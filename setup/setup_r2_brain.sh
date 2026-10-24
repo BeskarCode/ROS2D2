@@ -140,9 +140,14 @@ cat > /etc/udev/rules.d/99-r2-mega.rules <<'EOF'
 # Genuine Arduino Mega 2560 (and R3)
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", SYMLINK+="r2-mega"
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0010", SYMLINK+="r2-mega"
+# Mega ADK (the ShadowMD board) and Mega ADK R3
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="003f", SYMLINK+="r2-mega"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0044", SYMLINK+="r2-mega"
 # Clones with CH340 / FTDI / CP210x USB-serial chips
 SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="r2-mega"
 SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="r2-mega"
+# TODO when the RPLIDAR C1 arrives: its USB adapter is probably a CP210x too. Check
+# with lsusb and give it its own rule (/dev/r2-lidar), by serial number if needed.
 SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="r2-mega"
 EOF
 udevadm control --reload-rules
