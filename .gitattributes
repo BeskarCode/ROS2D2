@@ -1,0 +1,6 @@
+# Everything here runs on Linux (the Raspberry Pi or the Docker bench): Unix line endings
+* text=auto eol=lf
+*.onnx binary
+*.png binary
+*.jpg binary
+*.mp4 binary

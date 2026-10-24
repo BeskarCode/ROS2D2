@@ -1,0 +1,12 @@
+# Values tuned on the droid with the proof of concept (2026-10-23)
+dome_tracker:
+  ros__parameters:
+    camera: front
+    enabled: true
+    rate_hz: 15.0
+    min_speed: 18
+    max_speed: 58
+    kd: 0.3
+    deadzone: 0.15
+    invert: true
+    lost_after: 0.2
