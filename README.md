@@ -21,7 +21,7 @@ proof of concept, split into ROS 2 nodes.
 | `r2_camera` | `camera_node` | USB or network (ESP32-CAM) camera, one instance per camera |
 | `r2_vision` | `face_detector` | OpenCV YuNet face detector, closest face first |
 | `r2_dome_tracker` | `dome_tracker` | Dome speed from the face position (control law tuned on the droid) |
-| `r2_shadow_bridge` | `mega_bridge` | The only node that talks to the Mega over USB serial |
+| `r2_shadow_bridge` | `mega_bridge`, `foot_calibrate` | The only node that talks to the Mega over USB serial; feet and dome move only in autonomous mode (PS + L2 on the foot controller) |
 | `r2_imu` | `imu_node` | MPU6050 gyro and accelerometer over I2C, plus a Madgwick filter |
 | `r2_bringup` | | Launch files: `ros2 launch r2_bringup dome_tracker.launch.py` |
 
