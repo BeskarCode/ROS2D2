@@ -2,7 +2,7 @@
 
     python3 fake_mega.py /tmp/mega-side /tmp/mega_rx.log /tmp/mega-ctl
 
-It speaks the autonomous-mode protocol like the firmware (ENABLE_FOOT_AUTO):
+It speaks the autonomous-mode protocol like the firmware (ENABLE_ROS2D2):
   ROS:AUTO:? / ROS:AUTO:0 answer AUTO ON / AUTO OFF <reason>
   ROS:FOOT: while the mode is off -> "ERR FOOT AUTO OFF", at most once a second
 Every received line goes to the log with a timestamp.
