@@ -170,10 +170,15 @@ log "Lidar driver: Slamtec sllidar_ros2 (RPLIDAR C1), from source"
 # No Jazzy binary supports the C1 (ros-jazzy-rplidar-ros stops at the A3/S1), so it is
 # built with the rest of the workspace: cd ~/r2_ws && colcon build
 apt-get install -y build-essential
+# Our fork of Slamtec's repo, pinned to a known commit so a reinstall builds the same driver
 SLLIDAR="${R2_HOME}/r2_ws/src/sllidar_ros2"
+SLLIDAR_REPO="https://github.com/Fernando-Beltran/sllidar_ros2.git"
+SLLIDAR_COMMIT="34300099fadfc772965962dec837bf436706188f"
 if [[ ! -d "$SLLIDAR/.git" ]]; then
-  sudo -u "$R2_USER" git clone --depth 1 https://github.com/Slamtec/sllidar_ros2.git "$SLLIDAR"
+  sudo -u "$R2_USER" git clone "$SLLIDAR_REPO" "$SLLIDAR"
 fi
+sudo -u "$R2_USER" git -C "$SLLIDAR" fetch -q origin
+sudo -u "$R2_USER" git -C "$SLLIDAR" checkout -q "$SLLIDAR_COMMIT"
 
 log "Shell environment"
 BASHRC="${R2_HOME}/.bashrc"
