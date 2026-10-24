@@ -4,7 +4,7 @@
   <name>r2_imu</name>
   <version>0.1.0</version>
   <description>ROS2D2 IMU node: MPU6050 gyro and accelerometer over I2C, published as sensor_msgs/Imu, plus tilt.</description>
-  <maintainer email="fernando.beltran@gmail.com">Fernando Beltran</maintainer>
+  <maintainer email="Fernando-Beltran@users.noreply.github.com">Fernando Beltran</maintainer>
   <license>MIT</license>
 
   <exec_depend>rclpy</exec_depend>

@@ -4,7 +4,7 @@
   <name>r2_camera</name>
   <version>0.1.0</version>
   <description>ROS2D2 camera node: USB webcams and network (ESP32) cameras published as ROS images, one instance per camera.</description>
-  <maintainer email="fernando.beltran@gmail.com">Fernando Beltran</maintainer>
+  <maintainer email="Fernando-Beltran@users.noreply.github.com">Fernando Beltran</maintainer>
   <license>MIT</license>
 
   <exec_depend>rclpy</exec_depend>

@@ -17,7 +17,7 @@ setup(
     install_requires=["setuptools"],
     zip_safe=True,
     maintainer="Fernando Beltran",
-    maintainer_email="fernando.beltran@gmail.com",
+    maintainer_email="Fernando-Beltran@users.noreply.github.com",
     description="ROS2D2 camera node (USB and network cameras)",
     license="MIT",
     tests_require=["pytest"],
