@@ -7,3 +7,6 @@ ros2_ws/install/
 ros2_ws/log/
 # Test bench results
 docker/bench-out/
+# Write-ups, posts, plans and specs stay local (docs/ is its own local git repo)
+docs/
+.superpowers/
