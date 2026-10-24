@@ -9,7 +9,8 @@ FROM ros:jazzy-ros-base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ros-jazzy-vision-msgs \
-      python3-serial python3-yaml python3-pytest python3-pip \
+      ros-jazzy-imu-filter-madgwick \
+      python3-serial python3-smbus2 python3-yaml python3-pytest python3-pip \
       socat \
     && rm -rf /var/lib/apt/lists/*
 

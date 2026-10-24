@@ -1,0 +1,12 @@
+# MPU6050 on the Pi's I2C bus 1 (header pins 3 SDA, 5 SCL), next to the DF2301QG (0x64)
+imu:
+  ros__parameters:
+    bus: 1
+    address: 0x68
+    rate_hz: 100.0
+    accel_range_g: 4        # 2, 4, 8 or 16
+    gyro_range_dps: 500     # 250, 500, 1000 or 2000
+    dlpf: 3                 # about 44 Hz: cuts the foot motors' vibration
+    frame_id: imu_link
+    calibrate_sec: 2.0      # keep the droid still while it starts
+    tilt_warn_deg: 20.0

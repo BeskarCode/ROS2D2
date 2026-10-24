@@ -113,9 +113,14 @@ apt-get install -y \
   ros-${ROS_DISTRO}-rqt-reconfigure \
   ros-${ROS_DISTRO}-foxglove-bridge
 
-log "System tools: serial, video, audio"
+log "Sensor packages: IMU filter"
 apt-get install -y \
-  python3-serial python3-venv python3-pip python3-opencv python3-yaml \
+  ros-${ROS_DISTRO}-imu-filter-madgwick
+
+log "System tools: serial, I2C, video, audio"
+apt-get install -y \
+  python3-serial python3-smbus2 i2c-tools \
+  python3-venv python3-pip python3-opencv python3-yaml \
   v4l-utils ffmpeg \
   alsa-utils portaudio19-dev \
   htop tmux avahi-daemon
@@ -125,7 +130,10 @@ log "rosdep"
 sudo -u "$R2_USER" rosdep update
 
 log "Device access for ${R2_USER}"
-usermod -aG dialout,video,audio,plugdev "$R2_USER"
+getent group i2c >/dev/null || groupadd -r i2c
+usermod -aG dialout,video,audio,plugdev,i2c "$R2_USER"
+# /dev/i2c-1 for the i2c group (the MPU6050 and the DF2301QG live there)
+echo 'KERNEL=="i2c-[0-9]*", GROUP="i2c", MODE="0660"' > /etc/udev/rules.d/99-r2-i2c.rules
 
 log "udev: the Mega appears as /dev/r2-mega"
 cat > /etc/udev/rules.d/99-r2-mega.rules <<'EOF'
