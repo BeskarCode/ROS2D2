@@ -107,6 +107,20 @@ wait_state false boot || fail "7: mode not off with reason boot after a reset"
 m=$(mark); drive 2 0.4
 since $m | grep -q "ROS:FOOT:" && fail "7: ROS:FOOT: sent after the reset"
 
+echo "== 9. foot_calibrate drives fixed units through the bridge"
+m=$(mark)
+ros2 run r2_shadow_bridge foot_calibrate --drive 20 --seconds 2 --measured 0.8 > "$OUT/auto_calibrate.log" 2>&1 &
+CAL=$!
+sleep 4
+poke button
+wait $CAL || fail "9: foot_calibrate failed: $(tail -2 "$OUT/auto_calibrate.log")"
+n=$(since $m | grep -c "ROS:FOOT:20,0"); s=$(since $m | grep -c "ROS:FOOT:0,0")
+echo "   ROS:FOOT:20,0 x$n, ROS:FOOT:0,0 x$s; $(grep "drive_units_per_mps =" "$OUT/auto_calibrate.log")"
+[ "$n" -ge 20 ] && [ "$s" -eq 1 ] || fail "9: expected ~30 ROS:FOOT:20,0 and one stop"
+grep -q "drive_units_per_mps = 50.0" "$OUT/auto_calibrate.log" || fail "9: wrong calibration result"
+poke button                      # leave the mode off for the next step
+wait_state false button || fail "9: mode not off"
+
 if [ -n "$VIDEO" ]; then
     echo "== 8. dome tracker only in autonomous mode (camera: $VIDEO)"
     cat > /tmp/cameras.yaml <<EOF

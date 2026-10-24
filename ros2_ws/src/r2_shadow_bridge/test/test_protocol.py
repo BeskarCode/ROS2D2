@@ -1,5 +1,6 @@
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_line, foot_tick,
-                                       is_error, parse_auto_line, twist_to_units)
+                                       is_error, parse_auto_line, twist_to_units, units_to_twist,
+                                       calibration_factor)
 
 PREFIXES = ["MD:", "S1:", "S3:"]
 
@@ -102,3 +103,18 @@ def test_parse_auto_lines():
     assert parse_auto_line("OK forwarded to Serial1") is None
     assert parse_auto_line("AUTO MAYBE") is None
     assert parse_auto_line("AUTO OFF") is None
+
+
+def test_units_to_twist_inverts_twist_to_units():
+    assert units_to_twist(20, 15, 50, 30) == (0.4, 0.5)
+    assert twist_to_units(0.4, 0.5, 50, 30, 0.4, 0.6) == (20, 15)
+
+
+def test_calibration_factor_drive():
+    # 20 units for 3 s covered 1.2 m -> 0.4 m/s -> 50 units per m/s
+    assert abs(calibration_factor(20, 1.2, 3.0, turning=False) - 50.0) < 1e-9
+
+
+def test_calibration_factor_turn():
+    # 15 units for 4 s made one full turn -> pi/2 rad/s -> 15 / (pi/2) units per rad/s
+    assert abs(calibration_factor(15, 1.0, 4.0, turning=True) - 9.549) < 0.001

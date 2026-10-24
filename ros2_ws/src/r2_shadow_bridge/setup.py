@@ -20,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "mega_bridge = r2_shadow_bridge.mega_bridge_node:main",
+            "foot_calibrate = r2_shadow_bridge.foot_calibrate:main",
         ],
     },
 )

@@ -22,7 +22,9 @@ Console commands the bridge lets through from /mega/command:
 Errors come back as lines starting with "ERR".
 """
 
-DOME_STOP = "ROS:DOME:0\n"
+import math
+
+DOME_STOP ="ROS:DOME:0\n"
 FOOT_STOP = "ROS:FOOT:0,0\n"
 
 
@@ -94,3 +96,14 @@ def command_allowed(cmd, prefixes):
 
 def is_error(line):
     return line.startswith("ERR")
+
+
+def units_to_twist(drive_units, turn_units, drive_per_mps, turn_per_radps):
+    """Sabertooth (drive, turn) -> (m/s, rad/s): the inverse of twist_to_units."""
+    return drive_units / drive_per_mps, turn_units / turn_per_radps
+
+
+def calibration_factor(units, measured, seconds, turning):
+    """Units per m/s (measured = metres covered) or per rad/s (measured = full turns)."""
+    amount = measured * 2 * math.pi if turning else measured
+    return units / (amount / seconds)
