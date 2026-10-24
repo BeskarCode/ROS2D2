@@ -17,7 +17,7 @@ LOG=$OUT/auto_mega_rx.log
 echo "== build"
 rm -rf /ws/src && mkdir -p /ws && cp -r /r2/ros2_ws/src /ws/src
 cd /ws
-colcon build --symlink-install --packages-select r2_shadow_bridge 2>&1 | tail -1
+colcon build --symlink-install 2>&1 | tail -1
 source install/setup.bash
 
 echo "== pretend Mega"
@@ -39,11 +39,11 @@ poke() { echo "$1" > /tmp/mega-ctl; }
 
 # Latest /r2/auto_mode (latched), as true/false
 auto_state() {
-    timeout 10 ros2 topic echo --once --qos-durability transient_local --qos-reliability reliable \
+    timeout -s INT -k 2 10 ros2 topic echo --once --qos-durability transient_local --qos-reliability reliable \
         --field data /r2/auto_mode 2>/dev/null | head -1 | tr 'A-Z' 'a-z'    # True -> true
 }
 auto_reason() {
-    timeout 10 ros2 topic echo --once --qos-durability transient_local --qos-reliability reliable \
+    timeout -s INT -k 2 10 ros2 topic echo --once --qos-durability transient_local --qos-reliability reliable \
         --field data /r2/auto_mode/reason 2>/dev/null | head -1
 }
 wait_state() {    # wait_state true|false [reason]
@@ -55,7 +55,7 @@ wait_state() {    # wait_state true|false [reason]
     return 1
 }
 drive() {         # drive <seconds> <m/s>
-    timeout "$1" ros2 topic pub -r 15 /foot/cmd_vel geometry_msgs/msg/Twist "{linear: {x: $2}}" \
+    timeout -s INT -k 2 "$1" ros2 topic pub -r 15 /foot/cmd_vel geometry_msgs/msg/Twist "{linear: {x: $2}}" \
         > /dev/null 2>&1
     sleep 0.5
 }
@@ -94,7 +94,7 @@ echo "== 6. the Pi switches it off (service)"
 poke button
 wait_state true || fail "6: mode did not turn on again"
 m=$(mark)
-timeout 15 ros2 service call /r2/auto_mode/disable std_srvs/srv/Trigger > /dev/null 2>&1 \
+timeout -s INT -k 2 15 ros2 service call /r2/auto_mode/disable std_srvs/srv/Trigger > /dev/null 2>&1 \
     || fail "6: service call failed"
 since $m | grep -q "ROS:AUTO:0" || fail "6: ROS:AUTO:0 not sent"
 wait_state false pi || fail "6: mode not off with reason pi"
@@ -106,5 +106,42 @@ poke reset
 wait_state false boot || fail "7: mode not off with reason boot after a reset"
 m=$(mark); drive 2 0.4
 since $m | grep -q "ROS:FOOT:" && fail "7: ROS:FOOT: sent after the reset"
+
+if [ -n "$VIDEO" ]; then
+    echo "== 8. dome tracker only in autonomous mode (camera: $VIDEO)"
+    cat > /tmp/cameras.yaml <<EOF
+front:
+  source: $VIDEO
+  fps: 30
+  fourcc: ""
+  frame_id: dome_camera_front
+EOF
+    ros2 launch r2_camera cameras.launch.py config:=/tmp/cameras.yaml > "$OUT/auto_camera.log" 2>&1 &
+    CAM=$!
+    ros2 launch r2_vision face_detectors.launch.py > "$OUT/auto_faces.log" 2>&1 &
+    FACES=$!
+    ros2 run r2_dome_tracker dome_tracker --ros-args \
+        --params-file "$(ros2 pkg prefix r2_dome_tracker)/share/r2_dome_tracker/config/dome_tracker.yaml" \
+        > "$OUT/auto_tracker.log" 2>&1 &
+    TRACKER=$!
+    trap 'kill $TRACKER $FACES $CAM 2>/dev/null; cleanup' EXIT
+    sleep 8
+    nonzero() {   # nonzero <seconds>: /dome/speed_cmd messages that are not 0
+        timeout -s INT -k 2 "$1" ros2 topic echo --csv /dome/speed_cmd 2>/dev/null | grep -cv '^0$'
+    }
+    n=$(nonzero 10); echo "   mode off: $n dome speeds"
+    [ "$n" -eq 0 ] || fail "8: the tracker moves the dome with the mode off"
+    poke button
+    wait_state true || fail "8: mode did not turn on"
+    m=$(mark)
+    n=$(nonzero 10); echo "   mode on: $n dome speeds"
+    [ "$n" -gt 10 ] || fail "8: the tracker does not follow the face with the mode on"
+    since $m | grep -q "ROS:DOME:[1-9-]" || fail "8: no ROS:DOME: reached the Mega"
+    poke stick
+    wait_state false stick || fail "8: mode not off"
+    sleep 1
+    n=$(nonzero 10); echo "   mode off again: $n dome speeds"
+    [ "$n" -eq 0 ] || fail "8: the tracker keeps moving the dome after the stick"
+fi
 
 echo "ALL PASS"

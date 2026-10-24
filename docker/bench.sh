@@ -49,8 +49,9 @@ echo "== fake Mega"
 socat -d pty,raw,echo=0,link=/tmp/mega pty,raw,echo=0,link=/tmp/mega-side &
 SOCAT=$!
 sleep 1
-# What the Mega receives, with a timestamp per line
-( while IFS= read -r line; do echo "$(date +%s.%N) $line"; done < /tmp/mega-side ) > "$OUT/mega_rx.log" &
+# A pretend Mega that logs what it receives (with a timestamp per line) and speaks the
+# autonomous-mode protocol: the dome only follows faces once PS + L2 is "pressed"
+python3 /r2/docker/fake_mega.py /tmp/mega-side "$OUT/mega_rx.log" /tmp/mega-ctl &
 READER=$!
 
 cat > /tmp/cameras.yaml <<EOF
@@ -78,6 +79,10 @@ if [ -n "$FEEDBACK" ]; then
     for _ in $(seq 600); do started && break; sleep 0.5; done
 fi
 
+echo "== autonomous mode on (pretend PS + L2)"
+echo button > /tmp/mega-ctl
+sleep 1
+
 echo "== recording ($SECS s)"
 ros2 topic echo --csv /dome/speed_cmd > "$OUT/speed_cmd.csv" 2>/dev/null &
 SPEED=$!
@@ -102,8 +107,8 @@ echo "  min/max:";        sort -n "$OUT/speed_cmd.csv" | sed -n '1p;$p' | tr '\n
 NEG=$(grep -c '^-' "$OUT/speed_cmd.csv" || true)
 POS=$(grep -cE '^[1-9]' "$OUT/speed_cmd.csv" || true)
 echo "  negative/positive: $NEG / $POS"
-echo "Mega received:";    wc -l < "$OUT/mega_rx.log"
-echo "  first lines:";    head -5 "$OUT/mega_rx.log"
+echo "Mega received:";    grep -c "ROS:DOME:" "$OUT/mega_rx.log"
+echo "  first lines:";    grep "ROS:DOME:" "$OUT/mega_rx.log" | head -5 || true
 echo "errors in launch:"; grep -iE "error|traceback|exception" "$OUT/launch.log" | head -10 || echo "  none"
 
-state "{\"phase\": \"done\", \"summary\": \"$(wc -l < "$OUT/speed_cmd.csv") ordenes al dome: $NEG negativas, $POS positivas. El Mega recibio $(wc -l < "$OUT/mega_rx.log") lineas DM:\"}"
+state "{\"phase\": \"done\", \"summary\": \"$(wc -l < "$OUT/speed_cmd.csv") ordenes al dome: $NEG negativas, $POS positivas. El Mega recibio $(grep -c ROS:DOME: "$OUT/mega_rx.log") lineas ROS:DOME:\"}"

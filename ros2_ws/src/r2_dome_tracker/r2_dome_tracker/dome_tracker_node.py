@@ -6,7 +6,8 @@ Topics:
   out  /dome/speed_cmd                 std_msgs/Int16   ShadowMD DM: units, ~15 per second
                                                         while enabled; the Mega bridge turns
                                                         it into DM:<speed>
-  out  ~/status                        std_msgs/String  disabled | no face | tracking
+  in   /r2/auto_mode                   std_msgs/Bool    autonomous mode (latched); off = the dome is left alone
+  out  ~/status                        std_msgs/String  disabled | auto off | no face | tracking
 
 All gains can be changed while running (ros2 param set, or the web console).
 """
@@ -14,10 +15,10 @@ All gains can be changed while running (ros2 param set, or the web console).
 import rclpy
 from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
 from sensor_msgs.msg import CameraInfo
-from std_msgs.msg import Int16, String
+from std_msgs.msg import Bool, Int16, String
 from vision_msgs.msg import Detection2DArray
 
 from r2_dome_tracker.control import DomeTracker, Gains, face_error
@@ -51,6 +52,12 @@ class DomeTrackerNode(Node):
                                 history=HistoryPolicy.KEEP_LAST, depth=1)
         self.create_subscription(Detection2DArray, f"/cameras/{cam}/faces", self._on_faces, 10)
         self.create_subscription(CameraInfo, f"/cameras/{cam}/camera_info", self._on_info, sensor_qos)
+        # The dome follows faces only in autonomous mode (switched on from the controller).
+        # Latched by the Mega bridge; until it says otherwise the mode counts as off.
+        self.auto_on = False
+        latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                             reliability=ReliabilityPolicy.RELIABLE)
+        self.create_subscription(Bool, "/r2/auto_mode", self._on_auto_mode, latched)
         self.pub_speed = self.create_publisher(Int16, "/dome/speed_cmd", 10)
         self.pub_status = self.create_publisher(String, "~/status", 10)
 
@@ -104,13 +111,16 @@ class DomeTrackerNode(Node):
         else:
             self.tracker.no_face()
 
+    def _on_auto_mode(self, msg):
+        self.auto_on = msg.data
+
     def _tick(self):
-        if not self.param("enabled"):
+        if not self.param("enabled") or not self.auto_on:
             if self._was_enabled:
                 self.pub_speed.publish(Int16(data=0))   # one stop, then quiet: the controller is free
                 self.tracker.reset()
             self._was_enabled = False
-            self.pub_status.publish(String(data="disabled"))
+            self.pub_status.publish(String(data="disabled" if not self.param("enabled") else "auto off"))
             return
         self._was_enabled = True
         now = self.get_clock().now().nanoseconds / 1e9
