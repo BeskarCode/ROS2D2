@@ -50,7 +50,3 @@ docker run --rm -v <this folder>:/r2 -v <video folder>:/media ros2d2-dev \
 With a webcam on Windows, `python docker/webcam_mjpeg.py 1` serves it as an MJPEG
 stream (the same format as an ESP32-CAM) and opens a test page at
 <http://localhost:8081/> with Start and Stop buttons. See the top of `docker/bench.sh`.
-
-## Build log
-
-Step-by-step write-ups in Spanish: [`docs/bitacora`](docs/bitacora). Plan: [`docs/roadmap.md`](docs/roadmap.md).
