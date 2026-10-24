@@ -4,7 +4,7 @@
   <name>r2_shadow_bridge</name>
   <version>0.1.0</version>
   <description>ROS2D2 bridge to the ShadowMD Arduino Mega over USB serial (DM:, MD:, S1:, S3: commands).</description>
-  <maintainer email="fernando.beltran@gmail.com">Fernando Beltran</maintainer>
+  <maintainer email="Fernando-Beltran@users.noreply.github.com">Fernando Beltran</maintainer>
   <license>MIT</license>
 
   <exec_depend>rclpy</exec_depend>
