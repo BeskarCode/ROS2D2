@@ -121,6 +121,25 @@ grep -q "drive_units_per_mps = 50.0" "$OUT/auto_calibrate.log" || fail "9: wrong
 poke button                      # leave the mode off for the next step
 wait_state false button || fail "9: mode not off"
 
+echo "== 10. the bridge notices the mode went off even if the AUTO line is garbled or lost"
+poke button
+wait_state true || fail "10: mode did not turn on"
+poke glitch
+wait_state false stick || fail "10: AUTO line glued to an echo was missed"
+poke button
+wait_state true || fail "10: mode did not turn on again"
+poke silent
+m=$(mark)
+timeout -s INT -k 2 6 ros2 topic pub -r 15 /foot/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.4}}" \
+    > /dev/null 2>&1 &
+PUB=$!
+wait_state false || fail "10: the bridge still believes the mode is on after ERR FOOT AUTO OFF"
+sleep 2
+late=$(since $m | awk -v t="$(date +%s.%N)" '$1 > t - 1.5 && /ROS:FOOT:/' | wc -l)
+wait $PUB 2>/dev/null
+echo "   ROS:FOOT: lines in the last 1.5 s after resync: $late"
+[ "$late" -eq 0 ] || fail "10: still sending ROS:FOOT: after the resync"
+
 if [ -n "$VIDEO" ]; then
     echo "== 8. dome tracker only in autonomous mode (camera: $VIDEO)"
     cat > /tmp/cameras.yaml <<EOF

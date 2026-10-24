@@ -1,6 +1,6 @@
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_line, foot_tick,
                                        is_error, parse_auto_line, twist_to_units, units_to_twist,
-                                       calibration_factor)
+                                       calibration_factor, is_auto_off_error)
 
 PREFIXES = ["MD:", "S1:", "S3:"]
 
@@ -118,3 +118,22 @@ def test_calibration_factor_drive():
 def test_calibration_factor_turn():
     # 15 units for 4 s made one full turn -> pi/2 rad/s -> 15 / (pi/2) units per rad/s
     assert abs(calibration_factor(15, 1.0, 4.0, turning=True) - 9.549) < 0.001
+
+
+def test_twist_to_units_nan_or_inf_means_stop():
+    nan, inf = float("nan"), float("inf")
+    assert twist_to_units(nan, 0.0, 50, 30, 0.4, 0.6) == (0, 0)
+    assert twist_to_units(0.4, nan, 50, 30, 0.4, 0.6) == (0, 0)
+    assert twist_to_units(inf, 0.0, 50, 30, 0.4, 0.6) == (0, 0)
+
+
+def test_parse_auto_line_after_marcduino_echo():
+    # The MarcDuino echo can leave a partial line in front of the Mega's own line
+    assert parse_auto_line("[MD] xyzAUTO OFF stick") == (False, "stick")
+    assert parse_auto_line("[MD] *ON00AUTO ON") == (True, "")
+    assert parse_auto_line("NOT AUTO ONLY") is None
+
+
+def test_foot_auto_off_error_means_the_mode_is_off():
+    assert is_auto_off_error("ERR FOOT AUTO OFF")
+    assert not is_auto_off_error("ERR Invalid DM speed")

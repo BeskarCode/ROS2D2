@@ -12,6 +12,8 @@ The controller is pretend too: write one word per line to the control FIFO
   stick       the foot stick moved (off)
   controller  the foot Nav was lost (off)
   reset       the Mega restarted (off, "AUTO OFF boot")
+  glitch      the stick, with the AUTO line glued to a MarcDuino echo
+  silent      off, and the AUTO line is lost
 """
 
 import os
@@ -80,6 +82,12 @@ def on_control(word):
     elif word == "reset":
         auto_on, reason = False, "boot"
         state()
+    elif word == "glitch":       # the stick, with the AUTO line glued to a MarcDuino echo
+        if auto_on:
+            auto_on, reason = False, "stick"
+            ser.write(b"[MD] *ON00AUTO OFF stick\n")
+    elif word == "silent":       # off, and the AUTO line is lost altogether
+        auto_on, reason = False, "stick"
 
 
 say("AUTO OFF boot")

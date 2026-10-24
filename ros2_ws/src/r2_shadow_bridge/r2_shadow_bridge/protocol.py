@@ -23,6 +23,7 @@ Errors come back as lines starting with "ERR".
 """
 
 import math
+import re
 
 DOME_STOP ="ROS:DOME:0\n"
 FOOT_STOP = "ROS:FOOT:0,0\n"
@@ -57,7 +58,12 @@ def foot_line(drive, turn):
 
 
 def twist_to_units(linear, angular, drive_per_mps, turn_per_radps, max_linear, max_angular):
-    """m/s and rad/s -> Sabertooth (drive, turn), limited to max_linear/max_angular first."""
+    """m/s and rad/s -> Sabertooth (drive, turn), limited to max_linear/max_angular first.
+
+    NaN or infinity (a planner bug upstream) means stop, never full speed.
+    """
+    if not (math.isfinite(linear) and math.isfinite(angular)):
+        return 0, 0
     drive = round(_clamp(linear, max_linear) * drive_per_mps)
     turn = round(_clamp(angular, max_angular) * turn_per_radps)
     return _clamp(int(drive), 127), _clamp(int(turn), 127)
@@ -78,14 +84,23 @@ def foot_tick(fresh, auto_on, drive, turn, stopped):
     return None, True
 
 
+_AUTO_LINE = re.compile(r"AUTO (ON|OFF ([a-z]+))$")
+
+
 def parse_auto_line(line):
-    """"AUTO ON" -> (True, ""), "AUTO OFF <reason>" -> (False, reason), anything else -> None."""
-    words = line.split()
-    if words == ["AUTO", "ON"]:
-        return True, ""
-    if len(words) == 3 and words[:2] == ["AUTO", "OFF"]:
-        return False, words[2]
-    return None
+    """"AUTO ON" -> (True, ""), "AUTO OFF <reason>" -> (False, reason), anything else -> None.
+
+    Matched at the end of the line: the MarcDuino echo can leave a partial line in front.
+    """
+    m = _AUTO_LINE.search(line.strip())
+    if m is None:
+        return None
+    return (True, "") if m.group(1) == "ON" else (False, m.group(2))
+
+
+def is_auto_off_error(line):
+    """The Mega refused a ROS:FOOT: because the mode is off: our idea of the mode is stale."""
+    return line.strip() == "ERR FOOT AUTO OFF"
 
 
 def command_allowed(cmd, prefixes):

@@ -32,7 +32,8 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Int16, String
 from std_srvs.srv import Trigger
 
-from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_tick, is_error,
+from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_tick,
+                                       is_auto_off_error, is_error,
                                        parse_auto_line, twist_to_units)
 
 
@@ -154,7 +155,13 @@ class MegaBridgeNode(Node):
                 auto = parse_auto_line(line)
                 if auto is not None:
                     self._set_auto(*auto)
-                elif is_error(line):
+                    continue
+                if is_auto_off_error(line) and self.auto_on:
+                    # We missed an AUTO OFF line: the Mega is the authority. Stop sending
+                    # and ask why, so /r2/auto_mode/reason is right too.
+                    self._set_auto(False, "unknown")
+                    self._write("ROS:AUTO:?\n")
+                if is_error(line):
                     self.get_logger().warn(f"Mega: {line}")
 
     # --- commands ----------------------------------------------------------------------
