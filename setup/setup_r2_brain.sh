@@ -166,6 +166,15 @@ sudo -u "$R2_USER" "$VENV/bin/pip" install "numpy<2" "opencv-contrib-python-head
 log "Workspace ~/r2_ws"
 sudo -u "$R2_USER" mkdir -p "${R2_HOME}/r2_ws/src"
 
+log "Lidar driver: Slamtec sllidar_ros2 (RPLIDAR C1), from source"
+# No Jazzy binary supports the C1 (ros-jazzy-rplidar-ros stops at the A3/S1), so it is
+# built with the rest of the workspace: cd ~/r2_ws && colcon build
+apt-get install -y build-essential
+SLLIDAR="${R2_HOME}/r2_ws/src/sllidar_ros2"
+if [[ ! -d "$SLLIDAR/.git" ]]; then
+  sudo -u "$R2_USER" git clone --depth 1 https://github.com/Slamtec/sllidar_ros2.git "$SLLIDAR"
+fi
+
 log "Shell environment"
 BASHRC="${R2_HOME}/.bashrc"
 if ! grep -q '# >>> r2-brain >>>' "$BASHRC"; then
