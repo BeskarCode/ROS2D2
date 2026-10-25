@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# ROS2D2 - prepares a Raspberry Pi 4 (Ubuntu Server 24.04, 64-bit) as the
+# ROS2D2 - prepares a Raspberry Pi 4 (Ubuntu Server 24.04 or 26.04, 64-bit) as the
 # ROS 2 "brain" that sits on top of a ShadowMD Arduino Mega.
 #
 # Run once (safe to re-run):
 #   sudo bash setup_r2_brain.sh [username]
 #
 # What it does:
-#   1. Updates the system and installs ROS 2 Jazzy (ros-base + dev tools)
+#   1. Updates the system and installs ROS 2 (Jazzy on 24.04, Lyrical on 26.04)
 #   2. Installs the packages the brain needs: cameras, image transport,
 #      web console bridge (rosbridge), video streaming, serial, audio
 #   3. Python venv with a recent OpenCV (YuNet face detector needs >= 4.8)
@@ -16,7 +16,6 @@
 
 set -euo pipefail
 
-ROS_DISTRO=jazzy
 R2_USER="${1:-${SUDO_USER:-fernando}}"
 R2_HOME="$(getent passwd "$R2_USER" | cut -d: -f6)"
 ROS_DOMAIN=2   # all R2 nodes share this DDS domain
@@ -28,25 +27,41 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 . /etc/os-release
-if [[ "${VERSION_ID}" != "24.04" ]]; then
-  echo "Expected Ubuntu 24.04, found ${PRETTY_NAME}. ROS 2 Jazzy needs Ubuntu 24.04." >&2
-  exit 1
-fi
+# Each ROS 2 LTS is built for one Ubuntu LTS
+case "${VERSION_ID}" in
+  24.04) ROS_DISTRO=jazzy ;;
+  26.04) ROS_DISTRO=lyrical ;;
+  *) echo "Expected Ubuntu 24.04 or 26.04, found ${PRETTY_NAME}." >&2; exit 1 ;;
+esac
+echo "Ubuntu ${VERSION_ID} -> ROS 2 ${ROS_DISTRO}"
 
 export DEBIAN_FRONTEND=noninteractive
+# On a fresh image unattended-upgrades holds the dpkg lock for several minutes
+# after boot: wait for it instead of failing
+echo 'DPkg::Lock::Timeout "1800";' > /etc/apt/apt.conf.d/90-r2-lock-timeout
 
 log "Clock"
 # The Pi has no RTC; with a wrong date apt rejects the ROS repository signatures.
 # Some home routers block the default Ubuntu NTP server, so add alternatives
 # and, if still unsynchronised, take the date from an HTTPS response header
 # (-k: with a wrong clock the certificate can look not-yet-valid).
-mkdir -p /etc/systemd/timesyncd.conf.d
-cat > /etc/systemd/timesyncd.conf.d/r2-brain.conf <<'EOF'
+# 24.04 uses systemd-timesyncd; 26.04 uses chrony (NTS over TLS, which fails while
+# the clock is wrong, hence the plain-NTP servers added here too).
+if systemctl list-unit-files chrony.service >/dev/null 2>&1; then
+  mkdir -p /etc/chrony/sources.d
+  printf 'server %s iburst\n' time.google.com time.cloudflare.com es.pool.ntp.org \
+    > /etc/chrony/sources.d/r2-brain.sources
+  systemctl restart chrony
+  chronyc -a makestep >/dev/null 2>&1 || true
+else
+  mkdir -p /etc/systemd/timesyncd.conf.d
+  cat > /etc/systemd/timesyncd.conf.d/r2-brain.conf <<'EOF'
 [Time]
 NTP=time.google.com time.cloudflare.com es.pool.ntp.org
 FallbackNTP=ntp.ubuntu.com pool.ntp.org
 EOF
-systemctl restart systemd-timesyncd
+  systemctl restart systemd-timesyncd
+fi
 for _ in $(seq 1 15); do
   [[ "$(timedatectl show -p NTPSynchronized --value)" == "yes" ]] && break
   sleep 2
@@ -61,13 +76,14 @@ fi
 date
 
 log "Ubuntu repositories"
-# The Ubuntu Server image for the Pi ships with only "noble" and "noble-security".
-# Without "noble-updates", ROS dependencies such as libzstd-dev / liblz4-dev fail:
+# The Ubuntu Server image for the Pi ships with only "<codename>" and "<codename>-security".
+# Without "<codename>-updates", ROS dependencies such as libzstd-dev / liblz4-dev fail:
 # the security update of the library is installed but its -dev package is not
 # available at the same version ("you have held broken packages").
 UBUNTU_SOURCES=/etc/apt/sources.list.d/ubuntu.sources
-if [[ -f "$UBUNTU_SOURCES" ]] && ! grep -qE '^Suites:.*noble-updates' "$UBUNTU_SOURCES"; then
-  sed -i -E 's/^Suites: noble$/Suites: noble noble-updates noble-backports/' "$UBUNTU_SOURCES"
+CN="${VERSION_CODENAME}"
+if [[ -f "$UBUNTU_SOURCES" ]] && ! grep -qE "^Suites:.*${CN}-updates" "$UBUNTU_SOURCES"; then
+  sed -i -E "s/^Suites: ${CN}\$/Suites: ${CN} ${CN}-updates ${CN}-backports/" "$UBUNTU_SOURCES"
 fi
 grep -E '^Suites:' "$UBUNTU_SOURCES" || true
 
@@ -99,8 +115,8 @@ apt-get install -y \
   python3-rosdep
 
 log "Brain packages: cameras, image transport, web bridge, diagnostics"
+# (no usb_cam: it has no Lyrical build, and r2_camera reads the webcam with OpenCV)
 apt-get install -y \
-  ros-${ROS_DISTRO}-usb-cam \
   ros-${ROS_DISTRO}-v4l2-camera \
   ros-${ROS_DISTRO}-cv-bridge \
   ros-${ROS_DISTRO}-vision-msgs \
@@ -159,15 +175,20 @@ if [[ ! -d "$VENV" ]]; then
   # system-site-packages so rclpy / cv_bridge from ROS stay visible
   sudo -u "$R2_USER" python3 -m venv --system-site-packages "$VENV"
 fi
-sudo -u "$R2_USER" "$VENV/bin/pip" install --upgrade pip
-# numpy<2 keeps the ABI that Ubuntu's ROS packages (cv_bridge) were built with
-sudo -u "$R2_USER" "$VENV/bin/pip" install "numpy<2" "opencv-contrib-python-headless>=4.10,<4.11"
+if [[ "${ROS_DISTRO}" == "jazzy" ]]; then
+  # Ubuntu 24.04 ships OpenCV 4.6, too old for YuNet 2023.
+  # numpy<2 keeps the ABI that Ubuntu's ROS packages (cv_bridge) were built with
+  sudo -u "$R2_USER" "$VENV/bin/pip" install --upgrade pip
+  sudo -u "$R2_USER" "$VENV/bin/pip" install "numpy<2" "opencv-contrib-python-headless>=4.10,<4.11"
+fi
+# Ubuntu 26.04 ships OpenCV 4.10 and numpy 2, the same ones Lyrical was built
+# with, so the venv just uses the system packages
 
 log "Workspace ~/r2_ws"
 sudo -u "$R2_USER" mkdir -p "${R2_HOME}/r2_ws/src"
 
 log "Lidar driver: Slamtec sllidar_ros2 (RPLIDAR C1), from source"
-# No Jazzy binary supports the C1 (ros-jazzy-rplidar-ros stops at the A3/S1), so it is
+# No binary package supports the C1 (ros-*-rplidar-ros stops at the A3/S1), so it is
 # built with the rest of the workspace: cd ~/r2_ws && colcon build
 apt-get install -y build-essential
 # Our fork of Slamtec's repo, pinned to a known commit so a reinstall builds the same driver
@@ -196,9 +217,12 @@ EOF
 fi
 
 log "Check"
+# ROS's setup.bash reads unset variables: relax "set -u" while sourcing it
+set +u
 . /opt/ros/${ROS_DISTRO}/setup.bash
+set -u
 echo "ROS_DISTRO: ${ROS_DISTRO}"
-ros2 pkg list | grep -E '^(usb_cam|rosbridge_server|web_video_server|cv_bridge)$' || true
+ros2 pkg list | grep -E '^(v4l2_camera|rosbridge_server|web_video_server|cv_bridge)$' || true
 sudo -u "$R2_USER" "$VENV/bin/python" -c "import cv2, numpy; print('OpenCV', cv2.__version__, 'numpy', numpy.__version__)"
 ls -l /dev/r2-mega 2>/dev/null || echo "Mega not detected (plug it in by USB)"
 ls /dev/video* 2>/dev/null || echo "No cameras detected"
