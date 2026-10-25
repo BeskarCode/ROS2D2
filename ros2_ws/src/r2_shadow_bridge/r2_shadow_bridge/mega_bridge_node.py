@@ -15,6 +15,8 @@ Topics:
   in   /mega/command          std_msgs/String     MD:/S1:/S3: commands (sounds, panels, lights...)
   out  /mega/connected        std_msgs/Bool       serial port open or not
   out  /mega/log              std_msgs/String     every line the Mega prints
+  out  /mega/tx               std_msgs/String     every line sent to the Mega; "(not sent) ..." when
+                                                  the port is closed
   out  /r2/auto_mode          std_msgs/Bool       autonomous mode on or off (latched)
   out  /r2/auto_mode/reason   std_msgs/String     why it went off: boot, button, stick,
                                                   controller, pi or disconnected (latched)
@@ -77,6 +79,7 @@ class MegaBridgeNode(Node):
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_connected = self.create_publisher(Bool, "/mega/connected", latched)
         self.pub_log = self.create_publisher(String, "/mega/log", 50)
+        self.pub_tx = self.create_publisher(String, "/mega/tx", 50)
         self.pub_auto = self.create_publisher(Bool, "/r2/auto_mode", latched)
         self.pub_auto_reason = self.create_publisher(String, "/r2/auto_mode/reason", latched)
         self.pub_track = self.create_publisher(Bool, "/r2/track_mode", latched)
@@ -139,14 +142,22 @@ class MegaBridgeNode(Node):
         with self.lock:
             ser = self.ser
             if ser is None:
+                self._echo(f"(not sent) {line}")
                 return False
             try:
                 ser.write(line.encode("ascii"))
+                self._echo(line)
                 return True
             except (serial.SerialException, OSError) as e:
                 err = e
+        self._echo(f"(not sent) {line}")
         self._lost(err)
         return False
+
+    def _echo(self, line):
+        """Show what goes to the Mega on /mega/tx (the web console lists it)."""
+        if rclpy.ok():
+            self.pub_tx.publish(String(data=line.strip()))
 
     def _read_loop(self):
         buf = b""

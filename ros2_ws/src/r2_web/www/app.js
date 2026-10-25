@@ -75,6 +75,9 @@ function connect() {
     subscribe('/r2/track_mode', 'std_msgs/msg/Bool', (m) => setTrack(m.data));
     // latch: the tracker's subscription is transient-local, a volatile publisher would not match
     send({ op: 'advertise', topic: '/r2/track_mode', type: 'std_msgs/msg/Bool', latch: true });
+    subscribe('/mega/tx', 'std_msgs/msg/String', onTx);
+    subscribe('/mega/log', 'std_msgs/msg/String', (m) => { if ($('megarx').checked) addLine(m.data, 'rx'); });
+    subscribe('/mega/connected', 'std_msgs/msg/Bool', onConnected);
     subscribe('/dome/angle_estimate', 'std_msgs/msg/Float32', (m) => { angleDeg = m.data; });
     send({ op: 'advertise', topic: '/dome/angle_reset', type: 'std_msgs/msg/Empty' });
     readParams();
@@ -141,15 +144,76 @@ function setTrack(on) {
   $('track').classList.toggle('on', on);
 }
 $('track').addEventListener('click', () => {
+  if (megaConnected) {
+    // With a Mega only the controller turns tracking on (PS + L2 on the dome Nav); we can only stop it
+    if (trackOn) callService('/r2/track_mode/disable', 'std_srvs/srv/Trigger', {}, () => {});
+    return;
+  }
   const next = !trackOn;
   send({ op: 'publish', topic: '/r2/track_mode', msg: { data: next } });
   setTrack(next);
 });
 
+// ---------- Mega: what is sent and what it answers ----------
+let megaConnected = null;     // null = no bridge running (simulation)
+let paused = false;
+const MAX_LINES = 300;
+
+function onConnected(m) {
+  megaConnected = m.data;
+  $('megastate').textContent = m.data ? 'connected' : 'not connected';
+  $('track').title = m.data ? 'Turn on with PS + L2 on the dome Nav; here you can only stop it' : '';
+}
+
+function onTx(m) {
+  if (m.data.startsWith('(not sent) ')) addLine(m.data.slice(11), 'unsent');
+  else addLine(m.data, 'tx');
+}
+
+function addLine(text, cls) {
+  if (paused) return;
+  const log = $('megalog');
+  const first = log.firstElementChild;
+  // 15 identical ROS:DOME: lines a second: group repeats on one line with a counter
+  if (first && first.dataset.text === text && first.dataset.cls === cls) {
+    const n = Number(first.dataset.n) + 1;
+    first.dataset.n = n;
+    first.querySelector('.n').textContent = '×' + n;
+    first.querySelector('.t').textContent = clock();
+    return;
+  }
+  const div = document.createElement('div');
+  div.className = cls;
+  div.dataset.text = text; div.dataset.cls = cls; div.dataset.n = 1;
+  div.innerHTML = '<span class="t"></span><span class="x"></span><span class="n"></span>';
+  div.querySelector('.t').textContent = clock();
+  div.querySelector('.x').textContent = text;
+  log.prepend(div);
+  while (log.childElementCount > MAX_LINES) log.lastElementChild.remove();
+}
+
+function clock() {
+  const d = new Date();
+  return d.toLocaleTimeString('en-GB') + '.' + String(d.getMilliseconds()).padStart(3, '0').slice(0, 1);
+}
+
+$('megapause').addEventListener('click', () => {
+  paused = !paused;
+  $('megapause').textContent = paused ? 'Resume' : 'Pause';
+  $('megapause').classList.toggle('on', paused);
+});
+$('megaclear').addEventListener('click', () => { $('megalog').textContent = ''; });
+
 // ---------- dome speed and angle (estimated by the tracker node) ----------
 let angleDeg = 0;
+let simStopped = true;
 function onSpeed(m) {
   const speed = m.data;
+  // No bridge: show what it would send (protocol.dome_tick: repeat while turning, one stop, then quiet)
+  if (megaConnected === null && (speed !== 0 || !simStopped)) {
+    addLine(`ROS:DOME:${Math.max(-MAX_SPEED, Math.min(MAX_SPEED, speed))}`, 'sim');
+  }
+  simStopped = speed === 0;
   const pct = Math.max(-1, Math.min(1, speed / MAX_SPEED)) * 50;
   const fill = $('speedfill');
   fill.style.left = (pct < 0 ? 50 + pct : 50) + '%';
@@ -201,6 +265,16 @@ function resize() {
   }
 }
 
+// The picture is letterboxed inside its box (object-fit: contain): put the line on the picture itself
+function placeAim() {
+  const img = $('video');
+  const bw = img.clientWidth, bh = img.clientHeight;
+  const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 4 / 3;
+  const w = Math.min(bw, bh * ratio);
+  const frac = Math.max(0, Math.min(1, 0.5 + angleDeg / hfov));
+  $('aim').style.left = ((bw - w) / 2 + frac * w) + 'px';
+}
+
 let shown = 0;
 function frame() {
   // + = right. Ease towards the latest estimate: it arrives ~15 times a second
@@ -209,7 +283,7 @@ function frame() {
   dome.rotation.y = -THREE.MathUtils.degToRad(shown);
   $('angle').textContent = `${angleDeg >= 0 ? '+' : ''}${angleDeg.toFixed(0)}°`;
   // Where the simulated dome looks, on the (fixed) camera picture
-  $('aim').style.left = Math.max(0, Math.min(100, 50 + angleDeg / (hfov / 2) * 50)) + '%';
+  placeAim();
 
   resize();
   controls.update();
