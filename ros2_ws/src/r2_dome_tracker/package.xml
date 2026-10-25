@@ -4,7 +4,7 @@
   <name>r2_dome_tracker</name>
   <version>0.1.0</version>
   <description>ROS2D2 dome tracker: turns the dome to look at the closest face (control law from the DomeTracker proof of concept).</description>
-  <maintainer email="Fernando-Beltran@users.noreply.github.com">Fernando Beltran</maintainer>
+  <maintainer email="BeskarCode@users.noreply.github.com">Fernando Beltran</maintainer>
   <license>MIT</license>
 
   <exec_depend>rclpy</exec_depend>

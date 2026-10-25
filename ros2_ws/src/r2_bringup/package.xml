@@ -4,7 +4,7 @@
   <name>r2_bringup</name>
   <version>0.1.0</version>
   <description>ROS2D2 launch files that start the demos (dome tracker...).</description>
-  <maintainer email="Fernando-Beltran@users.noreply.github.com">Fernando Beltran</maintainer>
+  <maintainer email="BeskarCode@users.noreply.github.com">Fernando Beltran</maintainer>
   <license>MIT</license>
 
   <exec_depend>launch</exec_depend>

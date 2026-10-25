@@ -7,7 +7,7 @@ decides what to do, and the Mega keeps driving the motors, sounds and lights.
 The controller always wins: touch the stick and control is back with you at once.
 The Mega also stops the dome if the Pi goes quiet for 300 ms.
 
-First demo: the dome turns to look at you. It is the [DomeTracker](https://github.com/Fernando-Beltran/DomeTracker)
+First demo: the dome turns to look at you. It is the [DomeTracker](https://github.com/BeskarCode/DomeTracker)
 proof of concept, split into ROS 2 nodes.
 
 ```
