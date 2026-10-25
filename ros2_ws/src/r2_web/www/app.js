@@ -59,6 +59,7 @@ $('simulate').addEventListener('change', () => {
   showSim($('simulate').checked);
 });
 $('pixelate').addEventListener('change', () => {
+  savePref('pixelate', String($('pixelate').checked));
   for (const c of cams) setParam(detector(c), 'pixelate', 'bool', $('pixelate').checked);
 });
 // Like the monitors in Windows: the number shows big on each picture for a moment
@@ -152,7 +153,13 @@ function setCameras(list) {
     subscribe(`${base}/faces`, 'vision_msgs/msg/Detection2DArray', (m) => onFaces(c, m));
     subscribe(`${base}/camera_info`, 'sensor_msgs/msg/CameraInfo', (m) => { c.width = m.width; }, 2000);
   });
-  if (cams.length) getParams(detector(cams[0]), ['pixelate'], (v) => { $('pixelate').checked = v.pixelate; });
+  // Pixelate is remembered in this browser and put back after ROS2D2 restarts
+  if (cams.length) getParams(detector(cams[0]), ['pixelate'], (v) => {
+    const pref = loadPref('pixelate', null);
+    const want = pref === null ? v.pixelate : pref === 'true';
+    $('pixelate').checked = want;
+    if (want !== v.pixelate) for (const c of cams) setParam(detector(c), 'pixelate', 'bool', want);
+  });
   addFans();
 }
 

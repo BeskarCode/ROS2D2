@@ -50,6 +50,10 @@ async function load() {
   $('filename').textContent = api.file + (api.saved ? '' : ' (the package default: saving creates ~/.config/ros2d2/cameras.yaml)');
   const t = await call(`${TRACKER}/get_parameters`, 'rcl_interfaces/srv/GetParameters', { names: ['cameras'] });
   running = t && t.values[0] ? t.values[0].string_array_value || [] : [];
+  // Pixelate as chosen on the console (remembered in this browser), also after a restart
+  let pix = null;
+  try { pix = localStorage.getItem('r2web.pixelate'); } catch { /* private window */ }
+  if (pix !== null) for (const n of running) setParam(`/cameras/${n}/face_detector`, 'pixelate', pix === 'true');
 
   const configured = Object.entries(api.cameras);       // [name, params] in file order
   const used = new Set();
@@ -126,10 +130,11 @@ function render() {
     if (r.missing) {
       msg.textContent = 'Not plugged in. Plug it back in, or untick "use" and Save to remove it.';
     } else if (r.running) {
-      handlers[`/cameras/${r.name}/image_raw/compressed`] = (m) => {
+      // The face detector's picture: it keeps the faces pixelated when that is on
+      handlers[`/cameras/${r.name}/faces/image/compressed`] = (m) => {
         el.querySelector('img').src = `data:image/jpeg;base64,${m.data}`; msg.textContent = '';
       };
-      send({ op: 'subscribe', topic: `/cameras/${r.name}/image_raw/compressed`, type: 'sensor_msgs/msg/CompressedImage', throttle_rate: 200, queue_length: 1 });
+      send({ op: 'subscribe', topic: `/cameras/${r.name}/faces/image/compressed`, type: 'sensor_msgs/msg/CompressedImage', throttle_rate: 200, queue_length: 1 });
       msg.textContent = 'waiting for the picture…';
     } else {
       msg.textContent = r.use ? 'Not running yet: Save and restart to start it.' : 'Not used.';
