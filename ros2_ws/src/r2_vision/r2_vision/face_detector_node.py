@@ -26,7 +26,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import CompressedImage, Image
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
-from r2_vision.image_utils import biggest, image_to_bgr
+from r2_vision.image_utils import biggest, image_to_bgr, pixelate
 
 # Changing one of these rebuilds the detector
 REBUILD_PARAMS = {"model", "detect_width", "score_threshold", "nms_threshold", "top_k"}
@@ -49,6 +49,8 @@ class FaceDetectorNode(Node):
         p("nms_threshold", 0.3)
         p("top_k", 50)
         p("jpeg_quality", 60)
+        p("pixelate", False, ParameterDescriptor(
+            description="Hide the faces in the debug picture (for screenshots and videos)"))
 
         major, minor = (int(v) for v in cv2.__version__.split(".")[:2])
         if (major, minor) < (4, 8):
@@ -129,6 +131,8 @@ class FaceDetectorNode(Node):
         img = frame.copy()
         for i, f in enumerate(faces if faces is not None else []):
             x, y, fw, fh = (int(v) for v in f[:4])
+            if self.param("pixelate"):
+                pixelate(img, x, y, fw, fh)
             colour = (0, 255, 0) if i == 0 else (0, 200, 255)   # green = the one R2 looks at
             cv2.rectangle(img, (x, y), (x + fw, y + fh), colour, 2)
             cv2.putText(img, f"{f[14]:.2f}", (x, max(y - 6, 12)),

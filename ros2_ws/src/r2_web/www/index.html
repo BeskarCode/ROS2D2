@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ROS2D2 Console</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
   :root {
     --bg: #0d1117; --panel: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
@@ -15,6 +16,8 @@
   header { display: flex; align-items: center; gap: 12px; padding: 10px 16px;
            border-bottom: 1px solid var(--line); }
   header h1 { font-size: 16px; margin: 0; letter-spacing: .5px; }
+  header .logo { margin-left: auto; height: 32px; width: auto; }
+  @media (max-width: 600px) { header { flex-wrap: wrap; } header .logo { height: 24px; } }
   .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; background: var(--line); color: var(--muted); }
   .pill.ok { background: rgba(63,185,80,.15); color: var(--green); }
   .pill.warn { background: rgba(210,153,34,.15); color: var(--amber); }
@@ -25,7 +28,11 @@
   .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
              margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line);
              display: flex; justify-content: space-between; }
-  #video { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #000; }
+  .videowrap { position: relative; }
+  #aim { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #f0b429;
+         box-shadow: 0 0 6px #f0b429; display: none; pointer-events: none; }
+  #aim span { position: absolute; top: 6px; left: 6px; font-size: 11px; color: #f0b429; white-space: nowrap; }
+  #video { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 62vh; object-fit: contain; background: #000; }
   #view3d { display: block; width: 100%; aspect-ratio: 1 / 1; max-height: 60vh; touch-action: none; }
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px;
            background: var(--line); border-top: 1px solid var(--line); }
@@ -55,11 +62,19 @@
   <h1>ROS2D2</h1>
   <span id="conn" class="pill">connecting…</span>
   <span id="status" class="pill">tracker: ?</span>
+  <span id="simpill" class="pill warn" hidden>simulation</span>
+  <img class="logo" src="astromech-spain-logo.png" alt="Astromech Spain — Be happy and build droids">
 </header>
 <main>
   <section class="card">
     <h2><span>Camera <span id="camname"></span></span><span id="fps">– fps</span></h2>
-    <img id="video" alt="camera with detected faces">
+    <div class="videowrap">
+      <img id="video" alt="camera with detected faces">
+      <div id="aim"><span>simulated dome</span></div>
+    </div>
+    <div class="controls">
+      <label><input type="checkbox" id="pixelate"> pixelate faces</label>
+    </div>
     <div class="stats">
       <div class="stat"><div class="k">Faces</div><div class="v" id="faces">–</div></div>
       <div class="stat"><div class="k">Best score</div><div class="v" id="score">–</div></div>
@@ -76,10 +91,12 @@
       <button id="track">Track: ?</button>
       <button id="zero">Dome to front</button>
       <label>°/s at speed 80 <input type="number" id="rate" min="1" max="720" step="5"></label>
-      <label><input type="checkbox" id="invert"> invert</label>
+      <label><input type="checkbox" id="simulate"> simulate (no Mega)</label>
     </div>
     <p class="note">The dome has no position sensor: the angle is estimated from the speed commands.
-      Time a full turn at speed 80 and set °/s to 360 ÷ seconds.</p>
+      Time a full turn at speed 80 and set °/s to 360 ÷ seconds.<br>
+      Simulate: the real camera does not move, so the faces are shifted by the estimated angle
+      as if it had turned with the dome. The yellow line shows where the virtual dome looks.</p>
   </section>
 </main>
 <script type="module" src="app.js"></script>

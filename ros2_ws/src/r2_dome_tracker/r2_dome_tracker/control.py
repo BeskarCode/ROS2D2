@@ -67,3 +67,36 @@ class DomeTracker:
 def face_error(center_x, width):
     """Pixel column of the face centre -> -1 .. +1."""
     return (center_x - width / 2) / (width / 2)
+
+
+SPEED_REF = 80   # ShadowMDLite's DOME_TRACKER_MAX_SPEED: deg_per_s_at_80 is measured here
+
+
+class DomeEstimate:
+    """Dome angle worked out from the speeds sent (the dome has no position sensor).
+
+    Degrees, + = turned right (towards a face with a positive error), wrapped to -180..180.
+    """
+
+    def __init__(self, deg_per_s_at_80=90.0):
+        self.deg_per_s_at_80 = deg_per_s_at_80
+        self.reset()
+
+    def reset(self):
+        self.angle = 0.0
+
+    def update(self, speed, invert, dt):
+        # The tracker flips the sign with invert, so flip it back to get the real direction
+        direction = -1 if invert else 1
+        self.angle += direction * speed / SPEED_REF * self.deg_per_s_at_80 * dt
+        self.angle = (self.angle + 180.0) % 360.0 - 180.0
+
+
+def simulated_error(err, dome_deg, hfov_deg):
+    """Face error as a camera that turned dome_deg with the dome would see it.
+
+    For testing without the Mega: the real camera does not move, so its picture is
+    shifted by the simulated dome angle. None if the face falls out of the view.
+    """
+    shifted = err - dome_deg / (hfov_deg / 2)
+    return shifted if -1.0 <= shifted <= 1.0 else None

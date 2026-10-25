@@ -10,6 +10,12 @@ Topics:
                                                         off = the dome is left alone. Independent of
                                                         the autonomous mode of the feet
   out  ~/status                        std_msgs/String  disabled | track off | no face | tracking
+  out  /dome/angle_estimate            std_msgs/Float32 degrees, + = right; worked out from the speeds
+                                                        sent, as the dome has no position sensor
+  in   /dome/angle_reset               std_msgs/Empty   "the dome is facing front now": angle = 0
+
+simulate:=true closes the loop without a Mega: the faces are shifted as if the camera
+had turned with the estimated dome angle, so the (virtual) dome stops when it faces you.
 
 All gains can be changed while running (ros2 param set, or the web console).
 """
@@ -20,10 +26,10 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
 from sensor_msgs.msg import CameraInfo
-from std_msgs.msg import Bool, Int16, String
+from std_msgs.msg import Bool, Empty, Float32, Int16, String
 from vision_msgs.msg import Detection2DArray
 
-from r2_dome_tracker.control import DomeTracker, Gains, face_error
+from r2_dome_tracker.control import DomeEstimate, DomeTracker, Gains, face_error, simulated_error
 
 GAIN_PARAMS = {"min_speed", "max_speed", "kd", "deadzone", "invert", "lost_after"}
 
@@ -44,8 +50,15 @@ class DomeTrackerNode(Node):
         p("deadzone", g.deadzone, ParameterDescriptor(description="Centre band with no movement, 0-1"))
         p("invert", g.invert, ParameterDescriptor(description="Turn the other way"))
         p("lost_after", g.lost_after, ParameterDescriptor(description="No face for this long: stop, seconds"))
+        p("deg_per_s_at_80", 90.0, ParameterDescriptor(
+            description="How fast the dome turns at speed 80, for the angle estimate: 360 / seconds per turn"))
+        p("simulate", False, ParameterDescriptor(
+            description="No Mega: shift the faces by the estimated dome angle so the loop closes"))
+        p("camera_hfov_deg", 60.0, ParameterDescriptor(description="Horizontal field of view, for simulate"))
 
         self.tracker = DomeTracker(self._gains())
+        self.dome = DomeEstimate(self.param("deg_per_s_at_80"))
+        self._last_tick = None
         self.width = None
         self._was_enabled = False
 
@@ -62,6 +75,8 @@ class DomeTrackerNode(Node):
         self.create_subscription(Bool, "/r2/track_mode", self._on_track_mode, latched)
         self.pub_speed = self.create_publisher(Int16, "/dome/speed_cmd", 10)
         self.pub_status = self.create_publisher(String, "~/status", 10)
+        self.pub_angle = self.create_publisher(Float32, "/dome/angle_estimate", 10)
+        self.create_subscription(Empty, "/dome/angle_reset", lambda _: self.dome.reset(), 10)
 
         self.add_on_set_parameters_callback(self._check_params)
         self.add_post_set_parameters_callback(self._after_params)
@@ -84,6 +99,8 @@ class DomeTrackerNode(Node):
             return SetParametersResult(successful=False, reason="need 0 <= min_speed <= max_speed <= 127")
         if not 0 <= new.get("deadzone", 0) < 1:
             return SetParametersResult(successful=False, reason="deadzone must be 0-1")
+        if new.get("deg_per_s_at_80", 1) <= 0 or not 0 < new.get("camera_hfov_deg", 60) < 180:
+            return SetParametersResult(successful=False, reason="need deg_per_s_at_80 > 0, 0 < camera_hfov_deg < 180")
         if new.get("rate_hz", 1) <= 0:
             return SetParametersResult(successful=False, reason="rate_hz must be > 0")
         if "camera" in new:
@@ -94,6 +111,8 @@ class DomeTrackerNode(Node):
         names = {prm.name for prm in params}
         if names & GAIN_PARAMS:
             self.tracker.gains = self._gains()
+        if "deg_per_s_at_80" in names:
+            self.dome.deg_per_s_at_80 = self.param("deg_per_s_at_80")
         if "rate_hz" in names:
             self._timer.cancel()
             self._timer = self.create_timer(1.0 / self.param("rate_hz"), self._tick)
@@ -107,28 +126,41 @@ class DomeTrackerNode(Node):
                                    throttle_duration_sec=10.0)
             return
         t = Time.from_msg(msg.header.stamp).nanoseconds / 1e9   # when the picture was taken
+        err = None
         if msg.detections:
-            cx = msg.detections[0].bbox.center.position.x
-            self.tracker.face(face_error(cx, self.width), t)
-        else:
+            err = face_error(msg.detections[0].bbox.center.position.x, self.width)
+            if self.param("simulate"):
+                err = simulated_error(err, self.dome.angle, self.param("camera_hfov_deg"))
+        if err is None:
             self.tracker.no_face()
+        else:
+            self.tracker.face(err, t)
 
     def _on_track_mode(self, msg):
         self.track_on = msg.data
 
     def _tick(self):
+        now = self.get_clock().now().nanoseconds / 1e9
+        dt = 0.0 if self._last_tick is None else now - self._last_tick
+        self._last_tick = now
+        speed = self._step(now)
+        self.dome.update(speed, self.param("invert"), dt)
+        self.pub_angle.publish(Float32(data=float(self.dome.angle)))
+
+    def _step(self, now):
+        """Publish this tick's speed and status; returns the speed the dome turns at."""
         if not self.param("enabled") or not self.track_on:
             if self._was_enabled:
                 self.pub_speed.publish(Int16(data=0))   # one stop, then quiet: the controller is free
                 self.tracker.reset()
             self._was_enabled = False
             self.pub_status.publish(String(data="disabled" if not self.param("enabled") else "track off"))
-            return
+            return 0
         self._was_enabled = True
-        now = self.get_clock().now().nanoseconds / 1e9
         speed = self.tracker.speed(now)
         self.pub_speed.publish(Int16(data=speed))
         self.pub_status.publish(String(data="tracking" if self.tracker.has_target(now) else "no face"))
+        return speed
 
 
 def main():
@@ -136,10 +168,11 @@ def main():
     node = DomeTrackerNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
     finally:
-        node.pub_speed.publish(Int16(data=0))
+        if rclpy.ok():          # after an external shutdown the context is gone
+            node.pub_speed.publish(Int16(data=0))
         node.destroy_node()
         rclpy.try_shutdown()
 

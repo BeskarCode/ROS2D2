@@ -7,28 +7,59 @@ const params = new URLSearchParams(location.search);
 const CAM = params.get('cam') || 'front';
 const WS_URL = params.get('ws') || `ws://${location.hostname || 'localhost'}:9090`;
 const MAX_SPEED = 80;          // ShadowMDLite clamps |DM:| to DOME_TRACKER_MAX_SPEED
-const STALE_MS = 300;          // the Mega stops the dome after 300 ms without a speed
+const TRACKER = '/dome_tracker';
+const DETECTOR = `/cameras/${CAM}/face_detector`;
 
 const $ = (id) => document.getElementById(id);
 $('camname').textContent = `/cameras/${CAM}`;
 
-// ---------- settings kept in this browser ----------
-function load(key, fallback) {
-  try { const v = localStorage.getItem('r2web.' + key); return v === null ? fallback : JSON.parse(v); }
-  catch { return fallback; }
+// ---------- node parameters, changed live through rosbridge ----------
+// rcl_interfaces/msg/ParameterValue types: 1 bool, 3 double
+const PTYPE = { bool: [1, 'bool_value'], double: [3, 'double_value'] };
+let hfov = 60;
+
+function setParam(node, name, kind, value) {
+  const [type, field] = PTYPE[kind];
+  callService(`${node}/set_parameters`, 'rcl_interfaces/srv/SetParameters',
+    { parameters: [{ name, value: { type, [field]: value } }] },
+    (r) => { const res = r.results && r.results[0]; if (res && !res.successful) console.warn(name, res.reason); });
 }
-function save(key, value) {
-  try { localStorage.setItem('r2web.' + key, JSON.stringify(value)); } catch { /* private window */ }
+
+function getParams(node, names, fn) {
+  callService(`${node}/get_parameters`, 'rcl_interfaces/srv/GetParameters', { names },
+    (r) => fn(Object.fromEntries(names.map((n, i) => {
+      const v = r.values[i];
+      return [n, v.type === 1 ? v.bool_value : v.type === 2 ? v.integer_value : v.double_value];
+    }))));
 }
-const settings = { rate: load('rate', 90), invert: load('invert', false) };
-$('rate').value = settings.rate;
-$('invert').checked = settings.invert;
-$('rate').addEventListener('change', () => { settings.rate = Number($('rate').value) || 90; save('rate', settings.rate); });
-$('invert').addEventListener('change', () => { settings.invert = $('invert').checked; save('invert', settings.invert); });
+
+function readParams() {
+  getParams(TRACKER, ['deg_per_s_at_80', 'simulate', 'camera_hfov_deg'], (v) => {
+    $('rate').value = v.deg_per_s_at_80;
+    $('simulate').checked = v.simulate;
+    hfov = v.camera_hfov_deg;
+    showSim(v.simulate);
+  });
+  getParams(DETECTOR, ['pixelate'], (v) => { $('pixelate').checked = v.pixelate; });
+}
+
+function showSim(on) { $('simpill').hidden = !on; $('aim').style.display = on ? 'block' : 'none'; }
+
+$('rate').addEventListener('change', () => {
+  const v = Number($('rate').value);
+  if (v > 0) setParam(TRACKER, 'deg_per_s_at_80', 'double', v);
+});
+$('simulate').addEventListener('change', () => {
+  setParam(TRACKER, 'simulate', 'bool', $('simulate').checked);
+  showSim($('simulate').checked);
+});
+$('pixelate').addEventListener('change', () => setParam(DETECTOR, 'pixelate', 'bool', $('pixelate').checked));
 
 // ---------- rosbridge ----------
 let ws = null;
 const handlers = {};
+const pending = {};
+let callId = 0;
 let trackOn = null;
 
 function connect() {
@@ -44,16 +75,30 @@ function connect() {
     subscribe('/r2/track_mode', 'std_msgs/msg/Bool', (m) => setTrack(m.data));
     // latch: the tracker's subscription is transient-local, a volatile publisher would not match
     send({ op: 'advertise', topic: '/r2/track_mode', type: 'std_msgs/msg/Bool', latch: true });
+    subscribe('/dome/angle_estimate', 'std_msgs/msg/Float32', (m) => { angleDeg = m.data; });
+    send({ op: 'advertise', topic: '/dome/angle_reset', type: 'std_msgs/msg/Empty' });
+    readParams();
   };
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.op === 'publish' && handlers[msg.topic]) handlers[msg.topic](msg.msg);
+    if (msg.op === 'service_response' && pending[msg.id]) {
+      if (msg.result) pending[msg.id](msg.values);
+      else console.warn('service failed', msg.id, msg.values);
+      delete pending[msg.id];
+    }
   };
   ws.onclose = () => { setPill('conn', 'no rosbridge — retrying', 'bad'); setTimeout(connect, 2000); };
   ws.onerror = () => ws.close();
 }
 
 function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+
+function callService(service, type, args, fn) {
+  const id = 'call' + (++callId);
+  pending[id] = fn;
+  send({ op: 'call_service', id, service, type, args });
+}
 
 function subscribe(topic, type, fn, throttle = 0) {
   handlers[topic] = fn;
@@ -101,20 +146,17 @@ $('track').addEventListener('click', () => {
   setTrack(next);
 });
 
-// ---------- dome speed -> estimated angle ----------
-let speed = 0;
-let speedAt = 0;
+// ---------- dome speed and angle (estimated by the tracker node) ----------
 let angleDeg = 0;
 function onSpeed(m) {
-  speed = m.data;
-  speedAt = performance.now();
+  const speed = m.data;
   const pct = Math.max(-1, Math.min(1, speed / MAX_SPEED)) * 50;
   const fill = $('speedfill');
   fill.style.left = (pct < 0 ? 50 + pct : 50) + '%';
   fill.style.width = Math.abs(pct) + '%';
   $('speed').textContent = 'speed ' + speed;
 }
-$('zero').addEventListener('click', () => { angleDeg = 0; });
+$('zero').addEventListener('click', () => send({ op: 'publish', topic: '/dome/angle_reset', msg: {} }));
 
 // ---------- 3D view ----------
 const canvas = $('view3d');
@@ -159,17 +201,15 @@ function resize() {
   }
 }
 
-let last = performance.now();
-function frame(now) {
-  const dt = (now - last) / 1000;
-  last = now;
-  const live = now - speedAt < STALE_MS ? speed : 0;
-  // Positive DM: turns the dome clockwise seen from above (right); "invert" if yours goes the other way
-  const dir = settings.invert ? -1 : 1;
-  angleDeg += dir * (live / MAX_SPEED) * settings.rate * dt;
-  angleDeg = ((angleDeg + 180) % 360 + 360) % 360 - 180;
-  dome.rotation.y = -THREE.MathUtils.degToRad(angleDeg);
+let shown = 0;
+function frame() {
+  // + = right. Ease towards the latest estimate: it arrives ~15 times a second
+  let diff = ((angleDeg - shown + 540) % 360) - 180;
+  shown += diff * 0.35;
+  dome.rotation.y = -THREE.MathUtils.degToRad(shown);
   $('angle').textContent = `${angleDeg >= 0 ? '+' : ''}${angleDeg.toFixed(0)}°`;
+  // Where the simulated dome looks, on the (fixed) camera picture
+  $('aim').style.left = Math.max(0, Math.min(100, 50 + angleDeg / (hfov / 2) * 50)) + '%';
 
   resize();
   controls.update();

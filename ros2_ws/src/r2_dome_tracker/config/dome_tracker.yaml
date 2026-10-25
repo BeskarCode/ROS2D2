@@ -10,3 +10,6 @@ dome_tracker:
     deadzone: 0.15
     invert: true
     lost_after: 0.2
+    deg_per_s_at_80: 90.0      # 360 / seconds for a full turn at speed 80 (measure it)
+    simulate: false
+    camera_hfov_deg: 60.0

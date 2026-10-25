@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from r2_vision.image_utils import biggest, image_to_bgr
+from r2_vision.image_utils import biggest, image_to_bgr, pixelate
 
 
 def make_msg(img, encoding, pad=0):
@@ -45,3 +45,24 @@ def test_biggest():
     assert biggest(boxes) == 1
     assert biggest(None) is None
     assert biggest(np.zeros((0, 15))) is None
+
+
+def test_pixelate_turns_the_box_into_flat_blocks():
+    img = np.random.randint(0, 255, (40, 40, 3), np.uint8)
+    out = pixelate(img.copy(), 10, 10, 20, 20, blocks=2)
+    block = out[10:20, 10:20].reshape(-1, 3)
+    assert (block == block[0]).all()                                  # one colour per block
+    assert np.array_equal(block[0], img[10:20, 10:20].reshape(-1, 3).mean(0).astype(np.uint8))
+
+
+def test_pixelate_leaves_the_rest_alone():
+    img = np.random.randint(0, 255, (40, 40, 3), np.uint8)
+    out = pixelate(img.copy(), 10, 10, 20, 20)
+    assert np.array_equal(out[:10], img[:10])
+    assert np.array_equal(out[:, 30:], img[:, 30:])
+
+
+def test_pixelate_clips_boxes_off_the_picture():
+    img = np.random.randint(0, 255, (40, 40, 3), np.uint8)
+    pixelate(img, -15, 30, 30, 30)       # partly outside: no error
+    pixelate(img, 50, 50, 10, 10)        # fully outside: no error
