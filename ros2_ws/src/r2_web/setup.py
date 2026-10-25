@@ -1,8 +1,18 @@
+import os
 from glob import glob
 
 from setuptools import find_packages, setup
 
 package_name = "r2_web"
+
+
+def web_files():
+    """Every file under www/, keeping its folder (vendor/loaders, models...)."""
+    out = []
+    for folder, _, files in os.walk("www"):
+        if files:
+            out.append((os.path.join("share", package_name, folder), [os.path.join(folder, f) for f in files]))
+    return out
 
 setup(
     name=package_name,
@@ -12,9 +22,7 @@ setup(
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
         (f"share/{package_name}", ["package.xml"]),
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
-        (f"share/{package_name}/www", glob("www/*.*")),
-        (f"share/{package_name}/www/vendor", glob("www/vendor/*")),
-    ],
+    ] + web_files(),
     install_requires=["setuptools"],
     zip_safe=True,
     maintainer="Fernando Beltran",

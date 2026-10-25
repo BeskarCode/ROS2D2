@@ -1,7 +1,8 @@
 // ROS2D2 web console: talks to ROS through rosbridge's JSON protocol over a WebSocket.
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { buildR2 } from './r2model.js';
+import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
+import { MODELS, loadModel } from './models.js';
 
 const params = new URLSearchParams(location.search);
 const CAM = params.get('cam') || 'front';
@@ -235,8 +236,39 @@ const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(4, 8, 6);
 scene.add(sun);
 
-const { root, dome } = buildR2();
-scene.add(root);
+// Chrome and metal parts need something to reflect
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+
+let current = null;     // { root, dome } of the model on screen
+function loadPref(key, fallback) { try { return localStorage.getItem('r2web.' + key) || fallback; } catch { return fallback; } }
+function savePref(key, v) { try { localStorage.setItem('r2web.' + key, v); } catch { /* private window */ } }
+
+for (const [key, m] of Object.entries(MODELS)) {
+  const o = document.createElement('option');
+  o.value = key; o.textContent = m.label;
+  $('model').append(o);
+}
+async function showModel(key) {
+  if (!MODELS[key]) key = 'simple';
+  $('model').value = key;
+  $('loading').style.display = 'flex';
+  // ?split=0.8 tries another dome cut height while tuning a new model
+  const split = Number(params.get('split'));
+  try {
+    const next = await loadModel(key, split ? { domeFrom: split } : {});
+    if (current) scene.remove(current.root);
+    current = next;
+    scene.add(current.root);
+    $('credit').innerHTML = MODELS[key].credit ? 'Model: ' + MODELS[key].credit : '';
+    savePref('model', key);
+  } catch (e) {
+    console.error('model', key, e);
+    $('credit').textContent = 'Could not load ' + MODELS[key].label;
+  }
+  $('loading').style.display = 'none';
+}
+$('model').addEventListener('change', () => showModel($('model').value));
+showModel(params.get('model') || loadPref('model', 'remezyuk'));
 
 const floor = new THREE.Mesh(new THREE.CircleGeometry(3, 64),
   new THREE.MeshStandardMaterial({ color: 0x1b2230, roughness: 1 }));
@@ -280,7 +312,9 @@ function frame() {
   // + = right. Ease towards the latest estimate: it arrives ~15 times a second
   let diff = ((angleDeg - shown + 540) % 360) - 180;
   shown += diff * 0.35;
-  dome.rotation.y = -THREE.MathUtils.degToRad(shown);
+  // ?turn=90 holds the dome at that angle, to check where a new model is cut
+  const turn = params.has('turn') ? Number(params.get('turn')) : null;
+  if (current) current.dome.rotation.y = -THREE.MathUtils.degToRad(turn ?? shown);
   $('angle').textContent = `${angleDeg >= 0 ? '+' : ''}${angleDeg.toFixed(0)}°`;
   // Where the simulated dome looks, on the (fixed) camera picture
   placeAim();

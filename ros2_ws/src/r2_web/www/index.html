@@ -66,6 +66,13 @@
   #megalog .unsent::before { content: "✕ "; }
   #megalog .t { color: #5c6573; margin-right: 8px; }
   #megalog .n { color: var(--muted); margin-left: 6px; }
+  select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px;
+           padding: 1px 4px; font: 12px system-ui, sans-serif; text-transform: none; letter-spacing: 0; margin-left: 8px; }
+  .viewwrap { position: relative; display: flex; flex-direction: column; min-height: 0; }
+  #loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+             color: var(--muted); font-size: 13px; pointer-events: none; }
+  #credit { position: absolute; left: 10px; right: 10px; bottom: 6px; font-size: 10px; color: var(--muted); }
+  #credit a { color: var(--muted); }
   .note { padding: 0 14px 12px; font-size: 12px; color: var(--muted); margin: 0; }
 
   /* Wide screens: everything fits in the window, the picture and the 3D view take what is left */
@@ -75,12 +82,13 @@
     .card { display: flex; flex-direction: column; min-height: 0; }
     .videowrap { flex: 1; min-height: 0; background: #000; }
     #video { height: 100%; aspect-ratio: auto; max-height: none; }
+    .viewwrap { flex: 1; }
     #view3d { flex: 1; min-height: 0; height: auto; aspect-ratio: auto; max-height: none; }
   }
   @media (min-width: 861px) and (max-width: 1280px) {
     body { height: auto; overflow: auto; }
     .videowrap { flex: none; } #video { height: auto; aspect-ratio: 4 / 3; max-height: 62vh; }
-    #view3d { flex: none; aspect-ratio: 1 / 1; max-height: 60vh; }
+    .viewwrap { flex: none; } #view3d { flex: none; aspect-ratio: 1 / 1; max-height: 60vh; }
   }
 </style>
 <script type="importmap">
@@ -113,8 +121,12 @@
   </section>
 
   <section class="card">
-    <h2><span>Dome</span><span id="angle">0°</span></h2>
-    <canvas id="view3d"></canvas>
+    <h2><span>Dome <select id="model" aria-label="3D model"></select></span><span id="angle">0°</span></h2>
+    <div class="viewwrap">
+      <canvas id="view3d"></canvas>
+      <div id="loading">loading model…</div>
+      <div id="credit"></div>
+    </div>
     <div class="bar"><div class="fill" id="speedfill"></div><div class="mid"></div></div>
     <div class="barlabels"><span>◀ left</span><span id="speed">speed 0</span><span>right ▶</span></div>
     <div class="controls">
