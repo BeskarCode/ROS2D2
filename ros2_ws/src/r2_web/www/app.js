@@ -270,8 +270,46 @@ async function showModel(key) {
   }
   $('loading').style.display = 'none';
 }
-$('model').addEventListener('change', () => showModel($('model').value));
-showModel(params.get('model') || loadPref('model', 'vladimirov'));
+$('model').addEventListener('change', () => { showModel($('model').value); if (params.has('tune')) fillTune(); });
+
+// ?tune=1: sliders to place the dome cut by eye (on the blue line at the bottom of the dome)
+let tuneTurn = null;
+function fillTune() {
+  const m = MODELS[$('model').value];
+  if (!m.url) return;
+  const vals = { split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 };
+  for (const [k, v] of Object.entries(vals)) { $('t-' + k).value = v; $('v-' + k).textContent = v; }
+  showTune();
+}
+function showTune() {
+  const v = (k) => Number($('t-' + k).value);
+  $('t-out').textContent = `domeFrom: ${v('split')}, pitch: ${v('pitch')}, roll: ${v('roll')}`;
+  tuneTurn = v('turn');
+  $('v-turn').textContent = tuneTurn;
+}
+if (params.has('tune')) {
+  $('tune').style.display = 'flex';
+  let timer = null;
+  for (const k of ['split', 'pitch', 'roll']) {
+    $('t-' + k).addEventListener('input', () => {
+      $('v-' + k).textContent = $('t-' + k).value;
+      showTune();
+      clearTimeout(timer);
+      timer = setTimeout(() => recut(), 120);
+    });
+  }
+  $('t-turn').addEventListener('input', showTune);
+}
+async function recut() {
+  const key = $('model').value;
+  const next = await loadModel(key, {
+    domeFrom: Number($('t-split').value), pitch: Number($('t-pitch').value), roll: Number($('t-roll').value),
+  });
+  if (current) scene.remove(current.root);
+  current = next;
+  scene.add(current.root);
+}
+showModel(params.get('model') || loadPref('model', 'vladimirov')).then(() => { if (params.has('tune')) fillTune(); });
 
 const floor = new THREE.Mesh(new THREE.CircleGeometry(3, 64),
   new THREE.MeshStandardMaterial({ color: 0x1b2230, roughness: 1 }));
@@ -316,7 +354,7 @@ function frame() {
   let diff = ((angleDeg - shown + 540) % 360) - 180;
   shown += diff * 0.35;
   // ?turn=90 holds the dome at that angle, to check where a new model is cut
-  const turn = params.has('turn') ? Number(params.get('turn')) : null;
+  const turn = tuneTurn ?? (params.has('turn') ? Number(params.get('turn')) : null);
   if (current) current.dome.rotation.y = -THREE.MathUtils.degToRad(turn ?? shown);
   $('angle').textContent = `${angleDeg >= 0 ? '+' : ''}${angleDeg.toFixed(0)}°`;
   // Where the simulated dome looks, on the (fixed) camera picture

@@ -67,6 +67,11 @@
   select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px;
            padding: 1px 4px; font: 12px system-ui, sans-serif; text-transform: none; letter-spacing: 0; margin-left: 8px; }
   .viewwrap { position: relative; display: flex; flex-direction: column; min-height: 0; }
+  #tune { position: absolute; bottom: 22px; right: 8px; display: none; flex-direction: column; gap: 4px;
+          background: rgba(13,17,23,.85); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+          font-size: 11px; color: var(--muted); z-index: 2; }
+  #tune input[type=range] { width: 160px; }
+  #tune code { color: var(--text); user-select: all; }
   #loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
              color: var(--muted); font-size: 13px; pointer-events: none; }
   #credit { position: absolute; left: 10px; right: 10px; bottom: 6px; font-size: 10px; color: var(--muted); }
@@ -78,12 +83,12 @@
   /* Wide screens: everything fits in the window, the picture and the 3D view take what is left */
   @media (min-width: 861px) {
     body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-    main { flex: 1; min-height: 0; }
+    main { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); }
     .card { display: flex; flex-direction: column; min-height: 0; }
     .videowrap { flex: 1; min-height: 0; background: #000; }
     #video { height: 100%; aspect-ratio: auto; max-height: none; }
     .viewwrap { flex: 1; }
-    #view3d { flex: 1; min-height: 0; height: auto; aspect-ratio: auto; max-height: none; }
+    #view3d { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; max-height: none; }
   }
   @media (min-width: 861px) and (max-height: 760px) {
     header { padding: 4px 16px; } header .logo { height: 40px; }
@@ -128,6 +133,13 @@
       <canvas id="view3d"></canvas>
       <div id="loading">loading model…</div>
       <div id="credit"></div>
+      <div id="tune">
+        <label>dome cut height <input type="range" id="t-split" min="0.60" max="0.85" step="0.001"> <span id="v-split"></span></label>
+        <label>tilt front/back <input type="range" id="t-pitch" min="-25" max="25" step="0.2"> <span id="v-pitch"></span>°</label>
+        <label>tilt left/right <input type="range" id="t-roll" min="-15" max="15" step="0.2"> <span id="v-roll"></span>°</label>
+        <label>preview turn <input type="range" id="t-turn" min="-180" max="180" step="1" value="90"> <span id="v-turn"></span>°</label>
+        <span>values: <code id="t-out"></code></span>
+      </div>
     </div>
     <div class="bar"><div class="fill" id="speedfill"></div><div class="mid"></div></div>
     <div class="barlabels"><span>◀ left</span><span id="speed">speed 0</span><span>right ▶</span></div>
