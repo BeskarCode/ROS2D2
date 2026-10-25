@@ -9,11 +9,15 @@ Everything ROS sends starts with ROS:, so it stands apart from the console comma
                            can switch it on.
   ROS:AUTO:?               ask for the state
   ROS:DOME:<speed>         dome speed, -127..127 (the firmware clamps it). Silent on success.
-                           Only in autonomous mode; stops after 300 ms without one, and the
+                           Only with face tracking on; stops after 300 ms without one, and the
                            dome stick always wins. DM:<speed> is the same (DomeTracker PoC).
+  ROS:TRACK:0              switch face tracking off. Only the controller (PS + L2 on the dome
+                           Nav) can switch it on. It has nothing to do with the autonomous mode.
+  ROS:TRACK:?              ask for the state
 
 The Mega answers state changes with "AUTO ON" or "AUTO OFF <reason>"
-(reason: boot, button, stick, controller, pi).
+(reason: boot, button, stick, controller, pi), and "TRACK ON" or "TRACK OFF <reason>"
+(reason: boot, button, controller, pi).
 
 Console commands the bridge lets through from /mega/command:
   MD:<n>          MarcDuino function n, like a controller button (answers "OK ...")
@@ -85,6 +89,14 @@ def foot_tick(fresh, auto_on, drive, turn, stopped):
 
 
 _AUTO_LINE = re.compile(r"AUTO (ON|OFF ([a-z]+))$")
+_TRACK_LINE = re.compile(r"TRACK (ON|OFF ([a-z]+))$")
+
+
+def _parse_mode_line(pattern, line):
+    m = pattern.search(line.strip())
+    if m is None:
+        return None
+    return (True, "") if m.group(1) == "ON" else (False, m.group(2))
 
 
 def parse_auto_line(line):
@@ -92,10 +104,12 @@ def parse_auto_line(line):
 
     Matched at the end of the line: the MarcDuino echo can leave a partial line in front.
     """
-    m = _AUTO_LINE.search(line.strip())
-    if m is None:
-        return None
-    return (True, "") if m.group(1) == "ON" else (False, m.group(2))
+    return _parse_mode_line(_AUTO_LINE, line)
+
+
+def parse_track_line(line):
+    """Same as parse_auto_line, for face tracking: "TRACK ON" / "TRACK OFF <reason>"."""
+    return _parse_mode_line(_TRACK_LINE, line)
 
 
 def is_auto_off_error(line):

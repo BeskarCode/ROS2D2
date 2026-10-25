@@ -2,18 +2,22 @@
 
     python3 fake_mega.py /tmp/mega-side /tmp/mega_rx.log /tmp/mega-ctl
 
-It speaks the autonomous-mode protocol like the firmware (ENABLE_ROS2D2):
+It speaks the autonomous-mode and face-tracking protocol like the firmware (ENABLE_ROS2D2):
   ROS:AUTO:? / ROS:AUTO:0 answer AUTO ON / AUTO OFF <reason>
+  ROS:TRACK:? / ROS:TRACK:0 answer TRACK ON / TRACK OFF <reason>
   ROS:FOOT: while the mode is off -> "ERR FOOT AUTO OFF", at most once a second
 Every received line goes to the log with a timestamp.
 
-The controller is pretend too: write one word per line to the control FIFO
-  button      PS + L2 (on <-> off)
-  stick       the foot stick moved (off)
-  controller  the foot Nav was lost (off)
-  reset       the Mega restarted (off, "AUTO OFF boot")
-  glitch      the stick, with the AUTO line glued to a MarcDuino echo
-  silent      off, and the AUTO line is lost
+The controllers are pretend too: write one word per line to the control FIFO
+  button           PS + L2 on the foot Nav (autonomous mode on <-> off)
+  stick            the foot stick moved (autonomous mode off)
+  controller       the foot Nav was lost (autonomous mode off)
+  dome_button      PS + L2 on the dome Nav (face tracking on <-> off)
+  dome_stick       the dome stick moved (face tracking stays on: it only pauses)
+  dome_controller  the dome Nav was lost (face tracking off)
+  reset            the Mega restarted (both off, "AUTO OFF boot" and "TRACK OFF boot")
+  glitch           the stick, with the AUTO line glued to a MarcDuino echo
+  silent           off, and the AUTO line is lost
 """
 
 import os
@@ -32,6 +36,8 @@ log = open(log_path, "a", buffering=1)
 
 auto_on = False
 reason = "boot"
+track_on = False
+track_reason = "boot"
 last_err = 0.0
 
 
@@ -43,11 +49,22 @@ def state():
     say("AUTO ON" if auto_on else f"AUTO OFF {reason}")
 
 
+def track_state():
+    say("TRACK ON" if track_on else f"TRACK OFF {track_reason}")
+
+
 def turn_off(why):
     global auto_on, reason
     if auto_on:
         auto_on, reason = False, why
         state()
+
+
+def track_off(why):
+    global track_on, track_reason
+    if track_on:
+        track_on, track_reason = False, why
+        track_state()
 
 
 def on_line(line):
@@ -62,6 +79,15 @@ def on_line(line):
             state()
     elif line.startswith("ROS:AUTO:"):
         say("ERR ROS:AUTO only 0 or ?")
+    elif line == "ROS:TRACK:?":
+        track_state()
+    elif line == "ROS:TRACK:0":
+        if track_on:
+            track_off("pi")
+        else:
+            track_state()
+    elif line.startswith("ROS:TRACK:"):
+        say("ERR ROS:TRACK only 0 or ?")
     elif line.startswith("ROS:FOOT:") and not auto_on:
         if time.time() - last_err >= 1.0:
             last_err = time.time()
@@ -69,7 +95,7 @@ def on_line(line):
 
 
 def on_control(word):
-    global auto_on, reason
+    global auto_on, reason, track_on, track_reason
     log.write(f"{time.time():.3f} # {word}\n")
     if word == "button":
         if auto_on:
@@ -79,9 +105,21 @@ def on_control(word):
             state()
     elif word in ("stick", "controller"):
         turn_off(word)
+    elif word == "dome_button":
+        if track_on:
+            track_off("button")
+        else:
+            track_on = True
+            track_state()
+    elif word == "dome_stick":   # only pauses the tracker on the real Mega: no state change
+        pass
+    elif word == "dome_controller":
+        track_off("controller")
     elif word == "reset":
         auto_on, reason = False, "boot"
+        track_on, track_reason = False, "boot"
         state()
+        track_state()
     elif word == "glitch":       # the stick, with the AUTO line glued to a MarcDuino echo
         if auto_on:
             auto_on, reason = False, "stick"
@@ -91,6 +129,7 @@ def on_control(word):
 
 
 say("AUTO OFF boot")
+say("TRACK OFF boot")
 buf = b""
 ctl_buf = b""
 while True:

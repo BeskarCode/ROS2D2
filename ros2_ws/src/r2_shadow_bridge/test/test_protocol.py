@@ -1,6 +1,6 @@
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_line, foot_tick,
-                                       is_error, parse_auto_line, twist_to_units, units_to_twist,
-                                       calibration_factor, is_auto_off_error)
+                                       is_error, parse_auto_line, parse_track_line, twist_to_units,
+                                       units_to_twist, calibration_factor, is_auto_off_error)
 
 PREFIXES = ["MD:", "S1:", "S3:"]
 
@@ -137,3 +137,17 @@ def test_parse_auto_line_after_marcduino_echo():
 def test_foot_auto_off_error_means_the_mode_is_off():
     assert is_auto_off_error("ERR FOOT AUTO OFF")
     assert not is_auto_off_error("ERR Invalid DM speed")
+
+
+def test_parse_track_lines():
+    assert parse_track_line("TRACK ON") == (True, "")
+    assert parse_track_line("TRACK OFF boot") == (False, "boot")
+    assert parse_track_line("TRACK OFF controller") == (False, "controller")
+    assert parse_track_line("[MD] *ON00TRACK OFF pi") == (False, "pi")
+    assert parse_track_line("TRACK OFF") is None
+    assert parse_track_line("AUTO ON") is None
+
+
+def test_auto_and_track_lines_do_not_mix():
+    assert parse_auto_line("TRACK ON") is None
+    assert parse_auto_line("TRACK OFF button") is None

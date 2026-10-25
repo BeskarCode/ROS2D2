@@ -2,18 +2,25 @@
 
 El puente entre ROS 2 y el Arduino Mega de ShadowMD. **Es el único nodo que toca el
 puerto serie**: los demás publican lo que quieren y el puente lo traduce a las órdenes
-de texto que entiende el firmware (`ROS:FOOT:`, `ROS:DOME:`, `ROS:AUTO:`, `MD:`, `S1:`, `S3:`).
+de texto que entiende el firmware (`ROS:FOOT:`, `ROS:DOME:`, `ROS:AUTO:`, `ROS:TRACK:`, `MD:`, `S1:`, `S3:`).
 El protocolo completo está en `PCSerialProtocol.md` de ShadowMDLite.
 
-## El modo autónomo
+## El modo autónomo y el seguimiento de caras
 
-Los pies y el dome solo obedecen a ROS con el **modo autónomo** activado, y ese modo solo
-se enciende **desde el mando: PS + L2** en el mando de los pies. Lo apagan la misma
-combinación, tocar el stick de los pies, perder el mando, o la Pi (servicio
-`/r2/auto_mode/disable`). Después el R2 se queda quieto hasta que se vuelva a activar.
+Son dos modos **independientes**, y los dos se encienden solo desde el mando:
 
-El puente publica el estado en `/r2/auto_mode` y, mientras está apagado, no manda nada a
-los pies ni al dome aunque alguien publique velocidades.
+- **Modo autónomo (los pies): PS + L2 en el mando de los pies.** Lo apagan la misma
+  combinación, tocar el stick de los pies, perder ese mando, o la Pi (servicio
+  `/r2/auto_mode/disable`). Después los pies se quedan quietos hasta que se vuelva a activar.
+- **Seguimiento de caras (el dome): PS + L2 en el mando del dome.** Lo apagan la misma
+  combinación, perder el mando del dome, o la Pi (servicio `/r2/track_mode/disable`). El
+  stick del dome no lo apaga: manda él y el seguimiento vuelve a los 2 s. Hace falta mando
+  de dome.
+
+Así el dome puede mirar a la gente con el droide parado, o los pies moverse solos sin que
+el dome se mueva. El puente publica cada estado en `/r2/auto_mode` y `/r2/track_mode`, y
+mientras uno está apagado no manda nada a su parte (pies o dome) aunque alguien publique
+velocidades.
 
 ## Topics, servicio y parámetros
 
@@ -26,7 +33,10 @@ los pies ni al dome aunque alguien publique velocidades.
 | out | `/r2/auto_mode/reason` | `std_msgs/String` (latched) | Por qué se apagó: `boot`, `button`, `stick`, `controller`, `pi`, `disconnected` |
 | out | `/mega/connected` | `std_msgs/Bool` (latched) | Puerto serie abierto o no |
 | out | `/mega/log` | `std_msgs/String` | Todo lo que dice el Mega |
+| out | `/r2/track_mode` | `std_msgs/Bool` (latched) | Seguimiento de caras activo o no |
+| out | `/r2/track_mode/reason` | `std_msgs/String` (latched) | Por qué se apagó: `boot`, `button`, `controller`, `pi`, `disconnected` |
 | srv | `/r2/auto_mode/disable` | `std_srvs/Trigger` | Apaga el modo autónomo |
+| srv | `/r2/track_mode/disable` | `std_srvs/Trigger` | Apaga el seguimiento de caras |
 
 | Parámetro | Por defecto | Qué es |
 |---|---|---|
@@ -57,4 +67,4 @@ lo para en cualquier momento, como siempre.
 ## Probarlo sin el R2
 
 `docker/auto_bench.sh` arranca el puente contra un Mega simulado (`docker/fake_mega.py`)
-y comprueba el modo autónomo paso a paso; con `VIDEO=<vídeo>` también el dome tracker.
+y comprueba los dos modos paso a paso; con `VIDEO=<vídeo>` también el dome tracker.

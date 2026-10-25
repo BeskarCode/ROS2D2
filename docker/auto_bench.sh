@@ -1,5 +1,5 @@
 #!/bin/bash
-# Autonomous mode check for the Mega bridge, inside the ros2d2-dev container:
+# Autonomous mode and face tracking check for the Mega bridge, inside the ros2d2-dev container:
 #
 #   docker run --rm -v <ROS2D2>:/r2 ros2d2-dev bash /r2/docker/auto_bench.sh
 #
@@ -56,6 +56,28 @@ wait_state() {    # wait_state true|false [reason]
 }
 drive() {         # drive <seconds> <m/s>
     timeout -s INT -k 2 "$1" ros2 topic pub -r 15 /foot/cmd_vel geometry_msgs/msg/Twist "{linear: {x: $2}}" \
+        > /dev/null 2>&1
+    sleep 0.5
+}
+# Same for face tracking (/r2/track_mode)
+track_state() {
+    timeout -s INT -k 2 10 ros2 topic echo --once --qos-durability transient_local --qos-reliability reliable \
+        --field data /r2/track_mode 2>/dev/null | head -1 | tr 'A-Z' 'a-z'
+}
+track_reason() {
+    timeout -s INT -k 2 10 ros2 topic echo --once --qos-durability transient_local --qos-reliability reliable \
+        --field data /r2/track_mode/reason 2>/dev/null | head -1
+}
+wait_track() {    # wait_track true|false [reason]
+    for _ in $(seq 20); do
+        s=$(track_state)
+        if [ "$s" = "$1" ] && { [ -z "$2" ] || [ "$(track_reason)" = "$2" ]; }; then return 0; fi
+        sleep 0.5
+    done
+    return 1
+}
+turn_dome() {     # turn_dome <seconds> <speed>: what the dome tracker would publish
+    timeout -s INT -k 2 "$1" ros2 topic pub -r 15 /dome/speed_cmd std_msgs/msg/Int16 "{data: $2}" \
         > /dev/null 2>&1
     sleep 0.5
 }
@@ -140,8 +162,42 @@ wait $PUB 2>/dev/null
 echo "   ROS:FOOT: lines in the last 1.5 s after resync: $late"
 [ "$late" -eq 0 ] || fail "10: still sending ROS:FOOT: after the resync"
 
+echo "== 11. face tracking is its own mode (PS + L2 on the dome Nav)"
+poke reset
+wait_state false boot || fail "11: autonomous mode not off after a reset"
+wait_track false boot || fail "11: /r2/track_mode is not false (boot) after a reset"
+m=$(mark); turn_dome 2 30
+since $m | grep -q "ROS:DOME:[1-9-]" && fail "11: ROS:DOME: sent with face tracking off"
+poke button
+wait_state true || fail "11: autonomous mode did not turn on"
+m=$(mark); turn_dome 2 30
+since $m | grep -q "ROS:DOME:[1-9-]" && fail "11: the autonomous mode alone let ROS:DOME: through"
+[ "$(track_state)" = "false" ] || fail "11: the autonomous mode switched face tracking on"
+poke stick
+wait_state false stick || fail "11: autonomous mode not off"
+poke dome_button
+wait_track true || fail "11: face tracking did not turn on"
+[ "$(auto_state)" = "false" ] || fail "11: face tracking switched the autonomous mode on"
+m=$(mark); turn_dome 3 30
+n=$(since $m | grep -c "ROS:DOME:30"); echo "   track on, feet off: ROS:DOME:30 x$n"
+[ "$n" -ge 20 ] || fail "11: ROS:DOME: does not reach the Mega with face tracking on"
+poke dome_stick
+poke button; wait_state true || fail "11: autonomous mode did not turn on with tracking on"
+poke stick; wait_state false stick || fail "11: autonomous mode not off"
+[ "$(track_state)" = "true" ] || fail "11: the dome stick or the feet switched face tracking off"
+m=$(mark)
+timeout -s INT -k 2 15 ros2 service call /r2/track_mode/disable std_srvs/srv/Trigger > /dev/null 2>&1 \
+    || fail "11: track service call failed"
+since $m | grep -q "ROS:TRACK:0" || fail "11: ROS:TRACK:0 not sent"
+wait_track false pi || fail "11: face tracking not off with reason pi"
+poke dome_button; wait_track true || fail "11: face tracking did not turn on again"
+poke dome_controller
+wait_track false controller || fail "11: face tracking not off when the dome Nav is lost"
+m=$(mark); turn_dome 2 30
+since $m | grep -q "ROS:DOME:[1-9-]" && fail "11: ROS:DOME: sent after the dome Nav was lost"
+
 if [ -n "$VIDEO" ]; then
-    echo "== 8. dome tracker only in autonomous mode (camera: $VIDEO)"
+    echo "== 8. dome tracker only with face tracking on (camera: $VIDEO)"
     cat > /tmp/cameras.yaml <<EOF
 front:
   source: $VIDEO
@@ -162,19 +218,25 @@ EOF
     nonzero() {   # nonzero <seconds>: /dome/speed_cmd messages that are not 0
         timeout -s INT -k 2 "$1" ros2 topic echo --csv /dome/speed_cmd 2>/dev/null | grep -cv '^0$'
     }
-    n=$(nonzero 10); echo "   mode off: $n dome speeds"
-    [ "$n" -eq 0 ] || fail "8: the tracker moves the dome with the mode off"
+    n=$(nonzero 10); echo "   tracking off: $n dome speeds"
+    [ "$n" -eq 0 ] || fail "8: the tracker moves the dome with face tracking off"
     poke button
-    wait_state true || fail "8: mode did not turn on"
-    m=$(mark)
-    n=$(nonzero 10); echo "   mode on: $n dome speeds"
-    [ "$n" -gt 10 ] || fail "8: the tracker does not follow the face with the mode on"
-    since $m | grep -q "ROS:DOME:[1-9-]" || fail "8: no ROS:DOME: reached the Mega"
+    wait_state true || fail "8: autonomous mode did not turn on"
+    n=$(nonzero 10); echo "   autonomous mode on, tracking off: $n dome speeds"
+    [ "$n" -eq 0 ] || fail "8: the autonomous mode alone makes the tracker move the dome"
     poke stick
-    wait_state false stick || fail "8: mode not off"
+    wait_state false stick || fail "8: autonomous mode not off"
+    poke dome_button
+    wait_track true || fail "8: face tracking did not turn on"
+    m=$(mark)
+    n=$(nonzero 10); echo "   tracking on, feet off: $n dome speeds"
+    [ "$n" -gt 10 ] || fail "8: the tracker does not follow the face with face tracking on"
+    since $m | grep -q "ROS:DOME:[1-9-]" || fail "8: no ROS:DOME: reached the Mega"
+    poke dome_controller
+    wait_track false controller || fail "8: face tracking not off"
     sleep 1
-    n=$(nonzero 10); echo "   mode off again: $n dome speeds"
-    [ "$n" -eq 0 ] || fail "8: the tracker keeps moving the dome after the stick"
+    n=$(nonzero 10); echo "   tracking off again: $n dome speeds"
+    [ "$n" -eq 0 ] || fail "8: the tracker keeps moving the dome after face tracking went off"
 fi
 
 echo "ALL PASS"

@@ -2,13 +2,14 @@
 
 Everything else in ROS publishes what it wants; this node turns it into ShadowMD's
 serial commands (see protocol.py). Safety stays on the Mega: the controller always
-wins, the feet and the dome stop if the commands stop, and only the controller
-(PS + L2) can switch the autonomous mode on.
+wins, the feet and the dome stop if the commands stop, and only the controller can
+switch the autonomous mode (PS + L2 on the foot Nav) or face tracking (PS + L2 on the
+dome Nav) on. The two are independent.
 
 Topics:
   in   /dome/speed_cmd        std_msgs/Int16      dome speed (DM: units); sent ~15 times a second
-                                                  while turning and in autonomous mode; at 0 or
-                                                  when it goes stale, one stop and silence
+                                                  while turning and with face tracking on; at 0
+                                                  or when it goes stale, one stop and silence
   in   /foot/cmd_vel          geometry_msgs/Twist linear.x m/s, angular.z rad/s; same rules,
                                                   converted with the calibration parameters
   in   /mega/command          std_msgs/String     MD:/S1:/S3: commands (sounds, panels, lights...)
@@ -17,8 +18,12 @@ Topics:
   out  /r2/auto_mode          std_msgs/Bool       autonomous mode on or off (latched)
   out  /r2/auto_mode/reason   std_msgs/String     why it went off: boot, button, stick,
                                                   controller, pi or disconnected (latched)
-Service:
+  out  /r2/track_mode         std_msgs/Bool       face tracking on or off (latched)
+  out  /r2/track_mode/reason  std_msgs/String     why it went off: boot, button, controller,
+                                                  pi or disconnected (latched)
+Services:
   /r2/auto_mode/disable       std_srvs/Trigger    switch the autonomous mode off
+  /r2/track_mode/disable      std_srvs/Trigger    switch face tracking off
 """
 
 import threading
@@ -34,7 +39,7 @@ from std_srvs.srv import Trigger
 
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_tick,
                                        is_auto_off_error, is_error,
-                                       parse_auto_line, twist_to_units)
+                                       parse_auto_line, parse_track_line, twist_to_units)
 
 
 class MegaBridgeNode(Node):
@@ -66,20 +71,26 @@ class MegaBridgeNode(Node):
         self.foot_sent_stop = True
         self.auto_on = False
         self.auto_reason = None
+        self.track_on = False
+        self.track_reason = None
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_connected = self.create_publisher(Bool, "/mega/connected", latched)
         self.pub_log = self.create_publisher(String, "/mega/log", 50)
         self.pub_auto = self.create_publisher(Bool, "/r2/auto_mode", latched)
         self.pub_auto_reason = self.create_publisher(String, "/r2/auto_mode/reason", latched)
+        self.pub_track = self.create_publisher(Bool, "/r2/track_mode", latched)
+        self.pub_track_reason = self.create_publisher(String, "/r2/track_mode/reason", latched)
         self.create_subscription(Int16, "/dome/speed_cmd", self._on_dome, 10)
         self.create_subscription(Twist, "/foot/cmd_vel", self._on_foot, 10)
         self.create_subscription(String, "/mega/command", self._on_command, 10)
         self.create_service(Trigger, "/r2/auto_mode/disable", self._on_disable)
+        self.create_service(Trigger, "/r2/track_mode/disable", self._on_track_disable)
         self.create_timer(1.0 / self.get_parameter("rate_hz").value, self._tick)
 
         self.pub_connected.publish(Bool(data=False))
         self._set_auto(False, "boot")
+        self._set_track(False, "boot")
         self._stop = threading.Event()
         self._reader = threading.Thread(target=self._read_loop, daemon=True)
         self._reader.start()
@@ -103,9 +114,11 @@ class MegaBridgeNode(Node):
         with self.lock:
             self.ser = ser
         self.pub_connected.publish(Bool(data=True))
-        # The Mega has just restarted (the port opening resets it): the mode is off
+        # The Mega has just restarted (the port opening resets it): both modes are off
         self._set_auto(False, "boot")
+        self._set_track(False, "boot")
         self._write("ROS:AUTO:?\n")
+        self._write("ROS:TRACK:?\n")
         return True
 
     def _lost(self, why):
@@ -119,6 +132,7 @@ class MegaBridgeNode(Node):
             self.ser = None
         self.pub_connected.publish(Bool(data=False))
         self._set_auto(False, "disconnected")
+        self._set_track(False, "disconnected")
         self.get_logger().error(f"lost the Mega: {why}")
 
     def _write(self, line):
@@ -156,6 +170,10 @@ class MegaBridgeNode(Node):
                 if auto is not None:
                     self._set_auto(*auto)
                     continue
+                track = parse_track_line(line)
+                if track is not None:
+                    self._set_track(*track)
+                    continue
                 if is_auto_off_error(line) and self.auto_on:
                     # We missed an AUTO OFF line: the Mega is the authority. Stop sending
                     # and ask why, so /r2/auto_mode/reason is right too.
@@ -181,6 +199,11 @@ class MegaBridgeNode(Node):
         response.message = "sent ROS:AUTO:0" if response.success else "Mega not connected"
         return response
 
+    def _on_track_disable(self, request, response):
+        response.success = self._write("ROS:TRACK:0\n")
+        response.message = "sent ROS:TRACK:0" if response.success else "Mega not connected"
+        return response
+
     def _set_auto(self, on, reason):
         """Publish the autonomous mode, only when it changes."""
         if (on, reason) == (self.auto_on, self.auto_reason):
@@ -192,6 +215,17 @@ class MegaBridgeNode(Node):
         if changed_on:
             self.get_logger().info("autonomous mode ON" if on else f"autonomous mode OFF ({reason})")
 
+    def _set_track(self, on, reason):
+        """Publish face tracking, only when it changes."""
+        if (on, reason) == (self.track_on, self.track_reason):
+            return
+        changed_on = on != self.track_on or self.track_reason is None
+        self.track_on, self.track_reason = on, reason
+        self.pub_track_reason.publish(String(data=reason))
+        self.pub_track.publish(Bool(data=on))
+        if changed_on:
+            self.get_logger().info("face tracking ON" if on else f"face tracking OFF ({reason})")
+
     def _on_command(self, msg):
         cmd = msg.data.strip()
         if not command_allowed(cmd, self.param("command_prefixes")):
@@ -202,7 +236,7 @@ class MegaBridgeNode(Node):
 
     def _tick(self):
         fresh = self.dome_t is not None and time.monotonic() - self.dome_t < self.param("cmd_timeout")
-        line, self.dome_sent_stop = dome_tick(fresh and self.auto_on, self.dome_speed,
+        line, self.dome_sent_stop = dome_tick(fresh and self.track_on, self.dome_speed,
                                               self.dome_sent_stop, self.param("max_dome_speed"))
         if line:
             self._write(line)
