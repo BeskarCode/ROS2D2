@@ -22,8 +22,8 @@ Para comprobar que la Pi lo ve:
 i2cdetect -y 1          # debe aparecer 68
 ```
 
-**Dónde montarlo:** en el cuerpo, centrado y lo más cerca posible del eje de los
-pies, sujeto con cinta de doble cara gruesa o espuma para que no le llegue la
+**Dónde montarlo:** en el cuerpo, centrado y lo más cerca posible del eje del
+foot, sujeto con cinta de doble cara gruesa o espuma para que no le llegue la
 vibración de los motores.
 
 ## Uso

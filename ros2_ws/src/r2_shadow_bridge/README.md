@@ -9,24 +9,24 @@ El protocolo completo está en `PCSerialProtocol.md` de ShadowMDLite.
 
 Son dos modos **independientes**, y los dos se encienden solo desde el mando:
 
-- **Modo autónomo (los pies): PS + L2 en el mando de los pies.** Lo apagan la misma
-  combinación, tocar el stick de los pies, perder ese mando, o la Pi (servicio
-  `/r2/auto_mode/disable`). Después los pies se quedan quietos hasta que se vuelva a activar.
+- **Modo autónomo (foot): PS + L2 en el mando del foot.** Lo apagan la misma
+  combinación, tocar el stick del foot, perder ese mando, o la Pi (servicio
+  `/r2/auto_mode/disable`). Después el foot se queda quieto hasta que se vuelva a activar.
 - **Seguimiento de caras (el dome): PS + L2 en el mando del dome.** Lo apagan la misma
   combinación, perder el mando del dome, o la Pi (servicio `/r2/track_mode/disable`). El
   stick del dome no lo apaga: manda él y el seguimiento vuelve a los 2 s. Hace falta mando
   de dome.
 
-Así el dome puede mirar a la gente con el droide parado, o los pies moverse solos sin que
+Así el dome puede mirar a la gente con el droide parado, o el foot moverse solo sin que
 el dome se mueva. El puente publica cada estado en `/r2/auto_mode` y `/r2/track_mode`, y
-mientras uno está apagado no manda nada a su parte (pies o dome) aunque alguien publique
+mientras uno está apagado no manda nada a su parte (foot o dome) aunque alguien publique
 velocidades.
 
 ## Topics, servicio y parámetros
 
 | | Nombre | Tipo | Qué es |
 |---|---|---|---|
-| in | `/foot/cmd_vel` | `geometry_msgs/Twist` | Velocidad de los pies: `linear.x` en m/s, `angular.z` en rad/s |
+| in | `/foot/cmd_vel` | `geometry_msgs/Twist` | Velocidad del foot: `linear.x` en m/s, `angular.z` en rad/s |
 | in | `/dome/speed_cmd` | `std_msgs/Int16` | Velocidad del dome (unidades del SyRen) |
 | in | `/mega/command` | `std_msgs/String` | Órdenes `MD:`, `S1:`, `S3:` (sonidos, paneles, luces) |
 | out | `/r2/auto_mode` | `std_msgs/Bool` (latched) | Modo autónomo activo o no |
@@ -50,9 +50,9 @@ velocidades.
 Igual que con el dome, mientras haya movimiento manda la orden 15 veces por segundo; con
 velocidad 0, o si las órdenes dejan de llegar, manda **una** parada y se calla.
 
-## Calibrar los pies
+## Calibrar el foot
 
-Los pies no tienen encoders, así que hay que medir una vez cuánto anda el R2 con cada
+El foot no tiene encoders, así que hay que medir una vez cuánto anda el R2 con cada
 número de unidades. En el suelo, con sitio alrededor y el puente en marcha:
 
 ```
@@ -60,7 +60,7 @@ ros2 run r2_shadow_bridge foot_calibrate --drive 20 --seconds 3    # luego mide 
 ros2 run r2_shadow_bridge foot_calibrate --turn 15 --seconds 4     # luego cuenta las vueltas
 ```
 
-El script espera a que actives el modo con PS + L2, mueve los pies esos segundos, te pide
+El script espera a que actives el modo con PS + L2, mueve el foot esos segundos, te pide
 la medida y te da el valor de `drive_units_per_mps` o `turn_units_per_radps`. El stick
 lo para en cualquier momento, como siempre.
 
