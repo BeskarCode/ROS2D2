@@ -70,13 +70,15 @@
   #tune { position: absolute; bottom: 22px; right: 8px; display: none; flex-direction: column; gap: 4px;
           background: rgba(13,17,23,.85); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
           font-size: 11px; color: var(--muted); z-index: 2; }
-  #tune input[type=range] { width: 160px; }
   #tune code { color: var(--text); user-select: all; }
   /* ?tune=1: only the 3D view, as big as the window */
   body.tune main { grid-template-columns: 1fr; }
   body.tune section.card:not(:has(#view3d)) { display: none; }
   body.tune #tune { font-size: 13px; padding: 12px 14px; }
-  body.tune #tune input[type=range] { width: 260px; }
+  .trow { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .trow span { display: flex; align-items: center; gap: 6px; }
+  .trow button { width: 34px; height: 30px; padding: 0; font-size: 18px; line-height: 1; }
+  .trow b { min-width: 58px; text-align: center; color: var(--text); font-variant-numeric: tabular-nums; }
   #loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
              color: var(--muted); font-size: 13px; pointer-events: none; }
   #credit { position: absolute; left: 10px; right: 10px; bottom: 6px; font-size: 10px; color: var(--muted); }
@@ -139,10 +141,10 @@
       <div id="loading">loading model…</div>
       <div id="credit"></div>
       <div id="tune">
-        <label>dome cut height <input type="range" id="t-split" min="0.60" max="0.85" step="0.001"> <span id="v-split"></span></label>
-        <label>tilt front/back <input type="range" id="t-pitch" min="-25" max="25" step="0.2"> <span id="v-pitch"></span>°</label>
-        <label>tilt left/right <input type="range" id="t-roll" min="-15" max="15" step="0.2"> <span id="v-roll"></span>°</label>
-        <label>preview turn <input type="range" id="t-turn" min="-180" max="180" step="1" value="90"> <span id="v-turn"></span>°</label>
+        <div class="trow" data-k="split" data-step="0.002" data-dec="3">dome cut height <span><button>−</button><b id="v-split"></b><button>+</button></span></div>
+        <div class="trow" data-k="pitch" data-step="0.2" data-dec="1">tilt front/back <span><button>−</button><b id="v-pitch"></b>°<button>+</button></span></div>
+        <div class="trow" data-k="roll" data-step="0.2" data-dec="1">tilt left/right <span><button>−</button><b id="v-roll"></b>°<button>+</button></span></div>
+        <div class="trow" data-k="turn" data-step="15" data-dec="0">preview turn <span><button>−</button><b id="v-turn"></b>°<button>+</button></span></div>
         <label><input type="checkbox" id="t-plane" checked> show the cut</label>
         <label><input type="checkbox" id="t-hide"> hide the dome</label>
         <span><button id="t-undo" title="Ctrl+Z">Undo</button> <button id="t-reset">Reset</button></span>

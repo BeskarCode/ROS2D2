@@ -272,60 +272,62 @@ async function showModel(key) {
 }
 $('model').addEventListener('change', async () => { await showModel($('model').value); if (params.has('tune')) { fillTune(); decorate(); } });
 
-// ?tune=1: sliders to place the dome cut by eye (on the blue line at the bottom of the dome)
-let tuneTurn = null;
+// ?tune=1: - / + buttons to place the dome cut by eye (on the blue line at the bottom of the dome)
 const CUT = ['split', 'pitch', 'roll'];
+const tv = { split: 0.75, pitch: 0, roll: 0, turn: 90 };   // what the panel shows
+let tuneTurn = null;
 let history = [];          // earlier cut values, for Undo / Ctrl+Z
-let sliderStart = null;    // values when a slider drag began
+let recutTimer = null;
 
-const cutValues = () => Object.fromEntries(CUT.map((k) => [k, Number($('t-' + k).value)]));
-function setCut(vals) {
-  for (const [k, v] of Object.entries(vals)) { $('t-' + k).value = v; $('v-' + k).textContent = v; }
-  showTune();
+const cutValues = () => Object.fromEntries(CUT.map((k) => [k, tv[k]]));
+function showTune() {
+  for (const row of document.querySelectorAll('.trow')) {
+    $('v-' + row.dataset.k).textContent = tv[row.dataset.k].toFixed(Number(row.dataset.dec));
+  }
+  $('t-out').textContent = `domeFrom: ${tv.split.toFixed(3)}, pitch: ${tv.pitch.toFixed(1)}, roll: ${tv.roll.toFixed(1)}`;
+  tuneTurn = tv.turn;
+}
+function setCut(vals) { Object.assign(tv, vals); showTune(); }
+function modelCut() {
+  const m = MODELS[$('model').value];
+  return { split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 };
 }
 function fillTune() {
-  const m = MODELS[$('model').value];
-  if (!m.url) return;
+  if (!MODELS[$('model').value].url) return;
   history = [];
-  setCut({ split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 });
+  setCut(modelCut());
 }
 function undo() {
   if (!history.length) return;
   setCut(history.pop());
   recut();
 }
-function showTune() {
-  const v = (k) => Number($('t-' + k).value);
-  $('t-out').textContent = `domeFrom: ${v('split')}, pitch: ${v('pitch')}, roll: ${v('roll')}`;
-  tuneTurn = v('turn');
-  $('v-turn').textContent = tuneTurn;
+function step(k, dir, dec) {
+  if (CUT.includes(k)) history.push(cutValues());
+  tv[k] = Number((tv[k] + dir).toFixed(dec + 1));
+  if (k === 'turn') tv.turn = ((tv.turn + 540) % 360) - 180;
+  showTune();
+  if (CUT.includes(k)) { clearTimeout(recutTimer); recutTimer = setTimeout(recut, 80); }
 }
 if (params.has('tune')) {
   document.body.classList.add('tune');
   $('tune').style.display = 'flex';
-  let timer = null;
-  for (const k of CUT) {
-    $('t-' + k).addEventListener('pointerdown', () => { sliderStart = cutValues(); });
-    $('t-' + k).addEventListener('keydown', () => { sliderStart ??= cutValues(); });
-    $('t-' + k).addEventListener('change', () => {
-      if (sliderStart) history.push(sliderStart);
-      sliderStart = null;
-    });
-    $('t-' + k).addEventListener('input', () => {
-      $('v-' + k).textContent = $('t-' + k).value;
-      showTune();
-      clearTimeout(timer);
-      timer = setTimeout(() => recut(), 120);
-    });
+  for (const row of document.querySelectorAll('.trow')) {
+    const [minus, plus] = row.querySelectorAll('button');
+    const s = Number(row.dataset.step), dec = Number(row.dataset.dec);
+    for (const [btn, dir] of [[minus, -s], [plus, s]]) {
+      // One step per click; held down, it keeps stepping
+      let hold = null;
+      const stop = () => { clearTimeout(hold); clearInterval(hold); hold = null; };
+      btn.addEventListener('pointerdown', () => {
+        step(row.dataset.k, dir, dec);
+        hold = setTimeout(() => { hold = setInterval(() => step(row.dataset.k, dir, dec), 90); }, 400);
+      });
+      for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(ev, stop);
+    }
   }
-  $('t-turn').addEventListener('input', showTune);
   $('t-undo').addEventListener('click', undo);
-  $('t-reset').addEventListener('click', () => {
-    history.push(cutValues());
-    const m = MODELS[$('model').value];
-    setCut({ split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 });
-    recut();
-  });
+  $('t-reset').addEventListener('click', () => { history.push(cutValues()); setCut(modelCut()); recut(); });
   addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
   });
@@ -334,6 +336,7 @@ if (params.has('tune')) {
     if (m) m.visible = $('t-plane').checked;
   });
   $('t-hide').addEventListener('change', () => { if (current) current.dome.visible = !$('t-hide').checked; });
+  showTune();
 }
 // The cut drawn on the model: a see-through magenta disc on the plane, with a bright rim
 function cutMarker(cut) {
@@ -361,7 +364,7 @@ function decorate() {
 async function recut() {
   const key = $('model').value;
   const next = await loadModel(key, {
-    domeFrom: Number($('t-split').value), pitch: Number($('t-pitch').value), roll: Number($('t-roll').value),
+    domeFrom: tv.split, pitch: tv.pitch, roll: tv.roll,
   });
   if (current) scene.remove(current.root);
   current = next;
