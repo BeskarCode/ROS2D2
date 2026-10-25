@@ -252,10 +252,13 @@ async function showModel(key) {
   if (!MODELS[key]) key = 'simple';
   $('model').value = key;
   $('loading').style.display = 'flex';
-  // ?split=0.8 tries another dome cut height while tuning a new model
-  const split = Number(params.get('split'));
+  // ?split=0.76&pitch=-12&roll=3 try another dome cut while tuning a new model
+  const tune = {};
+  for (const [q, k] of [['split', 'domeFrom'], ['pitch', 'pitch'], ['roll', 'roll']]) {
+    if (params.has(q)) tune[k] = Number(params.get(q));
+  }
   try {
-    const next = await loadModel(key, split ? { domeFrom: split } : {});
+    const next = await loadModel(key, tune);
     if (current) scene.remove(current.root);
     current = next;
     scene.add(current.root);
@@ -268,7 +271,7 @@ async function showModel(key) {
   $('loading').style.display = 'none';
 }
 $('model').addEventListener('change', () => showModel($('model').value));
-showModel(params.get('model') || loadPref('model', 'remezyuk'));
+showModel(params.get('model') || loadPref('model', 'vladimirov'));
 
 const floor = new THREE.Mesh(new THREE.CircleGeometry(3, 64),
   new THREE.MeshStandardMaterial({ color: 0x1b2230, roughness: 1 }));

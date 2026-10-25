@@ -23,8 +23,6 @@
   .pill.warn { background: rgba(210,153,34,.15); color: var(--amber); }
   .pill.bad { background: rgba(248,81,73,.15); color: var(--red); }
   main { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr); gap: 16px; padding: 16px; }
-  @media (max-width: 1280px) { main { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
-                               #megacard { grid-column: 1 / -1; } #megalog { max-height: 40vh; } }
   @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
@@ -73,7 +71,9 @@
              color: var(--muted); font-size: 13px; pointer-events: none; }
   #credit { position: absolute; left: 10px; right: 10px; bottom: 6px; font-size: 10px; color: var(--muted); }
   #credit a { color: var(--muted); }
-  .note { padding: 0 14px 12px; font-size: 12px; color: var(--muted); margin: 0; }
+  .note { padding: 0 14px 10px; font-size: 12px; color: var(--muted); margin: 0; }
+  details.note summary { cursor: pointer; list-style: none; }
+  details.note summary::-webkit-details-marker { display: none; }
 
   /* Wide screens: everything fits in the window, the picture and the 3D view take what is left */
   @media (min-width: 861px) {
@@ -85,10 +85,12 @@
     .viewwrap { flex: 1; }
     #view3d { flex: 1; min-height: 0; height: auto; aspect-ratio: auto; max-height: none; }
   }
-  @media (min-width: 861px) and (max-width: 1280px) {
-    body { height: auto; overflow: auto; }
-    .videowrap { flex: none; } #video { height: auto; aspect-ratio: 4 / 3; max-height: 62vh; }
-    .viewwrap { flex: none; } #view3d { flex: none; aspect-ratio: 1 / 1; max-height: 60vh; }
+  @media (min-width: 861px) and (max-height: 760px) {
+    header { padding: 4px 16px; } header .logo { height: 40px; }
+    main { gap: 10px; padding: 10px; }
+    .card h2 { padding: 6px 12px; }
+    .stat { padding: 6px 12px; } .stat .v { font-size: 16px; }
+    .controls { padding: 8px 12px; }
   }
 </style>
 <script type="importmap">
@@ -135,10 +137,10 @@
       <label>°/s at speed 80 <input type="number" id="rate" min="1" max="720" step="5"></label>
       <label><input type="checkbox" id="simulate"> simulate (no Mega)</label>
     </div>
-    <p class="note">The dome has no position sensor: the angle is estimated from the speed commands.
+    <details class="note"><summary>ⓘ How the angle is estimated</summary>The dome has no position sensor: the angle is estimated from the speed commands.
       Time a full turn at speed 80 and set °/s to 360 ÷ seconds.<br>
       Simulate: the real camera does not move, so the faces are shifted by the estimated angle
-      as if it had turned with the dome. The yellow line shows where the virtual dome looks.</p>
+      as if it had turned with the dome. The yellow line shows where the virtual dome looks.</details>
   </section>
 
   <section class="card" id="megacard">
@@ -149,8 +151,8 @@
       <button id="megaclear">Clear</button>
       <label><input type="checkbox" id="megarx" checked> show replies</label>
     </div>
-    <p class="note">→ sent to the Mega, ← what it answers. Without a Mega (simulation) the
-      amber lines are what the bridge <em>would</em> send. Repeats are grouped.</p>
+    <details class="note"><summary>ⓘ What the lines mean</summary>→ sent to the Mega, ← what it answers. Without a Mega (simulation) the
+      amber lines are what the bridge <em>would</em> send. Repeats are grouped.</details>
   </section>
 </main>
 <script type="module" src="app.js"></script>
