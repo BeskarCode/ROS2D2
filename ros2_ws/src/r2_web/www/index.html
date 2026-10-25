@@ -29,11 +29,22 @@
   .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
              margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line);
              display: flex; justify-content: space-between; }
-  .videowrap { position: relative; }
-  #aim { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #f0b429;
-         box-shadow: 0 0 6px #f0b429; display: none; pointer-events: none; }
-  #aim span { position: absolute; top: 6px; left: 6px; font-size: 11px; color: #f0b429; white-space: nowrap; }
-  #video { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 62vh; object-fit: contain; background: #000; }
+  .cams { display: flex; gap: 4px; background: #000; }
+  .camtile { position: relative; flex: 1; min-width: 0; aspect-ratio: 4 / 3; }
+  .camtile img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .camtile .num { position: absolute; top: 8px; left: 8px; width: 30px; height: 30px; border-radius: 50%;
+                  background: rgba(13,17,23,.75); border: 2px solid var(--text); color: var(--text);
+                  font: 700 16px/26px system-ui, sans-serif; text-align: center; transition: all .25s; }
+  .camtile.identify .num { width: 120px; height: 120px; font-size: 72px; line-height: 116px;
+                           top: calc(50% - 60px); left: calc(50% - 60px); background: rgba(59,130,246,.85); }
+  .camtile .aim { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #f0b429;
+                  box-shadow: 0 0 6px #f0b429; display: none; pointer-events: none; }
+  .camtile .aim span { position: absolute; top: 6px; left: 6px; font-size: 11px; color: #f0b429; white-space: nowrap; }
+  .camtile .offline { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+                      background: rgba(13,17,23,.8); color: var(--red); font: 700 14px system-ui, sans-serif; letter-spacing: 2px; }
+  .camtile.off .offline { display: flex; }
+  .camtile .nocam { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+                    color: var(--muted); font-size: 12px; }
   #view3d { display: block; width: 100%; aspect-ratio: 1 / 1; max-height: 60vh; touch-action: none; }
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px;
            background: var(--line); border-top: 1px solid var(--line); }
@@ -84,6 +95,8 @@
              color: var(--muted); font-size: 13px; pointer-events: none; }
   #credit { position: absolute; left: 10px; right: 10px; bottom: 6px; font-size: 10px; color: var(--muted); }
   #credit a { color: var(--muted); }
+  .setuplink { color: var(--muted); font-size: 12px; margin-left: auto; text-decoration: none; }
+  .setuplink:hover { color: var(--text); }
   .note { padding: 0 14px 10px; font-size: 12px; color: var(--muted); margin: 0; }
   details.note summary { cursor: pointer; list-style: none; }
   details.note summary::-webkit-details-marker { display: none; }
@@ -93,8 +106,8 @@
     body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     main { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); }
     .card { display: flex; flex-direction: column; min-height: 0; }
-    .videowrap { flex: 1; min-height: 0; background: #000; }
-    #video { height: 100%; aspect-ratio: auto; max-height: none; }
+    .cams { flex: 1; min-height: 0; }
+    .camtile { aspect-ratio: auto; }
     .viewwrap { flex: 1; }
     #view3d { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; max-height: none; }
   }
@@ -120,13 +133,12 @@
 </header>
 <main>
   <section class="card">
-    <h2><span>Camera <span id="camname"></span></span><span id="fps">– fps</span></h2>
-    <div class="videowrap">
-      <img id="video" alt="camera with detected faces">
-      <div id="aim"><span>simulated dome</span></div>
-    </div>
+    <h2><span>Cameras</span><span id="fps">– fps</span></h2>
+    <div class="cams" id="cams"></div>
     <div class="controls">
       <label><input type="checkbox" id="pixelate"> pixelate faces</label>
+      <button id="identify">Identify</button>
+      <a href="setup.html" class="setuplink">⚙ Camera setup</a>
     </div>
     <div class="stats">
       <div class="stat"><div class="k">Faces</div><div class="v" id="faces">–</div></div>

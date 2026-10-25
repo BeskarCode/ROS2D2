@@ -1,0 +1,23 @@
+# ROS2D2: cameras, face detectors, dome tracker, Mega bridge and web console.
+# Installed by setup_r2_brain.sh as /etc/systemd/system/r2d2.service
+#   sudo systemctl status r2d2        journalctl -u r2d2 -f
+# Launch options (e.g. mega:=false when no Mega is plugged in) go in /etc/default/r2d2:
+#   R2D2_ARGS="mega:=false"
+[Unit]
+Description=ROS2D2 (R2-D2 brain on ROS 2)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+Environment=R2D2_ARGS=
+EnvironmentFile=-/etc/default/r2d2
+ExecStart=/bin/bash -c 'source /opt/ros/@DISTRO@/setup.bash && source @HOME@/r2_ws/install/setup.bash && source @HOME@/r2-venv/bin/activate && export ROS_DOMAIN_ID=2 && exec ros2 launch r2_bringup dome_tracker.launch.py $R2D2_ARGS'
+Restart=on-failure
+RestartSec=5
+# Let the launch stop all its nodes before systemd kills them
+KillSignal=SIGINT
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

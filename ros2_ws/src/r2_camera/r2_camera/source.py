@@ -41,3 +41,37 @@ def open_capture(source, width, height, fps, fourcc):
         return None
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)     # always the newest picture
     return cap
+
+
+def parse_v4l2_formats(text):
+    """`v4l2-ctl --list-formats-ext` output -> {fourcc: [(width, height, best_fps), ...]}.
+
+    Sizes keep the driver's order without repeats; best_fps is the highest the camera
+    offers at that size.
+    """
+    modes, fourcc, size = {}, None, None
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("[") and "'" in line:
+            fourcc = line.split("'")[1]
+            modes.setdefault(fourcc, {})
+        elif line.startswith("Size:") and fourcc:
+            w, h = line.split()[-1].split("x")
+            size = (int(w), int(h))
+            modes[fourcc].setdefault(size, 0.0)
+        elif line.startswith("Interval:") and fourcc and size and "(" in line:
+            fps = float(line.split("(")[1].split()[0])
+            modes[fourcc][size] = max(modes[fourcc][size], fps)
+    return {f: [(w, h, fps) for (w, h), fps in sizes.items()] for f, sizes in modes.items()}
+
+
+def list_modes(device, fourcc):
+    """'640x480@30' strings a V4L2 camera offers in that pixel format ([] if unknown)."""
+    import subprocess
+    try:
+        out = subprocess.run(["v4l2-ctl", "-d", str(device), "--list-formats-ext"],
+                             capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    modes = parse_v4l2_formats(out).get(fourcc) or next(iter(parse_v4l2_formats(out).values()), [])
+    return [f"{w}x{h}@{fps:g}" for w, h, fps in modes]

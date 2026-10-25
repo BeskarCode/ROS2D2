@@ -92,11 +92,43 @@ class DomeEstimate:
         self.angle = (self.angle + 180.0) % 360.0 - 180.0
 
 
-def simulated_error(err, dome_deg, hfov_deg):
-    """Face error as a camera that turned dome_deg with the dome would see it.
+REF_HALF_FOV = 30.0   # degrees off centre that count as error 1 (the gains were tuned on a 60 deg camera)
 
-    For testing without the Mega: the real camera does not move, so its picture is
-    shifted by the simulated dome angle. None if the face falls out of the view.
+
+def bearing_deg(err, yaw_deg, hfov_deg):
+    """Face error in one camera's picture -> degrees from the dome's front (+ = right)."""
+    return yaw_deg + err * hfov_deg / 2
+
+
+def in_view(rel_deg, cameras):
+    """Whether a direction (degrees from the dome's front) falls in any camera's view.
+
+    cameras: iterable of (yaw_deg, hfov_deg).
     """
-    shifted = err - dome_deg / (hfov_deg / 2)
-    return shifted if -1.0 <= shifted <= 1.0 else None
+    return any(abs(rel_deg - yaw) <= hfov / 2 for yaw, hfov in cameras)
+
+
+def pick_face(latest, now, max_age):
+    """The face to follow among several cameras: the biggest one seen recently.
+
+    latest: {camera: (t, bearing_deg, size)} with the newest face of each camera, size as a
+    fraction of the picture width (so cameras with different resolutions compare fairly).
+    Returns (t, bearing_deg) or None.
+    """
+    fresh = [v for v in latest.values() if v is not None and now - v[0] <= max_age]
+    if not fresh:
+        return None
+    t, bearing, _ = max(fresh, key=lambda v: v[2])
+    return t, bearing
+
+
+def face_to_error(bearing, dome_deg, cameras, simulate):
+    """Bearing of a face (degrees, from where the cameras point now) -> tracker error.
+
+    With simulate the cameras stay still but pretend to turn with the (estimated) dome:
+    the face is shifted by the dome angle and dropped if no camera would see it any more.
+    """
+    rel = bearing - dome_deg if simulate else bearing
+    if simulate and not in_view(rel, cameras):
+        return None
+    return rel / REF_HALF_FOV

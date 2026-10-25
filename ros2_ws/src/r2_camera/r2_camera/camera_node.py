@@ -11,7 +11,8 @@ Topics (relative to the node, e.g. /cameras/front/...):
   camera_info            sensor_msgs/CameraInfo          picture size (uncalibrated)
 
 Parameters can be changed while running (ros2 param set, or the web console);
-changing the source or the picture size reopens the camera.
+changing the source or the picture size reopens the camera. `available_modes` lists the
+sizes a USB camera offers in its pixel format ("640x480@30"), for the web console's menu.
 """
 
 import threading
@@ -21,10 +22,11 @@ import cv2
 import rclpy
 from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 
-from r2_camera.source import is_file, open_capture, parse_source
+from r2_camera.source import is_file, is_network, list_modes, open_capture, parse_source
 
 # Changing one of these needs the camera reopened
 REOPEN_PARAMS = {"source", "width", "height", "fps", "fourcc"}
@@ -53,6 +55,8 @@ class CameraNode(Node):
             description="JPEG copy for the web console and for remote viewers"))
         p("jpeg_quality", 70)
         p("reconnect_sec", 2.0)
+        p("available_modes", Parameter.Type.STRING_ARRAY, ParameterDescriptor(
+            description="Sizes the camera offers (filled in when it opens; setting it does nothing)"))
 
         # Best effort, keep only the newest picture: an old picture is worse than none
         qos = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -98,6 +102,11 @@ class CameraNode(Node):
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.get_logger().info(f"opened {src} at {w}x{h}")
+        if not is_network(src) and not is_file(src):
+            dev = f"/dev/video{src}" if isinstance(src, int) else src
+            modes = list_modes(dev, self.param("fourcc"))
+            if modes:
+                self.set_parameters([Parameter("available_modes", Parameter.Type.STRING_ARRAY, modes)])
         return cap
 
     def _capture_loop(self):

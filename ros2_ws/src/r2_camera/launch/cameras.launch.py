@@ -6,23 +6,22 @@
 
 import os
 
-import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+from r2_camera.config import config_path, load_cameras, node_params
+
 
 def camera_nodes(context):
-    path = LaunchConfiguration("config").perform(context)
-    with open(path, encoding="utf-8") as f:
-        cameras = yaml.safe_load(f) or {}
+    cameras = load_cameras(config_path(LaunchConfiguration("config").perform(context)))
+    if not cameras:
+        print("[cameras.launch] no camera found (cameras.yaml is on auto and nothing is plugged in)")
     nodes = []
     for name, params in cameras.items():
-        params = dict(params or {})
-        if "source" in params:
-            params["source"] = str(params["source"])   # `source: 0` in YAML is an int
+        params = node_params(params)
         nodes.append(Node(
             package="r2_camera",
             executable="camera_node",

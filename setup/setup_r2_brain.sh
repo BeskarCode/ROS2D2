@@ -216,6 +216,18 @@ EOF
   chown "$R2_USER":"$R2_USER" "$BASHRC"
 fi
 
+log "ROS2D2 service (starts with the Pi; the web console restarts it)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/r2d2.service" ]]; then
+  sed -e "s#@USER@#${R2_USER}#g" -e "s#@HOME@#${R2_HOME}#g" -e "s#@DISTRO@#${ROS_DISTRO}#g"     "$SCRIPT_DIR/r2d2.service" > /etc/systemd/system/r2d2.service
+  # (systemd environment files take no comments at the end of a line)
+  [[ -f /etc/default/r2d2 ]] || printf '%s
+' '# Remove mega:=false once the Mega is plugged in' 'R2D2_ARGS="mega:=false"' > /etc/default/r2d2
+  systemctl daemon-reload
+  systemctl enable r2d2
+  echo "Enabled r2d2.service: it starts once the workspace is built (cd ~/r2_ws && colcon build)"
+fi
+
 log "Check"
 # ROS's setup.bash reads unset variables: relax "set -u" while sourcing it
 set +u

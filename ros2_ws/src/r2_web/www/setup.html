@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROS2D2 Camera Setup</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
+    --blue: #3b82f6; --green: #3fb950; --amber: #d29922; --red: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header .brand { height: 56px; }
+  header .logo { margin-left: auto; height: 48px; }
+  a { color: var(--blue); }
+  main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tabs button.on { background: var(--blue); border-color: var(--blue); }
+  button { background: var(--line); color: var(--text); border: 1px solid #3a4250; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  button.primary { background: var(--blue); border-color: var(--blue); }
+  button:disabled { opacity: .5; cursor: default; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+  .cam { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .cam.off { opacity: .55; }
+  .cam .pic { position: relative; aspect-ratio: 4 / 3; background: #000; }
+  .cam .pic img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .cam .pic .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; text-align: center; padding: 20px; }
+  .cam .num { position: absolute; top: 8px; left: 8px; width: 34px; height: 34px; border-radius: 50%; background: rgba(13,17,23,.75);
+              border: 2px solid var(--text); font: 700 18px/30px system-ui, sans-serif; text-align: center; transition: all .25s; }
+  .cam.identify .num { width: 130px; height: 130px; font-size: 80px; line-height: 126px; top: calc(50% - 65px); left: calc(50% - 65px); background: rgba(59,130,246,.85); }
+  .cam .body { padding: 12px 14px; display: grid; gap: 8px; }
+  .cam .title { font-weight: 600; } .cam .path { color: var(--muted); font-size: 11px; word-break: break-all; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .row label { color: var(--muted); font-size: 12px; }
+  .step { display: flex; align-items: center; gap: 6px; }
+  .step button { width: 32px; height: 28px; padding: 0; font-size: 17px; }
+  .step b { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+  select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: inherit; }
+  textarea { width: 100%; min-height: 60vh; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+             padding: 12px; font: 13px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+  .status { color: var(--muted); font-size: 13px; }
+  .status.ok { color: var(--green); } .status.bad { color: var(--red); } .status.warn { color: var(--amber); }
+  .help { color: var(--muted); font-size: 12px; max-width: 900px; }
+  .cam .badge { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: 11px; vertical-align: 1px; }
+  .badge.online { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge.offline { background: rgba(248,81,73,.15); color: var(--red); }
+</style>
+</head>
+<body>
+<header>
+  <a href="./"><img class="brand" src="ros2d2-logo.png" alt="ROS2D2"></a>
+  <a href="./">← Console</a>
+  <img class="logo" src="astromech-spain-logo.png" alt="Astromech Spain">
+</header>
+<main>
+  <div class="tabs">
+    <button id="tab-form" class="on">Cameras</button>
+    <button id="tab-file">File</button>
+    <button id="identify">Identify</button>
+  </div>
+
+  <section id="form">
+    <p class="help">Every camera plugged into the Pi is listed. Numbers go left to right, like monitors:
+      press <b>Identify</b> and cover a camera with your hand to see which picture goes dark.
+      Direction and field of view apply at once; turning a camera on or off, or renumbering, needs
+      <b>Save and restart</b>.</p>
+    <div class="grid" id="cams"></div>
+  </section>
+
+  <section id="file" hidden>
+    <p class="help">The same settings as text: <code id="filename"></code>. You can also edit this file by hand on the Pi;
+      both ways edit the same file.</p>
+    <textarea id="yaml" spellcheck="false"></textarea>
+  </section>
+
+  <div class="bar">
+    <button class="primary" id="save">Save</button>
+    <button id="restart">Save and restart</button>
+    <span class="status" id="status"></span>
+  </div>
+</main>
+<script type="module" src="setup.js"></script>
+</body>
+</html>

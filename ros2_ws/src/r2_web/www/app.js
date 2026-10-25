@@ -5,19 +5,18 @@ import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
 
 const params = new URLSearchParams(location.search);
-const CAM = params.get('cam') || 'front';
 const WS_URL = params.get('ws') || `ws://${location.hostname || 'localhost'}:9090`;
 const MAX_SPEED = 80;          // ShadowMDLite clamps |DM:| to DOME_TRACKER_MAX_SPEED
 const TRACKER = '/dome_tracker';
-const DETECTOR = `/cameras/${CAM}/face_detector`;
 
 const $ = (id) => document.getElementById(id);
-$('camname').textContent = `/cameras/${CAM}`;
 
 // ---------- node parameters, changed live through rosbridge ----------
 // rcl_interfaces/msg/ParameterValue types: 1 bool, 3 double
 const PTYPE = { bool: [1, 'bool_value'], double: [3, 'double_value'] };
-let hfov = 60;
+// The cameras the tracker follows, left to right: { name, yaw, hfov, width, frames, latest, tile }
+let cams = [];
+const detector = (c) => `/cameras/${c.name}/face_detector`;
 
 function setParam(node, name, kind, value) {
   const [type, field] = PTYPE[kind];
@@ -30,21 +29,26 @@ function getParams(node, names, fn) {
   callService(`${node}/get_parameters`, 'rcl_interfaces/srv/GetParameters', { names },
     (r) => fn(Object.fromEntries(names.map((n, i) => {
       const v = r.values[i];
-      return [n, v.type === 1 ? v.bool_value : v.type === 2 ? v.integer_value : v.double_value];
+      const value = { 1: v.bool_value, 2: v.integer_value, 3: v.double_value, 4: v.string_value,
+                      9: v.string_array_value }[v.type];
+      return [n, value];
     }))));
 }
 
 function readParams() {
-  getParams(TRACKER, ['deg_per_s_at_80', 'simulate', 'camera_hfov_deg'], (v) => {
+  getParams(TRACKER, ['deg_per_s_at_80', 'simulate', 'cameras'], (v) => {
     $('rate').value = v.deg_per_s_at_80;
     $('simulate').checked = v.simulate;
-    hfov = v.camera_hfov_deg;
     showSim(v.simulate);
+    const names = v.cameras || [];
+    getParams(TRACKER, names.flatMap((n) => [`${n}.yaw_deg`, `${n}.hfov_deg`]), (g) => {
+      setCameras(names.map((n) => ({ name: n, yaw: g[`${n}.yaw_deg`], hfov: g[`${n}.hfov_deg`] })));
+    });
   });
-  getParams(DETECTOR, ['pixelate'], (v) => { $('pixelate').checked = v.pixelate; });
 }
 
-function showSim(on) { $('simpill').hidden = !on; $('aim').style.display = on ? 'block' : 'none'; }
+let simOn = false;
+function showSim(on) { simOn = on; $('simpill').hidden = !on; }
 
 $('rate').addEventListener('change', () => {
   const v = Number($('rate').value);
@@ -54,7 +58,14 @@ $('simulate').addEventListener('change', () => {
   setParam(TRACKER, 'simulate', 'bool', $('simulate').checked);
   showSim($('simulate').checked);
 });
-$('pixelate').addEventListener('change', () => setParam(DETECTOR, 'pixelate', 'bool', $('pixelate').checked));
+$('pixelate').addEventListener('change', () => {
+  for (const c of cams) setParam(detector(c), 'pixelate', 'bool', $('pixelate').checked);
+});
+// Like the monitors in Windows: the number shows big on each picture for a moment
+$('identify').addEventListener('click', () => {
+  for (const c of cams) c.tile.classList.add('identify');
+  setTimeout(() => { for (const c of cams) c.tile.classList.remove('identify'); }, 3000);
+});
 
 // ---------- rosbridge ----------
 let ws = null;
@@ -68,9 +79,6 @@ function connect() {
   setPill('conn', 'connecting…', '');
   ws.onopen = () => {
     setPill('conn', 'rosbridge ok', 'ok');
-    subscribe(`/cameras/${CAM}/faces/image/compressed`, 'sensor_msgs/msg/CompressedImage', onImage, 50);
-    subscribe(`/cameras/${CAM}/faces`, 'vision_msgs/msg/Detection2DArray', onFaces);
-    subscribe(`/cameras/${CAM}/camera_info`, 'sensor_msgs/msg/CameraInfo', onInfo, 2000);
     subscribe('/dome/speed_cmd', 'std_msgs/msg/Int16', onSpeed);
     subscribe('/dome_tracker/status', 'std_msgs/msg/String', onStatus);
     subscribe('/r2/track_mode', 'std_msgs/msg/Bool', (m) => setTrack(m.data));
@@ -112,26 +120,61 @@ function subscribe(topic, type, fn, throttle = 0) {
 function setPill(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'pill ' + cls; }
 
 // ---------- camera and faces ----------
-let width = null;
-let frames = 0;
-function onImage(m) {
-  $('video').src = `data:image/${m.format.includes('png') ? 'png' : 'jpeg'};base64,${m.data}`;
-  frames++;
-}
-setInterval(() => { $('fps').textContent = `${frames} fps`; frames = 0; }, 1000);
-
-function onInfo(m) { width = m.width; }
-
-function onFaces(m) {
-  const d = m.detections;
-  $('faces').textContent = d.length;
-  if (!d.length) { $('score').textContent = '–'; $('facex').textContent = '–'; return; }
-  const best = d[0];        // the detector puts the face R2 follows first
-  $('score').textContent = best.results.length ? best.results[0].hypothesis.score.toFixed(2) : '–';
-  if (width) {
-    const err = (best.bbox.center.position.x - width / 2) / (width / 2);   // -1 left .. +1 right
-    $('facex').textContent = (err > 0 ? 'right ' : 'left ') + Math.round(Math.abs(err) * 100) + '%';
+// One tile per camera, left to right by where it points, numbered like monitors
+function setCameras(list) {
+  for (const c of cams) {
+    for (const t of ['faces/image/compressed', 'faces', 'camera_info']) send({ op: 'unsubscribe', topic: `/cameras/${c.name}/${t}` });
   }
+  cams = list.sort((a, b) => a.yaw - b.yaw).map((c) => ({ ...c, width: null, frames: 0, latest: null }));
+  const box = $('cams');
+  box.textContent = '';
+  if (!cams.length) box.innerHTML = '<div class="camtile"><div class="nocam">no camera — see ⚙ Camera setup</div></div>';
+  cams.forEach((c, i) => {
+    c.tile = document.createElement('div');
+    c.tile.className = 'camtile';
+    c.tile.title = `${c.name}: ${c.yaw >= 0 ? '+' : ''}${c.yaw}°, ${c.hfov}° wide`;
+    c.tile.innerHTML = '<img alt=""><div class="offline">OFFLINE</div><div class="num"></div><div class="aim"><span>simulated dome</span></div>';
+    c.tile.querySelector('.num').textContent = i + 1;
+    c.tile.querySelector('img').alt = `camera ${i + 1} with detected faces`;
+    box.append(c.tile);
+    const base = `/cameras/${c.name}`;
+    subscribe(`${base}/faces/image/compressed`, 'sensor_msgs/msg/CompressedImage', (m) => {
+      c.tile.querySelector('img').src = `data:image/${m.format.includes('png') ? 'png' : 'jpeg'};base64,${m.data}`;
+      c.frames++;
+      c.lastFrame = performance.now();
+    }, 50);
+    subscribe(`${base}/faces`, 'vision_msgs/msg/Detection2DArray', (m) => onFaces(c, m));
+    subscribe(`${base}/camera_info`, 'sensor_msgs/msg/CameraInfo', (m) => { c.width = m.width; }, 2000);
+  });
+  if (cams.length) getParams(detector(cams[0]), ['pixelate'], (v) => { $('pixelate').checked = v.pixelate; });
+}
+setInterval(() => {
+  $('fps').textContent = cams.length ? cams.map((c) => c.frames).join(' · ') + ' fps' : '– fps';
+  // No picture for 2 s: unplugged or stuck (the camera node keeps trying to reopen it)
+  for (const c of cams) {
+    c.frames = 0;
+    c.tile.classList.toggle('off', !c.lastFrame || performance.now() - c.lastFrame > 2000);
+  }
+}, 1000);
+
+function onFaces(c, m) {
+  const d = m.detections;
+  c.latest = d.length && c.width ? {
+    t: performance.now(),
+    count: d.length,
+    score: d[0].results.length ? d[0].results[0].hypothesis.score : null,
+    size: d[0].bbox.size_x / c.width,
+    // degrees from the dome's front, + = right
+    bearing: c.yaw + (d[0].bbox.center.position.x - c.width / 2) / (c.width / 2) * c.hfov / 2,
+  } : null;
+  // All cameras together: the biggest face is the one R2 follows
+  const now = performance.now();
+  const fresh = cams.map((k) => k.latest).filter((l) => l && now - l.t < 500);
+  $('faces').textContent = fresh.reduce((n, l) => n + l.count, 0);
+  if (!fresh.length) { $('score').textContent = '–'; $('facex').textContent = '–'; return; }
+  const best = fresh.reduce((a, b) => (b.size > a.size ? b : a));
+  $('score').textContent = best.score == null ? '–' : best.score.toFixed(2);
+  $('facex').textContent = (best.bearing >= 0 ? 'right ' : 'left ') + Math.abs(best.bearing).toFixed(0) + '°';
 }
 
 function onStatus(m) {
@@ -408,12 +451,17 @@ function resize() {
 
 // The picture is letterboxed inside its box (object-fit: contain): put the line on the picture itself
 function placeAim() {
-  const img = $('video');
-  const bw = img.clientWidth, bh = img.clientHeight;
-  const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 4 / 3;
-  const w = Math.min(bw, bh * ratio);
-  const frac = Math.max(0, Math.min(1, 0.5 + angleDeg / hfov));
-  $('aim').style.left = ((bw - w) / 2 + frac * w) + 'px';
+  for (const c of cams) {
+    const aim = c.tile.querySelector('.aim');
+    const frac = 0.5 + (angleDeg - c.yaw) / c.hfov;      // where the simulated dome looks, in this picture
+    if (!simOn || frac < 0 || frac > 1) { aim.style.display = 'none'; continue; }
+    const img = c.tile.querySelector('img');
+    const bw = img.clientWidth, bh = img.clientHeight;
+    const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 4 / 3;
+    const w = Math.min(bw, bh * ratio);
+    aim.style.display = 'block';
+    aim.style.left = ((bw - w) / 2 + frac * w) + 'px';
+  }
 }
 
 let shown = 0;

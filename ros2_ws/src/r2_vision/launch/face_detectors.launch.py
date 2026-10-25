@@ -6,12 +6,13 @@
 
 import os
 
-import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+from r2_camera.config import config_path, load_cameras
 
 
 def detector_nodes(context):
@@ -20,8 +21,7 @@ def detector_nodes(context):
         cameras = [n.strip() for n in names.split(",") if n.strip()]
     else:
         path = os.path.join(get_package_share_directory("r2_camera"), "config", "cameras.yaml")
-        with open(path, encoding="utf-8") as f:
-            cameras = list((yaml.safe_load(f) or {}).keys())
+        cameras = list(load_cameras(config_path(path)))
     return [
         Node(
             package="r2_vision",

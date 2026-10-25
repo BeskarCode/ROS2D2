@@ -1,5 +1,10 @@
 """R2 dome tracker node: turns the dome to look at the closest face.
 
+One or more cameras, as listed in r2_camera's cameras.yaml. Each has a direction
+(<camera>.yaw_deg, from the dome's front, + = right) and a field of view (<camera>.hfov_deg),
+so a face anywhere in any picture becomes an angle from the dome's front; the dome turns
+towards the biggest face seen by any camera.
+
 Topics:
   in   /cameras/<camera>/faces         vision_msgs/Detection2DArray  (biggest face first)
   in   /cameras/<camera>/camera_info   sensor_msgs/CameraInfo        (picture width)
@@ -14,13 +19,16 @@ Topics:
                                                         sent, as the dome has no position sensor
   in   /dome/angle_reset               std_msgs/Empty   "the dome is facing front now": angle = 0
 
-simulate:=true closes the loop without a Mega: the faces are shifted as if the camera
+simulate:=true closes the loop without a Mega: the faces are shifted as if the cameras
 had turned with the estimated dome angle, so the (virtual) dome stops when it faces you.
 
 All gains can be changed while running (ros2 param set, or the web console).
 """
 
+import os
+
 import rclpy
+from ament_index_python.packages import get_package_share_directory
 from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
@@ -29,9 +37,17 @@ from sensor_msgs.msg import CameraInfo
 from std_msgs.msg import Bool, Empty, Float32, Int16, String
 from vision_msgs.msg import Detection2DArray
 
-from r2_dome_tracker.control import DomeEstimate, DomeTracker, Gains, face_error, simulated_error
+from r2_camera.config import config_path, load_cameras
+from r2_dome_tracker.control import (DomeEstimate, DomeTracker, Gains, bearing_deg, face_error,
+                                     face_to_error, pick_face)
 
 GAIN_PARAMS = {"min_speed", "max_speed", "kd", "deadzone", "invert", "lost_after"}
+
+
+def cameras_from_config(path):
+    """{name: (yaw_deg, hfov_deg)} for every camera in r2_camera's cameras.yaml (or found, on auto)."""
+    cams = load_cameras(config_path(path))
+    return {name: (float(c["yaw_deg"]), float(c["hfov_deg"])) for name, c in cams.items()}
 
 
 class DomeTrackerNode(Node):
@@ -39,7 +55,8 @@ class DomeTrackerNode(Node):
         super().__init__("dome_tracker")
         g = Gains()
         p = self.declare_parameter
-        p("camera", "front", ParameterDescriptor(description="Camera whose faces the dome follows"))
+        p("cameras_config", os.path.join(get_package_share_directory("r2_camera"), "config", "cameras.yaml"),
+          ParameterDescriptor(description="cameras.yaml: the cameras, their direction and field of view"))
         p("enabled", True)
         p("rate_hz", 15.0, ParameterDescriptor(
             description="How often the speed is sent; the Mega stops the dome after 300 ms without one"))
@@ -54,19 +71,32 @@ class DomeTrackerNode(Node):
             description="How fast the dome turns at speed 80, for the angle estimate: 360 / seconds per turn"))
         p("simulate", False, ParameterDescriptor(
             description="No Mega: shift the faces by the estimated dome angle so the loop closes"))
-        p("camera_hfov_deg", 60.0, ParameterDescriptor(description="Horizontal field of view, for simulate"))
+
+        # One or more cameras: names from cameras.yaml; their aim and field of view become
+        # parameters, so the web console can fix them live (or swap left and right)
+        config = cameras_from_config(self.param("cameras_config"))
+        p("cameras", list(config), ParameterDescriptor(description="Cameras whose faces the dome follows"))
+        self.cams = list(self.param("cameras"))
+        for name in self.cams:
+            yaw, hfov = config.get(name, (0.0, 60.0))
+            p(f"{name}.yaw_deg", yaw,
+              ParameterDescriptor(description="Where it points: degrees from the dome's front, + = right"))
+            p(f"{name}.hfov_deg", hfov, ParameterDescriptor(description="Horizontal field of view, degrees"))
 
         self.tracker = DomeTracker(self._gains())
         self.dome = DomeEstimate(self.param("deg_per_s_at_80"))
         self._last_tick = None
-        self.width = None
+        self.width = {}            # picture width of each camera
+        self.latest = {}           # newest face of each camera: (t, bearing_deg, size)
         self._was_enabled = False
 
-        cam = self.get_parameter("camera").value
         sensor_qos = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
                                 history=HistoryPolicy.KEEP_LAST, depth=1)
-        self.create_subscription(Detection2DArray, f"/cameras/{cam}/faces", self._on_faces, 10)
-        self.create_subscription(CameraInfo, f"/cameras/{cam}/camera_info", self._on_info, sensor_qos)
+        for cam in self.cams:
+            self.create_subscription(Detection2DArray, f"/cameras/{cam}/faces",
+                                     lambda msg, cam=cam: self._on_faces(cam, msg), 10)
+            self.create_subscription(CameraInfo, f"/cameras/{cam}/camera_info",
+                                     lambda msg, cam=cam: self.width.__setitem__(cam, msg.width), sensor_qos)
         # The dome follows faces only with face tracking on (switched on from the dome Nav).
         # Latched by the Mega bridge; until it says otherwise it counts as off.
         self.track_on = False
@@ -81,7 +111,8 @@ class DomeTrackerNode(Node):
         self.add_on_set_parameters_callback(self._check_params)
         self.add_post_set_parameters_callback(self._after_params)
         self._timer = self.create_timer(1.0 / self.get_parameter("rate_hz").value, self._tick)
-        self.get_logger().info(f"following faces from camera '{cam}'")
+        self.get_logger().info("following faces from " + ", ".join(
+            f"{c} ({self.param(c + '.yaw_deg'):+.0f} deg)" for c in self.cams))
 
     def param(self, name):
         return self.get_parameter(name).value
@@ -99,12 +130,14 @@ class DomeTrackerNode(Node):
             return SetParametersResult(successful=False, reason="need 0 <= min_speed <= max_speed <= 127")
         if not 0 <= new.get("deadzone", 0) < 1:
             return SetParametersResult(successful=False, reason="deadzone must be 0-1")
-        if new.get("deg_per_s_at_80", 1) <= 0 or not 0 < new.get("camera_hfov_deg", 60) < 180:
-            return SetParametersResult(successful=False, reason="need deg_per_s_at_80 > 0, 0 < camera_hfov_deg < 180")
+        if new.get("deg_per_s_at_80", 1) <= 0:
+            return SetParametersResult(successful=False, reason="need deg_per_s_at_80 > 0")
+        if any(not 0 < v < 180 for k, v in new.items() if k.endswith(".hfov_deg")):
+            return SetParametersResult(successful=False, reason="hfov_deg must be between 0 and 180")
         if new.get("rate_hz", 1) <= 0:
             return SetParametersResult(successful=False, reason="rate_hz must be > 0")
-        if "camera" in new:
-            return SetParametersResult(successful=False, reason="camera is fixed at start; relaunch to change it")
+        if "cameras" in new or "cameras_config" in new:
+            return SetParametersResult(successful=False, reason="the cameras are fixed at start; relaunch to change them")
         return SetParametersResult(successful=True)
 
     def _after_params(self, params):
@@ -117,24 +150,33 @@ class DomeTrackerNode(Node):
             self._timer.cancel()
             self._timer = self.create_timer(1.0 / self.param("rate_hz"), self._tick)
 
-    def _on_info(self, msg):
-        self.width = msg.width
+    def _cam_geometry(self):
+        return [(self.param(c + ".yaw_deg"), self.param(c + ".hfov_deg")) for c in self.cams]
 
-    def _on_faces(self, msg):
-        if self.width is None:
-            self.get_logger().warn("no camera_info yet, waiting for the picture width",
+    def _on_faces(self, cam, msg):
+        width = self.width.get(cam)
+        if width is None:
+            self.get_logger().warn(f"no camera_info from {cam} yet, waiting for the picture width",
                                    throttle_duration_sec=10.0)
             return
         t = Time.from_msg(msg.header.stamp).nanoseconds / 1e9   # when the picture was taken
-        err = None
         if msg.detections:
-            err = face_error(msg.detections[0].bbox.center.position.x, self.width)
-            if self.param("simulate"):
-                err = simulated_error(err, self.dome.angle, self.param("camera_hfov_deg"))
+            d = msg.detections[0]              # the biggest face in this picture
+            bearing = bearing_deg(face_error(d.bbox.center.position.x, width),
+                                  self.param(cam + ".yaw_deg"), self.param(cam + ".hfov_deg"))
+            self.latest[cam] = (t, bearing, d.bbox.size_x / width)
+        else:
+            self.latest[cam] = None
+
+        # Follow the biggest face any camera has seen recently
+        now = self.get_clock().now().nanoseconds / 1e9
+        best = pick_face(self.latest, now, self.param("lost_after"))
+        err = None if best is None else face_to_error(best[1], self.dome.angle, self._cam_geometry(),
+                                                      self.param("simulate"))
         if err is None:
             self.tracker.no_face()
         else:
-            self.tracker.face(err, t)
+            self.tracker.face(err, best[0])
 
     def _on_track_mode(self, msg):
         self.track_on = msg.data
