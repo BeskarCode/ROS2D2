@@ -14,8 +14,9 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def share(pkg, *path):
@@ -36,7 +37,12 @@ def generate_launch_description():
             package="r2_dome_tracker",
             executable="dome_tracker",
             name="dome_tracker",
-            parameters=[share("r2_dome_tracker", "config", "dome_tracker.yaml")],
+            parameters=[
+                share("r2_dome_tracker", "config", "dome_tracker.yaml"),
+                # No Mega: the real dome cannot turn, so close the loop in simulation
+                {"simulate": ParameterValue(PythonExpression(
+                    ["'", LaunchConfiguration("mega"), "'.lower() != 'true'"]), value_type=bool)},
+            ],
             output="screen",
         ),
         Node(

@@ -117,7 +117,13 @@ function subscribe(topic, type, fn, throttle = 0) {
   send({ op: 'subscribe', topic, type, throttle_rate: throttle, queue_length: 1 });
 }
 
-function setPill(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'pill ' + cls; }
+const PILL_ICONS = { conn: 'fa-plug', status: 'fa-crosshairs' };
+function setPill(id, text, cls) {
+  const el = $(id);
+  el.innerHTML = PILL_ICONS[id] ? `<i class="fa-solid ${PILL_ICONS[id]}"></i>` : '';
+  el.append(text);
+  el.className = 'pill ' + cls;
+}
 
 // ---------- camera and faces ----------
 // One tile per camera, left to right by where it points, numbered like monitors
@@ -147,7 +153,36 @@ function setCameras(list) {
     subscribe(`${base}/camera_info`, 'sensor_msgs/msg/CameraInfo', (m) => { c.width = m.width; }, 2000);
   });
   if (cams.length) getParams(detector(cams[0]), ['pixelate'], (v) => { $('pixelate').checked = v.pixelate; });
+  addFans();
 }
+
+// What each camera sees, drawn on the 3D dome as see-through fans that turn with it
+const FAN_COLOURS = [0x3b82f6, 0xf0b429, 0x3fb950, 0xf85149, 0xa371f7, 0x39c5cf];
+function addFans() {
+  if (!current) return;
+  const old = current.dome.getObjectByName('fans');
+  if (old) current.dome.remove(old);
+  const g = new THREE.Group();
+  g.name = 'fans';
+  g.visible = $('showfov').checked;
+  cams.forEach((c, i) => {
+    // CircleGeometry draws in XY; laid flat it maps angle phi to (cos phi, 0, -sin phi).
+    // Front is +Z and + yaw is to the right (-X), so a yaw of t sits at phi = -90 deg - t.
+    const h = THREE.MathUtils.degToRad(Math.min(c.hfov, 359));
+    const mid = -Math.PI / 2 - THREE.MathUtils.degToRad(c.yaw);
+    const fan = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48, mid - h / 2, h),
+      new THREE.MeshBasicMaterial({ color: FAN_COLOURS[i % FAN_COLOURS.length], transparent: true, opacity: 0.18,
+        side: THREE.DoubleSide, depthWrite: false }));
+    fan.rotation.x = -Math.PI / 2;
+    fan.position.y = 0.25;
+    g.add(fan);
+  });
+  current.dome.add(g);
+}
+$('showfov').addEventListener('change', () => {
+  const f = current && current.dome.getObjectByName('fans');
+  if (f) f.visible = $('showfov').checked;
+});
 setInterval(() => {
   $('fps').textContent = cams.length ? cams.map((c) => c.frames).join(' · ') + ' fps' : '– fps';
   // No picture for 2 s: unplugged or stuck (the camera node keeps trying to reopen it)
@@ -184,7 +219,7 @@ function onStatus(m) {
 
 function setTrack(on) {
   trackOn = on;
-  $('track').textContent = 'Track: ' + (on ? 'ON' : 'off');
+  $('track').innerHTML = '<i class="fa-solid fa-crosshairs"></i>Track: ' + (on ? 'ON' : 'off');
   $('track').classList.toggle('on', on);
 }
 $('track').addEventListener('click', () => {
@@ -243,7 +278,7 @@ function clock() {
 
 $('megapause').addEventListener('click', () => {
   paused = !paused;
-  $('megapause').textContent = paused ? 'Resume' : 'Pause';
+  $('megapause').innerHTML = paused ? '<i class="fa-solid fa-play"></i>Resume' : '<i class="fa-solid fa-pause"></i>Pause';
   $('megapause').classList.toggle('on', paused);
 });
 $('megaclear').addEventListener('click', () => { $('megalog').textContent = ''; });
@@ -306,6 +341,7 @@ async function showModel(key) {
     current = next;
     scene.add(current.root);
     $('credit').innerHTML = MODELS[key].credit ? 'Model: ' + MODELS[key].credit : '';
+    addFans();
     savePref('model', key);
   } catch (e) {
     console.error('model', key, e);
@@ -413,6 +449,7 @@ async function recut() {
   current = next;
   scene.add(current.root);
   decorate();
+  addFans();
 }
 showModel(params.get('model') || loadPref('model', 'vladimirov')).then(() => { if (params.has('tune')) { fillTune(); decorate(); } });
 

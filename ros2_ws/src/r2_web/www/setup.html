@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ROS2D2 Camera Setup</title>
 <link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
 <style>
   :root {
     --bg: #0d1117; --panel: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
@@ -16,13 +17,20 @@
   header .brand { height: 56px; }
   header .logo { margin-left: auto; height: 48px; }
   a { color: var(--blue); }
-  main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+  nav.modes { display: flex; gap: 4px; margin-left: 16px; }
+  nav.modes a { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 8px;
+                color: var(--muted); text-decoration: none; border: 1px solid transparent; font-size: 14px; }
+  nav.modes a:hover { color: var(--text); background: var(--line); }
+  nav.modes a.on { color: var(--text); background: var(--line); border-color: #3a4250; }
+  .pill i, button i, .card h2 i, label i { margin-right: 6px; }
+  button.icon i, .step button i, .trow button i { margin: 0; }
+  main { padding: 16px; max-width: 1600px; margin: 0 auto; }
   .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
   .tabs button.on { background: var(--blue); border-color: var(--blue); }
   button { background: var(--line); color: var(--text); border: 1px solid #3a4250; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
   button.primary { background: var(--blue); border-color: var(--blue); }
   button:disabled { opacity: .5; cursor: default; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
   .cam { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .cam.off { opacity: .55; }
   .cam .pic { position: relative; aspect-ratio: 4 / 3; background: #000; }
@@ -45,6 +53,15 @@
   .status { color: var(--muted); font-size: 13px; }
   .status.ok { color: var(--green); } .status.bad { color: var(--red); } .status.warn { color: var(--amber); }
   .help { color: var(--muted); font-size: 12px; max-width: 900px; }
+  .slider { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; }
+  .slider input[type=range] { width: 200px; accent-color: var(--blue); }
+  .slider b { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  .coverage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+              position: sticky; top: 12px; }
+  .coverage svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .coverage .legend { color: var(--muted); font-size: 12px; }
   .cam .badge { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: 11px; vertical-align: 1px; }
   .badge.online { background: rgba(63,185,80,.15); color: var(--green); }
   .badge.offline { background: rgba(248,81,73,.15); color: var(--red); }
@@ -53,14 +70,17 @@
 <body>
 <header>
   <a href="./"><img class="brand" src="ros2d2-logo.png" alt="ROS2D2"></a>
-  <a href="./">← Console</a>
+  <nav class="modes">
+    <a href="./"><i class="fa-solid fa-gauge-high"></i>Console</a>
+    <a href="setup.html" class="on"><i class="fa-solid fa-gear"></i>Setup</a>
+  </nav>
   <img class="logo" src="astromech-spain-logo.png" alt="Astromech Spain">
 </header>
 <main>
   <div class="tabs">
-    <button id="tab-form" class="on">Cameras</button>
-    <button id="tab-file">File</button>
-    <button id="identify">Identify</button>
+    <button id="tab-form" class="on"><i class="fa-solid fa-video"></i>Cameras</button>
+    <button id="tab-file"><i class="fa-solid fa-file-code"></i>File</button>
+    <button id="identify"><i class="fa-solid fa-hashtag"></i>Identify</button>
   </div>
 
   <section id="form">
@@ -68,7 +88,16 @@
       press <b>Identify</b> and cover a camera with your hand to see which picture goes dark.
       Direction and field of view apply at once; turning a camera on or off, or renumbering, needs
       <b>Save and restart</b>.</p>
+    <div class="layout">
+    <div class="coverage">
+      <svg id="map" viewBox="-110 -110 220 220" aria-label="what the cameras see, from above"></svg>
+      <div class="legend"><b style="color:var(--text)"><i class="fa-solid fa-eye"></i>What R2 sees, from above.</b><br>
+        The circle is the dome, the arrow its front. Each fan is a camera: where it points and how wide it sees.
+        Leave a little overlap between neighbours so a face does not get lost passing from one to the next.
+        <div id="cover" style="margin-top:8px"></div></div>
+    </div>
     <div class="grid" id="cams"></div>
+    </div>
   </section>
 
   <section id="file" hidden>
@@ -78,8 +107,8 @@
   </section>
 
   <div class="bar">
-    <button class="primary" id="save">Save</button>
-    <button id="restart">Save and restart</button>
+    <button class="primary" id="save"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    <button id="restart"><i class="fa-solid fa-power-off"></i>Save and restart</button>
     <span class="status" id="status"></span>
   </div>
 </main>

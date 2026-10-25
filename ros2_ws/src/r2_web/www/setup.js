@@ -40,7 +40,8 @@ function setParam(node, name, value) {
 
 // ---------- load ----------
 async function load() {
-  status('loading…');
+  status('', '');
+  $('status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> loading…';
   const api = await (await fetch('api/cameras')).json();
   if (api.error) return status(api.error, 'bad');
   plugged = api.detected.map((d) => d.path).join('|');
@@ -106,16 +107,16 @@ function render() {
       <div class="pic"><img alt=""><div class="msg"></div><div class="num">${r.num}</div></div>
       <div class="body">
         <div class="row"><span><span class="title"></span><div class="path"></div></span>
-          <label><input type="checkbox" class="use"> use</label></div>
-        <div class="row"><label>number</label><div class="step"><button data-a="left">◀</button><b>${r.num}</b><button data-a="right">▶</button></div></div>
-        <div class="row"><label>size</label><select class="mode">${modes.map((m) => `<option>${m}</option>`).join('')}</select></div>
-        <div class="row"><label>points to (− left, + right)</label><div class="step"><button data-a="yaw-">−</button><b class="yaw"></b><button data-a="yaw+">+</button></div></div>
-        <div class="row"><label>field of view</label><div class="step"><button data-a="hfov-">−</button><b class="hfov"></b><button data-a="hfov+">+</button></div></div>
+          <label><input type="checkbox" class="use"> <i class="fa-solid fa-power-off"></i>use</label></div>
+        <div class="row"><label><i class="fa-solid fa-hashtag"></i>number</label><div class="step"><button data-a="left"><i class="fa-solid fa-chevron-left"></i></button><b>${r.num}</b><button data-a="right"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+        <div class="row"><label><i class="fa-solid fa-expand"></i>size</label><select class="mode">${modes.map((m) => `<option>${m}</option>`).join('')}</select></div>
+        <div class="row"><label><i class="fa-solid fa-compass"></i>points to</label><div class="slider"><input type="range" class="yawr" min="-180" max="180" step="1"><b class="yaw"></b></div></div>
+        <div class="row"><label><i class="fa-solid fa-eye"></i>field of view</label><div class="slider"><input type="range" class="hfovr" min="20" max="170" step="1"><b class="hfov"></b></div></div>
       </div>`;
     el.querySelector('.title').textContent = r.title + (r.name ? ` (${r.name})` : '');
     const badge = document.createElement('span');
     badge.className = 'badge ' + (r.missing ? 'offline' : 'online');
-    badge.textContent = r.missing ? 'offline' : 'plugged in';
+    badge.innerHTML = r.missing ? '<i class="fa-solid fa-plug-circle-xmark"></i> offline' : '<i class="fa-solid fa-plug-circle-check"></i> plugged in';
     el.querySelector('.title').after(badge);
     el.querySelector('.path').textContent = r.source;
     el.querySelector('.use').checked = r.use;
@@ -143,6 +144,10 @@ function render() {
       }
     });
     el.querySelectorAll('button[data-a]').forEach((b) => b.addEventListener('click', () => act(r, b.dataset.a)));
+    el.querySelector('.yawr').value = r.yaw;
+    el.querySelector('.hfovr').value = r.hfov;
+    el.querySelector('.yawr').addEventListener('input', (e) => slide(r, 'yaw', Number(e.target.value)));
+    el.querySelector('.hfovr').addEventListener('input', (e) => slide(r, 'hfov', Number(e.target.value)));
     box.append(el);
   }
 }
@@ -150,6 +155,47 @@ function render() {
 function showGeometry(r) {
   r.el.querySelector('.yaw').textContent = `${r.yaw > 0 ? '+' : ''}${r.yaw}°`;
   r.el.querySelector('.hfov').textContent = `${r.hfov}°`;
+  drawMap();
+}
+
+// Slider moved: show it, and tell the tracker straight away (at most ~10 times a second)
+const sendTimers = {};
+function slide(r, what, value) {
+  r[what] = value;
+  showGeometry(r);
+  dirty();
+  if (!r.running) return;
+  const key = r.name + what;
+  clearTimeout(sendTimers[key]);
+  sendTimers[key] = setTimeout(() => setParam(TRACKER, `${r.name}.${what === 'yaw' ? 'yaw_deg' : 'hfov_deg'}`, r[what] + 0.0), 100);
+}
+
+// Top-down map: the dome, its front, and one fan per camera in use
+const COLOURS = ['#3b82f6', '#f0b429', '#3fb950', '#f85149', '#a371f7', '#39c5cf'];
+function drawMap() {
+  const svg = $('map');
+  if (!svg) return;
+  const used = rows.filter((r) => r.use);
+  const R = 95;
+  // degrees from the front (+ = right) -> point on the map (front = up)
+  const at = (deg, rad) => [Math.sin(deg * Math.PI / 180) * rad, -Math.cos(deg * Math.PI / 180) * rad];
+  let out = `<circle r="${R}" fill="none" stroke="#2a313c" stroke-dasharray="3 4"/>`;
+  used.forEach((r, i) => {
+    const c = COLOURS[i % COLOURS.length];
+    const h = Math.min(r.hfov, 359.9);
+    const [x1, y1] = at(r.yaw - h / 2, R), [x2, y2] = at(r.yaw + h / 2, R), [tx, ty] = at(r.yaw, R * 0.62);
+    out += `<path d="M0 0 L${x1} ${y1} A${R} ${R} 0 ${h > 180 ? 1 : 0} 1 ${x2} ${y2} Z" fill="${c}" fill-opacity=".22" stroke="${c}" stroke-width="1.5"/>`;
+    out += `<circle cx="${tx}" cy="${ty}" r="11" fill="#0d1117" stroke="${c}" stroke-width="2"/>` +
+           `<text x="${tx}" y="${ty + 4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="${c}">${i + 1}</text>`;
+  });
+  out += `<circle r="26" fill="#161b22" stroke="#8b949e" stroke-width="2"/>` +
+         `<path d="M0 -40 L-7 -27 L7 -27 Z" fill="#e6edf3"/>` +
+         `<text y="5" text-anchor="middle" font-size="10" fill="#8b949e">dome</text>`;
+  svg.innerHTML = out;
+  // Total view without counting overlaps twice (1 degree steps)
+  let seen = 0;
+  for (let d = -180; d < 180; d++) if (used.some((r) => Math.abs(((d - r.yaw + 540) % 360) - 180) <= r.hfov / 2)) seen++;
+  $('cover').textContent = used.length ? `Together they see ${seen}° of 360°.` : 'No camera in use.';
 }
 
 function act(r, a) {
@@ -206,6 +252,7 @@ async function save(restart) {
   needsRestart = false;
   $('yaml').value = text;
   if (!restart) return status(`Saved in ${res.file}.`, 'ok');
+  busy(true);
   status('Saved. Restarting ROS2D2… the page reloads when it is back.', 'warn');
   await fetch('api/restart', { method: 'POST' });
   waitForRestart();
@@ -229,6 +276,14 @@ $('tab-file').addEventListener('click', () => {
   $('form').hidden = true; $('file').hidden = false; $('tab-file').classList.add('on'); $('tab-form').classList.remove('on');
 });
 $('yaml').addEventListener('input', () => dirty(true));
+
+// While ROS2D2 restarts: spinning icon on the button, nothing else to press
+function busy(on) {
+  $('restart').disabled = on;
+  $('save').disabled = on;
+  $('restart').innerHTML = on ? '<i class="fa-solid fa-spinner fa-spin"></i>Restarting…'
+                              : '<i class="fa-solid fa-power-off"></i>Save and restart';
+}
 
 function status(text, cls = '') { $('status').textContent = text; $('status').className = 'status ' + cls; }
 
