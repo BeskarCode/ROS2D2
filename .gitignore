@@ -10,3 +10,5 @@ docker/bench-out/
 # Write-ups, posts, plans and specs stay local (docs/ is its own local git repo)
 docs/
 .superpowers/
+# Firmware secrets (WiFi passwords): each sketch has a config.example.h to copy
+firmware/**/config.h
