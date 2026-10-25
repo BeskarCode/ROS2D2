@@ -194,7 +194,7 @@ apt-get install -y build-essential
 # Our fork of Slamtec's repo, pinned to a known commit so a reinstall builds the same driver
 SLLIDAR="${R2_HOME}/r2_ws/src/sllidar_ros2"
 SLLIDAR_REPO="https://github.com/BeskarCode/sllidar_ros2.git"
-SLLIDAR_COMMIT="34300099fadfc772965962dec837bf436706188f"
+SLLIDAR_COMMIT="1eeb93039c56f6e78d760e3550132dde315adc23"   # + Lyrical build fix
 if [[ ! -d "$SLLIDAR/.git" ]]; then
   sudo -u "$R2_USER" git clone "$SLLIDAR_REPO" "$SLLIDAR"
 fi
