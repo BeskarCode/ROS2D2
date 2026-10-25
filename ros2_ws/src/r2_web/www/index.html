@@ -23,7 +23,7 @@
   .pill.warn { background: rgba(210,153,34,.15); color: var(--amber); }
   .pill.bad { background: rgba(248,81,73,.15); color: var(--red); }
   main { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 3fr); gap: 16px; padding: 16px; }
-  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { main { grid-template-columns: 1fr; } }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
              margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line);
@@ -72,6 +72,11 @@
           font-size: 11px; color: var(--muted); z-index: 2; }
   #tune input[type=range] { width: 160px; }
   #tune code { color: var(--text); user-select: all; }
+  /* ?tune=1: only the 3D view, as big as the window */
+  body.tune main { grid-template-columns: 1fr; }
+  body.tune section.card:not(:has(#view3d)) { display: none; }
+  body.tune #tune { font-size: 13px; padding: 12px 14px; }
+  body.tune #tune input[type=range] { width: 260px; }
   #loading { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
              color: var(--muted); font-size: 13px; pointer-events: none; }
   #credit { position: absolute; left: 10px; right: 10px; bottom: 6px; font-size: 10px; color: var(--muted); }
@@ -81,7 +86,7 @@
   details.note summary::-webkit-details-marker { display: none; }
 
   /* Wide screens: everything fits in the window, the picture and the 3D view take what is left */
-  @media (min-width: 861px) {
+  @media (min-width: 701px) {
     body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     main { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); }
     .card { display: flex; flex-direction: column; min-height: 0; }
@@ -90,7 +95,7 @@
     .viewwrap { flex: 1; }
     #view3d { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; max-height: none; }
   }
-  @media (min-width: 861px) and (max-height: 760px) {
+  @media (min-width: 701px) and (max-height: 760px) {
     header { padding: 4px 16px; } header .logo { height: 40px; }
     main { gap: 10px; padding: 10px; }
     .card h2 { padding: 6px 12px; }
@@ -138,6 +143,9 @@
         <label>tilt front/back <input type="range" id="t-pitch" min="-25" max="25" step="0.2"> <span id="v-pitch"></span>°</label>
         <label>tilt left/right <input type="range" id="t-roll" min="-15" max="15" step="0.2"> <span id="v-roll"></span>°</label>
         <label>preview turn <input type="range" id="t-turn" min="-180" max="180" step="1" value="90"> <span id="v-turn"></span>°</label>
+        <label><input type="checkbox" id="t-plane" checked> show the cut</label>
+        <label><input type="checkbox" id="t-hide"> hide the dome</label>
+        <span><button id="t-undo" title="Ctrl+Z">Undo</button> <button id="t-reset">Reset</button></span>
         <span>values: <code id="t-out"></code></span>
       </div>
     </div>

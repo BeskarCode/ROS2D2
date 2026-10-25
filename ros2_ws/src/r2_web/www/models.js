@@ -88,7 +88,7 @@ function splitDome(scene, spec) {
   const root = new THREE.Group();
   bodyParts.forEach((m) => root.add(m));
   root.add(tilt);
-  return { root, dome };
+  return { root, dome, cut: { centre, normal } };
 }
 
 // Plain float, non-indexed, non-interleaved copy: meshopt stores positions quantized

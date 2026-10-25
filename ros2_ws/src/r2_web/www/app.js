@@ -270,16 +270,29 @@ async function showModel(key) {
   }
   $('loading').style.display = 'none';
 }
-$('model').addEventListener('change', () => { showModel($('model').value); if (params.has('tune')) fillTune(); });
+$('model').addEventListener('change', async () => { await showModel($('model').value); if (params.has('tune')) { fillTune(); decorate(); } });
 
 // ?tune=1: sliders to place the dome cut by eye (on the blue line at the bottom of the dome)
 let tuneTurn = null;
+const CUT = ['split', 'pitch', 'roll'];
+let history = [];          // earlier cut values, for Undo / Ctrl+Z
+let sliderStart = null;    // values when a slider drag began
+
+const cutValues = () => Object.fromEntries(CUT.map((k) => [k, Number($('t-' + k).value)]));
+function setCut(vals) {
+  for (const [k, v] of Object.entries(vals)) { $('t-' + k).value = v; $('v-' + k).textContent = v; }
+  showTune();
+}
 function fillTune() {
   const m = MODELS[$('model').value];
   if (!m.url) return;
-  const vals = { split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 };
-  for (const [k, v] of Object.entries(vals)) { $('t-' + k).value = v; $('v-' + k).textContent = v; }
-  showTune();
+  history = [];
+  setCut({ split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 });
+}
+function undo() {
+  if (!history.length) return;
+  setCut(history.pop());
+  recut();
 }
 function showTune() {
   const v = (k) => Number($('t-' + k).value);
@@ -288,9 +301,16 @@ function showTune() {
   $('v-turn').textContent = tuneTurn;
 }
 if (params.has('tune')) {
+  document.body.classList.add('tune');
   $('tune').style.display = 'flex';
   let timer = null;
-  for (const k of ['split', 'pitch', 'roll']) {
+  for (const k of CUT) {
+    $('t-' + k).addEventListener('pointerdown', () => { sliderStart = cutValues(); });
+    $('t-' + k).addEventListener('keydown', () => { sliderStart ??= cutValues(); });
+    $('t-' + k).addEventListener('change', () => {
+      if (sliderStart) history.push(sliderStart);
+      sliderStart = null;
+    });
     $('t-' + k).addEventListener('input', () => {
       $('v-' + k).textContent = $('t-' + k).value;
       showTune();
@@ -299,7 +319,45 @@ if (params.has('tune')) {
     });
   }
   $('t-turn').addEventListener('input', showTune);
+  $('t-undo').addEventListener('click', undo);
+  $('t-reset').addEventListener('click', () => {
+    history.push(cutValues());
+    const m = MODELS[$('model').value];
+    setCut({ split: m.domeFrom, pitch: m.pitch || 0, roll: m.roll || 0 });
+    recut();
+  });
+  addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  });
+  $('t-plane').addEventListener('change', () => {
+    const m = current && current.root.getObjectByName('cutMarker');
+    if (m) m.visible = $('t-plane').checked;
+  });
+  $('t-hide').addEventListener('change', () => { if (current) current.dome.visible = !$('t-hide').checked; });
 }
+// The cut drawn on the model: a see-through magenta disc on the plane, with a bright rim
+function cutMarker(cut) {
+  const g = new THREE.Group();
+  g.position.copy(cut.centre);
+  g.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), cut.normal);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.7, 64),
+    new THREE.MeshBasicMaterial({ color: 0xff2bd6, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.02, 8, 128),
+    new THREE.MeshBasicMaterial({ color: 0xff2bd6 }));
+  rim.rotation.x = -Math.PI / 2;
+  g.add(disc, rim);
+  g.name = 'cutMarker';
+  return g;
+}
+function decorate() {
+  if (!params.has('tune') || !current || !current.cut) return;
+  const marker = cutMarker(current.cut);
+  marker.visible = $('t-plane').checked;
+  current.root.add(marker);
+  current.dome.visible = !$('t-hide').checked;
+}
+
 async function recut() {
   const key = $('model').value;
   const next = await loadModel(key, {
@@ -308,8 +366,9 @@ async function recut() {
   if (current) scene.remove(current.root);
   current = next;
   scene.add(current.root);
+  decorate();
 }
-showModel(params.get('model') || loadPref('model', 'vladimirov')).then(() => { if (params.has('tune')) fillTune(); });
+showModel(params.get('model') || loadPref('model', 'vladimirov')).then(() => { if (params.has('tune')) { fillTune(); decorate(); } });
 
 const floor = new THREE.Mesh(new THREE.CircleGeometry(3, 64),
   new THREE.MeshStandardMaterial({ color: 0x1b2230, roughness: 1 }));
@@ -327,6 +386,12 @@ controls.target.set(0, 2.2, 0);
 controls.enablePan = false;
 controls.minDistance = 4;
 controls.maxDistance = 16;
+// Calibration: look closely at the head
+if (params.has('tune')) {
+  camera.position.set(2.4, 3.9, 3.6);
+  controls.target.set(0, 2.9, 0);
+  controls.minDistance = 1.5;
+}
 controls.update();
 
 function resize() {
