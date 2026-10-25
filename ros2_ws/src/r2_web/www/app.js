@@ -6,6 +6,9 @@ import { MODELS, loadModel } from './models.js';
 
 const params = new URLSearchParams(location.search);
 const WS_URL = params.get('ws') || `ws://${location.hostname || 'localhost'}:9090`;
+// Pictures come from web_video_server as MJPEG (a plain <img>); rosbridge only carries data
+const VIDEO = (topic) => `http://${location.hostname || 'localhost'}:${params.get('video') || 8081}` +
+  `/stream?topic=${topic}&type=ros_compressed&qos_profile=sensor_data`;
 const MAX_SPEED = 80;          // ShadowMDLite clamps |DM:| to DOME_TRACKER_MAX_SPEED
 const TRACKER = '/dome_tracker';
 
@@ -130,7 +133,8 @@ function setPill(id, text, cls) {
 // One tile per camera, left to right by where it points, numbered like monitors
 function setCameras(list) {
   for (const c of cams) {
-    for (const t of ['faces/image/compressed', 'faces', 'camera_info']) send({ op: 'unsubscribe', topic: `/cameras/${c.name}/${t}` });
+    for (const t of ['faces', 'camera_info']) send({ op: 'unsubscribe', topic: `/cameras/${c.name}/${t}` });
+    c.tile.querySelector('img').src = '';      // closes the MJPEG connection
   }
   cams = list.sort((a, b) => a.yaw - b.yaw).map((c) => ({ ...c, width: null, frames: 0, latest: null }));
   const box = $('cams');
@@ -143,14 +147,16 @@ function setCameras(list) {
     c.tile.innerHTML = '<img alt=""><div class="offline">OFFLINE</div><div class="num"></div><div class="aim"><span>simulated dome</span></div>';
     c.tile.querySelector('.num').textContent = i + 1;
     c.tile.querySelector('img').alt = `camera ${i + 1} with detected faces`;
+    c.tile.querySelector('img').src = VIDEO(`/cameras/${c.name}/faces/image`);
     box.append(c.tile);
     const base = `/cameras/${c.name}`;
-    subscribe(`${base}/faces/image/compressed`, 'sensor_msgs/msg/CompressedImage', (m) => {
-      c.tile.querySelector('img').src = `data:image/${m.format.includes('png') ? 'png' : 'jpeg'};base64,${m.data}`;
+    // One faces message per picture the detector handled: it counts the fps and tells
+    // when a camera stops (unplugged)
+    subscribe(`${base}/faces`, 'vision_msgs/msg/Detection2DArray', (m) => {
       c.frames++;
       c.lastFrame = performance.now();
-    }, 50);
-    subscribe(`${base}/faces`, 'vision_msgs/msg/Detection2DArray', (m) => onFaces(c, m));
+      onFaces(c, m);
+    });
     subscribe(`${base}/camera_info`, 'sensor_msgs/msg/CameraInfo', (m) => { c.width = m.width; }, 2000);
   });
   // Pixelate is remembered in this browser and put back after ROS2D2 restarts

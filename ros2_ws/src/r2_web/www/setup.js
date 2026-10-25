@@ -101,6 +101,7 @@ function renumber() {
 // ---------- render ----------
 function render() {
   const box = $('cams');
+  box.querySelectorAll('img').forEach((i) => { i.src = ''; });   // close the old MJPEG connections
   box.textContent = '';
   for (const r of rows) {
     const el = document.createElement('div');
@@ -130,11 +131,11 @@ function render() {
     if (r.missing) {
       msg.textContent = 'Not plugged in. Plug it back in, or untick "use" and Save to remove it.';
     } else if (r.running) {
-      // The face detector's picture: it keeps the faces pixelated when that is on
-      handlers[`/cameras/${r.name}/faces/image/compressed`] = (m) => {
-        el.querySelector('img').src = `data:image/jpeg;base64,${m.data}`; msg.textContent = '';
-      };
-      send({ op: 'subscribe', topic: `/cameras/${r.name}/faces/image/compressed`, type: 'sensor_msgs/msg/CompressedImage', throttle_rate: 200, queue_length: 1 });
+      // The face detector's picture (pixelated when that is on), as MJPEG from web_video_server
+      const img = el.querySelector('img');
+      img.onload = () => { msg.textContent = ''; };
+      img.src = `http://${location.hostname}:8081/stream?topic=/cameras/${r.name}/faces/image` +
+                '&type=ros_compressed&qos_profile=sensor_data';
       msg.textContent = 'waiting for the picture…';
     } else {
       msg.textContent = r.use ? 'Not running yet: Save and restart to start it.' : 'Not used.';
