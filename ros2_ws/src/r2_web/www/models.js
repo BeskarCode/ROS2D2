@@ -18,9 +18,9 @@ export const MODELS = {
     label: 'R2-D2 · ivan.vladimirov08',
     url: 'models/r2d2-vladimirov.glb',
     // The head leans: cut along the blue line at the bottom of the dome
-    domeFrom: 0.762,
-    pitch: -12.6,
-    roll: 3.4,
+    domeFrom: 0.748,   // placed by eye with ?tune=1
+    pitch: -15.6,
+    roll: 0,
     yaw: 0,
     credit: '"R2-D2" (<a href="https://sketchfab.com/3d-models/r2-d2-0f9760c4e566442ca80e2fcf7e2faa0d" ' +
             'target="_blank" rel="noopener">Sketchfab</a>) by ivan.vladimirov08, ' +
