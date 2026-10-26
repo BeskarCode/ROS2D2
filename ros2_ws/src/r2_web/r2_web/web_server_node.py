@@ -12,6 +12,8 @@ and a small HTTP API for what ROS topics cannot do:
                       whether the lidar is plugged in (/dev/r2-lidar)
   POST /api/sensors   save sensors.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if
                       it is valid; the sensors' poses follow at once (sensor_tf reloads it)
+  GET  /api/nav       nav.yaml in use (the navigator's settings) and any error in it
+  POST /api/nav       save nav.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
 
 http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera and sensor setup
@@ -34,6 +36,8 @@ from rclpy.node import Node
 from r2_camera.config import USER_CONFIG, config_path, load_cameras, usb_cameras
 from r2_camera.source import list_modes
 from r2_sensors.config import USER_CONFIG as SENSORS_USER_CONFIG
+from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
+from r2_web.nav_api import nav_payload, save_nav
 from r2_web.sensors_api import save_sensors, sensors_payload
 
 SERVICE = "r2d2"
@@ -68,6 +72,7 @@ class Handler(SimpleHTTPRequestHandler):
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".js": "text/javascript"}
     default_config = ""
     sensors_default = ""
+    nav_default = ""
 
     def log_message(self, fmt, *args):
         pass
@@ -86,6 +91,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if self.path.split("?")[0] == "/api/nav":
+            return self._json(200, nav_payload(self.nav_default, NAV_USER_CONFIG))
         if self.path.split("?")[0] == "/api/sensors":
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
         if self.path.split("?")[0] != "/api/cameras":
@@ -108,6 +115,12 @@ class Handler(SimpleHTTPRequestHandler):
             threading.Timer(0.5, lambda: subprocess.run(
                 ["sudo", "-n", "systemctl", "restart", SERVICE], check=False)).start()
             return
+        if route == "/api/nav":
+            try:
+                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            return self._json(*save_nav(text, NAV_USER_CONFIG))
         if route == "/api/sensors":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
@@ -142,6 +155,7 @@ class WebServerNode(Node):
 
         Handler.default_config = os.path.join(get_package_share_directory("r2_camera"), "config", "cameras.yaml")
         Handler.sensors_default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
+        Handler.nav_default = os.path.join(get_package_share_directory("r2_nav"), "config", "nav.yaml")
         handler = functools.partial(Handler, directory=root)
         self.httpd = ThreadingHTTPServer(("0.0.0.0", port), handler)
         self.httpd.daemon_threads = True
