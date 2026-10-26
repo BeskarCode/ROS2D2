@@ -22,6 +22,7 @@ nav.yaml (the web console's Navigation page edits it):
 """
 
 import copy
+import json
 import math
 import os
 import re
@@ -108,6 +109,22 @@ def clamp_param(name, value):
         v = min(max(float(value), lo), hi)
         return int(round(v)) if name == "give_up_after" else v
     return value
+
+
+def ramp(current, wanted, max_step):
+    """One step towards `wanted`, no bigger than max_step: no jumps for the feet."""
+    return current + max(-max_step, min(max_step, wanted - current))
+
+
+def state_json(d, goal, heading_odom, filtered, raw):
+    """What /nav/state carries for the web page (one JSON object)."""
+    r = lambda v: None if v is None else round(v, 3)   # noqa: E731
+    return json.dumps({
+        "state": d.state, "why": d.why, "v": round(d.v, 3), "w": round(d.w, 3),
+        "heading": r(heading_odom), "tries": d.tries, "goal": list(goal) if goal else None,
+        "stops": {k: r(v) for k, v in d.stops.items()},
+        "filtered": {k: r(v) for k, v in filtered.items()}, "raw": {k: r(v) for k, v in raw.items()},
+    })
 
 
 # ---------- geometry ----------
