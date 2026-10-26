@@ -1,8 +1,10 @@
 // Setup -> Sensors: place the lidar and the distance sensors on the droid, see what they
 // cover and what they miss, and save sensors.yaml (the TF follows at once on the Pi).
 // Sensors are kept as in sensors.yaml (metres, degrees, ROS axes: + yaw = left).
-import { call } from './rosbridge.js';
+import { MODELS } from './models.js';
+import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
+import { createSensorView3d } from './sensorview3d.js';
 import { R2, TYPES, coverage, defaultName, isLidar, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -27,6 +29,9 @@ export function createSensorsTab({ status }) {
   let object = { ...OBJECT0, ...OBJECTS.chair };
   let errorCb = () => {};
   let visible = false;
+  let scan = null;          // live lidar points in base_link: [[x, y]]
+  let scanHz = 0;
+  let scanAt = 0;
 
   const map = createSensorMap($('smap'), {
     onSelect: (name) => { selected = name; renderList(); redraw(); },
@@ -46,6 +51,7 @@ export function createSensorsTab({ status }) {
     },
     onObject: (x, y) => { Object.assign(object, { x, y }); redraw(); },
   });
+  const view3d = createSensorView3d($('view3d'));
 
   // ---------- load ----------
   async function load() {
@@ -70,15 +76,39 @@ export function createSensorsTab({ status }) {
   // The lidar: plugged in (its device exists), simulated (fake_lidar running) or offline.
   // The Pico sensors wait for the Pico (step 2 of the project).
   async function checkLidar() {
-    const nodes = await call('/rosapi/nodes', 'rosapi/Nodes', {});
+    const nodes = await call('/rosapi/nodes', 'rosapi_msgs/srv/Nodes', {});
     simulated = !!(nodes && nodes.nodes && nodes.nodes.includes('/fake_lidar'));
   }
   function badge(s) {
     if (!isLidar(s)) return ['wait', '<i class="fa-solid fa-hourglass-half"></i> waiting for the Pico'];
-    if (loaded.lidar_device) return ['ok', '<i class="fa-solid fa-plug-circle-check"></i> plugged in'];
-    if (simulated) return ['sim', '<i class="fa-solid fa-flask"></i> simulated'];
+    if (loaded.lidar_device) return ['ok', `<i class="fa-solid fa-plug-circle-check"></i> plugged in${hz()}`];
+    if (simulated) return ['sim', `<i class="fa-solid fa-flask"></i> simulated${hz()}`];
     return ['bad', '<i class="fa-solid fa-plug-circle-xmark"></i> offline'];
   }
+
+  const hz = () => (scan && scanHz ? ` · /scan ${Math.round(scanHz)} Hz` : '');
+
+  // The lidar's points, at most twice a second, in base_link from where the lidar is now
+  subscribe('/scan', 'sensor_msgs/msg/LaserScan', (m) => {
+    const s = sensors.find(isLidar);
+    if (!s || !visible) return;
+    const pts = [];
+    const c = Math.cos(s.yaw_deg * Math.PI / 180), n = Math.sin(s.yaw_deg * Math.PI / 180);
+    for (let i = 0; i < m.ranges.length; i += 2) {
+      const r = m.ranges[i];
+      if (r == null || !Number.isFinite(r) || r < m.range_min || r > m.range_max) continue;
+      const a = m.angle_min + i * m.angle_increment;
+      const lx = r * Math.cos(a), ly = r * Math.sin(a);
+      pts.push([s.x + lx * c - ly * n, s.y + lx * n + ly * c]);
+    }
+    const first = !scan;
+    scan = pts;
+    scanHz = m.scan_time > 0 ? 1 / m.scan_time : 0;   // the lidar's own rate (we only get 2 a second)
+    scanAt = Date.now();
+    if (first) renderList();
+    redraw();
+  }, 500);
+  setInterval(() => { if (scan && Date.now() - scanAt > 3000) { scan = null; renderList(); redraw(); } }, 1000);
 
   // ---------- state ----------
   const taken = (except) => new Set(sensors.filter((t) => t !== except).map((t) => t.name));
@@ -101,7 +131,9 @@ export function createSensorsTab({ status }) {
       const hits = Object.fromEntries(sensors.map((s) => [s.name, s.found === false ? null
         : sees(s, object.x, object.y, object.size, object.heightTop)]));
       const cov = coverage(sensors);
-      map.draw({ sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: null });
+      const state = { sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan };
+      map.draw(state);
+      if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
       readings(hits);
     });
@@ -282,6 +314,32 @@ export function createSensorsTab({ status }) {
   $('s-reset').addEventListener('click', () => { map.reset(); object = { ...object, ...OBJECT0 }; redraw(); });
   $('s-gaps').addEventListener('change', redraw);
   $('s-far').addEventListener('change', redraw);
+  // Top / 3D / Both, maximize, and the model (the console's choice by default)
+  const setView = (v) => {
+    $('views').className = 'views v-' + v;
+    document.querySelectorAll('#s-view button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+    try { localStorage.setItem('r2web.sensorView', v); } catch { /* private window */ }
+    view3d.resize();
+    redraw();
+  };
+  document.querySelectorAll('#s-view button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.v)));
+  const setMax = (on) => {
+    $('viewer').classList.toggle('max', on);
+    $('s-max').innerHTML = on ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-expand"></i>';
+    $('s-max').title = on ? 'close (Esc)' : 'maximize';
+    view3d.resize();
+  };
+  $('s-max').addEventListener('click', () => setMax(!$('viewer').classList.contains('max')));
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') setMax(false); });
+  const modelSel = $('s-model');
+  modelSel.innerHTML = Object.entries(MODELS).map(([k, m]) => `<option value="${k}">${m.label}</option>`).join('');
+  let pref = { model: 'simple', view: 'both' };
+  try { pref = { model: localStorage.getItem('r2web.model') || 'simple', view: localStorage.getItem('r2web.sensorView') || 'both' }; } catch { /* private window */ }
+  modelSel.value = MODELS[pref.model] ? pref.model : 'simple';
+  modelSel.addEventListener('change', () => view3d.setModel(modelSel.value).catch((e) => status(`Could not load the model: ${e}`, 'bad')));
+  view3d.setModel(modelSel.value).catch(() => {});
+  setView(['top', '3d', 'both'].includes(pref.view) ? pref.view : 'both');
+
   const objSel = $('s-object');
   objSel.innerHTML = Object.entries(OBJECTS).map(([k, o]) => `<option value="${k}">${o.label}</option>`).join('');
   objSel.addEventListener('change', () => { object = { ...object, ...OBJECTS[objSel.value] }; redraw(); });
@@ -299,7 +357,7 @@ export function createSensorsTab({ status }) {
 
   return {
     load,
-    show() { visible = true; redraw(); },
+    show() { visible = true; view3d.resize(); redraw(); },
     hide() { visible = false; },
     toYaml,
     fileText: () => (changed ? toYaml() : loaded.yaml),

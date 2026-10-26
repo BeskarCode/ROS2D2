@@ -76,7 +76,21 @@
   .maphead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
   .maphead .sp { flex: 1; }
   .chk { color: var(--muted); font-size: 12px; display: flex; gap: 4px; align-items: center; }
-  .views { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .views { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .views.v-top, .views.v-3d { grid-template-columns: 1fr; }
+  .views.v-top #view3d, .views.v-3d svg#smap { display: none; }
+  @media (max-width: 1400px) { .views { grid-template-columns: 1fr; } }
+  #view3d { position: relative; aspect-ratio: 1 / 1; max-height: calc(100vh - 290px); width: 100%; background: #0b0f14;
+            border-radius: 8px; overflow: hidden; user-select: none; -webkit-user-select: none; }
+  #view3d canvas { display: block; width: 100%; height: 100%; }
+  #view3d .hint { position: absolute; left: 8px; bottom: 6px; color: var(--muted); font-size: 11px; pointer-events: none; }
+  .seg { display: inline-flex; } .seg button { border-radius: 0; margin-left: -1px; }
+  .seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .seg button.on { background: var(--blue); border-color: var(--blue); }
+  .viewer.max { position: fixed; inset: 10px; z-index: 50; overflow: auto; box-shadow: 0 0 0 100vmax rgba(0,0,0,.6); }
+  .viewer.max svg#smap, .viewer.max #view3d { max-height: none; height: calc(100vh - 260px); aspect-ratio: auto; }
+  .viewer.max .views { grid-template-columns: 1fr 1fr; }
+  .viewer.max .views.v-top, .viewer.max .views.v-3d { grid-template-columns: 1fr; }
   svg#smap { width: 100%; max-height: calc(100vh - 290px); height: auto; aspect-ratio: 1 / 1; display: block; margin: 0 auto;
              background: #0b0f14; border-radius: 8px;
              touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -154,6 +168,7 @@
     <div class="slayout">
       <div class="viewer" id="viewer">
         <div class="maphead">
+          <span class="seg" id="s-view"><button data-v="top">Top</button><button data-v="3d">3D</button><button data-v="both">Both</button></span>
           <button id="s-zin" title="zoom in"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
           <button id="s-zout" title="zoom out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
           <button id="s-reset" title="zoom and test object back"><i class="fa-solid fa-rotate-left"></i>Reset</button>
@@ -161,8 +176,10 @@
           <label class="chk"><input type="checkbox" id="s-far"> full range</label>
           <span class="sp"></span>
           <label class="chk">test object <select id="s-object"></select></label>
+          <label class="chk"><i class="fa-solid fa-robot"></i><select id="s-model" aria-label="3D model"></select></label>
+          <button id="s-max" title="maximize"><i class="fa-solid fa-expand"></i></button>
         </div>
-        <div class="views" id="views"><svg id="smap" viewBox="-1.6 -1.6 3.2 3.2" aria-label="what the sensors see, from above"></svg></div>
+        <div class="views" id="views"><svg id="smap" viewBox="-1.6 -1.6 3.2 3.2" aria-label="what the sensors see, from above"></svg><div id="view3d"><div class="hint">drag to orbit · wheel to zoom · right-drag to pan</div></div></div>
         <div class="slegend">
           <span><i class="sw" style="background:#39c5cf"></i>Lidar (Pi, USB)</span>
           <span><i class="sw" style="background:#a371f7"></i>VL53L0X ToF (Pico)</span>
