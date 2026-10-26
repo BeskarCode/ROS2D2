@@ -8,7 +8,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from './vendor/libs/meshopt_decoder.module.js';
-import { buildR2 } from './r2model.js';
+import { buildR2Simple } from './r2simple.js';
+import { R2 } from './sensormath.js';
 
 const HEIGHT = 3.8;
 
@@ -28,11 +29,24 @@ export const MODELS = {
   },
 };
 
+/** The same model at real size in metres (feet on y = 0, front +Z), for the sensor setup. */
+export async function loadModelMetres(key) {
+  const r2 = await loadModel(key);
+  const k = R2.heightM / HEIGHT;
+  r2.root.scale.multiplyScalar(k);
+  return r2;
+}
+
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 export async function loadModel(key, overrides = {}) {
   const spec = { ...MODELS[key], ...overrides };
-  if (!spec.url) return buildR2();
+  if (!spec.url) {
+    // built in metres: bring it to the same height as the downloaded ones
+    const r2 = buildR2Simple();
+    r2.root.scale.setScalar(HEIGHT / R2.heightM);
+    return r2;
+  }
   const gltf = await loader.loadAsync(spec.url);
   return splitDome(gltf.scene, spec);
 }
