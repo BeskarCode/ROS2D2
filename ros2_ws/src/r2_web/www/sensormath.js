@@ -10,7 +10,7 @@ export const R2 = {
   feet: [
     { x: -0.04, y: 0.30, w: 0.15, l: 0.34 },
     { x: -0.04, y: -0.30, w: 0.15, l: 0.34 },
-    { x: 0.06, y: 0, w: 0.12, l: 0.20 },
+    { x: 0.14, y: 0, w: 0.12, l: 0.20 },     // centre foot, ahead (three-leg stance)
   ],
 };
 
