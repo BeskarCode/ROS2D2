@@ -1,0 +1,67 @@
+# R2 sensors. Edit them in the web console (Setup -> Sensors) or by hand: both edit the
+# same file (~/.config/ros2d2/sensors.yaml once saved from the console).
+# Metres and degrees. x forward, y left, z up from the floor under the body centre
+# (base_link, REP 103). yaw_deg + = left, pitch_deg + = down.
+# This placement is a first guess: move the sensors to where they really are.
+lidar:
+  type: rplidar_c1
+  port: /dev/r2-lidar
+  x: 0.17
+  y: 0.0
+  z: 0.11
+  yaw_deg: 0
+  fov_deg: 200
+tof_front_left:
+  type: vl53l0x
+  x: 0.225
+  y: 0.07
+  z: 0.25
+  yaw_deg: 30
+  stop_distance: 0.3
+  pico: {xshut: 2}
+tof_front:
+  type: vl53l0x
+  x: 0.23
+  y: 0.0
+  z: 0.25
+  stop_distance: 0.3
+  pico: {xshut: 3}
+tof_front_right:
+  type: vl53l0x
+  x: 0.225
+  y: -0.07
+  z: 0.25
+  yaw_deg: -30
+  stop_distance: 0.3
+  pico: {xshut: 4}
+tof_floor:
+  type: vl53l0x
+  x: 0.2
+  y: 0.0
+  z: 0.28
+  pitch_deg: 55
+  pico: {xshut: 5}
+sonar_front_left:
+  type: hcsr04
+  x: 0.215
+  y: 0.11
+  z: 0.3
+  yaw_deg: 15
+  stop_distance: 0.35
+  pico: {trig: 10, echo: 11}
+sonar_front_right:
+  type: hcsr04
+  x: 0.215
+  y: -0.11
+  z: 0.3
+  yaw_deg: -15
+  stop_distance: 0.35
+  pico: {trig: 12, echo: 13}
+sonar_rear:
+  type: hcsr04
+  x: -0.23
+  y: 0.0
+  z: 0.3
+  yaw_deg: 180
+  stop_distance: 0.25
+  pico: {trig: 14, echo: 15}
