@@ -8,9 +8,13 @@ and a small HTTP API for what ROS topics cannot do:
                       the cameras in use and the cameras.yaml text in use
   POST /api/cameras   save cameras.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."});
                       it then wins over the package's file. The file stays hand-editable.
+  GET  /api/sensors   sensors.yaml in use: its text, the sensors, any error in it, and
+                      whether the lidar is plugged in (/dev/r2-lidar)
+  POST /api/sensors   save sensors.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if
+                      it is valid; the sensors' poses follow at once (sensor_tf reloads it)
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
 
-http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera setup
+http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera and sensor setup
 """
 
 import functools
@@ -29,6 +33,8 @@ from rclpy.node import Node
 
 from r2_camera.config import USER_CONFIG, config_path, load_cameras, usb_cameras
 from r2_camera.source import list_modes
+from r2_sensors.config import USER_CONFIG as SENSORS_USER_CONFIG
+from r2_web.sensors_api import save_sensors, sensors_payload
 
 SERVICE = "r2d2"
 
@@ -61,6 +67,7 @@ def detected_cameras():
 class Handler(SimpleHTTPRequestHandler):
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".js": "text/javascript"}
     default_config = ""
+    sensors_default = ""
 
     def log_message(self, fmt, *args):
         pass
@@ -79,6 +86,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if self.path.split("?")[0] == "/api/sensors":
+            return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
         if self.path.split("?")[0] != "/api/cameras":
             return super().do_GET()
         path = config_path(self.default_config)
@@ -99,6 +108,12 @@ class Handler(SimpleHTTPRequestHandler):
             threading.Timer(0.5, lambda: subprocess.run(
                 ["sudo", "-n", "systemctl", "restart", SERVICE], check=False)).start()
             return
+        if route == "/api/sensors":
+            try:
+                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            return self._json(*save_sensors(text, SENSORS_USER_CONFIG))
         if route != "/api/cameras":
             return self._json(404, {"error": "not found"})
         try:
@@ -126,6 +141,7 @@ class WebServerNode(Node):
         root = self.get_parameter("root").value
 
         Handler.default_config = os.path.join(get_package_share_directory("r2_camera"), "config", "cameras.yaml")
+        Handler.sensors_default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
         handler = functools.partial(Handler, directory=root)
         self.httpd = ThreadingHTTPServer(("0.0.0.0", port), handler)
         self.httpd.daemon_threads = True
