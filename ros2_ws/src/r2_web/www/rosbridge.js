@@ -10,7 +10,7 @@ const subs = {};           // topic -> subscribe message, to send again on recon
 
 export function connect(onOpen) {
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => { Object.values(subs).forEach(send); onOpen(); };
+  ws.onopen = () => { advertised.clear(); Object.values(subs).forEach(send); onOpen(); };
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data);
     if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic](m.msg);
@@ -40,4 +40,10 @@ export function subscribe(topic, type, cb, throttleMs = 0) {
   handlers[topic] = cb;
   subs[topic] = { op: 'subscribe', topic, type, throttle_rate: throttleMs, queue_length: 1 };
   send(subs[topic]);
+}
+
+const advertised = new Set();
+export function publish(topic, type, msg) {
+  if (!advertised.has(topic)) { send({ op: 'advertise', topic, type }); advertised.add(topic); }
+  send({ op: 'publish', topic, msg });
 }
