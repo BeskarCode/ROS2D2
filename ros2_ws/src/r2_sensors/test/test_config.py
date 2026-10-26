@@ -51,10 +51,23 @@ def test_no_sensors():
     ("l1:\n  type: rplidar_c1\n  port: /dev/a\n  x: 0\n  y: 0\n  z: 0\n"
      "l2:\n  type: rplidar_c1\n  port: /dev/b\n  x: 0\n  y: 0\n  z: 0\n", "one lidar"),
     ("- a\n- b\n", "sensors"),
+    ("t:\n  type: [vl53l0x]\n  x: 0\n  y: 0\n  z: 0\n", "t: type"),
+    ("[a]: 1\n", "name"),
+    ("t:\n  type: vl53l0x\n  ? [x]\n  : 1\n", "plain text"),
+    ("l:\n  type: rplidar_c1\n  port: \"<img src=x onerror=alert(1)>\"\n  x: 0\n  y: 0\n  z: 0\n", "l: port"),
 ])
+
 def test_bad_files_say_what_is_wrong(text, needle):
     with pytest.raises(SensorConfigError, match=re.escape(needle)):
         parse_sensors(text)
+
+
+def test_reloader_survives_any_broken_file(tmp_path):
+    from r2_sensors.config import Reloader
+    p = tmp_path / "sensors.yaml"
+    p.write_text("t:\n  type: [vl53l0x]\n  x: 0\n  y: 0\n  z: 0\n", encoding="utf-8")
+    r = Reloader(lambda: str(p))
+    assert r.poll() is None and r.error
 
 
 def test_yaw_left_is_positive():

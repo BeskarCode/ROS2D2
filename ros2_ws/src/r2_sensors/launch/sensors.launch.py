@@ -20,7 +20,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-from r2_sensors.config import SensorConfigError, config_path, lidar_name, load_sensors
+from r2_sensors.config import config_path, lidar_name, load_sensors
 
 
 def lidar_nodes(context):
@@ -29,7 +29,7 @@ def lidar_nodes(context):
     params = [{"config": config}]
     try:
         sensors = load_sensors(config_path(config))
-    except (OSError, SensorConfigError) as e:
+    except Exception as e:     # a broken file must not stop the whole droid launch  # noqa: BLE001
         print(f"[sensors.launch] sensors.yaml: {e}")
         sensors = {}
     name = lidar_name(sensors)

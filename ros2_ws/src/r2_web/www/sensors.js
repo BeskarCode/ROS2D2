@@ -203,13 +203,14 @@ export function createSensorsTab({ status }) {
           ${slider(s, 'range_max', '<i class="fa-solid fa-ruler"></i>range', T.range[0], T.range[1], 0.05, FMT.range_max)}
           ${slider(s, 'z', '<i class="fa-solid fa-arrows-up-down"></i>height', 0.03, 1.0, 0.005, FMT.z)}
           ${isLidar(s) ? '' : slider(s, 'stop_distance', '<i class="fa-solid fa-hand"></i>stop when closer', 0, Math.min(0.8, s.range_max - 0.01), 0.01, FMT.stop_distance)}
-          ${isLidar(s) ? `<div class="row"><label><i class="fa-brands fa-usb"></i>port</label><span class="sub">${s.port}</span></div>`
+          ${isLidar(s) ? `<div class="row"><label><i class="fa-brands fa-usb"></i>port</label><span class="sub port"></span></div>`
             : `<div class="row"><label><i class="fa-solid fa-microchip"></i>on the Pico</label><div class="pins">${PINS[s.type].map((p) => pinSelect(s, p, used)).join('')}</div></div>`}
           <div class="row"><label><i class="fa-solid fa-location-dot"></i>position</label>
             <span class="sub pos">${posText(s)}</span></div>
           <div class="row"><span></span><button class="remove"><i class="fa-solid fa-trash"></i>Remove</button></div>
         </div>`;
       el.querySelector('.sub').textContent = s.name;
+      if (el.querySelector('.port')) el.querySelector('.port').textContent = s.port;
       const name = el.querySelector('.name');
       name.value = s.name;
       name.addEventListener('change', () => {

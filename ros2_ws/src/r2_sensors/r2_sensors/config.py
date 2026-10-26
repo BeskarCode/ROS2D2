@@ -43,6 +43,7 @@ TYPES = {
 LIDARS = ("rplidar_c1",)
 PICO_PINS = {"vl53l0x": ("xshut",), "hcsr04": ("trig", "echo")}
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
+PORT = re.compile(r"^/dev/[A-Za-z0-9_./-]+$")
 GPIO = range(0, 29)
 
 
@@ -63,6 +64,8 @@ def _mapping(loader, node, deep=False):
     keys = set()
     for key_node, _ in node.value:
         key = loader.construct_object(key_node, deep=deep)
+        if not isinstance(key, (str, int, float, bool)) and key is not None:
+            raise SensorConfigError(f"line {key_node.start_mark.line + 1}: a name must be plain text")
         if key in keys:
             raise SensorConfigError(f"{key}: duplicated")
         keys.add(key)
@@ -85,7 +88,7 @@ def _sensor(name, raw):
     if not isinstance(raw, dict):
         raise SensorConfigError(f"{name}: settings must be a block of key: value")
     kind = raw.get("type")
-    if kind not in TYPES:
+    if not isinstance(kind, str) or kind not in TYPES:
         raise SensorConfigError(f"{name}: type must be one of {', '.join(TYPES)}")
     s = {**TYPES[kind], "yaw_deg": 0.0, "pitch_deg": 0.0, "stop_distance": 0.0, **raw}
     for key in ("x", "y", "z", "yaw_deg", "pitch_deg", "fov_deg", "range_min", "range_max", "stop_distance"):
@@ -99,8 +102,8 @@ def _sensor(name, raw):
     if not 0 <= s["stop_distance"] < s["range_max"]:
         raise SensorConfigError(f"{name}: stop_distance must be 0 (never) or less than range_max")
     if kind in LIDARS:
-        if not isinstance(s.get("port"), str) or not s["port"]:
-            raise SensorConfigError(f"{name}: port is missing")
+        if not isinstance(s.get("port"), str) or not PORT.match(s["port"]):
+            raise SensorConfigError(f"{name}: port must be a device path like /dev/r2-lidar")
     else:
         pico = s.get("pico")
         want = PICO_PINS[kind]
@@ -165,7 +168,7 @@ class Reloader:
         self._seen = stamp
         try:
             self.sensors = load_sensors(path)
-        except (OSError, SensorConfigError) as e:
+        except Exception as e:     # a hand-edited file must never stop the node  # noqa: BLE001
             self.error = str(e)
             return None
         self.error = None
