@@ -173,6 +173,21 @@ def test_gives_up_and_stays():
     assert run(nav, 2, t0=t + 20)[-1].state == "going"
 
 
+def test_blocks_while_making_progress_do_not_give_up():
+    # skirting a table: briefly blocked again and again, but getting closer each time
+    nav = Navigator(cfg(give_up_after=2), SENSORS)
+    nav.set_goal(4.0, 0.0)
+    t, x = 0.0, 0.0
+    states = []
+    for _ in range(5):
+        states += [d.state for d in run(nav, 2, pose=(x, 0, 0), ranges=clear_ranges(tof_front=0.2), t0=t)]
+        t += 0.2
+        states += [d.state for d in run(nav, 10, pose=(x, 0, 0), t0=t)]
+        t += 1.0
+        x += 0.6                                                    # 0.6 m closer before the next block
+    assert "gave up" not in states
+
+
 def test_watchdog_counts_a_try():
     nav = Navigator(cfg(), SENSORS)
     nav.set_goal(2.0, 0.0)

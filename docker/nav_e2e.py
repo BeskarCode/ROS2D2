@@ -17,11 +17,12 @@ from std_msgs.msg import Bool, String
 
 rclpy.init()
 n = rclpy.create_node("nav_e2e")
-seen = {"tx": [], "log": [], "auto": False, "state": {}, "pose": None, "world": None}
+seen = {"tx": [], "log": [], "connected": False, "auto": False, "state": {}, "pose": None, "world": None}
 latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 n.create_subscription(String, "/mega/tx", lambda m: seen["tx"].append(m.data), 100)
 n.create_subscription(String, "/mega/log", lambda m: seen["log"].append(m.data), 100)
 n.create_subscription(Bool, "/r2/auto_mode", lambda m: seen.update(auto=m.data), latched)
+n.create_subscription(Bool, "/mega/connected", lambda m: seen.update(connected=m.data), latched)
 n.create_subscription(String, "/nav/state", lambda m: seen.update(state=json.loads(m.data)), 10)
 n.create_subscription(Odometry, "/odom", lambda m: seen.update(pose=(m.pose.pose.position.x, m.pose.pose.position.y)), 10)
 n.create_subscription(String, "/sim/world", lambda m: seen.update(world=m.data), latched)
@@ -53,8 +54,10 @@ def send_goal(x, y):
 
 
 step("simulation running", wait(lambda: seen["world"] and seen["pose"] and seen["state"], 30))
-# the fake Mega answers the bridge's ROS:AUTO:? once it is up (slow on a busy Pi)
-step("fake Mega answering the bridge", wait(lambda: any("AUTO OFF" in t for t in seen["log"]), 60))
+# the bridge says it is connected (latched, so we get it even if it happened before we listened);
+# then a moment for the fake Mega to answer its first questions
+step("bridge connected to the fake Mega", wait(lambda: seen["connected"], 60))
+wait(lambda: False, 2.0)
 cmd.publish(String(data=json.dumps({"op": "reset"})))
 cmd.publish(String(data=json.dumps({"op": "press", "what": "button"})))
 step("autonomous mode on (PS + L2)", wait(lambda: seen["auto"], 10))
