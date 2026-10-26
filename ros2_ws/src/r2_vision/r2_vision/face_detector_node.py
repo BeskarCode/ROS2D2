@@ -92,7 +92,7 @@ class FaceDetectorNode(Node):
         t0 = time.perf_counter()
         frame = image_to_bgr(msg)
         if frame is None or frame.ndim != 3:
-            self.get_logger().warn(f"unsupported encoding {msg.encoding}", throttle_duration_sec=30.0)
+            self.get_logger().warning(f"unsupported encoding {msg.encoding}", throttle_duration_sec=30.0)
             return
         h, w = frame.shape[:2]
         detector, det_w, det_h = self._detector_for(w, h)
