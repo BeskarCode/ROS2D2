@@ -1,6 +1,6 @@
 """A pretend ShadowMD Mega for the test bench, on the other end of a socat pty pair.
 
-    python3 fake_mega.py /tmp/mega-side /tmp/mega_rx.log /tmp/mega-ctl
+    ros2 run r2_sim fake_mega /tmp/mega-side /tmp/mega_rx.log /tmp/mega-ctl
 
 It speaks the autonomous-mode and face-tracking protocol like the firmware (ENABLE_ROS2D2):
   ROS:AUTO:? / ROS:AUTO:0 answer AUTO ON / AUTO OFF <reason>
@@ -27,13 +27,7 @@ import time
 
 import serial
 
-port, log_path, ctl_path = sys.argv[1:4]
-ser = serial.Serial(port, 115200, timeout=0)
-if not os.path.exists(ctl_path):
-    os.mkfifo(ctl_path)
-ctl = os.open(ctl_path, os.O_RDONLY | os.O_NONBLOCK)
-log = open(log_path, "a", buffering=1)
-
+ser = log = None
 auto_on = False
 reason = "boot"
 track_on = False
@@ -128,26 +122,39 @@ def on_control(word):
         auto_on, reason = False, "stick"
 
 
-say("AUTO OFF boot")
-say("TRACK OFF boot")
-buf = b""
-ctl_buf = b""
-while True:
-    ready, _, _ = select.select([ser.fileno(), ctl], [], [], 1.0)
-    if ser.fileno() in ready:
-        buf += ser.read(256)
-        *lines, buf = buf.replace(b"\r", b"\n").split(b"\n")
-        for raw in lines:
-            if raw.strip():
-                on_line(raw.decode("ascii", "replace").strip())
-    if ctl in ready:
-        data = os.read(ctl, 256)
-        if not data:                     # writer closed: reopen so the next echo works
-            os.close(ctl)
-            ctl = os.open(ctl_path, os.O_RDONLY | os.O_NONBLOCK)
-            continue
-        ctl_buf += data
-        *words, ctl_buf = ctl_buf.split(b"\n")
-        for w in words:
-            if w.strip():
-                on_control(w.decode().strip())
+def main(argv=None):
+    """fake_mega <port> <log> <control FIFO>: answers on <port> like the ShadowMD Mega."""
+    global ser, log
+    port, log_path, ctl_path = (argv or sys.argv[1:])[:3]
+    ser = serial.Serial(port, 115200, timeout=0)
+    if not os.path.exists(ctl_path):
+        os.mkfifo(ctl_path)
+    ctl = os.open(ctl_path, os.O_RDONLY | os.O_NONBLOCK)
+    log = open(log_path, "a", buffering=1)
+    say("AUTO OFF boot")
+    say("TRACK OFF boot")
+    buf = b""
+    ctl_buf = b""
+    while True:
+        ready, _, _ = select.select([ser.fileno(), ctl], [], [], 1.0)
+        if ser.fileno() in ready:
+            buf += ser.read(256)
+            *lines, buf = buf.replace(b"\r", b"\n").split(b"\n")
+            for raw in lines:
+                if raw.strip():
+                    on_line(raw.decode("ascii", "replace").strip())
+        if ctl in ready:
+            data = os.read(ctl, 256)
+            if not data:                     # writer closed: reopen so the next echo works
+                os.close(ctl)
+                ctl = os.open(ctl_path, os.O_RDONLY | os.O_NONBLOCK)
+                continue
+            ctl_buf += data
+            *words, ctl_buf = ctl_buf.split(b"\n")
+            for w in words:
+                if w.strip():
+                    on_control(w.decode().strip())
+
+
+if __name__ == "__main__":
+    main()
