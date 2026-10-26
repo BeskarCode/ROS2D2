@@ -24,6 +24,7 @@ export function createSensorsTab({ status }) {
   let sensors = [];        // [{ name, nameEdited, found, ...fields }]
   let loaded = { file: '', saved: false, yaml: '', lidar_device: false };
   let changed = false;
+  let locked = false;       // sensors.yaml is broken: fix it in the File tab first
   let selected = null;
   let simulated = false;
   let object = { ...OBJECT0, ...OBJECTS.chair };
@@ -36,6 +37,7 @@ export function createSensorsTab({ status }) {
   const map = createSensorMap($('smap'), {
     onSelect: (name) => { selected = name; renderList(); redraw(); },
     onMove: (name, x, y) => {
+      if (locked) return name;
       const s = sensors.find((t) => t.name === name);
       Object.assign(s, { x, y });
       const old = s.name;
@@ -60,6 +62,10 @@ export function createSensorsTab({ status }) {
     try { api = await (await fetch('api/sensors', { cache: 'no-store' })).json(); } catch { return; }
     loaded = api;
     changed = false;
+    locked = !!api.error;
+    $('s-add').disabled = locked;
+    $('s-locked').hidden = !locked;
+    if (visible) $('save').disabled = locked;
     sensors = Object.entries(api.sensors).map(([name, s]) => ({ ...s, name, found: null }));
     for (const s of sensors) s.nameEdited = s.name !== defaultName(s, taken(s));
     if (!sensors.some((s) => s.name === selected)) selected = sensors[0] ? sensors[0].name : null;
@@ -253,6 +259,7 @@ export function createSensorsTab({ status }) {
         renderList();
         touched();
       });
+      if (locked) el.querySelectorAll('input, select, button').forEach((c) => { c.disabled = true; });
       box.append(el);
     }
     $('s-addtype').querySelector('[value=rplidar_c1]').disabled = sensors.some(isLidar);
@@ -300,6 +307,7 @@ export function createSensorsTab({ status }) {
   }
 
   async function save(text) {
+    if (text == null && locked) { status('sensors.yaml is broken: fix it in the File tab first.', 'bad'); return false; }
     const body = JSON.stringify({ yaml: text ?? toYaml() });
     let res;
     try { res = await (await fetch('api/sensors', { method: 'POST', body })).json(); } catch { status('Not saved: the Pi does not answer.', 'bad'); return false; }
@@ -359,10 +367,10 @@ export function createSensorsTab({ status }) {
 
   return {
     load,
-    show() { visible = true; view3d.resize(); redraw(); },
-    hide() { visible = false; },
+    show() { visible = true; $('save').disabled = locked; view3d.resize(); redraw(); },
+    hide() { visible = false; $('save').disabled = false; },
     toYaml,
-    fileText: () => (changed ? toYaml() : loaded.yaml),
+    fileText: () => (changed && !locked ? toYaml() : loaded.yaml),
     fileName: () => loaded.file + (loaded.saved ? '' : ' (the package default: saving creates ~/.config/ros2d2/sensors.yaml)'),
     save,
     onError(cb) { errorCb = cb; },

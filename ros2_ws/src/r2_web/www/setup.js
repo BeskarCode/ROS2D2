@@ -12,14 +12,16 @@ let fileText = '';
 let cameraFile = '';
 
 // ---------- load ----------
+// The camera list loads again on every rosbridge reconnect: it only speaks (status line,
+// File text) while the cameras are the section on screen
+const camStatus = (text, cls) => { if (section === 'cameras') status(text, cls); };
 async function load() {
-  status('', '');
-  $('status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> loading…';
+  if (section === 'cameras') $('status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> loading…';
   const api = await (await fetch('api/cameras')).json();
-  if (api.error) return status(api.error, 'bad');
+  if (api.error) return camStatus(api.error, 'bad');
   plugged = api.detected.map((d) => d.path).join('|');
   fileText = api.yaml;
-  $('yaml').value = fileText;
+  if (section === 'cameras') $('yaml').value = fileText;
   cameraFile = api.file + (api.saved ? '' : ' (the package default: saving creates ~/.config/ros2d2/cameras.yaml)');
   if (section === 'cameras') $('filename').textContent = cameraFile;
   const t = await call(`${TRACKER}/get_parameters`, 'rcl_interfaces/srv/GetParameters', { names: ['cameras'] });
@@ -49,7 +51,7 @@ async function load() {
   rows.forEach((r, i) => { r.num = r.num ?? 100 + i; });
   renumber();
   render();
-  status(api.saved ? 'Loaded the saved setup.' : 'Using the package default (auto). Save to keep your own.', api.saved ? '' : 'warn');
+  camStatus(api.saved ? 'Loaded the saved setup.' : 'Using the package default (auto). Save to keep your own.', api.saved ? '' : 'warn');
 }
 
 function makeRow(entry, order, found) {
@@ -275,7 +277,7 @@ function showTab(name) {
     $('yaml').value = sensorsTab.fileText();
     $('filename').textContent = sensorsTab.fileName();
   } else {
-    if (needsRestart || $('status').classList.contains('warn')) $('yaml').value = toYaml();
+    $('yaml').value = needsRestart || $('status').classList.contains('warn') ? toYaml() : fileText;
     $('filename').textContent = cameraFile;
   }
 }
@@ -286,7 +288,7 @@ $('tab-form').addEventListener('click', () => showTab('cameras'));
 $('tab-sensors').addEventListener('click', () => showTab('sensors'));
 $('tab-file').addEventListener('click', () => showTab('file'));
 $('yaml').addEventListener('input', () => dirty(section === 'cameras'));
-sensorsTab.onError(() => showTab('file'));
+sensorsTab.onError(() => { section = 'sensors'; showTab('file'); });
 
 // While ROS2D2 restarts: spinning icon on the button, nothing else to press
 function busy(on) {
