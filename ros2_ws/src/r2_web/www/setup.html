@@ -3,9 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ROS2D2 Camera Setup</title>
+<title>ROS2D2 Setup</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+<script type="importmap">
+  { "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
 <style>
   :root {
     --bg: #0d1117; --panel: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
@@ -65,6 +68,48 @@
   .cam .badge { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: 11px; vertical-align: 1px; }
   .badge.online { background: rgba(63,185,80,.15); color: var(--green); }
   .badge.offline { background: rgba(248,81,73,.15); color: var(--red); }
+
+  /* Sensors */
+  .slayout { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(330px, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .slayout { grid-template-columns: 1fr; } }
+  .viewer { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .maphead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .maphead .sp { flex: 1; }
+  .chk { color: var(--muted); font-size: 12px; display: flex; gap: 4px; align-items: center; }
+  .views { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  svg#smap { width: 100%; max-height: calc(100vh - 290px); height: auto; aspect-ratio: 1 / 1; display: block; margin: 0 auto;
+             background: #0b0f14; border-radius: 8px;
+             touch-action: none; user-select: none; -webkit-user-select: none; }
+  .slegend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .slegend i.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .stat { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .stat .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .l { color: var(--muted); font-size: 11px; }
+  #s-blind { color: var(--muted); font-size: 12px; margin-top: 8px; } #s-blind b { color: var(--red); }
+  #slist { display: grid; gap: 8px; }
+  .sensor { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+  .sensor.sel { border-color: var(--c); box-shadow: 0 0 0 1px var(--c); cursor: default; }
+  .sensor .top { display: flex; align-items: center; gap: 8px; }
+  .sensor .title { font-weight: 600; }
+  .sensor .sub { color: var(--muted); font-size: 11px; }
+  .sensor .reading { font-variant-numeric: tabular-nums; font-size: 12px; }
+  .sensor.hit .reading { color: var(--green); font-weight: 600; }
+  .sensor .badge { margin-left: auto; white-space: nowrap; }
+  .badge.ok { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge.sim { background: rgba(59,130,246,.15); color: var(--blue); }
+  .badge.bad { background: rgba(248,81,73,.15); color: var(--red); }
+  .badge.wait { background: rgba(139,148,158,.15); color: var(--muted); }
+  .sensor .edit { display: none; margin-top: 10px; gap: 6px; }
+  .sensor.sel .edit { display: grid; }
+  .sensor .row label { width: 130px; flex: none; }
+  .sensor .slider input[type=range] { accent-color: var(--c); width: auto; flex: 1; }
+  .sensor .slider b { min-width: 80px; font-size: 12px; }
+  .sensor input.name { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: inherit; }
+  .pins { display: flex; gap: 10px; }
+  .pin { color: var(--muted); font-size: 12px; }
+  .pin.clash select { border-color: var(--red); color: var(--red); }
+  .sadd { display: flex; gap: 6px; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -79,6 +124,7 @@
 <main>
   <div class="tabs">
     <button id="tab-form" class="on"><i class="fa-solid fa-video"></i>Cameras</button>
+    <button id="tab-sensors"><i class="fa-solid fa-satellite-dish"></i>Sensors</button>
     <button id="tab-file"><i class="fa-solid fa-file-code"></i>File</button>
     <button id="identify"><i class="fa-solid fa-hashtag"></i>Identify</button>
   </div>
@@ -100,8 +146,46 @@
     </div>
   </section>
 
+  <section id="sensors" hidden>
+    <p class="help">R2 seen from above, front up, to scale (rings every 50 cm). Drag a sensor on the map to move it;
+      click it in the list to set where it points, how wide it sees and how far. <b>Red dots</b> are places near R2
+      that no sensor covers. Drag the <b>test object</b>: the sensors that would see it light up, with the distance
+      they would read. <b>Save</b> applies at once: ROS moves the sensors' poses and the lidar's cut.</p>
+    <div class="slayout">
+      <div class="viewer" id="viewer">
+        <div class="maphead">
+          <button id="s-zin" title="zoom in"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+          <button id="s-zout" title="zoom out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          <button id="s-reset" title="zoom and test object back"><i class="fa-solid fa-rotate-left"></i>Reset</button>
+          <label class="chk"><input type="checkbox" id="s-gaps" checked> show gaps</label>
+          <label class="chk"><input type="checkbox" id="s-far"> full range</label>
+          <span class="sp"></span>
+          <label class="chk">test object <select id="s-object"></select></label>
+        </div>
+        <div class="views" id="views"><svg id="smap" viewBox="-1.6 -1.6 3.2 3.2" aria-label="what the sensors see, from above"></svg></div>
+        <div class="slegend">
+          <span><i class="sw" style="background:#39c5cf"></i>Lidar (Pi, USB)</span>
+          <span><i class="sw" style="background:#a371f7"></i>VL53L0X ToF (Pico)</span>
+          <span><i class="sw" style="background:#f0b429"></i>HC-SR04 ultrasonic (Pico)</span>
+          <span><i class="sw" style="background:#f85149"></i>Not covered</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="v" id="s-near">–</div><div class="l">covered up to 50 cm from R2</div></div>
+          <div class="stat"><div class="v" id="s-farv">–</div><div class="l">covered up to 1 m from R2</div></div>
+          <div class="stat"><div class="v" id="s-found">–</div><div class="l">sensors working / configured</div></div>
+        </div>
+        <div id="s-blind"></div>
+      </div>
+      <div>
+        <div id="slist"></div>
+        <div class="sadd"><select id="s-addtype"><option value="vl53l0x">VL53L0X</option><option value="hcsr04">HC-SR04</option>
+          <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
+      </div>
+    </div>
+  </section>
+
   <section id="file" hidden>
-    <p class="help">The same settings as text: <code id="filename"></code>. You can also edit this file by hand on the Pi;
+    <p class="help">The settings of the last tab as text: <code id="filename"></code>. You can also edit this file by hand on the Pi;
       both ways edit the same file.</p>
     <textarea id="yaml" spellcheck="false"></textarea>
   </section>
