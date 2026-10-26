@@ -187,6 +187,9 @@ fi
 log "Workspace ~/r2_ws"
 sudo -u "$R2_USER" mkdir -p "${R2_HOME}/r2_ws/src"
 
+log "socat (the navigation simulator joins the real Mega bridge to a fake Mega with a pty pair)"
+apt-get install -y socat
+
 log "Lidar driver: Slamtec sllidar_ros2 (RPLIDAR C1), from source"
 # No binary package supports the C1 (ros-*-rplidar-ros stops at the A3/S1), so it is
 # built with the rest of the workspace: cd ~/r2_ws && colcon build

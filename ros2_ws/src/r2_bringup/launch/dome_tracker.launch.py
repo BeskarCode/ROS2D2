@@ -5,6 +5,10 @@ plus the sensors (their poses from sensors.yaml, and the lidar).
     ros2 launch r2_bringup dome_tracker.launch.py port:=/dev/ttyACM0
     ros2 launch r2_bringup dome_tracker.launch.py mega:=false   # no Mega plugged in
     ros2 launch r2_bringup dome_tracker.launch.py lidar:=sim    # pretend lidar (none plugged in yet)
+    ros2 launch r2_bringup dome_tracker.launch.py sim:=true     # the whole droid simulated: a room,
+                    # pretend sensors and a fake Mega with the real bridge (test navigation safely)
+
+The navigator always runs; it only moves the feet while the autonomous mode is on (PS + L2).
 
 Web console (camera, faces, 3D dome, camera and sensor setup) on http://<pi>:8080/ unless web:=false.
 """
@@ -32,6 +36,8 @@ def generate_launch_description():
         DeclareLaunchArgument("web", default_value="true", description="Start the web console"),
         DeclareLaunchArgument("lidar", default_value="auto", choices=["auto", "sim", "off"],
                               description="auto: the real lidar if plugged in; sim: a pretend one; off"),
+        DeclareLaunchArgument("sim", default_value="false",
+                              description="true: simulated room, sensors and Mega (no real Mega bridge)"),
 
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             share("r2_camera", "launch", "cameras.launch.py"))),
@@ -39,7 +45,12 @@ def generate_launch_description():
             share("r2_vision", "launch", "face_detectors.launch.py"))),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             share("r2_sensors", "launch", "sensors.launch.py")),
-            launch_arguments={"lidar": LaunchConfiguration("lidar")}.items()),
+            # in the simulation the room provides the lidar (/scan_raw)
+            launch_arguments={"lidar": PythonExpression(["'off' if '", LaunchConfiguration("sim"),
+                                                         "'.lower() == 'true' else '", LaunchConfiguration("lidar"), "'"])}.items()),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(share("r2_nav", "launch", "nav.launch.py"))),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(share("r2_sim", "launch", "sim.launch.py")),
+                                 condition=IfCondition(LaunchConfiguration("sim"))),
         Node(
             package="r2_dome_tracker",
             executable="dome_tracker",
@@ -58,7 +69,9 @@ def generate_launch_description():
             name="mega_bridge",
             parameters=[{"port": LaunchConfiguration("port")}],
             output="screen",
-            condition=IfCondition(LaunchConfiguration("mega")),
+            # the simulation brings its own bridge, on the fake Mega's pty
+            condition=IfCondition(PythonExpression(["'", LaunchConfiguration("mega"), "'.lower() == 'true' and '",
+                                                    LaunchConfiguration("sim"), "'.lower() != 'true'"])),
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(share("r2_web", "launch", "web.launch.py")),
