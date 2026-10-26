@@ -48,6 +48,7 @@ export function createSensorsTab({ status }) {
         card.querySelector('.pos').textContent = posText(s);
       }
       touched();
+      return s.name;
     },
     onObject: (x, y) => { Object.assign(object, { x, y }); redraw(); },
   });

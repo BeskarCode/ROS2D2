@@ -105,7 +105,8 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
   svg.addEventListener('pointermove', (ev) => {
     if (!drag) return;
     const p = toRos(ev);
-    if (drag === 'object') onObject(p.x, p.y); else onMove(drag, p.x, p.y);
+    // a sensor named after where it sits may get a new name while it moves: keep following it
+    if (drag === 'object') onObject(p.x, p.y); else drag = onMove(drag, p.x, p.y) || drag;
   });
   const end = () => { drag = null; };
   for (const e of ['pointerup', 'pointercancel', 'lostpointercapture']) svg.addEventListener(e, end);
