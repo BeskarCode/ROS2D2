@@ -120,7 +120,7 @@ class CameraNode(Node):
                 next_t = time.monotonic()
                 cap = self._open()
                 if cap is None:
-                    self.get_logger().warn(
+                    self.get_logger().warning(
                         f"cannot open {self.param('source')}, retrying in {self.param('reconnect_sec')} s",
                         throttle_duration_sec=30.0)
                     time.sleep(self.param("reconnect_sec"))
@@ -136,7 +136,7 @@ class CameraNode(Node):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)    # end of the video: play it again
                 continue
             if not ok:
-                self.get_logger().warn("camera stopped sending pictures, reopening")
+                self.get_logger().warning("camera stopped sending pictures, reopening")
                 cap.release()
                 cap = None
                 time.sleep(self.param("reconnect_sec"))

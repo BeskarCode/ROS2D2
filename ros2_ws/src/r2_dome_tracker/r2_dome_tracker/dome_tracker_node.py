@@ -156,7 +156,7 @@ class DomeTrackerNode(Node):
     def _on_faces(self, cam, msg):
         width = self.width.get(cam)
         if width is None:
-            self.get_logger().warn(f"no camera_info from {cam} yet, waiting for the picture width",
+            self.get_logger().warning(f"no camera_info from {cam} yet, waiting for the picture width",
                                    throttle_duration_sec=10.0)
             return
         t = Time.from_msg(msg.header.stamp).nanoseconds / 1e9   # when the picture was taken

@@ -63,10 +63,10 @@ class ImuNode(Node):
                            self.param("gyro_range_dps"), self.param("rate_hz"), self.param("dlpf"))
             who = chip.who_am_i()
             if who != 0x68:
-                self.get_logger().warn(f"WHO_AM_I is 0x{who:02x}, not 0x68: probably a clone, trying anyway")
+                self.get_logger().warning(f"WHO_AM_I is 0x{who:02x}, not 0x68: probably a clone, trying anyway")
             chip.start()
         except (OSError, ImportError) as e:
-            self.get_logger().warn(f"no MPU6050 on bus {self.param('bus')} at 0x{self.param('address'):02x} "
+            self.get_logger().warning(f"no MPU6050 on bus {self.param('bus')} at 0x{self.param('address'):02x} "
                                    f"({e}); retrying every {self.param('reconnect_sec')} s",
                                    throttle_duration_sec=60.0)
             return False
@@ -114,7 +114,7 @@ class ImuNode(Node):
         tilt = tilt_deg(accel)
         self.pub_tilt.publish(Float32(data=tilt))
         if tilt > self.param("tilt_warn_deg"):
-            self.get_logger().warn(f"tilted {tilt:.0f} degrees", throttle_duration_sec=2.0)
+            self.get_logger().warning(f"tilted {tilt:.0f} degrees", throttle_duration_sec=2.0)
 
         if now - self.last_temp >= 1.0:
             self.last_temp = now

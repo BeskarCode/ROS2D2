@@ -108,7 +108,7 @@ class MegaBridgeNode(Node):
         try:
             ser = serial.Serial(port, self.param("baud"), timeout=0.1)
         except (serial.SerialException, OSError) as e:
-            self.get_logger().warn(f"no Mega on {port} ({e}); retrying every "
+            self.get_logger().warning(f"no Mega on {port} ({e}); retrying every "
                                    f"{self.param('reconnect_sec')} s", throttle_duration_sec=60.0)
             return False
         self.get_logger().info(f"opened {port}; waiting {self.param('open_wait')} s for the Mega to boot")
@@ -191,7 +191,7 @@ class MegaBridgeNode(Node):
                     self._set_auto(False, "unknown")
                     self._write("ROS:AUTO:?\n")
                 if is_error(line):
-                    self.get_logger().warn(f"Mega: {line}")
+                    self.get_logger().warning(f"Mega: {line}")
 
     # --- commands ----------------------------------------------------------------------
 
@@ -240,10 +240,10 @@ class MegaBridgeNode(Node):
     def _on_command(self, msg):
         cmd = msg.data.strip()
         if not command_allowed(cmd, self.param("command_prefixes")):
-            self.get_logger().warn(f"command not allowed: {cmd!r}")
+            self.get_logger().warning(f"command not allowed: {cmd!r}")
             return
         if not self._write(cmd + "\n"):
-            self.get_logger().warn(f"Mega not connected, dropped: {cmd}")
+            self.get_logger().warning(f"Mega not connected, dropped: {cmd}")
 
     def _tick(self):
         fresh = self.dome_t is not None and time.monotonic() - self.dome_t < self.param("cmd_timeout")
