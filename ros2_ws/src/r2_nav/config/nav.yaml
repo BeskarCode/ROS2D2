@@ -1,0 +1,19 @@
+# R2 navigation: how it moves on its own. Edit it in the web console (Navigation page) or by
+# hand (~/.config/ros2d2/nav.yaml once saved from the console wins over this one).
+safety_radius: 0.55     # m from the body centre: the droid keeps everything outside it
+slow_from: 0.80         # m beyond the circle where it starts slowing down
+max_speed: 0.35         # m/s (the Mega bridge caps at 0.4)
+max_turn_deg: 30        # deg/s (the bridge caps at 0.6 rad/s = 34)
+accel: 0.5              # m/s²
+goal_tolerance: 0.25    # m
+sensors_may_stop_earlier: true   # a sensor's own stop_distance (sensors.yaml) wins when larger
+filter: true            # median of 5 + smoothing on the distance sensors
+on_blocked: turn        # turn | reverse | wait
+allow_reverse: true
+give_up_after: 3        # tries; then it stops until it gets a new goal
+sounds:                 # MarcDuino command, or "" for none (examples: match your sound banks)
+  auto_on: "S1:$11"
+  obstacle: "S1:$21"
+  blocked: "S1:$31"
+  give_up: "S1:$41"
+  arrived: "S1:$W"
