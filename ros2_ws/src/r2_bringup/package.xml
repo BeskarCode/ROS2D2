@@ -10,6 +10,7 @@
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>r2_camera</exec_depend>
+  <exec_depend>r2_sensors</exec_depend>
   <exec_depend>r2_vision</exec_depend>
   <exec_depend>r2_dome_tracker</exec_depend>
   <exec_depend>r2_shadow_bridge</exec_depend>

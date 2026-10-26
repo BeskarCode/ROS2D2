@@ -23,6 +23,8 @@ proof of concept, split into ROS 2 nodes.
 | `r2_dome_tracker` | `dome_tracker` | Dome speed from the face position (control law tuned on the droid) |
 | `r2_shadow_bridge` | `mega_bridge`, `foot_calibrate` | The only node that talks to the Mega over USB serial; the feet move only in autonomous mode (PS + L2 on the foot controller), the dome only with face tracking on (PS + L2 on the dome controller); the two are independent |
 | `r2_imu` | `imu_node` | MPU6050 gyro and accelerometer over I2C, plus a Madgwick filter |
+| `r2_sensors` | `sensor_tf`, `fake_lidar`, `scan_crop` | Where the lidar and the distance sensors (VL53L0X, HC-SR04 on a Pico) sit, from `sensors.yaml` (edited in the web console: Setup → Sensors), on `/tf_static`; the lidar's `/scan` cut to what the droid does not hide; a pretend lidar with `lidar:=sim` |
+| `r2_web` | `web_console` | Web console on port 8080: cameras, faces, 3D dome, camera and sensor setup |
 | `r2_bringup` | | Launch files: `ros2 launch r2_bringup dome_tracker.launch.py` |
 
 ## Raspberry Pi setup

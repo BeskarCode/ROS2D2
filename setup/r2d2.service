@@ -3,6 +3,7 @@
 #   sudo systemctl status r2d2        journalctl -u r2d2 -f
 # Launch options (e.g. mega:=false when no Mega is plugged in) go in /etc/default/r2d2:
 #   R2D2_ARGS="mega:=false"
+#   R2D2_ARGS="mega:=false lidar:=sim"     (a pretend lidar until the RPLIDAR C1 is plugged in)
 [Unit]
 Description=ROS2D2 (R2-D2 brain on ROS 2)
 After=network-online.target
