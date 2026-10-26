@@ -4,6 +4,9 @@
     ros2 launch r2_sensors sensors.launch.py lidar:=sim     # pretend lidar (none plugged in yet)
     ros2 launch r2_sensors sensors.launch.py lidar:=off
 
+sensors_config:=/path/sensors.yaml uses another file (not "config": a parent launch's own
+config argument, like the cameras' one, would leak into it).
+
 lidar:=auto starts the RPLIDAR C1 driver (sllidar_ros2) when its port (from sensors.yaml,
 /dev/r2-lidar by default) exists, and nothing otherwise. Either lidar publishes /scan_raw;
 scan_crop turns it into /scan without the angles the droid hides.
@@ -21,7 +24,7 @@ from r2_sensors.config import SensorConfigError, config_path, lidar_name, load_s
 
 
 def lidar_nodes(context):
-    config = LaunchConfiguration("config").perform(context)
+    config = LaunchConfiguration("sensors_config").perform(context)
     mode = LaunchConfiguration("lidar").perform(context)
     params = [{"config": config}]
     try:
@@ -55,11 +58,11 @@ def lidar_nodes(context):
 def generate_launch_description():
     default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
     return LaunchDescription([
-        DeclareLaunchArgument("config", default_value=default,
+        DeclareLaunchArgument("sensors_config", default_value=default,
                               description="sensors.yaml (the one in ~/.config/ros2d2 wins if it exists)"),
         DeclareLaunchArgument("lidar", default_value="auto", choices=["auto", "sim", "off"],
                               description="auto: the real lidar if plugged in; sim: a pretend one; off"),
         Node(package="r2_sensors", executable="sensor_tf", name="sensor_tf",
-             parameters=[{"config": LaunchConfiguration("config")}], output="screen"),
+             parameters=[{"config": LaunchConfiguration("sensors_config")}], output="screen"),
         OpaqueFunction(function=lidar_nodes),
     ])
