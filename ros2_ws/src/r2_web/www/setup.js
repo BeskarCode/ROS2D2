@@ -1,42 +1,15 @@
 // Camera setup: which cameras R2 uses, their number, size, direction and field of view.
 // Saves cameras.yaml on the Pi through the web console's /api/cameras.
+import { call, connect, setParam } from './rosbridge.js';
+import { createSensorsTab } from './sensors.js';
+
 const $ = (id) => document.getElementById(id);
-const WS_URL = `ws://${location.hostname || 'localhost'}:9090`;
 const TRACKER = '/dome_tracker';
 
 let rows = [];           // one per camera: { use, num, name, source, id, title, modes, mode, yaw, hfov, extra, running }
 let running = [];        // camera names the tracker uses right now
 let fileText = '';
-
-// ---------- rosbridge (live preview and live changes) ----------
-let ws = null;
-let callId = 0;
-const pending = {};
-const handlers = {};
-function connect() {
-  ws = new WebSocket(WS_URL);
-  ws.onopen = () => load();
-  ws.onmessage = (ev) => {
-    const m = JSON.parse(ev.data);
-    if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic](m.msg);
-    if (m.op === 'service_response' && pending[m.id]) { pending[m.id](m.result ? m.values : null); delete pending[m.id]; }
-  };
-  ws.onclose = () => setTimeout(connect, 2000);
-}
-const send = (o) => ws && ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(o));
-function call(service, type, args) {
-  return new Promise((resolve) => {
-    const id = 'c' + (++callId);
-    pending[id] = resolve;
-    send({ op: 'call_service', id, service, type, args });
-    setTimeout(() => { if (pending[id]) { delete pending[id]; resolve(null); } }, 3000);
-  });
-}
-function setParam(node, name, value) {
-  const v = typeof value === 'boolean' ? { type: 1, bool_value: value }
-    : Number.isInteger(value) ? { type: 2, integer_value: value } : { type: 3, double_value: value };
-  return call(`${node}/set_parameters`, 'rcl_interfaces/srv/SetParameters', { parameters: [{ name, value: v }] });
-}
+let cameraFile = '';
 
 // ---------- load ----------
 async function load() {
@@ -47,7 +20,8 @@ async function load() {
   plugged = api.detected.map((d) => d.path).join('|');
   fileText = api.yaml;
   $('yaml').value = fileText;
-  $('filename').textContent = api.file + (api.saved ? '' : ' (the package default: saving creates ~/.config/ros2d2/cameras.yaml)');
+  cameraFile = api.file + (api.saved ? '' : ' (the package default: saving creates ~/.config/ros2d2/cameras.yaml)');
+  if (section === 'cameras') $('filename').textContent = cameraFile;
   const t = await call(`${TRACKER}/get_parameters`, 'rcl_interfaces/srv/GetParameters', { names: ['cameras'] });
   running = t && t.values[0] ? t.values[0].string_array_value || [] : [];
   // Pixelate as chosen on the console (remembered in this browser), also after a restart
@@ -250,14 +224,25 @@ function toYaml() {
   return out;
 }
 
+// Which settings the File tab and the Save buttons work on
+let section = 'cameras';
+const sensorsTab = createSensorsTab({ status });
+
 async function save(restart) {
   const fromFile = !$('file').hidden;
-  const text = fromFile ? $('yaml').value : toYaml();
-  const res = await (await fetch('api/cameras', { method: 'POST', body: JSON.stringify({ yaml: text }) })).json();
-  if (res.error) return status(res.error, 'bad');
-  needsRestart = false;
-  $('yaml').value = text;
-  if (!restart) return status(`Saved in ${res.file}.`, 'ok');
+  if (section === 'sensors') {
+    const text = fromFile ? $('yaml').value : null;
+    if (!(await sensorsTab.save(text))) return;
+    if (fromFile) sensorsTab.load();
+  } else {
+    const text = fromFile ? $('yaml').value : toYaml();
+    const res = await (await fetch('api/cameras', { method: 'POST', body: JSON.stringify({ yaml: text }) })).json();
+    if (res.error) return status(res.error, 'bad');
+    needsRestart = false;
+    $('yaml').value = text;
+    if (!restart) return status(`Saved in ${res.file}.`, 'ok');
+  }
+  if (!restart) return;
   busy(true);
   status('Saved. Restarting ROS2D2… the page reloads when it is back.', 'warn');
   await fetch('api/restart', { method: 'POST' });
@@ -274,14 +259,34 @@ function waitForRestart() {
   }, 1000);
 }
 
+// Tabs: Cameras, Sensors, and File (the text of whichever of the two was open last)
+function showTab(name) {
+  if (name !== 'file') section = name;
+  $('form').hidden = name !== 'cameras';
+  $('sensors').hidden = name !== 'sensors';
+  $('file').hidden = name !== 'file';
+  $('tab-form').classList.toggle('on', name === 'cameras');
+  $('tab-sensors').classList.toggle('on', name === 'sensors');
+  $('tab-file').classList.toggle('on', name === 'file');
+  $('identify').hidden = name !== 'cameras';
+  if (name === 'sensors') sensorsTab.show(); else sensorsTab.hide();
+  if (name !== 'file') return;
+  if (section === 'sensors') {
+    $('yaml').value = sensorsTab.fileText();
+    $('filename').textContent = sensorsTab.fileName();
+  } else {
+    if (needsRestart || $('status').classList.contains('warn')) $('yaml').value = toYaml();
+    $('filename').textContent = cameraFile;
+  }
+}
+
 $('save').addEventListener('click', () => save(false));
 $('restart').addEventListener('click', () => save(true));
-$('tab-form').addEventListener('click', () => { $('form').hidden = false; $('file').hidden = true; $('tab-form').classList.add('on'); $('tab-file').classList.remove('on'); });
-$('tab-file').addEventListener('click', () => {
-  if (needsRestart || $('status').classList.contains('warn')) $('yaml').value = toYaml();
-  $('form').hidden = true; $('file').hidden = false; $('tab-file').classList.add('on'); $('tab-form').classList.remove('on');
-});
-$('yaml').addEventListener('input', () => dirty(true));
+$('tab-form').addEventListener('click', () => showTab('cameras'));
+$('tab-sensors').addEventListener('click', () => showTab('sensors'));
+$('tab-file').addEventListener('click', () => showTab('file'));
+$('yaml').addEventListener('input', () => dirty(section === 'cameras'));
+sensorsTab.onError(() => showTab('file'));
 
 // While ROS2D2 restarts: spinning icon on the button, nothing else to press
 function busy(on) {
@@ -310,4 +315,5 @@ setInterval(async () => {
   } catch { /* restarting */ }
 }, 3000);
 
-connect();
+connect(load);
+sensorsTab.load();   // from the web server: works without rosbridge
