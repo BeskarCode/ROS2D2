@@ -11,7 +11,8 @@ import rclpy
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
-from tf2_ros import StaticTransformBroadcaster
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+from tf2_msgs.msg import TFMessage
 
 from r2_sensors.config import Reloader, config_path, transforms
 
@@ -25,7 +26,11 @@ class SensorTf(Node):
         super().__init__("sensor_tf")
         default = self.declare_parameter("config", default_config()).value
         self.reloader = Reloader(lambda: config_path(default))
-        self.broadcaster = StaticTransformBroadcaster(self)
+        # Our own latched /tf_static instead of tf2's StaticTransformBroadcaster, which keeps
+        # every frame it ever sent: a sensor removed or renamed would stay in the message
+        latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                             reliability=ReliabilityPolicy.RELIABLE)
+        self.pub = self.create_publisher(TFMessage, "/tf_static", latched)
         self.last_error = None
         self.poll()
         self.create_timer(1.0, self.poll)
@@ -48,8 +53,7 @@ class SensorTf(Node):
             t.transform.rotation.x, t.transform.rotation.y = qx, qy
             t.transform.rotation.z, t.transform.rotation.w = qz, qw
             msgs.append(t)
-        if msgs:
-            self.broadcaster.sendTransform(msgs)
+        self.pub.publish(TFMessage(transforms=msgs))     # the whole list, even when empty
         self.get_logger().info(f"{len(msgs)} sensors from {self.reloader.path_fn()}")
 
 
