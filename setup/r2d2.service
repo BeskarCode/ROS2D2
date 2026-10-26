@@ -13,6 +13,12 @@ Wants=network-online.target
 [Service]
 User=@USER@
 Environment=R2D2_ARGS=
+# Find ROS nodes on this machine only: multicast discovery over the Pi's wifi loses nodes that
+# start later (a new rosbridge subscription, a terminal). /etc/default/r2d2 can override it.
+Environment=ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+# Cyclone DDS: with Fast DDS on Lyrical, nodes started later (a new rosbridge subscription,
+# a terminal) stopped getting data from the running ones after a minute or two
+Environment=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 EnvironmentFile=-/etc/default/r2d2
 ExecStart=/bin/bash -c 'source /opt/ros/@DISTRO@/setup.bash && source @HOME@/r2_ws/install/setup.bash && source @HOME@/r2-venv/bin/activate && export ROS_DOMAIN_ID=2 && exec ros2 launch r2_bringup dome_tracker.launch.py $R2D2_ARGS'
 Restart=on-failure
