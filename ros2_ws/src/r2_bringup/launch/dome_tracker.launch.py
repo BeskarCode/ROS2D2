@@ -1,10 +1,12 @@
-"""The whole dome tracker demo: cameras -> face detectors -> dome tracker -> Mega bridge.
+"""The whole dome tracker demo: cameras -> face detectors -> dome tracker -> Mega bridge,
+plus the sensors (their poses from sensors.yaml, and the lidar).
 
     ros2 launch r2_bringup dome_tracker.launch.py
     ros2 launch r2_bringup dome_tracker.launch.py port:=/dev/ttyACM0
     ros2 launch r2_bringup dome_tracker.launch.py mega:=false   # no Mega plugged in
+    ros2 launch r2_bringup dome_tracker.launch.py lidar:=sim    # pretend lidar (none plugged in yet)
 
-Web console (camera, faces, 3D dome) on http://<pi>:8080/ unless web:=false.
+Web console (camera, faces, 3D dome, camera and sensor setup) on http://<pi>:8080/ unless web:=false.
 """
 
 import os
@@ -28,11 +30,16 @@ def generate_launch_description():
         DeclareLaunchArgument("port", default_value="/dev/r2-mega", description="Mega serial port"),
         DeclareLaunchArgument("mega", default_value="true", description="Start the Mega bridge"),
         DeclareLaunchArgument("web", default_value="true", description="Start the web console"),
+        DeclareLaunchArgument("lidar", default_value="auto", choices=["auto", "sim", "off"],
+                              description="auto: the real lidar if plugged in; sim: a pretend one; off"),
 
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             share("r2_camera", "launch", "cameras.launch.py"))),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             share("r2_vision", "launch", "face_detectors.launch.py"))),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(
+            share("r2_sensors", "launch", "sensors.launch.py")),
+            launch_arguments={"lidar": LaunchConfiguration("lidar")}.items()),
         Node(
             package="r2_dome_tracker",
             executable="dome_tracker",
