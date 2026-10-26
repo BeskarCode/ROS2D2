@@ -49,6 +49,7 @@ WAIT_MAX = 4.0           # s
 OBSTACLE_QUIET = 3.0     # s between two "obstacle" sounds
 STUCK_AFTER = 12.0       # s without getting 0.15 m closer counts as a try
 FREE_STEPS = 8           # steps with the front clear before heading for the goal again
+PROGRESS_RESETS = 0.5    # m closer to the goal since the last failed try: the count starts again
 
 
 class NavConfigError(ValueError):
@@ -251,6 +252,7 @@ class Navigator:
         self.was_blocked = False
         self.best_d = math.inf
         self.best_t = None
+        self.try_d = math.inf          # distance to the goal at the last failed try
 
     def set_goal(self, x, y):
         self.goal = (x, y)
@@ -329,7 +331,10 @@ class Navigator:
         if stuck:
             self.best_d, self.best_t = gd, now
         if (blocked and not self.was_blocked) or stuck:
-            self.tries += 1
+            # brushing past a table blocks it briefly again and again while it gets closer:
+            # only count tries that come without real progress since the previous one
+            self.tries = 1 if self.try_d - gd >= PROGRESS_RESETS else self.tries + 1
+            self.try_d = gd
             if self.tries > cfg["give_up_after"]:
                 n = cfg["give_up_after"]
                 self.gave_up = f"could not get past after {n} {'tries' if n > 1 else 'try'}: stopped until a new goal"

@@ -18,6 +18,8 @@
   <exec_depend>r2_sensors</exec_depend>
 
   <test_depend>python3-pytest</test_depend>
+  <test_depend>r2_sim</test_depend>
+  <test_depend>r2_shadow_bridge</test_depend>
 
   <export>
     <build_type>ament_python</build_type>

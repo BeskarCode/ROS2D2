@@ -91,3 +91,11 @@ def test_blocked_move():
     assert blocked_move(w, (1.0, 0.0, 0.0))
     assert blocked_move(w, (2.9, 0.0, 0.0))                           # in the wall
     assert not blocked_move(w, (-1.0, 0.0, 0.0))
+
+
+def test_box_corners_are_round():
+    # 0.35 m from a box corner, diagonally: R2's 0.30 m footprint does not touch it
+    w = World.empty()
+    w.apply({"op": "add", "kind": "box", "x": 0.2, "y": 0.0, "w": 0.8, "h": 0.5})
+    assert not blocked_move(w, (0.84, -0.50, 0.0))
+    assert blocked_move(w, (0.75, -0.40, 0.0))

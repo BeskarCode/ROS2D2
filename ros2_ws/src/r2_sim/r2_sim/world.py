@@ -220,6 +220,10 @@ def blocked_move(world, pose):
         if o["kind"] == "post":
             if math.hypot(x - o["x"], y - o["y"]) < o["r"] + FOOTPRINT:
                 return True
-        elif abs(x - o["x"]) < o["w"] / 2 + FOOTPRINT and abs(y - o["y"]) < o["h"] / 2 + FOOTPRINT:
-            return True
+        else:
+            # distance to the box itself (round corners), not to a box grown into a bigger square
+            dx = max(abs(x - o["x"]) - o["w"] / 2, 0.0)
+            dy = max(abs(y - o["y"]) - o["h"] / 2, 0.0)
+            if math.hypot(dx, dy) < FOOTPRINT:
+                return True
     return False
