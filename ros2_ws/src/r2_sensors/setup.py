@@ -22,6 +22,10 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [],
+        "console_scripts": [
+            "sensor_tf = r2_sensors.sensor_tf_node:main",
+            "fake_lidar = r2_sensors.fake_lidar_node:main",
+            "scan_crop = r2_sensors.scan_crop_node:main",
+        ],
     },
 )

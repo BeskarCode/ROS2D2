@@ -142,6 +142,36 @@ def load_sensors(path):
         return parse_sensors(f.read())
 
 
+class Reloader:
+    """Re-reads sensors.yaml when it changes (saved from the web console), so the poses
+    follow without a restart. A broken file keeps the last good sensors."""
+
+    def __init__(self, path_fn):
+        self.path_fn = path_fn      # () -> path in use (the user's file appears on first save)
+        self.sensors = {}
+        self.error = None
+        self._seen = None
+
+    def poll(self):
+        """The new sensors if the file changed and is valid, else None."""
+        path = self.path_fn()
+        try:
+            stamp = (path, os.path.getmtime(path))
+        except OSError as e:
+            self.error = f"{path}: {e.strerror}"
+            return None
+        if stamp == self._seen:
+            return None
+        self._seen = stamp
+        try:
+            self.sensors = load_sensors(path)
+        except (OSError, SensorConfigError) as e:
+            self.error = str(e)
+            return None
+        self.error = None
+        return self.sensors
+
+
 def _quaternion(roll, pitch, yaw):
     cr, sr = math.cos(roll / 2), math.sin(roll / 2)
     cp, sp = math.cos(pitch / 2), math.sin(pitch / 2)
