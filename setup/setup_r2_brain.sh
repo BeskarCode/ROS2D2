@@ -187,6 +187,9 @@ fi
 log "Workspace ~/r2_ws"
 sudo -u "$R2_USER" mkdir -p "${R2_HOME}/r2_ws/src"
 
+log "Cyclone DDS (Fast DDS on Lyrical lost late-joining nodes on the Pi)"
+apt-get install -y "ros-${ROS_DISTRO}-rmw-cyclonedds-cpp"
+
 log "socat (the navigation simulator joins the real Mega bridge to a fake Mega with a pty pair)"
 apt-get install -y socat
 
@@ -210,6 +213,10 @@ if ! grep -q '# >>> r2-brain >>>' "$BASHRC"; then
   cat >> "$BASHRC" <<EOF
 
 # >>> r2-brain >>>
+# all of ROS runs on the Pi (the browser goes through rosbridge): find nodes on this machine only,
+# not by multicast over wifi, which loses nodes started later. Must come before setup.bash.
+export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 source /opt/ros/${ROS_DISTRO}/setup.bash
 [ -f ~/r2_ws/install/setup.bash ] && source ~/r2_ws/install/setup.bash
 export ROS_DOMAIN_ID=${ROS_DOMAIN}
