@@ -81,8 +81,10 @@ resistor("R1", "1k", "PWR_LED", "GND")
 # --- I2C: pull-ups on the short bus, U1 repeater to the long one ----------------------
 resistor("R2", "4.7k", "SDA", "+3V3")
 resistor("R3", "4.7k", "SCL", "+3V3")
+# Port B (static low offset) on the Pico's bus, port A (clean ~0 V low) on the long cables:
+# the datasheet's own "driving a short cable" example (master on B, cable on A)
 add("U1", "PCA9517A", "Package_SO:VSSOP-8_3x3mm_P0.65mm", "C80799",      # PCA9517ADP (MSOP-8)
-    {1: "+3V3", 2: "SCL", 3: "SDA", 4: "GND", 5: "+3V3", 6: "SDA_L", 7: "SCL_L", 8: "+3V3"},
+    {1: "+3V3", 2: "SCL_L", 3: "SDA_L", 4: "GND", 5: "+3V3", 6: "SDA", 7: "SCL", 8: "+3V3"},
     "Logic_LevelTranslator:TCA9517ADGK")
 cap("C5", "100n", "+3V3")
 resistor("R4", "2.2k", "SDA_L", "+3V3")

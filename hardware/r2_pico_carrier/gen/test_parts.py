@@ -120,3 +120,13 @@ def test_schematic_matches_parts(tmp_path):
                 got[(node.get("ref"), node.get("pin"))] = net.get("name").lstrip("/")
     want = {(r, p): n for r, part in PARTS.items() for p, n in part.pads.items() if n}
     assert {k: v for k, v in got.items() if not v.startswith("unconnected-")} == want
+
+
+def test_repeater_sides():
+    """PCA9517A: port B has the static low offset, port A drives a clean ~0 V low (datasheet,
+    'typical application driving a short cable': master on B, cable on A). So the Pico's short
+    bus is on B and the long cables to VL3-VL4 are on A."""
+    u1 = PARTS["U1"].pads
+    assert (u1["2"], u1["3"]) == ("SCL_L", "SDA_L")       # SCLA, SDAA: the long bus
+    assert (u1["7"], u1["6"]) == ("SCL", "SDA")           # SCLB, SDAB: the Pico's bus
+    assert u1["1"] == u1["8"] == u1["5"] == "+3V3"        # VCCA, VCCB, EN
