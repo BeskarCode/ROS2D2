@@ -70,7 +70,7 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    girada, corrígela allí mismo. Los zócalos y tiras pueden verse desplazados en la vista previa
    (su posición es la del pin 1): es normal.
 5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
-6. Los LEDs WS2812B-2020 solo se montan en **Standard** (no Economic).
+6. Los LEDs WS2812B (5050) solo se montan en **Standard** (no Economic).
 
 ### PCBWay (`pcbway/`)
 
