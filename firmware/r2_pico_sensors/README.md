@@ -46,7 +46,27 @@ draws it again). With today's `sensors.yaml`:
 
 ## Build and flash
 
-(See below, filled in with `flash.sh`.)
+Once, on the computer: `arduino-cli` with the Pico core and the VL53L0X library:
+
+```
+arduino-cli config add board_manager.additional_urls https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+arduino-cli core update-index
+arduino-cli core install rp2040:rp2040
+arduino-cli lib install VL53L0X
+```
+
+The first time, the Pico has no firmware: hold BOOTSEL while plugging it into the Pi. It
+shows up as a USB drive labelled `RP2350`; copy `build/r2_pico_sensors.ino.uf2` onto it.
+
+From then on, from Git Bash on the computer:
+
+```
+firmware/r2_pico_sensors/flash.sh        # PI=fernando@<pi address> if it is not 192.168.68.112
+```
+
+It builds, copies the `.uf2` to the Pi, stops the `r2d2` service, restarts the Pico into
+its USB loader (1200 baud on `/dev/r2-pico`), copies the file and starts the service again.
+No BOOTSEL. Host test of the CFG parser: `g++ -std=c++17 -I. test/test_config.cpp && ./a.out`.
 
 ## Protocol (USB serial, one line each, ASCII)
 

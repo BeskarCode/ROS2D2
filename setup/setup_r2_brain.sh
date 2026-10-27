@@ -166,6 +166,11 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="r
 # with lsusb and give it its own rule (/dev/r2-lidar), by serial number if needed.
 SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="r2-mega"
 EOF
+cat > /etc/udev/rules.d/99-r2-pico.rules <<'EOF'
+# The Raspberry Pi Pico 2 with firmware/r2_pico_sensors (distance sensors). Only its serial
+# port matches: in its USB loader (BOOTSEL) it is a drive, not a tty.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2e8a", SYMLINK+="r2-pico"
+EOF
 udevadm control --reload-rules
 udevadm trigger
 
