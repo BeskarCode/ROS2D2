@@ -26,6 +26,9 @@
   nav.modes a:hover { color: var(--text); background: var(--line); }
   nav.modes a.on { color: var(--text); background: var(--line); border-color: #3a4250; }
   .pill i, button i, .card h2 i, label i { margin-right: 6px; }
+  .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; background: var(--line); color: var(--muted); }
+  .pill.ok { background: rgba(63,185,80,.15); color: var(--green); }
+  .pill.bad { background: rgba(248,81,73,.15); color: var(--red); }
   button.icon i, .step button i, .trow button i { margin: 0; }
   main { padding: 16px; max-width: 1600px; margin: 0 auto; }
   .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
@@ -114,6 +117,7 @@
   .badge.sim { background: rgba(59,130,246,.15); color: var(--blue); }
   .badge.bad { background: rgba(248,81,73,.15); color: var(--red); }
   .badge.wait { background: rgba(139,148,158,.15); color: var(--muted); }
+  .badge.off { background: rgba(139,148,158,.08); color: var(--muted); opacity: .8; }
   .sensor .edit { display: none; margin-top: 10px; gap: 6px; }
   .sensor.sel .edit { display: grid; }
   .sensor .row label { width: 130px; flex: none; }
@@ -134,6 +138,7 @@
     <a href="nav.html"><i class="fa-solid fa-route"></i>Navigation</a>
     <a href="setup.html" class="on"><i class="fa-solid fa-gear"></i>Setup</a>
   </nav>
+  <span id="picopill" class="pill"><i class="fa-solid fa-microchip"></i>Pico: …</span>
   <img class="logo" src="astromech-spain-logo.png" alt="Astromech Spain">
 </header>
 <main>

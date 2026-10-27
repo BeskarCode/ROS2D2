@@ -5,6 +5,7 @@ import { MODELS } from './models.js';
 import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
+import { picoPill, sensorBadge } from './picostate.js';
 import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -33,6 +34,11 @@ export function createSensorsTab({ status }) {
   let scan = null;          // live lidar points in base_link: [[x, y]]
   let scanHz = 0;
   let scanAt = 0;
+  let pico = null;          // /pico/state from r2_pico_bridge, and when it came
+  let picoAt = 0;
+  let simWorld = false;     // the navigation simulator publishes the /range topics instead
+  const ranges = {};        // name -> { range (m, Infinity = nothing in range), at }
+  const rangeSubs = new Set();
 
   const map = createSensorMap($('smap'), {
     onSelect: (name) => { selected = name; renderList(); redraw(); },
@@ -75,19 +81,30 @@ export function createSensorsTab({ status }) {
       status(`sensors.yaml: ${api.error}. Fix it in the File tab.`, 'bad');
       errorCb();
     }
+    subscribeRanges();
     await checkLidar();       // through rosbridge: may take a moment, or not answer
     renderList();
     redraw();
   }
 
   // The lidar: plugged in (its device exists), simulated (fake_lidar running) or offline.
-  // The Pico sensors wait for the Pico (step 2 of the project).
+  // The Pico's sensors: from /pico/state and /range/<name> (see picostate.js).
   async function checkLidar() {
     const nodes = await call('/rosapi/nodes', 'rosapi_msgs/srv/Nodes', {});
     simulated = !!(nodes && nodes.nodes && nodes.nodes.includes('/fake_lidar'));
+    simWorld = !!(nodes && nodes.nodes && nodes.nodes.includes('/sim_world'));
+  }
+  const ICONS = { ok: 'fa-ruler-horizontal', sim: 'fa-flask', bad: 'fa-plug-circle-xmark', off: 'fa-circle-minus', wait: 'fa-hourglass-half' };
+  function reading(name, now) {
+    const r = ranges[name];
+    return r ? { range: r.range, ageMs: now - r.at } : null;
   }
   function badge(s) {
-    if (!isLidar(s)) return ['wait', '<i class="fa-solid fa-hourglass-half"></i> waiting for the Pico'];
+    if (!isLidar(s)) {
+      const now = Date.now();
+      const b = sensorBadge(s.name, pico, reading(s.name, now), now - picoAt, simWorld);
+      return [b.cls, `<i class="fa-solid ${ICONS[b.cls]}"></i> ${b.text}`];
+    }
     if (loaded.lidar_device) return ['ok', `<i class="fa-solid fa-plug-circle-check"></i> plugged in${hz()}`];
     if (simulated) return ['sim', `<i class="fa-solid fa-flask"></i> simulated${hz()}`];
     return ['bad', '<i class="fa-solid fa-plug-circle-xmark"></i> offline'];
@@ -138,12 +155,64 @@ export function createSensorsTab({ status }) {
       const hits = Object.fromEntries(sensors.map((s) => [s.name, s.found === false ? null
         : sees(s, object.x, object.y, object.size, object.heightTop)]));
       const cov = coverage(sensors);
-      const state = { sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan };
+      const now = Date.now();
+      const live = Object.fromEntries(sensors.map((s) => {
+        const b = isLidar(s) ? null : badge(s)[0], r = reading(s.name, now);
+        return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
+      }));
+      const state = { sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan, readings: live };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
       readings(hits);
+      badges();
     });
+  }
+
+  // Refresh only the badges (the cards hold inputs: rebuilding them would lose the focus)
+  function badges() {
+    for (const s of sensors) {
+      const el = document.querySelector(`#slist .sensor[data-name="${s.name}"] .badge`);
+      if (!el) continue;
+      const [cls, text] = badge(s);
+      if (el.className !== `badge ${cls}`) el.className = `badge ${cls}`;
+      if (el.innerHTML !== text) el.innerHTML = text;
+    }
+  }
+
+  // Live: the Pico's state and each Pico sensor's /range, drawn at most 4 times a second
+  let liveTimer = null;
+  function live() {
+    if (!visible || liveTimer) return;
+    liveTimer = setTimeout(() => { liveTimer = null; redraw(); }, 250);
+  }
+  subscribe('/pico/state', 'std_msgs/msg/String', (m) => {
+    try { pico = JSON.parse(m.data); picoAt = Date.now(); } catch { return; }
+    live();
+  });
+  // The header's Pico pill (whatever tab is open)
+  function showPico() {
+    const el = $('picopill');
+    if (!el) return;
+    const p = picoPill(pico, Date.now() - picoAt);
+    el.hidden = simWorld;
+    el.className = 'pill ' + p.cls;
+    el.innerHTML = '<i class="fa-solid fa-microchip"></i>';
+    el.append(p.text);
+  }
+  // so a Pico or a reading that went quiet shows it
+  setInterval(() => { showPico(); live(); }, 1000);
+  function subscribeRanges() {
+    for (const s of sensors) {
+      if (isLidar(s) || rangeSubs.has(s.name)) continue;
+      const name = s.name;
+      rangeSubs.add(name);
+      // rosbridge sends inf (nothing in range) as null
+      subscribe(`/range/${name}`, 'sensor_msgs/msg/Range', (m) => {
+        ranges[name] = { range: m.range == null ? Infinity : m.range, at: Date.now() };
+        live();
+      }, 100);
+    }
   }
 
   function stats(cov) {
