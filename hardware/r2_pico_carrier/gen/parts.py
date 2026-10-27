@@ -9,7 +9,8 @@ Connectors keep the module's own pin order, so a straight Dupont cable fits:
 VL1-VL2 sit on the I2C bus itself (cables < 50 cm); VL3-VL4 behind the U1 repeater (> 50 cm).
 
 Every LCSC number was checked on its jlcpcb.com part page (27 Oct 2026); JP1/JP2 and D4 were
-changed to parts JLCPCB had in stock when quoting (the first ones were out of stock). MAKER gives the
+changed to parts JLCPCB had in stock when quoting (the first ones were out of stock), and the
+LEDs to the WS2812B-2020-V6 (same 2020 package; the plain -2020 was out of stock). MAKER gives the
 maker and maker part number of each, for the PCBWay BOM (PCBWay does not use LCSC numbers).
 """
 from dataclasses import dataclass, field
@@ -109,7 +110,7 @@ for n in range(1, 6):
 # --- diagnostic LEDs: one WS2812B-2020 per connector (VL1..VL4, US1..US5) -----------------
 resistor("R6", "33", "LED_DIN_P", "LED_DIN")
 for k in range(1, 10):
-    add(f"LED{k}", "WS2812B-2020", "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm", "C965555",
+    add(f"LED{k}", "WS2812B-2020", "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm", "C52917434",   # -V6
         {1: f"LED_D{k}" if k < 9 else "", 2: "GND", 3: "LED_DIN" if k == 1 else f"LED_D{k - 1}", 4: "VLED"},
         "LED:WS2812B-2020")
     cap(f"C{10 + k}", "100n", "VLED")
@@ -146,7 +147,7 @@ MAKER = {
     "C976305": ("BHFUSE", "BSMD1206-075-30V", "SMD"),
     "C2286": ("Hubei KENTO Elec", "KT-0603R", "SMD"),
     "C80799": ("NXP", "PCA9517ADP,118", "SMD"),
-    "C965555": ("Worldsemi", "WS2812B-2020", "SMD"),
+    "C52917434": ("Worldsemi", "WS2812B-2020-V6", "SMD"),
     "C318884": ("XKB Connection", "TS-1187A-B-A-B", "SMD"),
     "C2905423": ("Shenzhen Kinghelm Elec", "KH-2.54FH-1X20P-H8.5", "THT"),
     "C37208": ("BOOMELE", "2.54-1x6P male header, straight", "THT"),
