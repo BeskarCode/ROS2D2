@@ -45,6 +45,8 @@ PICO_PINS = {"vl53l0x": ("xshut",), "hcsr04": ("trig", "echo")}
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 PORT = re.compile(r"^/dev/[A-Za-z0-9_./-]+$")
 GPIO = range(0, 29)
+# Not for sensors: the VL53L0X's I2C (GP16 SDA, GP17 SCL) and the board's own (GP25 = LED)
+PICO_RESERVED = (16, 17, 23, 24, 25)
 
 
 class SensorConfigError(ValueError):
@@ -112,6 +114,9 @@ def _sensor(name, raw):
         pins = [pico[k] for k in want]
         if any(isinstance(p, bool) or not isinstance(p, int) or p not in GPIO for p in pins):
             raise SensorConfigError(f"{name}: pico pins are GPIO 0 to 28")
+        for p in pins:
+            if p in PICO_RESERVED:
+                raise SensorConfigError(f"{name}: GP{p} is reserved (I2C or the board)")
         if len(set(pins)) != len(pins):
             raise SensorConfigError(f"{name}: pico pins must be different")
     return s
