@@ -5,6 +5,7 @@ plus the sensors (their poses from sensors.yaml, and the lidar).
     ros2 launch r2_bringup dome_tracker.launch.py port:=/dev/ttyACM0
     ros2 launch r2_bringup dome_tracker.launch.py mega:=false   # no Mega plugged in
     ros2 launch r2_bringup dome_tracker.launch.py lidar:=sim    # pretend lidar (none plugged in yet)
+    ros2 launch r2_bringup dome_tracker.launch.py pico:=false   # no Pico for the distance sensors
     ros2 launch r2_bringup dome_tracker.launch.py sim:=true     # the whole droid simulated: a room,
                     # pretend sensors and a fake Mega with the real bridge (test navigation safely)
 
@@ -36,6 +37,8 @@ def generate_launch_description():
         DeclareLaunchArgument("web", default_value="true", description="Start the web console"),
         DeclareLaunchArgument("lidar", default_value="auto", choices=["auto", "sim", "off"],
                               description="auto: the real lidar if plugged in; sim: a pretend one; off"),
+        DeclareLaunchArgument("pico", default_value="true",
+                              description="Start the bridge to the Pico that reads the distance sensors"),
         DeclareLaunchArgument("sim", default_value="false",
                               description="true: simulated room, sensors and Mega (no real Mega bridge)"),
 
@@ -71,6 +74,15 @@ def generate_launch_description():
             output="screen",
             # the simulation brings its own bridge, on the fake Mega's pty
             condition=IfCondition(PythonExpression(["'", LaunchConfiguration("mega"), "'.lower() == 'true' and '",
+                                                    LaunchConfiguration("sim"), "'.lower() != 'true'"])),
+        ),
+        Node(
+            package="r2_pico_bridge",
+            executable="pico_bridge",
+            name="pico_bridge",
+            output="screen",
+            # the simulation publishes its own /range/<name>
+            condition=IfCondition(PythonExpression(["'", LaunchConfiguration("pico"), "'.lower() == 'true' and '",
                                                     LaunchConfiguration("sim"), "'.lower() != 'true'"])),
         ),
         IncludeLaunchDescription(

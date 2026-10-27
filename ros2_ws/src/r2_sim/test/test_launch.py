@@ -8,7 +8,7 @@ launch = pytest.importorskip("launch")
 ament = pytest.importorskip("ament_index_python.packages")
 
 
-def entities(sim, mega="true"):
+def entities(sim, mega="true", pico="true"):
     from launch import LaunchContext
     from launch.actions import IncludeLaunchDescription
     from launch_ros.actions import Node
@@ -18,7 +18,7 @@ def entities(sim, mega="true"):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     ctx = LaunchContext()
-    ctx.launch_configurations.update({"sim": sim, "mega": mega, "lidar": "auto", "web": "false", "port": "/dev/null"})
+    ctx.launch_configurations.update({"sim": sim, "mega": mega, "pico": pico, "lidar": "auto", "web": "false", "port": "/dev/null"})
     out = []
     for e in mod.generate_launch_description().entities:
         if getattr(e, "condition", None) is not None and not e.condition.evaluate(ctx):
@@ -43,3 +43,9 @@ def test_launch_with_sim_has_no_real_bridge():
     ents = entities("true")
     assert any(kind == "include" and str(loc).endswith("sim.launch.py") for kind, loc in ents)
     assert ("node", "mega_bridge") not in ents
+
+
+def test_the_pico_bridge_runs_on_the_real_droid_only():
+    assert ("node", "pico_bridge") in entities("false")
+    assert ("node", "pico_bridge") not in entities("true")      # the simulation has its own /range
+    assert ("node", "pico_bridge") not in entities("false", pico="false")
