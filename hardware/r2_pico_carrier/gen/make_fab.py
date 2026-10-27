@@ -20,6 +20,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 PCB = os.path.join(ROOT, "r2_pico_carrier.kicad_pcb")
 CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\kicad-cli.exe")
+# JLCPCB library models that sit turned against KiCad's: degrees added in their CPL only
+JLC_ROTATION = {"C2905423": 90}
 LAYERS = "F.Cu,B.Cu,F.Mask,B.Mask,F.Silkscreen,B.Silkscreen,F.Paste,B.Paste,Edge.Cuts"
 
 
@@ -83,7 +85,8 @@ def main():
               [[PARTS[refs[0]].value, ",".join(refs), PARTS[refs[0]].footprint.split(":")[1], lcsc]
                for lcsc, refs in g.items()])
     write_csv(os.path.join(ROOT, "jlcpcb", "cpl.csv"), ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"],
-              [[r, f"{x:.3f}mm", f"{y:.3f}mm", "Top", f"{rot:.1f}"] for r, x, y, rot in pos])
+              [[r, f"{x:.3f}mm", f"{y:.3f}mm", "Top", f"{(rot + JLC_ROTATION.get(PARTS[r].lcsc, 0)) % 360:.1f}"]
+               for r, x, y, rot in pos])
     rows = []
     for i, (lcsc, refs) in enumerate(g.items(), 1):
         maker, mpn, kind = MAKER[lcsc]

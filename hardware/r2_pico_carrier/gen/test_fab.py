@@ -64,3 +64,11 @@ def test_placement_is_the_part_centre():
     assert abs(y - (pin1_y - 19 * 2.54 / 2)) < 0.05
     x = float(cpl["VL1"]["Mid X"].rstrip("m"))
     assert abs(x - (55.0 + 5 * 2.54 / 2)) < 0.05     # 6 pins from x = 55 to the right
+
+
+def test_jlcpcb_rotation_offsets():
+    """JLCPCB's model of the 1x20 socket lies along x: the CPL turns it 90 deg to stand along
+    the Pico's rows (seen in their placement viewer, 27 Oct 2026)."""
+    cpl = {r["Designator"]: r for r in rows(os.path.join(ROOT, "jlcpcb", "cpl.csv"))}
+    assert float(cpl["JP1"]["Rotation"]) == float(cpl["JP2"]["Rotation"]) == 90.0
+    assert float(cpl["US1"]["Rotation"]) == 90.0       # headers were right: unchanged
