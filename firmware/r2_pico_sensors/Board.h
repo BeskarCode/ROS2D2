@@ -35,6 +35,8 @@ struct Ui {
   int shown = 0;
   uint32_t lastPress = 0;
   bool pressedOnce = false;
+  bool level = true;          // the button line: high = released (pull-up)
+  uint32_t lastEdge = 0;
 };
 
 inline void uiPress(Ui& ui, uint32_t now) {
@@ -44,6 +46,16 @@ inline void uiPress(Ui& ui, uint32_t now) {
   if (ui.screen == Screen::Off) ui.screen = Screen::Splash;
   else if (ui.screen == Screen::Splash) ui.screen = Screen::Sensor;
   else ui.shown = (ui.shown + 1) % N_CONN;
+}
+
+// The button line as read (high = released). A press counts only when the line falls after
+// being steadily high for DEBOUNCE_MS, so bounces on pressing and on releasing are ignored.
+inline void uiButton(Ui& ui, bool high, uint32_t now) {
+  if (high == ui.level) return;
+  bool steady = now - ui.lastEdge >= DEBOUNCE_MS;
+  ui.level = high;
+  ui.lastEdge = now;
+  if (!high && steady) uiPress(ui, now);
 }
 
 inline void uiTick(Ui& ui, uint32_t now) {

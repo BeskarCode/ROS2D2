@@ -46,6 +46,22 @@ int main() {
   check(ui.screen == Screen::Splash, "wakes to the logo");
   uiPress(ui, 51000);
   check(ui.screen == Screen::Sensor && ui.shown == 1, "then the last connector seen");
+  // The button line itself (high = released): a press bouncing on release is one step
+  Ui b;
+  uiButton(b, false, 1000);                       // press
+  check(b.screen == Screen::Splash, "a clean press wakes it");
+  uiButton(b, true, 1200);                        // release...
+  uiButton(b, false, 1201);                       // ...bouncing
+  uiButton(b, true, 1202);
+  check(b.screen == Screen::Splash, "release bounce is not a second press");
+  uiButton(b, false, 2000);                       // next real press
+  uiButton(b, true, 2005);                        // bouncing on the way down
+  uiButton(b, false, 2010);
+  check(b.screen == Screen::Sensor && b.shown == 0, "press bounce is not a second press either");
+  uiButton(b, true, 2300);
+  uiButton(b, false, 2400);
+  check(b.shown == 1, "the next clean press moves on");
+
   Ui splash;
   uiPress(splash, 100);
   uiTick(splash, 100 + AWAKE_MS + 1);
