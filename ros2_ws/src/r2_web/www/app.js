@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
+import { picoPill } from './picostate.js';
 
 const params = new URLSearchParams(location.search);
 const WS_URL = params.get('ws') || `ws://${location.hostname || 'localhost'}:9090`;
@@ -51,7 +52,19 @@ function readParams() {
 }
 
 let simOn = false;
-function showSim(on) { simOn = on; $('simpill').hidden = !on; }
+function showSim(on) { simOn = on; $('simpill').hidden = !on; showPico(); }
+
+// The Pico that reads the distance sensors (/pico/state from r2_pico_bridge)
+let pico = null, picoAt = 0;
+function showPico() {
+  const p = picoPill(pico, Date.now() - picoAt);
+  const el = $('picopill');
+  el.hidden = simOn;
+  el.className = 'pill ' + p.cls;
+  el.innerHTML = '<i class="fa-solid fa-microchip"></i>';
+  el.append(p.text);
+}
+setInterval(showPico, 1000);
 
 $('rate').addEventListener('change', () => {
   const v = Number($('rate').value);
@@ -91,6 +104,10 @@ function connect() {
     subscribe('/mega/tx', 'std_msgs/msg/String', onTx);
     subscribe('/mega/log', 'std_msgs/msg/String', (m) => { if ($('megarx').checked) addLine(m.data, 'rx'); });
     subscribe('/mega/connected', 'std_msgs/msg/Bool', onConnected);
+    subscribe('/pico/state', 'std_msgs/msg/String', (m) => {
+      try { pico = JSON.parse(m.data); picoAt = Date.now(); } catch { return; }
+      showPico();
+    });
     subscribe('/dome/angle_estimate', 'std_msgs/msg/Float32', (m) => { angleDeg = m.data; });
     send({ op: 'advertise', topic: '/dome/angle_reset', type: 'std_msgs/msg/Empty' });
     readParams();

@@ -42,6 +42,14 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
       o += `<path d="M${fan(s, R)} Z" fill="${T.colour}" fill-opacity="${missing ? 0.04 : on ? 0.28 : 0.13}" ` +
            `stroke="${T.colour}" stroke-width="${sw * (on ? 2 : 1)}"${missing ? ` stroke-dasharray="${sw * 6} ${sw * 6}"` : ''}/>`;
     }
+    // what each sensor measures now: its fan filled up to the reading
+    for (const s of state.sensors) {
+      const r = state.readings && state.readings[s.name];
+      if (r == null || !Number.isFinite(r)) continue;
+      const T = TYPES[s.type];
+      o += `<path d="M${fan(s, Math.min(r, reach(s)))} Z" fill="${T.colour}" fill-opacity="0.4" ` +
+           `stroke="${T.colour}" stroke-width="${sw * 2.5}"/>`;
+    }
     if (state.showGaps && state.cov) {
       for (const [x, y, e] of state.cov.gaps) {
         const [sx, sy] = toMap(x, y);
