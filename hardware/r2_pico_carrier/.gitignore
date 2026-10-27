@@ -1,0 +1,8 @@
+*.rpt
+*-backups/
+_autosave-*
+*.lck
+fp-info-cache
+*.dsn
+*.ses
+renders/*.svg
