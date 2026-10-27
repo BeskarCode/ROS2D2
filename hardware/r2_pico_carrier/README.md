@@ -34,10 +34,19 @@ HC-SR04 aguantan cables largos en cualquier US.
 ## Alimentación
 
 - **Borna +5V / GND**: 5 V de la fuente del droide. Lleva fusible rearmable (750 mA) y diodo
-  contra la polaridad invertida (si conectas los cables al revés no se quema nada, solo no
-  funciona). El LED verde junto a la borna dice que hay 5 V.
+  contra la polaridad invertida. El LED verde junto a la borna dice que hay 5 V.
+- **Conecta la borna con el USB de la Pico desenchufado y comprueba la polaridad.** El diodo
+  solo protege si la placa no tiene otra masa: con el USB puesto, la masa de la Pi también es
+  la de la placa, y unos cables al revés harían un corto por el cable USB que no pasa ni por el
+  fusible ni por el diodo.
 - El **USB** de la Pico va a la Pi 4 para los datos. La Pico funciona con el USB o con la borna;
   los HC-SR04 y los LEDs **solo con la borna**.
+
+## Pinchar la Pico
+
+Con el **USB hacia el borde de arriba** (donde pone USB) y el pin 1 junto al "1". Al revés o
+desplazada una fila **sí se puede estropear**: los 5 V de VSYS caerían en un GPIO o en GND.
+Míralo dos veces antes de dar corriente.
 
 ## Pantalla y LEDs
 
@@ -56,7 +65,9 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    las tiras y zócalos son de agujero pasante).
 3. Sube `jlcpcb/bom.csv` y `jlcpcb/cpl.csv`.
 4. En la vista previa de colocación mira **la orientación** de D1-D3 (raya = cátodo), LED1-LED9,
-   U1 y D4. Si alguna está girada, corrígela allí mismo.
+   U1, D4 y **SW1** (si el pulsador sale girado 90°, queda siempre pulsado). Si alguna está
+   girada, corrígela allí mismo. Los zócalos y tiras pueden verse desplazados en la vista previa
+   (su posición es la del pin 1): es normal.
 5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
 
 ### PCBWay (`pcbway/`)
