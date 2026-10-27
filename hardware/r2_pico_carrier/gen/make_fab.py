@@ -38,13 +38,23 @@ def gerbers(zip_path):
 
 
 def positions():
-    """[(ref, x, y, rotation)] of the assembled parts, from KiCad, in mm (y up, as fabs want)."""
-    tmp = os.path.join(tempfile.mkdtemp(), "pos.csv")
-    cli("pcb", "export", "pos", "--format", "csv", "--units", "mm", "--side", "front",
-        "--use-drill-file-origin", "-o", tmp, PCB)
-    with open(tmp, encoding="utf-8", newline="") as f:
-        out = [(r["Ref"], float(r["PosX"]), float(r["PosY"]), float(r["Rot"])) for r in csv.DictReader(f)]
-    return [p for p in out if p[0] in PARTS and not p[0].startswith("H")]
+    """[(ref, x, y, rotation)] of the assembled parts in mm, from the bottom-left corner, y up.
+    The position is the centre of the part's pads: fabs place by the part's centre, while
+    KiCad anchors a through-hole part on its pin 1."""
+    import pcbnew
+    board = pcbnew.LoadBoard(PCB)
+    origin = board.GetDesignSettings().GetAuxOrigin()       # bottom-left corner (make_pcb.py)
+    ox, oy = pcbnew.ToMM(origin.x), pcbnew.ToMM(origin.y)
+    out = []
+    for fp in board.GetFootprints():
+        ref = fp.GetReference()
+        if ref not in PARTS or ref.startswith("H"):
+            continue
+        xs = [pcbnew.ToMM(p.GetPosition().x) for p in fp.Pads()]
+        ys = [pcbnew.ToMM(p.GetPosition().y) for p in fp.Pads()]
+        x, y = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+        out.append((ref, x - ox, oy - y, fp.GetOrientationDegrees() % 360))
+    return sorted(out)
 
 
 def groups():

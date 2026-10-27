@@ -53,3 +53,14 @@ def test_pcbway_package():
         assert r["Mfg Part #"] and r["Manufacturer"], r
         assert int(r["Qty"]) == len(r["Designator"].split(","))
         assert r["Type"] in ("SMD", "THT")
+
+
+def test_placement_is_the_part_centre():
+    """Fabs place a part by its centre: a 1x20 socket's position is halfway along its pins,
+    not its pin 1 (KiCad's anchor for through-hole parts)."""
+    cpl = {r["Designator"]: r for r in rows(os.path.join(ROOT, "jlcpcb", "cpl.csv"))}
+    y = float(cpl["JP1"]["Mid Y"].rstrip("m"))
+    pin1_y = 90 - (2.0 + 1.37)                     # board coordinates, y up
+    assert abs(y - (pin1_y - 19 * 2.54 / 2)) < 0.05
+    x = float(cpl["VL1"]["Mid X"].rstrip("m"))
+    assert abs(x - (55.0 + 5 * 2.54 / 2)) < 0.05     # 6 pins from x = 55 to the right
