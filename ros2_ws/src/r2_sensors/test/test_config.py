@@ -111,3 +111,14 @@ def test_pins_outside_the_board_keep_their_message():
     text = "tof_x:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {xshut: 29}\n"
     with pytest.raises(SensorConfigError, match="pico pins are GPIO 0 to 28"):
         parse_sensors(text)
+
+
+def test_at_most_twelve_pico_sensors():
+    block = "s{i}:\n  type: hcsr04\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{trig: {t}, echo: {e}}}\n"
+    pins = [p for p in range(29) if p not in (16, 17, 23, 24, 25)]
+    text = "".join(block.format(i=i, t=pins[2 * i], e=pins[2 * i + 1]) for i in range(12))
+    assert len(parse_sensors(text)) == 12
+    tofs = "".join(f"t{i}:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{xshut: {p}}}\n"
+                   for i, p in enumerate(pins[:13]))
+    with pytest.raises(SensorConfigError, match="at most 12 sensors on the Pico"):
+        parse_sensors(tofs)

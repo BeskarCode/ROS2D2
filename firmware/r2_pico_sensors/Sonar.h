@@ -5,12 +5,12 @@
 
 #include <Arduino.h>
 
+#include "Measure.h"
 #include "Readings.h"
 
 namespace sonar {
 
 constexpr uint32_t WINDOW_US = 40000;   // the HC-SR04 holds ECHO up to ~38 ms with no echo
-constexpr int16_t MAX_MM = 3000;
 constexpr int FAILS_TO_LOSE = 3;
 
 int ring[MAX_SENSORS];      // sensor indexes that are HC-SR04s
@@ -19,19 +19,9 @@ int turn = -1;              // place in ring of the one pinging now
 int fails[MAX_SENSORS];
 uint32_t t0 = 0;
 volatile uint8_t echoPin = 0;
-volatile bool rose = false, fell = false;
-volatile uint32_t riseUs = 0, fallUs = 0;
+Echo echo;
 
-void onEcho() {
-  uint32_t t = micros();
-  if (digitalRead(echoPin)) {
-    riseUs = t;
-    rose = true;
-  } else if (rose && !fell) {
-    fallUs = t;
-    fell = true;
-  }
-}
+void onEcho() { echoEdge(echo, digitalRead(echoPin), micros()); }
 
 void stop() {
   if (turn >= 0) detachInterrupt(cfg[ring[turn]].b);
@@ -54,7 +44,7 @@ void begin() {
 void ping(uint32_t now) {
   const SensorCfg& s = cfg[ring[turn]];
   echoPin = s.b;
-  rose = fell = false;
+  echo = Echo();
   attachInterrupt(digitalPinToInterrupt(s.b), onEcho, CHANGE);
   digitalWrite(s.a, HIGH);
   delayMicroseconds(10);
@@ -65,10 +55,10 @@ void ping(uint32_t now) {
 void finish() {
   int i = ring[turn];
   detachInterrupt(digitalPinToInterrupt(cfg[i].b));
-  if (rose) {
+  int16_t mm = sonarResult(echo);
+  if (mm != MEASURE_FAIL) {
     fails[i] = 0;
-    int32_t mm = fell ? (int32_t)(fallUs - riseUs) * 343 / 2000 : -1;
-    report(i, mm > MAX_MM ? -1 : (int16_t)mm);
+    report(i, mm);
   } else if (++fails[i] >= FAILS_TO_LOSE) {
     lost(i);
   }

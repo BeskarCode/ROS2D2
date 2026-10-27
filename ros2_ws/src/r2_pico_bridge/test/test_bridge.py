@@ -183,3 +183,28 @@ def test_a_refused_cfg_is_shown(bench):
     bench.plug()
     bench.pico.cfg_error = "pin 16 reserved"     # before the node reconnects (reconnect_sec 0.2)
     assert bench.spin_until(lambda: bench.state and bench.state.get("config_error") == "pin 16 reserved", 4)
+
+
+def test_a_glitched_negative_reading_is_never_infinity(bench):
+    bench.pico.states = "ONNNNNN"
+    assert bench.spin_until(lambda: sensors(bench).get("tof_front_left") == "ok")
+    bench.node.on_line("R 0:-5")
+    bench.spin_until(lambda: False, 0.3)
+    assert not any(math.isinf(m.range) for m in bench.ranges.get("tof_front_left", []))
+
+
+def test_closer_than_range_min_is_range_min(bench):
+    bench.pico.states = "ONNNNNN"
+    bench.pico.readings = {0: 10}          # something touching the ToF: 1 cm, under its 3 cm minimum
+    assert bench.spin_until(lambda: bench.ranges.get("tof_front_left"))
+    assert bench.ranges["tof_front_left"][-1].range == pytest.approx(0.03)
+
+
+def test_no_pico_sensors_is_still_connected(bench):
+    lidar_only = "lidar:\n  type: rplidar_c1\n  port: /dev/r2-lidar\n  x: 0.17\n  y: 0\n  z: 0.11\n"
+    bench.config.write_text(lidar_only, encoding="utf-8")
+    t = os.path.getmtime(bench.config) + 5
+    os.utime(bench.config, (t, t))
+    assert bench.spin_until(lambda: bench.pico.cfg_lines and bench.pico.cfg_lines[-1] == "CFG", 4)
+    bench.spin_until(lambda: False, 2.0)        # longer than stale_sec
+    assert bench.connected is True and bench.state["connected"] is True
