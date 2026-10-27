@@ -58,7 +58,7 @@ def placement():
         p[f"LED{1 + i}"] = (71.5, y, 0)
         p[f"C{11 + i}"] = (75.0, y, 90)
     p.update({"R2": (57.0, 7.0, 0), "R3": (61.0, 7.0, 0), "C4": (52.5, 6.0, 90),
-              "R6": (52.5, 31.0, 90), "C5": (57.0, 33.0, 90), "U1": (62.0, 33.0, 0),
+              "R6": (52.5, 35.5, 90), "C5": (57.0, 33.0, 90), "U1": (62.0, 33.0, 0),
               "R4": (68.0, 31.5, 0), "R5": (68.0, 34.5, 0),
               "J1": (10.5, 63.0, 0), "F1": (21.5, 59.5, 0), "D1": (28.0, 59.5, 180),
               "C1": (21.5, 64.5, 0), "C2": (25.0, 64.5, 0),
@@ -188,7 +188,7 @@ def silkscreen(board):
 
 def rules(board):
     ds = board.GetDesignSettings()
-    ds.m_TrackMinWidth = mm(0.15)
+    ds.m_TrackMinWidth = mm(0.127)        # 5 mil: standard at JLCPCB and PCBWay
     ds.m_MinClearance = mm(0.15)
     ds.m_ViasMinSize = mm(0.6)
     ds.m_MinThroughDrill = mm(0.3)
@@ -249,8 +249,9 @@ def main():
         fp.Reference().SetTextSize(pcbnew.VECTOR2I(mm(0.8), mm(0.8)))
         fp.Reference().SetTextThickness(mm(0.15))
         fp.SetField("LCSC", part.lcsc)
+        fp.GetField("LCSC").SetVisible(False)        # for the BOM, never on the silkscreen
         # only the parts a person plugs into keep their name on the silkscreen
-        fp.Reference().SetVisible(ref.startswith(("J", "SW", "U")))
+        fp.Reference().SetVisible(ref in ("J2", "SW1", "U1"))
         fp.SetFPIDAsString(part.footprint)
         x, y, rot = place[ref]
         fp.SetPosition(at(x, y))
@@ -263,13 +264,15 @@ def main():
     check(board)
     rect(board, 0, 0, W, H, pcbnew.Edge_Cuts, 0.1)
     silkscreen(board)
-    for layer in (pcbnew.B_Cu, pcbnew.F_Cu):
+    # GND pour on the back only: the router then takes every GND pad down to it with a via
+    # (with a front pour too it took pads as joined through islands that were not)
+    for layer in (pcbnew.B_Cu,):
         z = pcbnew.ZONE(board)
         z.SetLayer(layer)
         z.SetNet(nets["GND"])
         z.SetLocalClearance(mm(0.3))
         z.SetMinThickness(mm(0.25))
-        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_FULL)   # thermal spokes got blocked by back tracks
         o = z.Outline()
         o.NewOutline()
         for x, y in ((0.5, 0.5), (W - 0.5, 0.5), (W - 0.5, H - 0.5), (0.5, H - 0.5)):

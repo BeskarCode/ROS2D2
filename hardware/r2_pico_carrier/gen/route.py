@@ -26,6 +26,11 @@ def main():
     dsn, ses = PCB.replace(".kicad_pcb", ".dsn"), PCB.replace(".kicad_pcb", ".ses")
     if os.path.exists(ses):
         os.remove(ses)
+    # GND is routed like any other net (as a plane, Freerouting left some GND pads without a
+    # way down to it); the pour goes back afterwards and joins everything again
+    zones = list(board.Zones())
+    for z in zones:
+        board.Remove(z)
     if not pcbnew.ExportSpecctraDSN(board, dsn):
         sys.exit("DSN export failed")
     cmd = [JAVA, "-jar", JAR, "-de", dsn, "-do", ses, "-mp", "100", "--gui.enabled=false"]
@@ -36,6 +41,13 @@ def main():
         sys.exit("Freerouting wrote no session")
     if not pcbnew.ImportSpecctraSES(board, ses):
         sys.exit("SES import failed")
+    # Freerouting necks a track down to 0.125 mm entering some pads: back to 0.127 mm (5 mil,
+    # the standard minimum at JLCPCB and PCBWay); the DRC run after this checks the clearances
+    for tr in board.GetTracks():
+        if tr.GetClass() == "PCB_TRACK" and tr.GetWidth() < pcbnew.FromMM(0.127):
+            tr.SetWidth(pcbnew.FromMM(0.127))
+    for z in zones:
+        board.Add(z)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     board.Save(PCB)
     print("routed:", sum(1 for t in board.GetTracks()), "tracks and vias")
