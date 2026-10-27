@@ -7,7 +7,7 @@ Placa base para la **Raspberry Pi Pico 2** que lee los sensores de distancia de 
 ![Arriba](renders/top.png)
 
 - 80 × 90 mm, 2 capas, 4 agujeros M3 en las esquinas.
-- Llega **completa de fábrica, pantalla incluida**: solo falta pinchar la Pico.
+- Llega **montada de fábrica**: solo falta pinchar la Pico y la pantalla.
 - Detrás: el logo redondo de Astromech Spain, **ROS2D2**, **by NandoMadrid**, www.astromechspain.com.
 - Esquema: [`renders/schematic.pdf`](renders/schematic.pdf). Vista 3D: [`renders/3d.png`](renders/3d.png).
 
@@ -21,7 +21,7 @@ hembra-hembra recto va directo, sin cruzar nada. El pin 1 es el de la izquierda 
 | **VL1, VL2** (< 50 cm) | 3V3 · GND · SCL · SDA · — (GPIO1, libre) · XSHUT | VL53L0X (GY-530) con cable corto |
 | **VL3, VL4** (> 50 cm) | igual | VL53L0X con cable largo: van por un repetidor I2C (PCA9517A) |
 | **US1 … US5** | 5V · TRIG · ECHO · GND | HC-SR04. El divisor de ECHO (1 kΩ / 2 kΩ) ya está en la placa |
-| **OLED** (J2) | GND · VCC · SCL · SDA | Pantalla 0,96" HS96L03W2C03 (SSD1315) **soldada en fábrica**, tumbada, pantalla arriba |
+| **OLED** (J2, hembra) | GND · VCC · SCL · SDA | Pantalla 0,96" SSD1306/SSD1315 I2C de 4 pines: se pincha tumbada, pantalla arriba |
 | **+5V / GND** (borna) | 5 V de la fuente del droide | Alimenta los HC-SR04, los LEDs y la Pico |
 | **DISPLAY** | pulsador | Enciende la pantalla y pasa de sensor |
 
@@ -69,23 +69,24 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    U1, D4 y **SW1** (si el pulsador sale girado 90°, queda siempre pulsado). Si alguna está
    girada, corrígela allí mismo. Los zócalos y tiras pueden verse desplazados en la vista previa
    (su posición es la del pin 1): es normal.
-5. Comprueba que las 19 líneas del BOM tienen pieza y stock (la pantalla C5248080 tenía poco
-   stock: 9 unidades; con 3 placas basta). No pagues nada que no cuadre.
-6. La pantalla (J2) va **tumbada sobre su silueta, pantalla arriba**: si la vista previa la pone
-   de pie o girada, pide que la monten así en las notas del pedido.
+5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
+6. Los LEDs WS2812B-2020 solo se montan en **Standard** (no Economic).
 
 ### PCBWay (`pcbway/`)
 
 1. pcbway.com → *PCB Instant Quote* → *Quick-order PCB* → sube `pcbway/gerber.zip`.
 2. Marca **Assembly** (Turnkey), cara Top.
 3. Sube `pcbway/bom.csv` y `pcbway/centroid.csv`. El BOM lleva fabricante y referencia de
-   fabricante (y, de nota, el número LCSC por si lo buscan allí). La línea de la pantalla (J2)
-   lleva la nota de montaje: tumbada, pantalla arriba, sobre su silueta, en una tira de 4 pines.
+   fabricante (y, de nota, el número LCSC por si lo buscan allí).
 4. PCBWay revisa el BOM a mano y te da el precio final por correo; revisa las orientaciones en su
    vista previa igual que arriba.
 
 ## Qué comprar aparte
 
+- Pantalla OLED 0,96" **128×64 SSD1306 (o SSD1315) I2C de 4 pines**, en orden
+  **GND-VCC-SCL-SDA** (algunas traen VCC-GND: compruébalo). Suéldale la tira de 4 pines macho
+  **hacia abajo** (por el lado contrario a la pantalla) y pínchala en J2, tumbada sobre su
+  silueta. Fíjala con **4 separadores M2 de 11 mm** (8,5 mm del zócalo + 2,5 mm de la tira).
 - Cables Dupont hembra-hembra.
 - Tiras de pines macho 1×20 para soldar a tu Pico 2 (hacia abajo), si no las tiene.
 

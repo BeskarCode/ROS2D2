@@ -8,7 +8,8 @@ Connectors keep the module's own pin order, so a straight Dupont cable fits:
   VL1-VL4 (VL53L0X GY-530) VIN GND SCL SDA GPIO1 XSHUT; US1-US5 (HC-SR04) VCC TRIG ECHO GND.
 VL1-VL2 sit on the I2C bus itself (cables < 50 cm); VL3-VL4 behind the U1 repeater (> 50 cm).
 
-Every LCSC number was checked on its jlcpcb.com part page (27 Oct 2026). MAKER gives the
+Every LCSC number was checked on its jlcpcb.com part page (27 Oct 2026); JP1/JP2 and D4 were
+changed to parts JLCPCB had in stock when quoting (the first ones were out of stock). MAKER gives the
 maker and maker part number of each, for the PCBWay BOM (PCBWay does not use LCSC numbers).
 """
 from dataclasses import dataclass, field
@@ -58,9 +59,9 @@ def cap(ref, value, a, b="GND"):
 
 # --- Pico sockets -----------------------------------------------------------------
 SOCKET20 = "Connector_PinSocket_2.54mm:PinSocket_1x20_P2.54mm_Vertical"
-add("JP1", "Pico 2 pins 1-20", SOCKET20, "C50984", {k: PICO_PIN_NET[k] for k in range(1, 21)},
+add("JP1", "Pico 2 pins 1-20", SOCKET20, "C2905423", {k: PICO_PIN_NET[k] for k in range(1, 21)},
     "Connector_Generic:Conn_01x20")
-add("JP2", "Pico 2 pins 40-21", SOCKET20, "C50984", {k: PICO_PIN_NET[41 - k] for k in range(1, 21)},
+add("JP2", "Pico 2 pins 40-21", SOCKET20, "C2905423", {k: PICO_PIN_NET[41 - k] for k in range(1, 21)},
     "Connector_Generic:Conn_01x20")
 
 # --- 5 V input: J1 -> F1 -> D1 -> +5V; +5V -> D2 -> VSYS; +5V -> D3 -> VLED -------------
@@ -75,7 +76,7 @@ cap("C1", "22u", "+5V")
 cap("C2", "100n", "+5V")
 cap("C3", "10u", "VLED")
 cap("C4", "10u", "+3V3")
-add("D4", "green", "LED_SMD:LED_0603_1608Metric", "C72043", {1: "PWR_LED", 2: "+5V"}, "Device:LED")
+add("D4", "red", "LED_SMD:LED_0603_1608Metric", "C2286", {1: "PWR_LED", 2: "+5V"}, "Device:LED")   # 5 V on (~3 mA)
 resistor("R1", "1k", "PWR_LED", "GND")
 
 # --- I2C: pull-ups on the short bus, U1 repeater to the long one ----------------------
@@ -113,11 +114,12 @@ for k in range(1, 10):
         "LED:WS2812B-2020")
     cap(f"C{10 + k}", "100n", "VLED")
 
-# --- display (fitted at the factory) and button ---------------------------------------------
-# HS96L03W2C03: 0.96" 128x64 OLED module (SSD1315, SSD1306-compatible), 27.3 x 27.8 mm, 4 holes
-# GND VCC SCL SDA at 2.54 mm, centred 2 mm from its top edge; soldered flat, screen up, on a
-# 4-pin male header. Its M2 holes are H5-H8.
-add("J2", "OLED HS96L03W2C03", "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical", "C5248080",
+# --- display socket and button -------------------------------------------------------------
+# J2: 4-pin female socket fitted at the factory. The OLED (any 0.96" 128x64 SSD1306/SSD1315 I2C
+# module, 27.3 x 27.8 mm, holes GND VCC SCL SDA 2 mm from its top edge, e.g. HS96L03W2C03) gets a
+# male header soldered pins down and plugs in lying flat, screen up, on ~11 mm M2 standoffs in
+# H5-H8. No OLED module was in stock at JLCPCB when quoting.
+add("J2", "OLED socket", "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical", "C2718488",
     {1: "GND", 2: "+3V3", 3: "SCL", 4: "SDA"}, "Connector_Generic:Conn_01x04")
 add("SW1", "display", "Button_Switch_SMD:SW_Push_1P1T_XKB_TS-1187A", "C318884",
     {1: "BTN", 2: "GND"}, "Switch:SW_Push")
@@ -142,14 +144,14 @@ MAKER = {
     "C45783": ("Samsung", "CL21A226MAQNNNE", "SMD"),
     "C8678": ("MDD", "SS34", "SMD"),
     "C976305": ("BHFUSE", "BSMD1206-075-30V", "SMD"),
-    "C72043": ("Everlight", "19-217/GHC-YR1S2/3T", "SMD"),
+    "C2286": ("Hubei KENTO Elec", "KT-0603R", "SMD"),
     "C80799": ("NXP", "PCA9517ADP,118", "SMD"),
     "C965555": ("Worldsemi", "WS2812B-2020", "SMD"),
     "C318884": ("XKB Connection", "TS-1187A-B-A-B", "SMD"),
-    "C50984": ("BOOMELE", "2.54-1*20PFemale", "THT"),
+    "C2905423": ("Shenzhen Kinghelm Elec", "KH-2.54FH-1X20P-H8.5", "THT"),
     "C37208": ("BOOMELE", "2.54-1x6P male header, straight", "THT"),
     "C2691448": ("XFCN", "PZ254V-11-04P", "THT"),
-    "C5248080": ("HS (Shenzhen Hansheng)", "HS96L03W2C03", "THT"),
+    "C2718488": ("BOOMELE", "2.54-1*4PFemale", "THT"),
     "C474952": ("KEFA", "KF128-5.08-2P", "THT"),
 }
 
