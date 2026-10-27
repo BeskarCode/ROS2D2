@@ -98,3 +98,16 @@ def test_no_lidar():
 def test_package_default_is_valid():
     path = os.path.join(os.path.dirname(__file__), "..", "config", "sensors.yaml")
     assert len(load_sensors(path)) == 8
+
+
+@pytest.mark.parametrize("pin", [16, 17, 23, 24, 25])
+def test_reserved_pico_pins_are_refused(pin):
+    text = f"tof_x:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{xshut: {pin}}}\n"
+    with pytest.raises(SensorConfigError, match=re.escape(f"GP{pin} is reserved (I2C or the board)")):
+        parse_sensors(text)
+
+
+def test_pins_outside_the_board_keep_their_message():
+    text = "tof_x:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {xshut: 29}\n"
+    with pytest.raises(SensorConfigError, match="pico pins are GPIO 0 to 28"):
+        parse_sensors(text)

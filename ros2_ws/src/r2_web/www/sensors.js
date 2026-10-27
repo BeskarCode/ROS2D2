@@ -5,7 +5,7 @@ import { MODELS } from './models.js';
 import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
-import { R2, TYPES, coverage, defaultName, isLidar, sees, sideText, uniqueName } from './sensormath.js';
+import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const OBJECTS = {
@@ -179,7 +179,7 @@ export function createSensorsTab({ status }) {
     stop_distance: (v) => (v ? `${Math.round(v * 100)} cm` : 'never'),
   };
   function pinSelect(s, pin, used) {
-    const opts = Array.from({ length: 29 }, (_, g) => `<option value="${g}"${s.pico[pin] === g ? ' selected' : ''}>GP${g}</option>`).join('');
+    const opts = PICO_GPIO.map((g) => `<option value="${g}"${s.pico[pin] === g ? ' selected' : ''}>GP${g}</option>`).join('');
     const clash = used.get(s.pico[pin]) > 1 ? ' clash' : '';
     return `<label class="pin${clash}">${pin} <select data-pin="${pin}">${opts}</select></label>`;
   }
@@ -268,7 +268,7 @@ export function createSensorsTab({ status }) {
   function freePins(n) {
     const used = new Set(sensors.flatMap((s) => Object.values(s.pico || {})));
     const out = [];
-    for (let g = 0; g <= 28 && out.length < n; g++) if (!used.has(g)) out.push(g);
+    for (const g of PICO_GPIO) if (out.length < n && !used.has(g)) out.push(g);
     return out;
   }
   $('s-add').addEventListener('click', () => {

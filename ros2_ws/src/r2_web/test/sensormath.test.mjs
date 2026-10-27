@@ -96,3 +96,10 @@ test('names typed by hand must be valid and unique', () => {
   assert.equal(uniqueName('Bad', new Set()), null);
   assert.equal(uniqueName(' tof_b ', new Set()), 'tof_b');
 });
+
+test('the Pico pins offered leave out the I2C and the board\'s own', async () => {
+  const { PICO_GPIO } = await import('../www/sensormath.js');
+  for (const g of [16, 17, 23, 24, 25]) assert.ok(!PICO_GPIO.includes(g), `GP${g} offered`);
+  for (const g of [0, 15, 18, 22, 26, 28]) assert.ok(PICO_GPIO.includes(g), `GP${g} missing`);
+  assert.equal(PICO_GPIO.length, 24);
+});
