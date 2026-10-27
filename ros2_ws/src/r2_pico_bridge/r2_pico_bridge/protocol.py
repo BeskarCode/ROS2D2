@@ -21,7 +21,7 @@ import re
 from r2_sensors.config import PICO_PINS
 
 PROTO = 1
-_HB = re.compile(r"^HB (\d+) (-|[ON]+)$")
+_HB = re.compile(r"^HB (\d+)(?: (-|[ON]*))?$")    # no states: CFG with no sensors
 _R_ITEM = re.compile(r"^(\d+):(-?\d+)$")
 _HELLO = re.compile(r"^PICO r2_pico_sensors (\S+) proto (\d+)$")
 
@@ -42,7 +42,7 @@ def parse(line):
     """One line from the Pico as a tuple, or None if it is not one of the protocol's."""
     m = _HB.match(line)
     if m:
-        return ("hb", int(m.group(1)), None if m.group(2) == "-" else m.group(2))
+        return ("hb", int(m.group(1)), None if m.group(2) == "-" else m.group(2) or "")
     if line.startswith("R "):
         out = []
         for item in line[2:].split():

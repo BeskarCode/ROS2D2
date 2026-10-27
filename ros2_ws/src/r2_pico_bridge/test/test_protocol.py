@@ -39,3 +39,7 @@ def test_parse_answers():
 def test_parse_rubbish():
     for line in ("", "hello", "HB", "HB x NN", "HB 5 NX", "CFG OK x", "PICO other 1 proto 1"):
         assert parse(line) is None, line
+
+
+def test_parse_heartbeat_with_no_sensors():
+    assert parse("HB 5") == ("hb", 5, "")

@@ -47,6 +47,7 @@ PORT = re.compile(r"^/dev/[A-Za-z0-9_./-]+$")
 GPIO = range(0, 29)
 # Not for sensors: the VL53L0X's I2C (GP16 SDA, GP17 SCL) and the board's own (GP25 = LED)
 PICO_RESERVED = (16, 17, 23, 24, 25)
+PICO_MAX = 12                     # the Pico's firmware refuses more (CFG ERR too many)
 
 
 class SensorConfigError(ValueError):
@@ -140,6 +141,8 @@ def parse_sensors(text):
                 raise SensorConfigError(f"{name}: pico pin {pin} is already used by {used[pin]}")
             used[pin] = name
         out[name] = s
+    if sum(s["type"] in PICO_PINS for s in out.values()) > PICO_MAX:
+        raise SensorConfigError(f"at most {PICO_MAX} sensors on the Pico")
     if sum(s["type"] in LIDARS for s in out.values()) > 1:
         raise SensorConfigError("only one lidar is supported")
     return out

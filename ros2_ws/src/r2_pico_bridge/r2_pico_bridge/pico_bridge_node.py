@@ -1,7 +1,10 @@
 """Bridge to the Pico that reads the distance sensors (VL53L0X, HC-SR04).
 
   in   sensors.yaml                  the Pico's sensors and pins (reloaded when saved)
-  out  /range/<name>  sensor_msgs/Range   each sensor that answers; inf = nothing in range.
+  out  /range/<name>  sensor_msgs/Range   each sensor that answers; inf = nothing in range
+                                     (only the Pico's -1; any other negative is a glitch: dropped).
+                                     Closer than range_min is sent as range_min: the navigator
+                                     reads anything out of [min, max] as "nothing there".
                                      One that does not answer publishes nothing, so whoever
                                      listens sees it go quiet (never "the way is clear").
   out  /pico/connected  std_msgs/Bool     latched
@@ -198,7 +201,7 @@ class PicoBridge(Node):
         with self.lock:
             names, status, sensors = self.names, self.status, self.sensors
         for i, mm in items:
-            if i >= len(names) or status.get(names[i]) != "ok":
+            if i >= len(names) or status.get(names[i]) != "ok" or mm < -1:
                 continue
             name = names[i]
             s = sensors[name]
@@ -209,7 +212,7 @@ class PicoBridge(Node):
             m.field_of_view = math.radians(s["fov_deg"])
             m.min_range = float(s["range_min"])
             m.max_range = float(s["range_max"])
-            m.range = math.inf if mm < 0 else mm / 1000.0
+            m.range = math.inf if mm == -1 else max(mm / 1000.0, m.min_range)
             self.pub_range[name].publish(m)
 
     # --- state ----------------------------------------------------------------------
