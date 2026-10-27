@@ -1,0 +1,284 @@
+"""Write r2_pico_carrier.kicad_pcb from parts.py: outline, M3 holes, every footprint placed
+with its nets, silkscreen (connector names and pins, the Pico's outline, the branding on the
+back) and the GND pour. No tracks: route.py routes it.
+
+    $KPY hardware/r2_pico_carrier/gen/make_pcb.py
+
+Layout (top view, mm, origin at the top-left corner):
+  - the Pico in the middle, its USB on the top edge (the cable from the Pi plugs in there);
+  - HC-SR04 connectors US1-US5 on the left (their GPIOs are on the Pico's left row), each
+    with its ECHO divider and its LED;
+  - VL53L0X connectors VL1-VL4 on the right (next to the I2C pins), VL3-VL4 marked > 50 cm;
+  - the 5 V input and its protection bottom left; display socket and button bottom right.
+"""
+import os
+
+import pcbnew
+from PIL import Image
+
+from parts import PARTS
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "..", "r2_pico_carrier.kicad_pcb")
+FP = os.environ.get("KICAD_FP", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\share\kicad\footprints")
+CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\kicad-cli.exe")
+LOGO = os.path.join(HERE, "..", "..", "..", "ros2_ws", "src", "r2_web", "www", "astromech-spain-logo.png")
+
+W, H = 80.0, 72.0                     # board size
+PICO_X, PICO_TOP = 40.0, 2.0          # Pico centre line and top edge (USB end)
+ROW = 8.89                            # Pico pin rows at +-8.89 mm from its centre
+PIN1_Y = PICO_TOP + 1.37 + 0.0        # first pin, 1.37 mm under the Pico's top edge
+POWER_NETS = ("5V_IN", "5V_FUSED", "+5V", "VSYS", "VLED", "+3V3", "GND")
+
+mm = pcbnew.FromMM
+
+
+def at(x, y):
+    return pcbnew.VECTOR2I(mm(x), mm(y))
+
+
+US_Y = [12 + i * 10 for i in range(5)]
+VL_Y = [12, 24, 39, 51]
+US_PINS = ["5V", "TR", "EC", "G"]
+VL_PINS = ["3V3", "G", "SCL", "SDA", "-", "XS"]
+HEADER_ROT = 90                       # pin 1 on the left, the rest to its right
+
+
+# ref -> (x, y, rotation degrees)
+def placement():
+    p = {"JP1": (PICO_X - ROW, PIN1_Y, 0), "JP2": (PICO_X + ROW, PIN1_Y, 0)}
+    for i, y in enumerate(US_Y):                          # US1..US5
+        p[f"US{i + 1}"] = (3.0, y, HEADER_ROT)
+        p[f"R{11 + i}"] = (15.0, y - 1.2, 0)              # 1k
+        p[f"R{21 + i}"] = (15.0, y + 1.6, 0)              # 2k
+        p[f"LED{5 + i}"] = (20.0, y, 0)
+        p[f"C{15 + i}"] = (23.5, y, 90)
+    for i, y in enumerate(VL_Y):                          # VL1..VL4
+        p[f"VL{i + 1}"] = (55.0, y, HEADER_ROT)
+        p[f"LED{1 + i}"] = (71.5, y, 0)
+        p[f"C{11 + i}"] = (75.0, y, 90)
+    p.update({"R2": (57.0, 7.0, 0), "R3": (61.0, 7.0, 0), "C4": (52.5, 6.0, 90),
+              "R6": (52.5, 31.0, 90), "C5": (57.0, 33.0, 90), "U1": (62.0, 33.0, 0),
+              "R4": (68.0, 31.5, 0), "R5": (68.0, 34.5, 0),
+              "J1": (10.5, 63.0, 0), "F1": (21.5, 59.5, 0), "D1": (28.0, 59.5, 180),
+              "C1": (21.5, 64.5, 0), "C2": (25.0, 64.5, 0),
+              "D2": (35.0, 59.5, 180), "D3": (35.0, 64.5, 180), "C3": (39.5, 64.5, 90),
+              "D4": (42.5, 59.5, 0), "R1": (46.0, 59.5, 0),
+              "J2": (61.0, 67.0, HEADER_ROT), "SW1": (72.0, 61.0, 0)})
+    for k, (x, y) in enumerate(((3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)), 1):
+        p[f"H{k}"] = (x, y, 0)
+    return p
+
+
+def check(board):
+    """Every pad on the board (0.5 mm in from the edge) and pin 1 of each header on the left."""
+    bad = []
+    for fp in board.GetFootprints():
+        ref = fp.GetReference()
+        pads = {p.GetNumber(): p.GetPosition() for p in fp.Pads()}
+        for num, pos in pads.items():
+            x, y = pcbnew.ToMM(pos.x), pcbnew.ToMM(pos.y)
+            if not (0.5 <= x <= W - 0.5 and 0.5 <= y <= H - 0.5) and num:
+                bad.append(f"{ref} pad {num} at ({x:.1f}, {y:.1f}) is off the board")
+        if ref.startswith(("US", "VL")) or ref == "J2":
+            xs = [pcbnew.ToMM(pads[str(k)].x) for k in range(1, len(pads) + 1)]
+            if xs != sorted(xs):
+                bad.append(f"{ref}: pin 1 is not on the left")
+    if bad:
+        raise SystemExit("\n".join(bad))
+
+
+def text(board, s, x, y, size=1.0, layer=pcbnew.F_SilkS, bold=False, angle=0, justify=None):
+    t = pcbnew.PCB_TEXT(board)
+    t.SetText(s)
+    t.SetPosition(at(x, y))
+    t.SetLayer(layer)
+    t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
+    t.SetTextThickness(mm(max(0.15, size * (0.2 if bold else 0.15))))
+    t.SetTextAngleDegrees(angle)
+    if justify:
+        t.SetHorizJustify(justify)
+    if layer == pcbnew.B_SilkS:
+        t.SetMirrored(True)
+    board.Add(t)
+
+
+def line(board, x0, y0, x1, y1, layer=pcbnew.F_SilkS, width=0.15):
+    s = pcbnew.PCB_SHAPE(board)
+    s.SetShape(pcbnew.SHAPE_T_SEGMENT)
+    s.SetStart(at(x0, y0))
+    s.SetEnd(at(x1, y1))
+    s.SetLayer(layer)
+    s.SetWidth(mm(width))
+    board.Add(s)
+
+
+def rect(board, x0, y0, x1, y1, layer, width=0.15, filled=False):
+    s = pcbnew.PCB_SHAPE(board)
+    s.SetShape(pcbnew.SHAPE_T_RECT)
+    s.SetStart(at(x0, y0))
+    s.SetEnd(at(x1, y1))
+    s.SetLayer(layer)
+    s.SetWidth(mm(width) if not filled else 0)
+    s.SetFilled(filled)
+    board.Add(s)
+
+
+def logo(board, cx, y0, width, layer):
+    """The Astromech Spain logo as filled silkscreen rectangles (one per run of pixels).
+    On the back it is mirrored, so it reads right when the board is turned over."""
+    im = Image.open(LOGO).convert("RGBA")
+    px = 0.2                                              # mm per pixel
+    cols = int(width / px)
+    im = im.resize((cols, round(im.height * cols / im.width)), Image.LANCZOS)
+    back = layer == pcbnew.B_SilkS
+    for y in range(im.height):
+        x = 0
+        while x < cols:
+            r, g, b, a = im.getpixel((x, y))
+            if a > 110 and (r + g + b) / 3 > 60:
+                x1 = x
+                while x1 < cols:
+                    r2, g2, b2, a2 = im.getpixel((x1, y))
+                    if not (a2 > 110 and (r2 + g2 + b2) / 3 > 60):
+                        break
+                    x1 += 1
+                xa, xb = cx - width / 2 + x * px, cx - width / 2 + x1 * px
+                if back:
+                    xa, xb = 2 * cx - xb, 2 * cx - xa
+                rect(board, xa, y0 + y * px, xb, y0 + (y + 1) * px, layer, filled=True)
+                x = x1
+            else:
+                x += 1
+    return y0 + im.height * px
+
+
+def silkscreen(board):
+    # The Pico, as seen plugged in: outline, USB, pin 1, "pins down"
+    rect(board, PICO_X - 11.2, PICO_TOP - 0.3, PICO_X + 11.2, PICO_TOP + 51.3, pcbnew.F_SilkS)
+    text(board, "USB", PICO_X, PICO_TOP + 2.2, 1.0, bold=True)
+    text(board, "PICO 2", PICO_X, PICO_TOP + 24, 1.5, bold=True)
+    text(board, "pins down", PICO_X, PICO_TOP + 26.5, 0.9)
+    text(board, "1", PICO_X - ROW - 1.8, PIN1_Y, 0.9, bold=True)
+    for i, y in enumerate(US_Y):
+        text(board, f"US{i + 1}", 3.0 - 1.3, y - 2.9, 1.0, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
+        for k, name in enumerate(US_PINS):
+            text(board, name, 3.0 + k * 2.54, y + 2.75, 0.8)
+    for i, y in enumerate(VL_Y):
+        text(board, f"VL{i + 1}", 55.0 - 1.3, y - 2.9, 1.0, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
+        for k, name in enumerate(VL_PINS):
+            text(board, name, 55.0 + k * 2.54, y + 2.75, 0.8)
+    text(board, "< 50 cm", 66.0, 9.6, 0.9, bold=True)
+    text(board, "> 50 cm", 66.0, 36.6, 0.9, bold=True)
+    line(board, 54.0, 29.0, W - 0.5, 29.0)
+    text(board, "+5V  GND", 13.0, 57.3, 0.8, bold=True)
+    for k, name in enumerate(["G", "V", "SCL", "SDA"]):
+        text(board, name, 61.0 + k * 2.54, 69.3, 0.8)
+    text(board, "OLED", 61.0 - 1.3, 64.6, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
+    text(board, "DISPLAY", 72.0, 65.0, 0.8, bold=True)
+    text(board, "ROS2D2 · NandoMadrid · rev A", 46.0, 70.6, 0.8, bold=True)
+    # Back: the branding, where there are no pads: "ROS2D2" between the Pico's rows,
+    # the logo and the rest along the bottom strip
+    text(board, "ROS2D2", PICO_X, 27.0, 5.0, pcbnew.B_SilkS, bold=True, angle=90)
+    y = logo(board, 36.0, 54.5, 40.0, pcbnew.B_SilkS)
+    text(board, "ROS2D2 · by NandoMadrid", 36.0, y + 2.0, 1.6, pcbnew.B_SilkS, bold=True)
+    text(board, "www.astromechspain.com", 36.0, y + 4.6, 1.4, pcbnew.B_SilkS)
+    text(board, "R2 Pico carrier · rev A", 36.0, y + 7.0, 1.2, pcbnew.B_SilkS)
+
+
+def rules(board):
+    ds = board.GetDesignSettings()
+    ds.m_TrackMinWidth = mm(0.15)
+    ds.m_MinClearance = mm(0.15)
+    ds.m_ViasMinSize = mm(0.6)
+    ds.m_MinThroughDrill = mm(0.3)
+    ds.m_CopperEdgeClearance = mm(0.3)
+    ncs = ds.m_NetSettings
+    default = ncs.GetDefaultNetclass()
+    default.SetTrackWidth(mm(0.25))
+    default.SetClearance(mm(0.15))       # U1's 0.65 mm pitch pads are 0.15 mm apart
+    default.SetViaDiameter(mm(0.6))
+    default.SetViaDrill(mm(0.3))
+    power = pcbnew.NETCLASS("Power")
+    power.SetTrackWidth(mm(0.5))
+    power.SetClearance(mm(0.15))
+    power.SetViaDiameter(mm(0.8))
+    power.SetViaDrill(mm(0.4))
+    ncs.SetNetclass("Power", power)
+    for net in POWER_NETS:
+        ncs.SetNetclassPatternAssignment(net, "Power")
+
+
+def schematic_free_pins():
+    """{(ref, pad): "unconnected-(...)"}: the pins the schematic leaves free get the same
+    net on the board, so they agree pad by pad (DRC schematic parity)."""
+    import subprocess
+    import tempfile
+    import xml.etree.ElementTree as ET
+    out = os.path.join(tempfile.mkdtemp(), "net.xml")
+    sch = os.path.join(HERE, "..", "r2_pico_carrier.kicad_sch")
+    subprocess.run([CLI, "sch", "export", "netlist", "--format", "kicadxml", "-o", out, sch],
+                   check=True, capture_output=True)
+    free = {}
+    for net in ET.parse(out).getroot().iter("net"):
+        if net.get("name").startswith("unconnected-"):
+            for node in net.iter("node"):
+                free[(node.get("ref"), node.get("pin"))] = net.get("name")
+    return free
+
+
+def main():
+    board = pcbnew.BOARD()
+    rules(board)
+    nets = {}
+    free = schematic_free_pins()
+    for name in sorted(set(free.values())):
+        nets[name] = pcbnew.NETINFO_ITEM(board, name)
+        board.Add(nets[name])
+    for part in PARTS.values():
+        for n in part.pads.values():
+            if n and n not in nets:
+                nets[n] = pcbnew.NETINFO_ITEM(board, n)
+                board.Add(nets[n])
+    place = placement()
+    for ref, part in PARTS.items():
+        lib, name = part.footprint.split(":")
+        fp = pcbnew.FootprintLoad(os.path.join(FP, f"{lib}.pretty"), name)
+        fp.SetReference(ref)
+        fp.SetValue(part.value)
+        fp.Reference().SetTextSize(pcbnew.VECTOR2I(mm(0.8), mm(0.8)))
+        fp.Reference().SetTextThickness(mm(0.15))
+        fp.SetField("LCSC", part.lcsc)
+        # only the parts a person plugs into keep their name on the silkscreen
+        fp.Reference().SetVisible(ref.startswith(("J", "SW", "U")))
+        fp.SetFPIDAsString(part.footprint)
+        x, y, rot = place[ref]
+        fp.SetPosition(at(x, y))
+        fp.SetOrientationDegrees(rot)
+        for pad in fp.Pads():
+            net = part.pads.get(pad.GetNumber(), "") or free.get((ref, pad.GetNumber()), "")
+            if net:
+                pad.SetNet(nets[net])
+        board.Add(fp)
+    check(board)
+    rect(board, 0, 0, W, H, pcbnew.Edge_Cuts, 0.1)
+    silkscreen(board)
+    for layer in (pcbnew.B_Cu, pcbnew.F_Cu):
+        z = pcbnew.ZONE(board)
+        z.SetLayer(layer)
+        z.SetNet(nets["GND"])
+        z.SetLocalClearance(mm(0.3))
+        z.SetMinThickness(mm(0.25))
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+        o = z.Outline()
+        o.NewOutline()
+        for x, y in ((0.5, 0.5), (W - 0.5, 0.5), (W - 0.5, H - 0.5), (0.5, H - 0.5)):
+            o.Append(mm(x), mm(y))
+        board.Add(z)
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    board.Save(OUT)
+    print("wrote", os.path.normpath(OUT))
+
+
+if __name__ == "__main__":
+    main()

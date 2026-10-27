@@ -86,7 +86,10 @@ def placement():
 
 
 def label(net, x, y, angle, key):
-    return f'(label "{net}" (at {x:.2f} {y:.2f} {angle}) {FONT} (uuid "{uid("label", *key)}"))'
+    # global labels: the net is called "SDA" on the board too, not "/SDA"
+    just = {0: "left", 90: "left", 180: "right", 270: "right"}[angle]
+    return (f'(global_label "{net}" (shape passive) (at {x:.2f} {y:.2f} {angle}) (fields_autoplaced yes) '
+            f'(effects (font (size 1.27 1.27)) (justify {just})) (uuid "{uid("label", *key)}"))')
 
 
 def main():
