@@ -101,3 +101,22 @@ def test_every_part_has_lcsc_and_footprint():
 @pytest.mark.parametrize("net", ["+5V", "+3V3", "VLED"])
 def test_rails_have_decoupling(net):
     assert any(r.startswith("C") for r in refs_on(net))
+
+
+def test_schematic_matches_parts(tmp_path):
+    """The generated schematic (make_sch.py) connects exactly what parts.py says."""
+    import subprocess
+    import xml.etree.ElementTree as ET
+    here = os.path.dirname(os.path.abspath(__file__))
+    sch = os.path.join(here, "..", "r2_pico_carrier.kicad_sch")
+    cli = os.path.join(os.path.dirname(os.path.dirname(KICAD_FP.rstrip(r"\/"))), "..", "bin", "kicad-cli.exe")
+    out = tmp_path / "net.xml"
+    subprocess.run([cli, "sch", "export", "netlist", "--format", "kicadxml", "-o", str(out), sch], check=True,
+                   capture_output=True)
+    got = {}
+    for net in ET.parse(out).getroot().iter("net"):
+        for node in net.iter("node"):
+            if not node.get("ref").startswith("#"):
+                got[(node.get("ref"), node.get("pin"))] = net.get("name").lstrip("/")
+    want = {(r, p): n for r, part in PARTS.items() for p, n in part.pads.items() if n}
+    assert {k: v for k, v in got.items() if not v.startswith("unconnected-")} == want
