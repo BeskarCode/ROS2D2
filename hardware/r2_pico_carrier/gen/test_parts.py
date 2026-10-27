@@ -86,10 +86,11 @@ def test_led_chain():
     din = {"LED1": next(n for n in PARTS[r].pads.values() if n != "LED_DIN_P")}
     for k in range(1, 10):
         led = PARTS[f"LED{k}"]
-        # WS2812B-2020: 1 DOUT, 2 VSS, 3 DIN, 4 VDD
-        assert led.pads["3"] == (din["LED1"] if k == 1 else f"LED_D{k - 1}")
-        assert led.pads["1"] == (f"LED_D{k}" if k < 9 else "")
-        assert led.pads["2"] == "GND" and led.pads["4"] == "VLED"
+        # WS2812B 5050: 1 VDD, 2 DOUT, 3 VSS, 4 DIN
+        assert led.pads["4"] == (din["LED1"] if k == 1 else f"LED_D{k - 1}")
+        assert led.pads["2"] == (f"LED_D{k}" if k < 9 else "")
+        assert led.pads["3"] == "GND" and led.pads["1"] == "VLED"
+        assert led.footprint == "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm"
 
 
 def test_every_part_has_lcsc_and_footprint():

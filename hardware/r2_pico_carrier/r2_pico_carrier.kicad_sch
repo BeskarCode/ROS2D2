@@ -2589,7 +2589,7 @@
 		)
 		(embedded_fonts no)
 	)
-(symbol "LED:WS2812B-2020"
+(symbol "LED:WS2812B"
 		(pin_names
 			(offset 0.254)
 		)
@@ -2609,7 +2609,7 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "WS2812B-2020"
+		(property "Value" "WS2812B"
 			(at 1.27 -5.715 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2620,7 +2620,7 @@
 				(justify left top)
 			)
 		)
-		(property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm"
+		(property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm"
 			(at 1.27 -7.62 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2632,7 +2632,7 @@
 				(justify left top)
 			)
 		)
-		(property "Datasheet" "https://cdn-shop.adafruit.com/product-files/4684/4684_WS2812B-2020_V1.3_EN.pdf"
+		(property "Datasheet" "https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf"
 			(at 2.54 -9.525 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2644,7 +2644,7 @@
 				(justify left top)
 			)
 		)
-		(property "Description" "RGB LED with integrated controller, 2.0 x 2.0 mm, 12 mA"
+		(property "Description" "RGB LED with integrated controller"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2655,7 +2655,7 @@
 				)
 			)
 		)
-		(property "ki_keywords" "RGB LED NeoPixel Nano addressable"
+		(property "ki_keywords" "RGB LED NeoPixel addressable"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2666,7 +2666,7 @@
 				)
 			)
 		)
-		(property "ki_fp_filters" "LED*WS2812*-2020_PLCC4*"
+		(property "ki_fp_filters" "LED*WS2812*PLCC*5.0x5.0mm*P3.2mm*"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2677,7 +2677,7 @@
 				)
 			)
 		)
-		(symbol "WS2812B-2020_0_0"
+		(symbol "WS2812B_0_0"
 			(text "RGB"
 				(at 2.286 -4.191 0)
 				(effects
@@ -2687,7 +2687,7 @@
 				)
 			)
 		)
-		(symbol "WS2812B-2020_0_1"
+		(symbol "WS2812B_0_1"
 			(polyline
 				(pts
 					(xy 1.27 -2.54) (xy 1.778 -2.54)
@@ -2784,7 +2784,25 @@
 				)
 			)
 		)
-		(symbol "WS2812B-2020_1_1"
+		(symbol "WS2812B_1_1"
+			(pin power_in line
+				(at 0 7.62 270)
+				(length 2.54)
+				(name "VDD"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
 			(pin output line
 				(at 7.62 0 180)
 				(length 2.54)
@@ -2795,7 +2813,7 @@
 						)
 					)
 				)
-				(number "1"
+				(number "2"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2813,7 +2831,7 @@
 						)
 					)
 				)
-				(number "2"
+				(number "3"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2825,24 +2843,6 @@
 				(at -7.62 0 0)
 				(length 2.54)
 				(name "DIN"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-				(number "3"
-					(effects
-						(font
-							(size 1.27 1.27)
-						)
-					)
-				)
-			)
-			(pin power_in line
-				(at 0 7.62 270)
-				(length 2.54)
-				(name "VDD"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -3424,75 +3424,75 @@
 (symbol (lib_id "Device:R") (at 149.86 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "a30b338d-33b0-5aff-a02e-0b1ebd7fb664") (property "Reference" "R6" (at 152.86 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "33" (at 152.86 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Resistor_SMD:R_0603_1608Metric" (at 152.86 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 152.86 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C23140" (at 152.86 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "f994029d-3baf-5e23-9d72-aa205adeab33")) (pin "2" (uuid "b240f3b1-4b88-526d-8230-b03695144358")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "R6") (unit 1)))))
 (global_label "LED_DIN_P" (shape passive) (at 149.86 210.82 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "e21786a4-40b2-55f5-9dde-b4a6d4e6684f"))
 (global_label "LED_DIN" (shape passive) (at 149.86 218.44 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "1257f362-05a2-5cdd-ab99-df3407d2bbe9"))
-(symbol (lib_id "LED:WS2812B-2020") (at 170.18 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "275551f6-a14e-5d52-a58d-6ebea86716ea") (property "Reference" "LED1" (at 173.18 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 173.18 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 173.18 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 173.18 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 173.18 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "3fb6fe3b-bbfb-5b21-921e-a8751792da9e")) (pin "2" (uuid "3f91c912-0184-5501-95d4-b2393e4b08ca")) (pin "3" (uuid "baa51551-f5e2-5f2e-852b-6cb4c7cffe8b")) (pin "4" (uuid "101478ff-83da-5152-b6bd-d9e20b4b40b4")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED1") (unit 1)))))
-(global_label "LED_D1" (shape passive) (at 177.80 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b78351c2-af67-5111-b4a6-2a9bc3383503"))
-(global_label "GND" (shape passive) (at 170.18 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "726fee40-4aa8-5696-98fe-34b5cb2fe59e"))
-(global_label "LED_DIN" (shape passive) (at 162.56 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "5bdb47e6-b350-5e0f-b03b-efa5f04a6c66"))
-(global_label "VLED" (shape passive) (at 170.18 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "265cfc5f-6fcd-5edd-aef3-0cd786e623c4"))
+(symbol (lib_id "LED:WS2812B") (at 170.18 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "275551f6-a14e-5d52-a58d-6ebea86716ea") (property "Reference" "LED1" (at 173.18 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 173.18 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 173.18 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 173.18 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 173.18 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "3fb6fe3b-bbfb-5b21-921e-a8751792da9e")) (pin "2" (uuid "3f91c912-0184-5501-95d4-b2393e4b08ca")) (pin "3" (uuid "baa51551-f5e2-5f2e-852b-6cb4c7cffe8b")) (pin "4" (uuid "101478ff-83da-5152-b6bd-d9e20b4b40b4")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED1") (unit 1)))))
+(global_label "VLED" (shape passive) (at 170.18 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b78351c2-af67-5111-b4a6-2a9bc3383503"))
+(global_label "LED_D1" (shape passive) (at 177.80 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "726fee40-4aa8-5696-98fe-34b5cb2fe59e"))
+(global_label "GND" (shape passive) (at 170.18 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "5bdb47e6-b350-5e0f-b03b-efa5f04a6c66"))
+(global_label "LED_DIN" (shape passive) (at 162.56 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "265cfc5f-6fcd-5edd-aef3-0cd786e623c4"))
 (symbol (lib_id "Device:C") (at 170.18 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "5cafb4c7-23bd-5323-acf1-e643f2a71f98") (property "Reference" "C11" (at 173.18 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 173.18 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 173.18 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 173.18 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 173.18 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "76dc3a38-7834-5498-be68-3a43f65150e8")) (pin "2" (uuid "7e133207-6f21-59f3-8acf-e184c1c35afa")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C11") (unit 1)))))
 (global_label "VLED" (shape passive) (at 170.18 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "a8a3e18c-c6ce-55da-825a-f4d2a23cf87c"))
 (global_label "GND" (shape passive) (at 170.18 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "21679594-80d9-5836-a785-b7b2540f5343"))
-(symbol (lib_id "LED:WS2812B-2020") (at 196.85 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "c97ff47d-1abc-5029-8c0b-8c99a2a8994e") (property "Reference" "LED2" (at 199.85 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 199.85 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 199.85 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 199.85 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 199.85 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "f0bf928c-e306-5a29-9059-86148d6fb344")) (pin "2" (uuid "c2be0a3c-26be-5782-b2a4-0790246dd290")) (pin "3" (uuid "f4e88ff7-9f53-5ebb-8cbb-d58a22226493")) (pin "4" (uuid "6e27b4fd-e8f0-5a64-bc41-2ba47aad13eb")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED2") (unit 1)))))
-(global_label "LED_D2" (shape passive) (at 204.47 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b858c976-b1a7-59ff-9e74-7ac697c7e0ee"))
-(global_label "GND" (shape passive) (at 196.85 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "c4ea6872-1aca-508b-a126-3f3098555633"))
-(global_label "LED_D1" (shape passive) (at 189.23 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "f46c24f3-752f-5e2d-9d00-03342043e72a"))
-(global_label "VLED" (shape passive) (at 196.85 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "9d75f44f-d12e-559c-b40c-cafb6272ea27"))
+(symbol (lib_id "LED:WS2812B") (at 196.85 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "c97ff47d-1abc-5029-8c0b-8c99a2a8994e") (property "Reference" "LED2" (at 199.85 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 199.85 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 199.85 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 199.85 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 199.85 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "f0bf928c-e306-5a29-9059-86148d6fb344")) (pin "2" (uuid "c2be0a3c-26be-5782-b2a4-0790246dd290")) (pin "3" (uuid "f4e88ff7-9f53-5ebb-8cbb-d58a22226493")) (pin "4" (uuid "6e27b4fd-e8f0-5a64-bc41-2ba47aad13eb")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED2") (unit 1)))))
+(global_label "VLED" (shape passive) (at 196.85 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b858c976-b1a7-59ff-9e74-7ac697c7e0ee"))
+(global_label "LED_D2" (shape passive) (at 204.47 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "c4ea6872-1aca-508b-a126-3f3098555633"))
+(global_label "GND" (shape passive) (at 196.85 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "f46c24f3-752f-5e2d-9d00-03342043e72a"))
+(global_label "LED_D1" (shape passive) (at 189.23 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "9d75f44f-d12e-559c-b40c-cafb6272ea27"))
 (symbol (lib_id "Device:C") (at 196.85 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "2f50175c-a30a-50bd-baf8-7eaaa5721d05") (property "Reference" "C12" (at 199.85 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 199.85 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 199.85 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 199.85 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 199.85 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "95399543-4a1d-5bf2-bc25-9db8522768b0")) (pin "2" (uuid "a0562f22-3404-5ecb-94b3-6668417b0f96")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C12") (unit 1)))))
 (global_label "VLED" (shape passive) (at 196.85 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "841e9fbe-bbaf-5350-a091-7cf44eaf9539"))
 (global_label "GND" (shape passive) (at 196.85 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "0ae06ebe-fa69-5087-9fe5-1133feeeb38e"))
-(symbol (lib_id "LED:WS2812B-2020") (at 223.52 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "7fd9c722-e3ac-5f03-b421-9c9042987d27") (property "Reference" "LED3" (at 226.52 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 226.52 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 226.52 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 226.52 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 226.52 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "f2cec8d0-85af-53f9-86a2-788d24f743a2")) (pin "2" (uuid "c79833cc-e511-5709-b131-f7298ab9ebc6")) (pin "3" (uuid "d5d400f9-eea3-5d6f-b2ce-d764c2c445b2")) (pin "4" (uuid "a2b40497-c8d5-5a10-85a6-c9857ae29da9")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED3") (unit 1)))))
-(global_label "LED_D3" (shape passive) (at 231.14 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "198165be-4dc2-5cda-9411-ff2f72524d8a"))
-(global_label "GND" (shape passive) (at 223.52 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "5da66479-b331-548d-a0fd-3eab5a4544a9"))
-(global_label "LED_D2" (shape passive) (at 215.90 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "b647e512-9dd0-5e58-8a6a-3fc977b04713"))
-(global_label "VLED" (shape passive) (at 223.52 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "c3d3508e-caec-5a5e-98bb-8d9b96ee7347"))
+(symbol (lib_id "LED:WS2812B") (at 223.52 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "7fd9c722-e3ac-5f03-b421-9c9042987d27") (property "Reference" "LED3" (at 226.52 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 226.52 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 226.52 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 226.52 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 226.52 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "f2cec8d0-85af-53f9-86a2-788d24f743a2")) (pin "2" (uuid "c79833cc-e511-5709-b131-f7298ab9ebc6")) (pin "3" (uuid "d5d400f9-eea3-5d6f-b2ce-d764c2c445b2")) (pin "4" (uuid "a2b40497-c8d5-5a10-85a6-c9857ae29da9")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED3") (unit 1)))))
+(global_label "VLED" (shape passive) (at 223.52 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "198165be-4dc2-5cda-9411-ff2f72524d8a"))
+(global_label "LED_D3" (shape passive) (at 231.14 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "5da66479-b331-548d-a0fd-3eab5a4544a9"))
+(global_label "GND" (shape passive) (at 223.52 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "b647e512-9dd0-5e58-8a6a-3fc977b04713"))
+(global_label "LED_D2" (shape passive) (at 215.90 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "c3d3508e-caec-5a5e-98bb-8d9b96ee7347"))
 (symbol (lib_id "Device:C") (at 223.52 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "1931a3b2-f355-5214-9c6f-6ac52140ad08") (property "Reference" "C13" (at 226.52 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 226.52 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 226.52 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 226.52 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 226.52 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "a04edfa7-631d-53b1-9db0-4e2a1677c0b7")) (pin "2" (uuid "ca7f0f25-e688-5b2f-a423-70a14cbbcb27")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C13") (unit 1)))))
 (global_label "VLED" (shape passive) (at 223.52 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "4e442f74-555b-58b0-bde6-ce5c081ad3c0"))
 (global_label "GND" (shape passive) (at 223.52 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "55cb1c9f-9148-51fe-8bc4-ee7a665af45f"))
-(symbol (lib_id "LED:WS2812B-2020") (at 251.46 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "bb2bbed3-f237-5b93-9e98-38d4fc838d41") (property "Reference" "LED4" (at 254.46 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 254.46 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 254.46 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 254.46 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 254.46 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "5ce8cf94-99ab-52c9-b7bf-d0de0c4d038d")) (pin "2" (uuid "fe923e9b-3f46-5c34-8ab2-8893e112ac6a")) (pin "3" (uuid "94283bed-8e47-5491-a6d8-665c9dba7e94")) (pin "4" (uuid "45a52b67-61ec-5c5b-9d8a-24e09f360344")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED4") (unit 1)))))
-(global_label "LED_D4" (shape passive) (at 259.08 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b898ce72-2d3d-5c77-a432-b726e75002b0"))
-(global_label "GND" (shape passive) (at 251.46 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "d30e26c5-4ea0-5800-8027-fbddd1687675"))
-(global_label "LED_D3" (shape passive) (at 243.84 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "f265a2c9-2488-5572-b770-656f7d0dc550"))
-(global_label "VLED" (shape passive) (at 251.46 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "003512d9-4c6c-519a-b99f-ead88e82ab14"))
+(symbol (lib_id "LED:WS2812B") (at 251.46 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "bb2bbed3-f237-5b93-9e98-38d4fc838d41") (property "Reference" "LED4" (at 254.46 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 254.46 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 254.46 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 254.46 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 254.46 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "5ce8cf94-99ab-52c9-b7bf-d0de0c4d038d")) (pin "2" (uuid "fe923e9b-3f46-5c34-8ab2-8893e112ac6a")) (pin "3" (uuid "94283bed-8e47-5491-a6d8-665c9dba7e94")) (pin "4" (uuid "45a52b67-61ec-5c5b-9d8a-24e09f360344")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED4") (unit 1)))))
+(global_label "VLED" (shape passive) (at 251.46 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b898ce72-2d3d-5c77-a432-b726e75002b0"))
+(global_label "LED_D4" (shape passive) (at 259.08 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "d30e26c5-4ea0-5800-8027-fbddd1687675"))
+(global_label "GND" (shape passive) (at 251.46 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "f265a2c9-2488-5572-b770-656f7d0dc550"))
+(global_label "LED_D3" (shape passive) (at 243.84 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "003512d9-4c6c-519a-b99f-ead88e82ab14"))
 (symbol (lib_id "Device:C") (at 251.46 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "0859267a-b0b2-5077-8f1d-560a94eb067b") (property "Reference" "C14" (at 254.46 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 254.46 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 254.46 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 254.46 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 254.46 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "c2134677-8153-56c4-849b-160594eecb26")) (pin "2" (uuid "b2fa56ae-fce0-549a-b799-9baf79b133ae")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C14") (unit 1)))))
 (global_label "VLED" (shape passive) (at 251.46 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "52a1cbfd-5076-5d15-b170-0188b958a0d1"))
 (global_label "GND" (shape passive) (at 251.46 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "c419d0df-5bee-5907-bb89-04ee8141c0a0"))
-(symbol (lib_id "LED:WS2812B-2020") (at 278.13 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "f92bdec8-8b31-590e-9265-02deb780289d") (property "Reference" "LED5" (at 281.13 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 281.13 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 281.13 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 281.13 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 281.13 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "84797591-5ec0-5caf-a6eb-a3500316b90b")) (pin "2" (uuid "803c24a2-d251-5485-9cf3-47e838a67b77")) (pin "3" (uuid "36d58fd2-e875-55f2-97cb-631864d63ffd")) (pin "4" (uuid "3324bc21-ca2e-5cd0-9e7c-fbad940b2efa")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED5") (unit 1)))))
-(global_label "LED_D5" (shape passive) (at 285.75 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "ef3d07a6-d303-5989-a363-605adf148bcb"))
-(global_label "GND" (shape passive) (at 278.13 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "b53bfb46-5968-5168-850e-208342ef9466"))
-(global_label "LED_D4" (shape passive) (at 270.51 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "7652ff8a-e8c5-5203-94ad-c48952ccc8dd"))
-(global_label "VLED" (shape passive) (at 278.13 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "63450220-a98a-5d4a-99b9-6239f7d29d18"))
+(symbol (lib_id "LED:WS2812B") (at 278.13 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "f92bdec8-8b31-590e-9265-02deb780289d") (property "Reference" "LED5" (at 281.13 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 281.13 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 281.13 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 281.13 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 281.13 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "84797591-5ec0-5caf-a6eb-a3500316b90b")) (pin "2" (uuid "803c24a2-d251-5485-9cf3-47e838a67b77")) (pin "3" (uuid "36d58fd2-e875-55f2-97cb-631864d63ffd")) (pin "4" (uuid "3324bc21-ca2e-5cd0-9e7c-fbad940b2efa")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED5") (unit 1)))))
+(global_label "VLED" (shape passive) (at 278.13 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "ef3d07a6-d303-5989-a363-605adf148bcb"))
+(global_label "LED_D5" (shape passive) (at 285.75 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b53bfb46-5968-5168-850e-208342ef9466"))
+(global_label "GND" (shape passive) (at 278.13 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "7652ff8a-e8c5-5203-94ad-c48952ccc8dd"))
+(global_label "LED_D4" (shape passive) (at 270.51 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "63450220-a98a-5d4a-99b9-6239f7d29d18"))
 (symbol (lib_id "Device:C") (at 278.13 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "a4eab87a-f99e-54f6-8fcb-7b0f75d13e59") (property "Reference" "C15" (at 281.13 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 281.13 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 281.13 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 281.13 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 281.13 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "9d6efa4f-a3a3-511e-b0c4-045de98b529e")) (pin "2" (uuid "e924fa75-06fb-5b1a-9396-657b2bcb4b55")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C15") (unit 1)))))
 (global_label "VLED" (shape passive) (at 278.13 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "c89a35b3-c2fd-56f6-ab50-66e9f10e61ea"))
 (global_label "GND" (shape passive) (at 278.13 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "b4ad89f3-ffc5-5ea0-9f8e-dfa33ebe4ad4"))
-(symbol (lib_id "LED:WS2812B-2020") (at 304.80 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "1535bc84-71aa-5092-92e5-77027ef4e44a") (property "Reference" "LED6" (at 307.8 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 307.8 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 307.8 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 307.8 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 307.8 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "6c6a4b3e-7db3-57ab-82a9-64f8c75aafd3")) (pin "2" (uuid "0e5a4be2-2fc3-5428-adfe-11ab14a2953c")) (pin "3" (uuid "97030098-9a37-53d0-88ed-51aa93058ddd")) (pin "4" (uuid "d14191f9-1120-5024-833b-8648d17ee611")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED6") (unit 1)))))
-(global_label "LED_D6" (shape passive) (at 312.42 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "185888a0-9ba3-5138-9e1e-6994fec6d574"))
-(global_label "GND" (shape passive) (at 304.80 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "b314fa1c-8e26-554c-965e-3ca9abde9543"))
-(global_label "LED_D5" (shape passive) (at 297.18 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "65ea0730-51bd-54d9-8b6a-e375e6e2e921"))
-(global_label "VLED" (shape passive) (at 304.80 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "52adeaec-79f1-58da-8e1e-edf91169f7d7"))
+(symbol (lib_id "LED:WS2812B") (at 304.80 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "1535bc84-71aa-5092-92e5-77027ef4e44a") (property "Reference" "LED6" (at 307.8 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 307.8 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 307.8 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 307.8 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 307.8 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "6c6a4b3e-7db3-57ab-82a9-64f8c75aafd3")) (pin "2" (uuid "0e5a4be2-2fc3-5428-adfe-11ab14a2953c")) (pin "3" (uuid "97030098-9a37-53d0-88ed-51aa93058ddd")) (pin "4" (uuid "d14191f9-1120-5024-833b-8648d17ee611")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED6") (unit 1)))))
+(global_label "VLED" (shape passive) (at 304.80 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "185888a0-9ba3-5138-9e1e-6994fec6d574"))
+(global_label "LED_D6" (shape passive) (at 312.42 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "b314fa1c-8e26-554c-965e-3ca9abde9543"))
+(global_label "GND" (shape passive) (at 304.80 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "65ea0730-51bd-54d9-8b6a-e375e6e2e921"))
+(global_label "LED_D5" (shape passive) (at 297.18 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "52adeaec-79f1-58da-8e1e-edf91169f7d7"))
 (symbol (lib_id "Device:C") (at 304.80 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "f5faf9be-5a67-5496-acfc-ed38dccfeb43") (property "Reference" "C16" (at 307.8 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 307.8 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 307.8 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 307.8 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 307.8 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "835adeaa-4780-58fb-9ce0-f48f55e4ac67")) (pin "2" (uuid "f1f33e23-b501-5c3e-803c-da93bc18f546")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C16") (unit 1)))))
 (global_label "VLED" (shape passive) (at 304.80 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "fa3ce3cd-c8b8-539a-bcc0-9e97eaf81f91"))
 (global_label "GND" (shape passive) (at 304.80 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "ff4e65c0-8097-5b87-a96b-e12afb5b994f"))
-(symbol (lib_id "LED:WS2812B-2020") (at 331.47 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "e5e11b91-b472-5c89-8dfc-c0f46a4a3f62") (property "Reference" "LED7" (at 334.47 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 334.47 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 334.47 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 334.47 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 334.47 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "8910e482-06b4-5fbc-b52f-59cae82d2977")) (pin "2" (uuid "b87238f8-5724-5ae0-97df-f5a9c2bbdf6c")) (pin "3" (uuid "3289d386-91c3-5f51-9f43-4b8182622c97")) (pin "4" (uuid "93e5485f-a216-53b8-947b-35f41c34a3fd")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED7") (unit 1)))))
-(global_label "LED_D7" (shape passive) (at 339.09 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "9fd66dd0-926d-53d8-a457-33c11be061d4"))
-(global_label "GND" (shape passive) (at 331.47 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "f2a1a80f-aebd-5c86-82f6-8ec7532b9dc7"))
-(global_label "LED_D6" (shape passive) (at 323.85 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "3d9d95b5-34e9-5eec-b646-9b964708d878"))
-(global_label "VLED" (shape passive) (at 331.47 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "978296b3-2f31-5d0a-b40f-d26adcc227a5"))
+(symbol (lib_id "LED:WS2812B") (at 331.47 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "e5e11b91-b472-5c89-8dfc-c0f46a4a3f62") (property "Reference" "LED7" (at 334.47 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 334.47 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 334.47 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 334.47 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 334.47 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "8910e482-06b4-5fbc-b52f-59cae82d2977")) (pin "2" (uuid "b87238f8-5724-5ae0-97df-f5a9c2bbdf6c")) (pin "3" (uuid "3289d386-91c3-5f51-9f43-4b8182622c97")) (pin "4" (uuid "93e5485f-a216-53b8-947b-35f41c34a3fd")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED7") (unit 1)))))
+(global_label "VLED" (shape passive) (at 331.47 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "9fd66dd0-926d-53d8-a457-33c11be061d4"))
+(global_label "LED_D7" (shape passive) (at 339.09 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "f2a1a80f-aebd-5c86-82f6-8ec7532b9dc7"))
+(global_label "GND" (shape passive) (at 331.47 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "3d9d95b5-34e9-5eec-b646-9b964708d878"))
+(global_label "LED_D6" (shape passive) (at 323.85 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "978296b3-2f31-5d0a-b40f-d26adcc227a5"))
 (symbol (lib_id "Device:C") (at 331.47 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "5860fa54-381e-5044-b65b-df5fab811063") (property "Reference" "C17" (at 334.47 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 334.47 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 334.47 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 334.47 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 334.47 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "05299af1-0566-5504-9f45-c50b46a5b02b")) (pin "2" (uuid "68650f71-5da3-542c-bcfb-a02a707a8618")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C17") (unit 1)))))
 (global_label "VLED" (shape passive) (at 331.47 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "8db72fa9-d913-51b5-b7d2-54c29b58fdb9"))
 (global_label "GND" (shape passive) (at 331.47 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "f2406b21-886d-509a-97b6-d14aba35ffdc"))
-(symbol (lib_id "LED:WS2812B-2020") (at 359.41 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "ef3931ef-c607-5a12-b982-1b647ec1c8db") (property "Reference" "LED8" (at 362.41 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 362.41 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 362.41 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 362.41 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 362.41 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "bf62bb28-8a7a-5be5-8d4c-95c0a2e9d78f")) (pin "2" (uuid "fab0fcc1-d1da-5811-b54b-67ebbc11151d")) (pin "3" (uuid "4116ea53-28e2-5e95-9d72-8719e3d5805c")) (pin "4" (uuid "5de82b3f-f4cc-5304-82ab-89de01dff824")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED8") (unit 1)))))
-(global_label "LED_D8" (shape passive) (at 367.03 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "2cefb5d0-5008-5e1d-90d9-908b837883ce"))
-(global_label "GND" (shape passive) (at 359.41 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "86d5d9ab-1ad5-5d71-9277-fe7e3192a9b8"))
-(global_label "LED_D7" (shape passive) (at 351.79 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "199b244e-cd9c-51b3-bd8e-c3a267c15327"))
-(global_label "VLED" (shape passive) (at 359.41 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "e4015a10-ecab-5135-a0f4-5a1d00e362e7"))
+(symbol (lib_id "LED:WS2812B") (at 359.41 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "ef3931ef-c607-5a12-b982-1b647ec1c8db") (property "Reference" "LED8" (at 362.41 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 362.41 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 362.41 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 362.41 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 362.41 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "bf62bb28-8a7a-5be5-8d4c-95c0a2e9d78f")) (pin "2" (uuid "fab0fcc1-d1da-5811-b54b-67ebbc11151d")) (pin "3" (uuid "4116ea53-28e2-5e95-9d72-8719e3d5805c")) (pin "4" (uuid "5de82b3f-f4cc-5304-82ab-89de01dff824")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED8") (unit 1)))))
+(global_label "VLED" (shape passive) (at 359.41 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "2cefb5d0-5008-5e1d-90d9-908b837883ce"))
+(global_label "LED_D8" (shape passive) (at 367.03 214.63 0) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "86d5d9ab-1ad5-5d71-9277-fe7e3192a9b8"))
+(global_label "GND" (shape passive) (at 359.41 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "199b244e-cd9c-51b3-bd8e-c3a267c15327"))
+(global_label "LED_D7" (shape passive) (at 351.79 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "e4015a10-ecab-5135-a0f4-5a1d00e362e7"))
 (symbol (lib_id "Device:C") (at 359.41 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "f2d8bd3b-3a5a-50ff-a2fc-958bdc422f3c") (property "Reference" "C18" (at 362.41 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 362.41 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 362.41 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 362.41 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 362.41 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "51986686-653a-5f64-bf2c-27f2c2d830ce")) (pin "2" (uuid "524736f3-ebc5-5c6d-a323-a47643282c09")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C18") (unit 1)))))
 (global_label "VLED" (shape passive) (at 359.41 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "0cdf0c06-6bfc-5b63-b9c4-8be1be3b13df"))
 (global_label "GND" (shape passive) (at 359.41 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "ea481c60-0fa6-50f5-aa82-86ab38e5287e"))
-(symbol (lib_id "LED:WS2812B-2020") (at 386.08 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "70da10fa-4fac-544f-97cc-6ef056c86636") (property "Reference" "LED9" (at 389.08 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B-2020" (at 389.08 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B-2020_PLCC4_2.0x2.0mm" (at 389.08 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 389.08 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C52917434" (at 389.08 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "4aaa524c-94fb-5b34-863d-65e480986dcd")) (pin "2" (uuid "39786683-733d-52f1-be48-97105fe0d15a")) (pin "3" (uuid "34fcbc1e-de4c-526f-81de-3da5334417eb")) (pin "4" (uuid "d49ba997-74a3-5c44-9561-0c18c17950c4")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED9") (unit 1)))))
-(no_connect (at 393.70 214.63) (uuid "86bbd8eb-91b3-5dce-92f2-b5c6b7ce37f0"))
-(global_label "GND" (shape passive) (at 386.08 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "c3d973d9-90d6-5690-93e1-13121f66de60"))
-(global_label "LED_D8" (shape passive) (at 378.46 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "126b1d9b-bd36-5188-ac5d-c48f15e422b1"))
-(global_label "VLED" (shape passive) (at 386.08 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "db919106-92f3-5ac0-84d3-a03813b6f1ec"))
+(symbol (lib_id "LED:WS2812B") (at 386.08 214.63 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "70da10fa-4fac-544f-97cc-6ef056c86636") (property "Reference" "LED9" (at 389.08 210.63 0) (effects (font (size 1.27 1.27)))) (property "Value" "WS2812B" (at 389.08 213.13 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm" (at 389.08 215.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 389.08 218.13 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C2874885" (at 389.08 220.63 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "4aaa524c-94fb-5b34-863d-65e480986dcd")) (pin "2" (uuid "39786683-733d-52f1-be48-97105fe0d15a")) (pin "3" (uuid "34fcbc1e-de4c-526f-81de-3da5334417eb")) (pin "4" (uuid "d49ba997-74a3-5c44-9561-0c18c17950c4")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "LED9") (unit 1)))))
+(global_label "VLED" (shape passive) (at 386.08 207.01 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "79894d6b-ad2b-5ef1-96e3-0cbd216a84bc"))
+(no_connect (at 393.70 214.63) (uuid "7c71f649-b4f1-544a-9d75-a61624788cd8"))
+(global_label "GND" (shape passive) (at 386.08 222.25 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "126b1d9b-bd36-5188-ac5d-c48f15e422b1"))
+(global_label "LED_D8" (shape passive) (at 378.46 214.63 180) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "db919106-92f3-5ac0-84d3-a03813b6f1ec"))
 (symbol (lib_id "Device:C") (at 386.08 240.03 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "bceb353d-0997-55c2-aee2-87ddb9b4c86d") (property "Reference" "C19" (at 389.08 236.03 0) (effects (font (size 1.27 1.27)))) (property "Value" "100n" (at 389.08 238.53 0) (effects (font (size 1.27 1.27)))) (property "Footprint" "Capacitor_SMD:C_0603_1608Metric" (at 389.08 241.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "Datasheet" "" (at 389.08 243.53 0) (effects (font (size 1.27 1.27)) (hide yes))) (property "LCSC" "C14663" (at 389.08 246.03 0) (effects (font (size 1.27 1.27)) (hide yes))) (pin "1" (uuid "327ba97a-bbb1-540f-b62d-1f29aa6d7afb")) (pin "2" (uuid "36b75bfd-b086-5ec3-9f2f-3e4e8dce604b")) (instances (project "r2_pico_carrier" (path "/1e5ddbbd-1ed4-52be-93d8-b73224ab9bea" (reference "C19") (unit 1)))))
 (global_label "VLED" (shape passive) (at 386.08 236.22 90) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify left)) (uuid "7ebafcec-4603-5119-89b6-6d3529117033"))
 (global_label "GND" (shape passive) (at 386.08 243.84 270) (fields_autoplaced yes) (effects (font (size 1.27 1.27)) (justify right)) (uuid "2762c337-8d95-57b1-b670-c50b75bd29b5"))
