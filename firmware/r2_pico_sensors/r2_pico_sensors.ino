@@ -1,12 +1,16 @@
 // r2_pico_sensors: R2's distance sensors (VL53L0X, HC-SR04) on a Raspberry Pi Pico 2,
 // read for the Pi 4 over USB serial. The Pi sends the sensors and their pins (CFG); the Pico
 // measures and answers with text lines. Protocol and wiring: README.md.
+// Core 0 measures and talks to the Pi; core 1 runs the carrier board's display, button and
+// LEDs (Display.h), which only read what core 0 measured.
 #include <Arduino.h>
+#include <pico/mutex.h>
 
 #include "Config.h"
 #include "Readings.h"
 #include "Sonar.h"
 #include "Tof.h"
+#include "Display.h"
 
 #define FW_VERSION "0.1.0"
 
@@ -18,6 +22,13 @@ SensorCfg cfg[MAX_SENSORS];
 Reading reading[MAX_SENSORS];
 int nSensors = 0;
 bool configured = false;
+
+// The I2C bus is shared by the VL53L0X (core 0) and the display (core 1). Initialised before
+// either setup() runs.
+mutex_t i2cLock;
+static struct I2cLockInit {
+  I2cLockInit() { mutex_init(&i2cLock); }
+} i2cLockInit;
 
 char line[LINE_MAX + 1];
 size_t lineLen = 0;
@@ -146,3 +157,8 @@ void loop() {
   }
   led(now);
 }
+
+// Core 1: the display, its button and the diagnostic LEDs
+void setup1() { display::setup(); }
+
+void loop1() { display::loop(); }

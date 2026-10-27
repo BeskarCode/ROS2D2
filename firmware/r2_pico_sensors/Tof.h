@@ -9,9 +9,12 @@
 #include <Arduino.h>
 #include <VL53L0X.h>
 #include <Wire.h>
+#include <pico/mutex.h>
 
 #include "Measure.h"
 #include "Readings.h"
+
+extern mutex_t i2cLock;     // the display (core 1) shares the bus
 
 namespace tof {
 
@@ -78,36 +81,53 @@ void begin() {
     lost(i);
   }
   delay(10);
-  for (int i = 0; i < nSensors; i++)
-    if (cfg[i].type == 'V') wake(i);
+  for (int i = 0; i < nSensors; i++) {
+    if (cfg[i].type != 'V') continue;
+    mutex_enter_blocking(&i2cLock);
+    wake(i);
+    mutex_exit(&i2cLock);
+  }
   lastRetry = millis();
 }
 
-void loop() {
-  for (int i = 0; i < nSensors; i++) {
-    if (cfg[i].type != 'V' || !reading[i].answers) continue;
+// One VL53L0X's turn: take its reading if there is one (called with the I2C lock held)
+void readOne(int i) {
+  {
     uint8_t ready = dev[i].readReg(RESULT_INTERRUPT_STATUS) & 0x07;
     if (dev[i].last_status != 0) {
       if (++fails[i] >= FAILS_TO_LOSE) off(i);
-      continue;
+      return;
     }
     if (!ready) {
       if (millis() - lastReading[i] > STUCK_MS) off(i);     // retried every RETRY_MS
-      continue;
+      return;
     }
     int16_t mm = tofResult(dev[i].readRangeContinuousMillimeters());
     if (dev[i].timeoutOccurred() || dev[i].last_status != 0 || mm == MEASURE_FAIL) {
       if (++fails[i] >= FAILS_TO_LOSE) off(i);
-      continue;
+      return;
     }
     fails[i] = 0;
     lastReading[i] = millis();
     report(i, mm);
   }
+}
+
+void loop() {
+  for (int i = 0; i < nSensors; i++) {
+    if (cfg[i].type != 'V' || !reading[i].answers) continue;
+    mutex_enter_blocking(&i2cLock);
+    readOne(i);
+    mutex_exit(&i2cLock);
+  }
   if (millis() - lastRetry >= RETRY_MS) {
     lastRetry = millis();
-    for (int i = 0; i < nSensors; i++)
-      if (cfg[i].type == 'V' && !reading[i].answers) wake(i);
+    for (int i = 0; i < nSensors; i++) {
+      if (cfg[i].type != 'V' || reading[i].answers) continue;
+      mutex_enter_blocking(&i2cLock);
+      wake(i);
+      mutex_exit(&i2cLock);
+    }
   }
 }
 
