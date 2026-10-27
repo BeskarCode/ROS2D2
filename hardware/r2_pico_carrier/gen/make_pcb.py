@@ -22,9 +22,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "r2_pico_carrier.kicad_pcb")
 FP = os.environ.get("KICAD_FP", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\share\kicad\footprints")
 CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\kicad-cli.exe")
-LOGO = os.path.join(HERE, "..", "..", "..", "ros2_ws", "src", "r2_web", "www", "astromech-spain-logo.png")
+# Astromech Spain's round logo (astromechspain.com, AstromechSpain_logo_circular_b.png, 1000 px)
+LOGO = os.path.join(HERE, "astromech-spain-logo-circular.png")
+# The OLED module (HS96L03W2C03, 27.3 x 27.8 mm; pins centred 2 mm from its top edge; holes
+# 23.5 x 23.8 mm apart) is fitted at the factory, flat over the board, soldered on J2's header
+OLED_X, OLED_TOP, OLED_W, OLED_H = 58.5, 60.0, 27.3, 27.8
 
-W, H = 80.0, 72.0                     # board size
+W, H = 80.0, 90.0                     # board size
 PICO_X, PICO_TOP = 40.0, 2.0          # Pico centre line and top edge (USB end)
 ROW = 8.89                            # Pico pin rows at +-8.89 mm from its centre
 PIN1_Y = PICO_TOP + 1.37 + 0.0        # first pin, 1.37 mm under the Pico's top edge
@@ -63,9 +67,11 @@ def placement():
               "J1": (10.5, 63.0, 0), "F1": (21.5, 59.5, 0), "D1": (28.0, 59.5, 180),
               "C1": (21.5, 64.5, 0), "C2": (25.0, 64.5, 0),
               "D2": (35.0, 59.5, 180), "D3": (35.0, 64.5, 180), "C3": (39.5, 64.5, 90),
-              "D4": (42.5, 59.5, 0), "R1": (46.0, 59.5, 0),
-              "J2": (61.0, 67.0, HEADER_ROT), "SW1": (72.0, 61.0, 0)})
-    for k, (x, y) in enumerate(((3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)), 1):
+              "D4": (40.8, 59.5, 0), "R1": (44.0, 57.0, 0),
+              "J2": (OLED_X - 3.81, OLED_TOP + 2.0, HEADER_ROT), "SW1": (38.0, 79.0, 0)})
+    for k, (dx, dy) in enumerate(((1.9, 2.0), (OLED_W - 1.9, 2.0), (1.9, OLED_H - 2.0), (OLED_W - 1.9, OLED_H - 2.0)), 5):
+        p[f"H{k}"] = (OLED_X - OLED_W / 2 + dx, OLED_TOP + dy, 0)
+    for k, (x, y) in enumerate(((3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)), 1):   # M3
         p[f"H{k}"] = (x, y, 0)
     return p
 
@@ -125,32 +131,49 @@ def rect(board, x0, y0, x1, y1, layer, width=0.15, filled=False):
 
 
 def logo(board, cx, y0, width, layer):
-    """The Astromech Spain logo as filled silkscreen rectangles (one per run of pixels).
-    On the back it is mirrored, so it reads right when the board is turned over."""
-    im = Image.open(LOGO).convert("RGBA")
-    px = 0.2                                              # mm per pixel
+    """The Astromech Spain logo as silkscreen: its black and red parts are printed, the yellow
+    stripe of the flag is left out so the flag still reads. Drawn at 0.05 mm per pixel from a
+    resampled mask (smooth edges), as filled rectangles: one per run of pixels, rows with the
+    same runs merged. On the back it is mirrored, so it reads right when the board is turned over."""
+    src = Image.open(LOGO).convert("RGBA")
+    mask = Image.new("L", src.size, 0)
+    for y in range(src.height):
+        for x in range(src.width):
+            r, g, b, a = src.getpixel((x, y))
+            yellow = r > 180 and g > 150 and b < 100
+            mask.putpixel((x, y), a if not yellow else 0)
+    px = 0.05
     cols = int(width / px)
-    im = im.resize((cols, round(im.height * cols / im.width)), Image.LANCZOS)
+    mask = mask.resize((cols, round(src.height * cols / src.width)), Image.LANCZOS)
     back = layer == pcbnew.B_SilkS
-    for y in range(im.height):
-        x = 0
+
+    def runs(y):
+        out, x = [], 0
         while x < cols:
-            r, g, b, a = im.getpixel((x, y))
-            if a > 110 and (r + g + b) / 3 > 60:
+            if mask.getpixel((x, y)) >= 128:
                 x1 = x
-                while x1 < cols:
-                    r2, g2, b2, a2 = im.getpixel((x1, y))
-                    if not (a2 > 110 and (r2 + g2 + b2) / 3 > 60):
-                        break
+                while x1 < cols and mask.getpixel((x1, y)) >= 128:
                     x1 += 1
-                xa, xb = cx - width / 2 + x * px, cx - width / 2 + x1 * px
-                if back:
-                    xa, xb = 2 * cx - xb, 2 * cx - xa
-                rect(board, xa, y0 + y * px, xb, y0 + (y + 1) * px, layer, filled=True)
+                out.append((x, x1))
                 x = x1
             else:
                 x += 1
-    return y0 + im.height * px
+        return out
+
+    y, n = 0, 0
+    while y < mask.height:
+        r = runs(y)
+        y1 = y + 1
+        while y1 < mask.height and runs(y1) == r:
+            y1 += 1
+        for xa, xb in r:
+            a, b = cx - width / 2 + xa * px, cx - width / 2 + xb * px
+            if back:
+                a, b = 2 * cx - b, 2 * cx - a
+            rect(board, a, y0 + y * px, b, y0 + y1 * px, layer, filled=True)
+            n += 1
+        y = y1
+    return y0 + mask.height * px
 
 
 def silkscreen(board):
@@ -172,18 +195,24 @@ def silkscreen(board):
     text(board, "> 50 cm", 66.0, 36.6, 0.9, bold=True)
     line(board, 54.0, 29.0, W - 0.5, 29.0)
     text(board, "+5V  GND", 13.0, 56.6, 0.8, bold=True)
+    # the OLED, lying flat: its outline, its pins, what goes there
+    x0 = OLED_X - OLED_W / 2
+    rect(board, x0, OLED_TOP, x0 + OLED_W, OLED_TOP + OLED_H, pcbnew.F_SilkS)
     for k, name in enumerate(["G", "V", "SCL", "SDA"]):
-        text(board, name, 61.0 + k * 2.54, 69.3, 0.8)
-    text(board, "OLED", 61.0 - 1.3, 64.6, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
-    text(board, "DISPLAY", 72.0, 65.0, 0.8, bold=True)
-    text(board, "ROS2D2 · NandoMadrid · rev A", 46.0, 70.6, 0.8, bold=True)
+        text(board, name, OLED_X - 3.81 + k * 2.54, OLED_TOP - 1.3, 0.8)
+    text(board, "OLED 0.96in HS96L03W2C03", OLED_X, OLED_TOP + 12.0, 1.0, bold=True)
+    text(board, "fitted flat, screen up", OLED_X, OLED_TOP + 14.5, 0.8)
+    text(board, "GND VCC SCL SDA", OLED_X, OLED_TOP + 16.7, 0.8)
+    text(board, "DISPLAY", 38.0, 83.5, 0.8, bold=True)
+    text(board, "ROS2D2 · NandoMadrid · rev A", 22.0, 88.3, 0.8, bold=True)
     # Back: the branding, where there are no pads: "ROS2D2" between the Pico's rows,
     # the logo and the rest along the bottom strip
     text(board, "ROS2D2", PICO_X, 27.0, 5.0, pcbnew.B_SilkS, bold=True, angle=90)
-    y = logo(board, 36.0, 54.5, 40.0, pcbnew.B_SilkS)
-    text(board, "ROS2D2 · by NandoMadrid", 36.0, y + 2.0, 1.6, pcbnew.B_SilkS, bold=True)
-    text(board, "www.astromechspain.com", 36.0, y + 4.6, 1.4, pcbnew.B_SilkS)
-    text(board, "R2 Pico carrier · rev A", 36.0, y + 7.0, 1.2, pcbnew.B_SilkS)
+    logo(board, 35.0, 59.0, 30.0, pcbnew.B_SilkS)
+    text(board, "ROS2D2", 63.0, 69.0, 2.0, pcbnew.B_SilkS, bold=True)
+    text(board, "by NandoMadrid", 63.0, 72.5, 1.4, pcbnew.B_SilkS, bold=True)
+    text(board, "www.astromechspain.com", 63.0, 76.0, 1.2, pcbnew.B_SilkS)
+    text(board, "R2 Pico carrier · rev A", 63.0, 79.0, 1.0, pcbnew.B_SilkS)
 
 
 def rules(board):

@@ -113,15 +113,20 @@ for k in range(1, 10):
         "LED:WS2812B-2020")
     cap(f"C{10 + k}", "100n", "VLED")
 
-# --- display socket and button ---------------------------------------------------------
-add("J2", "OLED SSD1306", "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical", "C2718488",
+# --- display (fitted at the factory) and button ---------------------------------------------
+# HS96L03W2C03: 0.96" 128x64 OLED module (SSD1315, SSD1306-compatible), 27.3 x 27.8 mm, 4 holes
+# GND VCC SCL SDA at 2.54 mm, centred 2 mm from its top edge; soldered flat, screen up, on a
+# 4-pin male header. Its M2 holes are H5-H8.
+add("J2", "OLED HS96L03W2C03", "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical", "C5248080",
     {1: "GND", 2: "+3V3", 3: "SCL", 4: "SDA"}, "Connector_Generic:Conn_01x04")
 add("SW1", "display", "Button_Switch_SMD:SW_Push_1P1T_XKB_TS-1187A", "C318884",
     {1: "BTN", 2: "GND"}, "Switch:SW_Push")
 
-# --- M3 mounting holes -------------------------------------------------------------------
+# --- M3 mounting holes; M2 holes for the OLED module lying flat on standoffs --------------
 for k in range(1, 5):
     add(f"H{k}", "M3", "MountingHole:MountingHole_3.2mm_M3", "", {}, "Mechanical:MountingHole")
+for k in range(5, 9):
+    add(f"H{k}", "M2 OLED", "MountingHole:MountingHole_2.2mm_M2", "", {}, "Mechanical:MountingHole")
 
 NETS = {n for p in PARTS.values() for n in p.pads.values() if n}
 
@@ -144,7 +149,7 @@ MAKER = {
     "C50984": ("BOOMELE", "2.54-1*20PFemale", "THT"),
     "C37208": ("BOOMELE", "2.54-1x6P male header, straight", "THT"),
     "C2691448": ("XFCN", "PZ254V-11-04P", "THT"),
-    "C2718488": ("BOOMELE", "2.54-1*4P female header", "THT"),
+    "C5248080": ("HS (Shenzhen Hansheng)", "HS96L03W2C03", "THT"),
     "C474952": ("KEFA", "KF128-5.08-2P", "THT"),
 }
 

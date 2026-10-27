@@ -27,7 +27,9 @@ def test_connector_pin_orders():
         assert [nets_of(f"VL{n}")[str(p)] for p in range(1, 7)] == ["+3V3", "GND", scl, sda, "", f"XSHUT{n}"]
     for n in range(1, 6):
         assert [nets_of(f"US{n}")[str(p)] for p in range(1, 5)] == ["+5V", f"TRIG{n}", f"ECHO{n}", "GND"]
+    # the OLED module's own pin order (HS96L03W2C03 datasheet: GND VCC SCL SDA)
     assert [nets_of("J2")[str(p)] for p in range(1, 5)] == ["GND", "+3V3", "SCL", "SDA"]
+    assert PARTS["J2"].lcsc == "C5248080"
     assert [nets_of("J1")[str(p)] for p in range(1, 3)] == ["5V_IN", "GND"]
 
 

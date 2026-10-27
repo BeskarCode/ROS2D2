@@ -78,8 +78,12 @@ def main():
     for i, (lcsc, refs) in enumerate(g.items(), 1):
         maker, mpn, kind = MAKER[lcsc]
         part = PARTS[refs[0]]
+        note = f"LCSC {lcsc}"
+        if refs == ["J2"]:
+            note += (". OLED module: solder it flat, screen up, over its silkscreen outline, on a 4-pin "
+                     "2.54 mm male header (pins GND VCC SCL SDA match the board).")
         rows.append([i, ",".join(refs), len(refs), maker, mpn, part.value, part.footprint.split(":")[1], kind,
-                     f"LCSC {lcsc}"])
+                     note])
     write_csv(os.path.join(ROOT, "pcbway", "bom.csv"),
               ["Item #", "Designator", "Qty", "Manufacturer", "Mfg Part #", "Description / Value",
                "Package/Footprint", "Type", "Your Instructions / Notes"], rows)

@@ -38,8 +38,8 @@ def test_jlcpcb_package():
         refs = [d.strip() for d in r["Designator"].split(",")]
         assert {PARTS[x].lcsc for x in refs} == {r["LCSC Part #"]}
     assert all(r["Layer"] == "Top" for r in cpl)
-    # origin at the bottom-left corner: every part inside the 80 x 72 mm board, y up
-    assert all(0 < float(r["Mid X"].rstrip("m")) < 80 and 0 < float(r["Mid Y"].rstrip("m")) < 72 for r in cpl)
+    # origin at the bottom-left corner: every part inside the 80 x 90 mm board, y up
+    assert all(0 < float(r["Mid X"].rstrip("m")) < 80 and 0 < float(r["Mid Y"].rstrip("m")) < 90 for r in cpl)
 
 
 def test_pcbway_package():

@@ -79,8 +79,8 @@ def placement():
         at[f"LED{k}"] = (170 + (k - 1) * 27, 215)
         at[f"C{10 + k}"] = (170 + (k - 1) * 27, 240)
     at["J2"], at["SW1"] = (40, 230), (85, 230)
-    for k in range(1, 5):
-        at[f"H{k}"] = (175 + (k - 1) * 15, 270)
+    for k in range(1, 9):
+        at[f"H{k}"] = (150 + (k - 1) * 12, 270)
     g = 1.27                                       # KiCad's connection grid
     return {r: (round(x / g) * g, round(y / g) * g) for r, (x, y) in at.items()}
 
