@@ -36,8 +36,17 @@ draws it again). With today's `sensors.yaml`:
 - VBUS is 5 V only while the Pico is powered by USB (it is: from the Pi).
 - About 20 mA per VL53L0X and 15 mA per HC-SR04: all seven fit on the Pi's USB.
 - Keep the I2C wires (SDA/SCL) short, under 50 cm. The VL53L0X's GPIO1 is not used.
-- **Reserved, never for a sensor:** GP16 and GP17 (I2C), GP23, GP24, GP25 (the board's own:
-  GP25 is the LED). The console does not offer them.
+- **Reserved, never for a sensor:** GP16 and GP17 (I2C), GP22 and GP26 (the carrier board's
+  LEDs and button), GP23, GP24, GP25 (the Pico's own: GP25 is the LED). The console does not
+  offer them.
+
+## The carrier board
+
+`hardware/r2_pico_carrier` is a board to order assembled: the Pico plugs in, and each sensor
+has its own connector (VL1-VL4, US1-US5), the ECHO dividers are on it, and it adds a 5 V input,
+one diagnostic LED per connector (GP22) and an OLED display with a button (GP26). The firmware
+handles them on the RP2350's second core; without the board, nothing changes. GP22 and GP26 are
+therefore reserved too. See its README.
 
 ## LED
 

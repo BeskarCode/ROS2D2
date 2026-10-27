@@ -8,8 +8,8 @@ Connectors keep the module's own pin order, so a straight Dupont cable fits:
   VL1-VL4 (VL53L0X GY-530) VIN GND SCL SDA GPIO1 XSHUT; US1-US5 (HC-SR04) VCC TRIG ECHO GND.
 VL1-VL2 sit on the I2C bus itself (cables < 50 cm); VL3-VL4 behind the U1 repeater (> 50 cm).
 
-LCSC numbers marked "verify" were taken from search results, not from the part page:
-make_fab.py checks every number against jlcpcb.com before the BOM is written.
+Every LCSC number was checked on its jlcpcb.com part page (27 Oct 2026). MAKER gives the
+maker and maker part number of each, for the PCBWay BOM (PCBWay does not use LCSC numbers).
 """
 from dataclasses import dataclass, field
 
@@ -58,10 +58,10 @@ def cap(ref, value, a, b="GND"):
 
 # --- Pico sockets -----------------------------------------------------------------
 SOCKET20 = "Connector_PinSocket_2.54mm:PinSocket_1x20_P2.54mm_Vertical"
-add("JP1", "Pico 2 pins 1-20", SOCKET20, "C49661", {k: PICO_PIN_NET[k] for k in range(1, 21)},
-    "Connector_Generic:Conn_01x20")                                      # verify
-add("JP2", "Pico 2 pins 40-21", SOCKET20, "C49661", {k: PICO_PIN_NET[41 - k] for k in range(1, 21)},
-    "Connector_Generic:Conn_01x20")                                      # verify
+add("JP1", "Pico 2 pins 1-20", SOCKET20, "C50984", {k: PICO_PIN_NET[k] for k in range(1, 21)},
+    "Connector_Generic:Conn_01x20")
+add("JP2", "Pico 2 pins 40-21", SOCKET20, "C50984", {k: PICO_PIN_NET[41 - k] for k in range(1, 21)},
+    "Connector_Generic:Conn_01x20")
 
 # --- 5 V input: J1 -> F1 -> D1 -> +5V; +5V -> D2 -> VSYS; +5V -> D3 -> VLED -------------
 add("J1", "5V in", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
@@ -98,7 +98,7 @@ for n in range(1, 5):
 # --- HC-SR04 connectors and ECHO dividers (1k ECHO -> pin, 2k pin -> GND) ---------------
 HDR4 = "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
 for n in range(1, 6):
-    add(f"US{n}", f"HC-SR04 {n}", HDR4, "C2691448",                       # verify
+    add(f"US{n}", f"HC-SR04 {n}", HDR4, "C2691448",
         {1: "+5V", 2: f"TRIG{n}", 3: f"ECHO{n}", 4: "GND"}, "Connector_Generic:Conn_01x04")
     resistor(f"R{10 + n}", "1k", f"ECHO{n}", f"ECHO{n}_P")
     resistor(f"R{20 + n}", "2k", f"ECHO{n}_P", "GND")
@@ -122,6 +122,29 @@ for k in range(1, 5):
     add(f"H{k}", "M3", "MountingHole:MountingHole_3.2mm_M3", "", {}, "Mechanical:MountingHole")
 
 NETS = {n for p in PARTS.values() for n in p.pads.values() if n}
+
+# LCSC number -> (maker, maker part number, type) for the PCBWay BOM
+MAKER = {
+    "C21190": ("UNI-ROYAL", "0603WAF1001T5E", "SMD"),
+    "C22975": ("UNI-ROYAL", "0603WAF2001T5E", "SMD"),
+    "C4190": ("UNI-ROYAL", "0603WAF2201T5E", "SMD"),
+    "C23162": ("UNI-ROYAL", "0603WAF4701T5E", "SMD"),
+    "C23140": ("UNI-ROYAL", "0603WAF330JT5E", "SMD"),
+    "C14663": ("Samsung", "CL10B104KB8NNNC", "SMD"),
+    "C15850": ("Samsung", "CL21A106KAYNNNE", "SMD"),
+    "C45783": ("Samsung", "CL21A226MAQNNNE", "SMD"),
+    "C8678": ("MDD", "SS34", "SMD"),
+    "C976305": ("BHFUSE", "BSMD1206-075-30V", "SMD"),
+    "C72043": ("Everlight", "19-217/GHC-YR1S2/3T", "SMD"),
+    "C80799": ("NXP", "PCA9517ADP,118", "SMD"),
+    "C965555": ("Worldsemi", "WS2812B-2020", "SMD"),
+    "C318884": ("XKB Connection", "TS-1187A-B-A-B", "SMD"),
+    "C50984": ("BOOMELE", "2.54-1*20PFemale", "THT"),
+    "C37208": ("BOOMELE", "2.54-1x6P male header, straight", "THT"),
+    "C2691448": ("XFCN", "PZ254V-11-04P", "THT"),
+    "C2718488": ("BOOMELE", "2.54-1*4P female header", "THT"),
+    "C474952": ("KEFA", "KF128-5.08-2P", "THT"),
+}
 
 
 def nets_of(ref):

@@ -188,6 +188,7 @@ def silkscreen(board):
 
 def rules(board):
     ds = board.GetDesignSettings()
+    ds.SetAuxOrigin(at(0, H))             # placement files: origin at the bottom-left corner
     ds.m_TrackMinWidth = mm(0.127)        # 5 mil: standard at JLCPCB and PCBWay
     ds.m_MinClearance = mm(0.15)
     ds.m_ViasMinSize = mm(0.6)
