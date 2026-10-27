@@ -171,7 +171,7 @@ def silkscreen(board):
     text(board, "< 50 cm", 66.0, 9.6, 0.9, bold=True)
     text(board, "> 50 cm", 66.0, 36.6, 0.9, bold=True)
     line(board, 54.0, 29.0, W - 0.5, 29.0)
-    text(board, "+5V  GND", 13.0, 57.3, 0.8, bold=True)
+    text(board, "+5V  GND", 13.0, 56.6, 0.8, bold=True)
     for k, name in enumerate(["G", "V", "SCL", "SDA"]):
         text(board, name, 61.0 + k * 2.54, 69.3, 0.8)
     text(board, "OLED", 61.0 - 1.3, 64.6, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)

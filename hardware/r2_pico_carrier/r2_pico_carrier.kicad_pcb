@@ -17994,7 +17994,7 @@
 		)
 	)
 	(gr_text "+5V  GND"
-		(at 13 57.3 0)
+		(at 13 56.6 0)
 		(layer "F.SilkS")
 		(uuid "3757380c-540f-4a20-b685-144bad3ff228")
 		(effects
