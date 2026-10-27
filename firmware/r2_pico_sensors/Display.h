@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <pico/mutex.h>
+#include <string.h>
 
 #include "Board.h"
 #include "Logo.h"
@@ -26,7 +27,7 @@ constexpr uint8_t BRIGHT = 25;          // of 255: the 9 LEDs stay under ~100 mA
 GFXcanvas1 canvas(128, 64);
 Adafruit_NeoPixel leds(N_CONN, LED_PIN, NEO_GRB + NEO_KHZ800);
 Ui ui;
-bool present = false, lit = false, lastButton = true;
+bool present = false, lit = false;
 uint32_t lastProbe = 0, lastFrame = 0, lastLeds = 0;
 
 enum class State { NotConfigured, NotResponding, Ok };
@@ -62,7 +63,13 @@ void power(bool on) {
   present = command(&c, 1) && present;
 }
 
-// One page (8 rows) of the canvas, as the SSD1306 wants it: one byte per column, LSB on top
+// One page (8 rows) of the canvas, as the SSD1306 wants it: one byte per column, LSB on top.
+// Sent only if it changed since last time, in CHUNK-byte writes (~3.5 ms at 100 kHz each): the
+// Wire timeout (10 ms, for the whole transfer) is never reached and the VL53L0X never wait long.
+constexpr int CHUNK = 32;
+uint8_t sent[8][128];
+bool sentValid = false;
+
 bool sendPage(int page) {
   uint8_t data[128];
   for (int x = 0; x < 128; x++) {
@@ -71,15 +78,20 @@ bool sendPage(int page) {
       if (canvas.getPixel(x, page * 8 + k)) v |= 1 << k;
     data[x] = v;
   }
+  if (sentValid && memcmp(data, sent[page], 128) == 0) return true;
   const uint8_t where[] = {0x21, 0, 127, 0x22, (uint8_t)page, (uint8_t)page};
   if (!command(where, sizeof where)) return false;
-  mutex_enter_blocking(&i2cLock);
-  Wire.beginTransmission(ADDRESS);
-  Wire.write(0x40);
-  Wire.write(data, sizeof data);
-  bool ok = Wire.endTransmission() == 0;
-  mutex_exit(&i2cLock);
-  return ok;
+  for (int x = 0; x < 128; x += CHUNK) {     // horizontal addressing: the column carries on
+    mutex_enter_blocking(&i2cLock);
+    Wire.beginTransmission(ADDRESS);
+    Wire.write(0x40);
+    Wire.write(data + x, CHUNK);
+    bool ok = Wire.endTransmission() == 0;
+    mutex_exit(&i2cLock);
+    if (!ok) return false;
+  }
+  memcpy(sent[page], data, 128);
+  return true;
 }
 
 void drawSplash() {
@@ -145,7 +157,7 @@ void drawLeds(uint32_t now) {
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  lastButton = digitalRead(BUTTON_PIN);
+  ui.level = digitalRead(BUTTON_PIN);
   leds.begin();
   leds.clear();
   leds.show();
@@ -153,15 +165,14 @@ void setup() {
 
 void loop() {
   uint32_t now = millis();
-  bool b = digitalRead(BUTTON_PIN);
-  if (lastButton && !b) uiPress(ui, now);
-  lastButton = b;
+  uiButton(ui, digitalRead(BUTTON_PIN), now);
   uiTick(ui, now);
   bool on = ui.screen != Screen::Off;
   if (!present && now - lastProbe >= PROBE_MS) {     // plugged in later: found within 3 s
     lastProbe = now;
     present = probe();
     lit = false;
+    sentValid = false;          // a display plugged in again shows nothing yet
   }
   if (on != lit) {
     lit = on;
@@ -176,7 +187,11 @@ void loop() {
     lastFrame = now;
     if (ui.screen == Screen::Splash) drawSplash();
     else drawSensor();
-    for (int page = 0; page < 8 && present; page++) present = sendPage(page);
+    for (int page = 0; page < 8 && present; page++) {
+      present = sendPage(page);
+      uiButton(ui, digitalRead(BUTTON_PIN), millis());     // a short tap is not missed
+    }
+    sentValid = present;
   }
   if (now - lastLeds >= LED_MS) {
     lastLeds = now;
