@@ -17,7 +17,11 @@
 
 set -euo pipefail
 
-R2_USER="${1:-${SUDO_USER:-fernando}}"
+R2_USER="${1:-${SUDO_USER:-}}"
+if [[ -z "$R2_USER" ]]; then
+  echo "Which user runs ROS2D2? sudo bash $0 <your-user>" >&2
+  exit 1
+fi
 R2_HOME="$(getent passwd "$R2_USER" | cut -d: -f6)"
 ROS_DOMAIN=2   # all R2 nodes share this DDS domain
 
