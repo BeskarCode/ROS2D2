@@ -134,6 +134,8 @@ def test_a_sensor_that_stops_answering_stops_publishing(bench):
     assert bench.spin_until(lambda: bench.ranges.get("tof_front_left"))
     bench.pico.states = "NNNNNNN"
     assert bench.spin_until(lambda: sensors(bench).get("tof_front_left") == "not_responding")
+    # let readings published before the 'N' arrive first, so they are not counted below
+    bench.spin_until(lambda: False, 0.3)
     # an R that was already on its way must not be published once the sensor is 'N'
     bench.node.on_line("R 0:300")
     count = len(bench.ranges["tof_front_left"])
