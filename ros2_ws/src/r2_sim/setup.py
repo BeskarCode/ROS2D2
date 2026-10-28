@@ -17,7 +17,7 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Fernando Beltran",
+    maintainer="NandoMadrid",
     maintainer_email="BeskarCode@users.noreply.github.com",
     description="ROS2D2 simulator: a room with obstacles, pretend lidar and distance sensors, a fake Mega",
     license="MIT",
