@@ -6,7 +6,7 @@ Item #,Designator,Qty,Manufacturer,Mfg Part #,Description / Value,Package/Footpr
 5,"D4,LED1,LED2,LED3,LED4,LED5,LED6,LED7,LED8,LED9",10,Hubei KENTO Elec,KT-0603R,red,LED_0603_1608Metric,SMD,LCSC C2286
 6,F1,1,BHFUSE,BSMD1206-075-30V,0.75A,Fuse_1206_3216Metric,SMD,LCSC C976305
 7,J1,1,KEFA,KF128-5.08-2P,5V in,"TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",THT,LCSC C474952
-8,J2,1,BOOMELE,2.54-1*4PFemale,OLED socket,PinSocket_1x04_P2.54mm_Vertical,THT,"LCSC C2718488. Socket only: the OLED module is not supplied, it is plugged in later."
+8,"J2,US1,US2,US3,US4,US5",6,XFCN,PZ254V-11-04P,OLED header,PinHeader_1x04_P2.54mm_Vertical,THT,"LCSC C2691448. J2 is the OLED header: the OLED module is not supplied, it is soldered on later."
 9,J3,1,JST,BM04B-SRSS-TB(LF)(SN),Qwiic,JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical,SMD,LCSC C160390
 10,"J4,VL1,VL2,VL3,VL4",5,BOOMELE,"2.54-1x6P male header, straight",expansion,PinHeader_1x06_P2.54mm_Vertical,THT,LCSC C37208
 11,J5,1,Korean Hroparts Elec,TYPE-C-31-M-12,USB-C 5V in,USB_C_Receptacle_HRO_TYPE-C-31-M-12,SMD,LCSC C165948
@@ -18,4 +18,3 @@ Item #,Designator,Qty,Manufacturer,Mfg Part #,Description / Value,Package/Footpr
 17,"R21,R22,R23,R24,R25",5,UNI-ROYAL,0603WAF2001T5E,2k,R_0603_1608Metric,SMD,LCSC C22975
 18,SW1,1,XKB Connection,TS-1187A-B-A-B,display,SW_Push_1P1T_XKB_TS-1187A,SMD,LCSC C318884
 19,U1,1,NXP,"PCA9517ADP,118",PCA9517A,VSSOP-8_3x3mm_P0.65mm,SMD,LCSC C80799
-20,"US1,US2,US3,US4,US5",5,XFCN,PZ254V-11-04P,HC-SR04 1,PinHeader_1x04_P2.54mm_Vertical,THT,LCSC C2691448

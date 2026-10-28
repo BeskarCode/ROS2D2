@@ -33,7 +33,10 @@ def test_connector_pin_orders():
         assert [nets_of(f"US{n}")[str(p)] for p in range(1, 5)] == ["+5V", f"TRIG{n}", f"ECHO{n}", "GND"]
     # the OLED module's own pin order (HS96L03W2C03 datasheet: GND VCC SCL SDA)
     assert [nets_of("J2")[str(p)] for p in range(1, 5)] == ["GND", "+3V3", "SCL", "SDA"]
-    assert PARTS["J2"].footprint.endswith("PinSocket_1x04_P2.54mm_Vertical")   # the OLED plugs in
+    # J2 is a male header fitted at the factory; the OLED goes over it and is soldered, flat on the
+    # header's plastic (no socket: it would leave the module ~11 mm up). Same part as US1-US5.
+    assert PARTS["J2"].footprint.endswith("PinHeader_1x04_P2.54mm_Vertical")
+    assert PARTS["J2"].lcsc == PARTS["US1"].lcsc and not PARTS["J2"].dnp
     assert [nets_of("J1")[str(p)] for p in range(1, 3)] == ["5V_IN", "GND"]
 
 

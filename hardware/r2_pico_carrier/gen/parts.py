@@ -128,11 +128,12 @@ for k in range(1, 10):
     add(f"LED{k}", "red", "LED_SMD:LED_0603_1608Metric", "C2286", {1: "GND", 2: f"STAT{k}_A"}, "Device:LED")
 
 # --- display socket and button -------------------------------------------------------------
-# J2: 4-pin female socket fitted at the factory. The OLED (any 0.96" 128x64 SSD1306/SSD1315 I2C
-# module, 27.3 x 27.8 mm, holes GND VCC SCL SDA 2 mm from its top edge, e.g. HS96L03W2C03) gets a
-# male header soldered pins down and plugs in lying flat, screen up, on ~11 mm M2 standoffs in
-# H5-H8. No OLED module was in stock at JLCPCB when quoting.
-add("J2", "OLED socket", "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical", "C2718488",
+# J2: 4-pin male header fitted at the factory (the same part as US1-US5). The OLED (any 0.96"
+# 128x64 SSD1306/SSD1315 I2C module, 27.3 x 27.8 mm, holes GND VCC SCL SDA 2 mm from its top edge,
+# e.g. HS96L03W2C03, with its own header NOT soldered) goes over the pins, screen up, and is
+# soldered from the top: it lies flat on the header's 2.5 mm plastic (H5-H8 take 2.5 mm M2
+# standoffs if wanted). No OLED module was in stock at JLCPCB when quoting.
+add("J2", "OLED header", HDR4, "C2691448",
     {1: "GND", 2: "+3V3", 3: "SCL", 4: "SDA"}, "Connector_Generic:Conn_01x04")
 add("SW1", "display", "Button_Switch_SMD:SW_Push_1P1T_XKB_TS-1187A", "C318884",
     {1: "BTN", 2: "GND"}, "Switch:SW_Push")
@@ -171,7 +172,6 @@ MAKER = {
     "C2905423": ("Shenzhen Kinghelm Elec", "KH-2.54FH-1X20P-H8.5", "THT"),
     "C37208": ("BOOMELE", "2.54-1x6P male header, straight", "THT"),
     "C2691448": ("XFCN", "PZ254V-11-04P", "THT"),
-    "C2718488": ("BOOMELE", "2.54-1*4PFemale", "THT"),
     "C474952": ("KEFA", "KF128-5.08-2P", "THT"),
 }
 

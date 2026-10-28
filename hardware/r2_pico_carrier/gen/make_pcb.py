@@ -26,7 +26,7 @@ CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCa
 # Astromech Spain's round logo (astromechspain.com, AstromechSpain_logo_circular_b.png, 1000 px)
 LOGO = os.path.join(HERE, "astromech-spain-logo-circular.png")
 # The OLED module (0.96" SSD1306/SSD1315, 27.3 x 27.8 mm; pins centred 2 mm from its top edge;
-# holes 23.5 x 23.8 mm apart) plugs into J2's socket lying flat, on M2 standoffs in H5-H8
+# holes 23.5 x 23.8 mm apart) is soldered onto J2's male header, flat on its plastic (H5-H8: M2)
 OLED_X, OLED_TOP, OLED_W, OLED_H = 58.5, 60.0, 27.3, 27.8
 
 W, H = 80.0, 90.0                     # board size
@@ -207,7 +207,7 @@ def silkscreen(board):
     for k, name in enumerate(["G", "V", "SCL", "SDA"]):
         text(board, name, OLED_X - 3.81 + k * 2.54, OLED_TOP - 1.3, 0.8)
     text(board, "OLED 0.96in SSD1306 I2C", OLED_X, OLED_TOP + 12.0, 1.0, bold=True)
-    text(board, "screen up, M2 standoffs 11 mm", OLED_X, OLED_TOP + 14.5, 0.8)
+    text(board, "screen up, soldered on J2", OLED_X, OLED_TOP + 14.5, 0.8)
     text(board, "GND VCC SCL SDA", OLED_X, OLED_TOP + 16.7, 0.8)
     text(board, "DISPLAY", 38.0, 83.5, 0.8, bold=True)
     logo(board, 21.0, 71.0, 13.0, pcbnew.F_SilkS)        # the free corner under the 5 V input

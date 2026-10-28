@@ -92,8 +92,8 @@ def main():
         maker, mpn, kind = MAKER[lcsc]
         part = PARTS[refs[0]]
         note = f"LCSC {lcsc}"
-        if refs == ["J2"]:
-            note += ". Socket only: the OLED module is not supplied, it is plugged in later."
+        if "J2" in refs:
+            note += ". J2 is the OLED header: the OLED module is not supplied, it is soldered on later."
         rows.append([i, ",".join(refs), len(refs), maker, mpn, part.value, part.footprint.split(":")[1], kind,
                      note])
     write_csv(os.path.join(ROOT, "pcbway", "bom.csv"),

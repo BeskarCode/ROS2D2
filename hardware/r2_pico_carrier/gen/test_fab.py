@@ -8,7 +8,7 @@ from parts import PARTS
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
 LAYERS = ("F_Cu", "B_Cu", "F_Mask", "B_Mask", "F_Silkscreen", "B_Silkscreen", "F_Paste", "B_Paste", "Edge_Cuts")
-ASSEMBLED = {r for r, p in PARTS.items() if not r.startswith("H")}
+ASSEMBLED = {r for r, p in PARTS.items() if not r.startswith("H") and not p.dnp}
 
 
 def rows(path):
