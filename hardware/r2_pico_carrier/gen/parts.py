@@ -6,7 +6,9 @@ The Pico 2 plugs in, pins down, into two 1x20 female sockets:
   JP1 pin k = Pico pin k (1..20, the GP0 side); JP2 pin k = Pico pin 41-k (40..21).
 Connectors keep the module's own pin order, so a straight Dupont cable fits:
   VL1-VL4 (VL53L0X GY-530) VIN GND SCL SDA GPIO1 XSHUT; US1-US5 (HC-SR04) VCC TRIG ECHO GND.
-VL1-VL2 sit on the I2C bus itself (cables < 50 cm); VL3-VL4 behind the U1 repeater (> 50 cm).
+VL1-VL4 all sit behind the U1 repeater: any of them takes a cable of any length up to 1 m
+(4 x 1 m Dupont ~ 400 pF + modules, under the ~530 pF that 2.2k pull-ups allow at 100 kHz).
+The Pico's own short bus (4.7k pull-ups) keeps the display, Qwiic and EXP.
 
 Every LCSC number was checked on its jlcpcb.com part page (27 Oct 2026); JP1/JP2 and D4 were
 changed to parts JLCPCB had in stock when quoting (the first ones were out of stock). The status
@@ -110,7 +112,7 @@ resistor("R5", "2.2k", "SCL_L", "+3V3")
 # --- VL53L0X connectors ----------------------------------------------------------------
 HDR6 = "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical"
 for n in range(1, 5):
-    sda, scl = ("SDA", "SCL") if n <= 2 else ("SDA_L", "SCL_L")
+    sda, scl = "SDA_L", "SCL_L"            # every VL behind the repeater: any cable up to 1 m
     add(f"VL{n}", f"VL53L0X {n}", HDR6, "C37208",
         {1: "+3V3", 2: "GND", 3: scl, 4: sda, 5: "", 6: f"XSHUT{n}"}, "Connector_Generic:Conn_01x06")
 

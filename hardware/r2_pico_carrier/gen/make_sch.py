@@ -134,7 +134,7 @@ def main():
                    f'(instances (project "r2_pico_carrier" (path "/{ROOT}" (reference "#FLG0{i + 1}") (unit 1)))))')
         out.append(label(net, x, y, 270, ("flag", net)))
     titles = [("R2 Pico carrier — power", 25, 25), ("Pico 2 (plugs in, pins down)", 25, 95),
-              ("I2C: VL1-VL2 short bus, U1 repeater to VL3-VL4 (> 50 cm)", 160, 25),
+              ("I2C: Pico bus (display, Qwiic, EXP); U1 repeater to VL1-VL4 (cables up to 1 m)", 160, 25),
               ("VL53L0X connectors (GY-530 order)", 160, 85),
               ("HC-SR04 connectors, ECHO 1k/2k dividers", 160, 135),
               ("Status LEDs, one GPIO each (LED1-4 = VL1-4, LED5-9 = US1-5)", 140, 200), ("Display, button, expansion (Qwiic, header)", 25, 210)]

@@ -8,7 +8,7 @@ Layout (top view, mm, origin at the top-left corner):
   - the Pico in the middle, its USB on the top edge (the cable from the Pi plugs in there);
   - HC-SR04 connectors US1-US5 on the left (their GPIOs are on the Pico's left row), each
     with its ECHO divider and its LED;
-  - VL53L0X connectors VL1-VL4 on the right (next to the I2C pins), VL3-VL4 marked > 50 cm;
+  - VL53L0X connectors VL1-VL4 on the right, all behind the U1 repeater (cables up to 1 m);
   - the 5 V input (terminal, and USB-C on the left edge) and its protection bottom left;
     display socket and button bottom right; the expansion (Qwiic + header) between them.
 """
@@ -27,7 +27,9 @@ CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCa
 LOGO = os.path.join(HERE, "astromech-spain-logo-circular.png")
 # The OLED module (0.96" SSD1306/SSD1315, 27.3 x 27.8 mm; pins centred 2 mm from its top edge;
 # holes 23.5 x 23.8 mm apart) is soldered onto J2's male header, flat on its plastic (H5-H8: M2)
-OLED_X, OLED_TOP, OLED_W, OLED_H = 58.5, 60.0, 27.3, 27.8
+OLED_X, OLED_TOP, OLED_W, OLED_H = 58.5, 60.0, 27.3, 27.8      # further right: H8 meets the M3 corner hole
+# EXP header pin 1: a Dupont plug on its last pin stays ~3 mm clear of the OLED's left edge
+EXP_X = 27.5
 
 W, H = 80.0, 90.0                     # board size
 PICO_X, PICO_TOP = 40.0, 2.0          # Pico centre line and top edge (USB end)
@@ -74,7 +76,7 @@ def placement():
               "J5": (3.6, 75.0, 270), "R6": (11.0, 73.0, 0), "R7": (11.0, 76.0, 0),
               "D5": (11.5, 81.0, 90),
               # expansion: Qwiic, and the 2.54 mm header between the Pico and the OLED
-              "J3": (37.0, 64.5, 0), "J4": (30.5, 69.0, HEADER_ROT)})
+              "J3": (37.0, 64.5, 0), "J4": (EXP_X, 69.0, HEADER_ROT)})
     for k, (dx, dy) in enumerate(((1.9, 2.0), (OLED_W - 1.9, 2.0), (1.9, OLED_H - 2.0), (OLED_W - 1.9, OLED_H - 2.0)), 5):
         p[f"H{k}"] = (OLED_X - OLED_W / 2 + dx, OLED_TOP + dy, 0)
     for k, (x, y) in enumerate(((3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)), 1):   # M3
@@ -197,9 +199,7 @@ def silkscreen(board):
         text(board, f"VL{i + 1}", 55.0 - 1.3, y - 2.9, 1.0, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
         for k, name in enumerate(VL_PINS):
             text(board, name, 55.0 + k * 2.54, y + 2.75, 0.8)
-    text(board, "< 50 cm", 66.0, 9.6, 0.9, bold=True)
-    text(board, "> 50 cm", 66.0, 36.6, 0.9, bold=True)
-    line(board, 54.0, 29.0, W - 0.5, 29.0)
+    text(board, "cable <= 1 m", 68.0, 9.6, 0.9, bold=True)
     # J1 turned so its wires come in from the left edge: pin 1 (+5V) on top, pin 2 (GND) below
     text(board, "+5V", 12.0, 59.0, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
     text(board, "GND", 12.0, 64.08, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
@@ -215,8 +215,8 @@ def silkscreen(board):
     logo(board, 21.0, 71.0, 13.0, pcbnew.F_SilkS)        # the free corner under the 5 V input
     text(board, "USB-C 5V", 5.0, 81.2, 0.8, bold=True)
     for k, name in enumerate(["5V", "G", "3V3", "SCL", "SDA", "RUN"]):
-        text(board, name, 30.5 + k * 2.54, 71.75, 0.8)
-    text(board, "EXP", 30.5 - 1.3, 66.6, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
+        text(board, name, EXP_X + k * 2.54, 71.75, 0.8)
+    text(board, "EXP", EXP_X - 1.3, 66.6, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
     text(board, "QWIIC", 42.6, 64.5, 0.8, bold=True)
     text(board, "ROS2D2 · NandoMadrid · rev A", 22.0, 88.3, 0.8, bold=True)
     # Back: the branding, where there are no pads: "ROS2D2" between the Pico's rows,

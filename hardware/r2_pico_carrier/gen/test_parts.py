@@ -27,7 +27,7 @@ def refs_on(net):
 
 
 def test_connector_pin_orders():
-    for n, (sda, scl) in enumerate([("SDA", "SCL")] * 2 + [("SDA_L", "SCL_L")] * 2, 1):
+    for n, (sda, scl) in enumerate([("SDA_L", "SCL_L")] * 4, 1):
         assert [nets_of(f"VL{n}")[str(p)] for p in range(1, 7)] == ["+3V3", "GND", scl, sda, "", f"XSHUT{n}"]
     for n in range(1, 6):
         assert [nets_of(f"US{n}")[str(p)] for p in range(1, 5)] == ["+5V", f"TRIG{n}", f"ECHO{n}", "GND"]
@@ -41,9 +41,12 @@ def test_connector_pin_orders():
 
 
 def test_long_group():
-    assert {"VL1", "VL2", "J2", "U1"} <= refs_on("SDA") and {"VL3", "VL4"}.isdisjoint(refs_on("SDA"))
-    assert {"VL3", "VL4", "U1"} <= refs_on("SDA_L") and {"VL1", "VL2", "J2"}.isdisjoint(refs_on("SDA_L"))
-    assert {"VL1", "VL2", "J2", "U1"} <= refs_on("SCL") and {"VL3", "VL4", "U1"} <= refs_on("SCL_L")
+    """Every VL53L0X sits behind the U1 repeater, so any VL connector takes a short or a long
+    cable; the Pico's own short bus keeps only the display, Qwiic and EXP."""
+    vls = {f"VL{n}" for n in range(1, 5)}
+    assert vls | {"U1"} <= refs_on("SDA_L") and vls | {"U1"} <= refs_on("SCL_L")
+    assert vls.isdisjoint(refs_on("SDA")) and vls.isdisjoint(refs_on("SCL"))
+    assert {"J2", "J3", "J4", "U1"} <= refs_on("SDA") and {"J2", "J3", "J4"}.isdisjoint(refs_on("SDA_L"))
 
 
 def test_pico_pins():
@@ -166,7 +169,7 @@ def test_schematic_matches_parts(tmp_path):
 def test_repeater_sides():
     """PCA9517A: port B has the static low offset, port A drives a clean ~0 V low (datasheet,
     'typical application driving a short cable': master on B, cable on A). So the Pico's short
-    bus is on B and the long cables to VL3-VL4 are on A."""
+    bus is on B and the cables to VL1-VL4 are on A."""
     u1 = PARTS["U1"].pads
     assert (u1["2"], u1["3"]) == ("SCL_L", "SDA_L")       # SCLA, SDAA: the long bus
     assert (u1["7"], u1["6"]) == ("SCL", "SDA")           # SCLB, SDAB: the Pico's bus
