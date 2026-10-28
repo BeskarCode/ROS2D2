@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The carrier board's parts and nets (parts.py), checked before any drawing is made.
 Run with KiCad's Python:  $KPY -m pytest hardware/r2_pico_carrier/gen
 """

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The whole loop without ROS, for tests and debugging: the simulated room and sensors (r2_sim),
 the navigator (nav_core), the node's filter and ramps, and the bridge's unit conversion and limits.
 Deterministic with a seed. drive(...) returns the trace:

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Write r2_pico_carrier.kicad_sch from parts.py: each part's symbol (copied from KiCad's own
 libraries), a net label on every connected pin and a no-connect flag on every free one.
 Blocks by function, so the PDF reads like a hand-drawn schematic.

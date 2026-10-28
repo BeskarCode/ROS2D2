@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Web console: rosbridge (ws :9090), the page server (http :8080) and web_video_server
 (http :8081), which sends the cameras' JPEG pictures to the browser as MJPEG without
 re-encoding them: far lighter than passing them through rosbridge.

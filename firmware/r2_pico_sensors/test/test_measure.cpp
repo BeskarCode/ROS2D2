@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Host test of the measuring rules (no Arduino):
 //   g++ -std=c++17 -Wall -I. test/test_measure.cpp -o /tmp/m && /tmp/m
 #include <cstdio>

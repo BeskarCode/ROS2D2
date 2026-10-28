@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // What the droid's sensors see, without DOM or three.js (tested with node --test).
 // Sensors carry the sensors.yaml fields: metres and degrees in ROS axes (base_link):
 // x forward, y left, z up; yaw_deg + = left, pitch_deg + = down.

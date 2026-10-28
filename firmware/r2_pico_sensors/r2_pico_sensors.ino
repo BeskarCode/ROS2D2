@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // r2_pico_sensors: R2's distance sensors (VL53L0X, HC-SR04) on a Raspberry Pi Pico 2,
 // read for the Pi 4 over USB serial. The Pi sends the sensors and their pins (CFG); the Pico
 // measures and answers with text lines. Protocol and wiring: README.md.

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The ordering packages made by make_fab.py: JLCPCB (LCSC parts) and PCBWay (maker part numbers)."""
 import csv
 import os

@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Host test of the CFG parser (no Arduino):
 //   g++ -std=c++17 -Wall -I. test/test_config.cpp -o /tmp/t && /tmp/t
 #include <cstdio>

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """R2 Pico carrier board: every part, its footprint, its LCSC number and the net on each pad.
 The one source of truth: the schematic (make_sch.py), the board (make_pcb.py) and the
 JLCPCB BOM/CPL (make_fab.py) are all generated from this file. Checked by test_parts.py.

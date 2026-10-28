@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """A pretend Pico (firmware/r2_pico_sensors) on the master side of a pty, for tests and the
 bench: it answers HELLO and CFG, sends HB and R lines like the real one.
 

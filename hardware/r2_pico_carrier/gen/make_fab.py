@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The ordering packages for the carrier board, from the routed r2_pico_carrier.kicad_pcb:
 
   jlcpcb/  gerber.zip, bom.csv (Comment, Designator, Footprint, LCSC Part #), cpl.csv

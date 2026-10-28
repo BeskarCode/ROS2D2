@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Write r2_pico_carrier.kicad_pcb from parts.py: outline, M3 holes, every footprint placed
 with its nets, silkscreen (connector names and pins, the Pico's outline, the branding on the
 back) and the GND pour. No tracks: route.py routes it.

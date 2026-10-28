@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // How a raw HC-SR04 echo or VL53L0X result becomes the millimetres sent to the Pi.
 // Plain C++ (no Arduino), so test/test_measure.cpp runs on any computer.
 // -1 means "answers, nothing in range": the Pi publishes it as infinity, which the navigator

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 # ROS2D2 - prepares a Raspberry Pi 4 (Ubuntu Server 24.04 or 26.04, 64-bit) as the
 # ROS 2 "brain" that sits on top of a ShadowMD Arduino Mega.
 #

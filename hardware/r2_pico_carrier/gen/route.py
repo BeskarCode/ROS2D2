@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Route r2_pico_carrier.kicad_pcb with Freerouting: export Specctra DSN, run Freerouting
 without its window, import the session (tracks and vias), refill the GND pours, save.
 Track widths come from the board's net classes (Power 0.5 mm, Default 0.25 mm).

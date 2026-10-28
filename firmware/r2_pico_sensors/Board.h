@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The carrier board (hardware/r2_pico_carrier): which connector each sensor is plugged into,
 // and the display's button logic. Plain C++ (no Arduino): test/test_board.cpp runs anywhere.
 #pragma once

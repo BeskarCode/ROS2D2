@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // rosbridge for the setup page: one websocket, service calls, parameters and throttled
 // subscriptions (sent again after a reconnect).
 const WS_URL = `ws://${location.hostname || 'localhost'}:9090`;

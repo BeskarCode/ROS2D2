@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The list of cameras, shared by the camera launch, the face detectors and the dome tracker.
 
 cameras.yaml either names the cameras one by one:

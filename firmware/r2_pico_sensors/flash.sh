@@ -1,4 +1,5 @@
 #!/bin/bash
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 # Build the Pico firmware on this computer and flash it on the Pico plugged into the Pi,
 # without touching BOOTSEL: the Pi asks the running firmware to restart into its USB
 # loader (1200 baud on its serial port), then copies the .uf2 to the drive that appears.
