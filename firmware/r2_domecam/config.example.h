@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // r2_domecam settings. Copy this file to config.h and fill it in:
 // config.h stays on your computer (it is in .gitignore), so the WiFi password is never pushed.
 #pragma once

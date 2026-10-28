@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Dome tracking control law, ported from the proof of concept (DomeTracker/poc).
 
 No ROS here, so it can be unit-tested and tuned on its own.

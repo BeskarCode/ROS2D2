@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Host test of the carrier board's connector map and the display's button logic:
 //   g++ -std=c++17 -Wall -I. test/test_board.cpp -o /tmp/b && /tmp/b
 #include <cstdio>

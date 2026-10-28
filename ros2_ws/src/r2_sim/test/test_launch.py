@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The main launch only brings the simulation (fake Mega, simulated room) with sim:=true, and
 never runs the real Mega bridge at the same time. Needs ROS (runs on the Pi or in Docker)."""
 import importlib.util

@@ -1,4 +1,5 @@
 #!/bin/bash
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 # ROS2D2 test bench, run inside the ros2d2-dev container:
 #
 #   docker run --rm -v <ROS2D2>:/r2 -v <video folder>:/media ros2d2-dev \

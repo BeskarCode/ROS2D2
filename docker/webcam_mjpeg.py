@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Serve a PC webcam as an MJPEG stream, the same format an ESP32-CAM gives.
 
 Lets the ROS2D2 container (or the Pi) use a webcam plugged into Windows:

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """/api/sensors for the web console's sensor setup: read and save sensors.yaml.
 No ROS here, so it can be tested on its own."""
 

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """MPU6050 gyro + accelerometer over I2C, without ROS.
 
 The bus is passed in (an smbus2.SMBus on the Pi, a fake in the tests), so all of

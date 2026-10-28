@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 # ROS2D2: cameras, face detectors, dome tracker, Mega bridge and web console.
 # Installed by setup_r2_brain.sh as /etc/systemd/system/r2d2.service
 #   sudo systemctl status r2d2        journalctl -u r2d2 -f

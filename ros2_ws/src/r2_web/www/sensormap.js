@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Top-down map of the droid and its sensors, in metres, front up (SVG). Sensors and the
 // test object are dragged with the mouse; they never leave the view (one outside after
 // zooming in is drawn on the edge, where it can be picked up again).
