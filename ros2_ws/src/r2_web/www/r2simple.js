@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // A plain R2 from primitives, real size in metres, standing like the full model (three
 // legs): the body leans back on its shoulders, the outer legs hang straight down to their
 // feet, and the centre leg drops from under the body to the front foot (where the lidar is).

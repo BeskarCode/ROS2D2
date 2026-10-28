@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 import pytest
 
 from r2_dome_tracker.control import DomeEstimate, bearing_deg, face_to_error, in_view, pick_face

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """A pretend ShadowMD Mega for the test bench, on the other end of a socat pty pair.
 
     ros2 run r2_sim fake_mega /tmp/mega-side /tmp/mega_rx.log /tmp/mega-ctl

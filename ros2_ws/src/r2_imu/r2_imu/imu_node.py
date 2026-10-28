@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """R2 IMU node: the MPU6050 (gyro + accelerometer) on the Pi's I2C bus.
 
 Topics:

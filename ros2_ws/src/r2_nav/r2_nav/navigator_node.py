@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The navigator node: drives the feet towards a goal with the logic in nav_core, only while
 the autonomous mode is on (switched on with the controller, PS + L2).
 

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """A pretend lidar until the RPLIDAR C1 arrives: /scan_raw, a full turn every 0.1 s, of a
 small room with a chair leg (r2_sensors.scan), seen from where sensors.yaml puts the lidar.
 scan_crop then cuts it to what the droid does not hide, as with the real one.

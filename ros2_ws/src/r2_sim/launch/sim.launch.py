@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The simulated droid: a room, pretend sensors, and a fake Mega on a pty with the REAL
 Mega bridge talking to it (so the bridge is tested too). The navigator and the sensor poses
 come from the main launch (sim:=true) or from their own launches.

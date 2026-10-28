@@ -1,4 +1,5 @@
 #!/bin/bash
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 # Autonomous mode and face tracking check for the Mega bridge, inside the ros2d2-dev container:
 #
 #   docker run --rm -v <ROS2D2>:/r2 ros2d2-dev bash /r2/docker/auto_bench.sh
