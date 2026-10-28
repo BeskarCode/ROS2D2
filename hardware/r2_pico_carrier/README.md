@@ -85,6 +85,8 @@ La Pico ya no tiene GPIO libres, así que lo que se añada va por **I2C**: el co
 Pico (GP16 SDA, GP17 SCL, pull-ups de 4,7 kΩ en la placa), junto con VL1, VL2 y la pantalla: no
 uses las direcciones 0x29 (VL53L0X) ni 0x3C (pantalla), y cables cortos (< 50 cm). Un expansor
 I2C (PCF8574, MCP23017…) da GPIO de sobra si hacen falta.
+No conectes en QWIIC/EXP otros repetidores ni aceleradores I2C (PCA9515/9517, LTC4311…): el lado
+B de U1 no puede compartir bus con ellos.
 
 ## Pedirla
 
