@@ -92,11 +92,12 @@ bool sendPage(int page) {
 
 void drawSplash() {
   canvas.fillScreen(0);
-  canvas.drawBitmap(0, 8, LOGO, LOGO_W, LOGO_H, 1);
+  // two-colour modules light rows 0-15 yellow: the title goes there, the logo (20 rows) below
   canvas.setTextSize(1);
-  canvas.setCursor(10, 40);
+  canvas.setCursor(22, 4);
   canvas.print("ROS2D2 sensors");
-  canvas.setCursor(10, 54);
+  canvas.drawBitmap(0, 22, LOGO, LOGO_W, LOGO_H, 1);
+  canvas.setCursor(10, 52);
   canvas.print("press for sensors >");
 }
 
