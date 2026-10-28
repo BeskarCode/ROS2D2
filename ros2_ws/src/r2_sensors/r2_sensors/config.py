@@ -46,8 +46,8 @@ NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 PORT = re.compile(r"^/dev/[A-Za-z0-9_./-]+$")
 GPIO = range(0, 29)
 # Not for sensors: the VL53L0X's I2C (GP16 SDA, GP17 SCL), the Pico's own (GP23-25, GP25 = LED)
-# and the carrier board's diagnostic LEDs (GP22) and display button (GP26)
-PICO_RESERVED = (16, 17, 22, 23, 24, 25, 26)
+# and the carrier board's status LEDs (GP0, GP1, GP6-9, GP22, GP27, GP28) and button (GP26)
+PICO_RESERVED = (0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28)
 PICO_MAX = 12                     # the Pico's firmware refuses more (CFG ERR too many)
 
 

@@ -20,8 +20,8 @@ export const TYPES = {
   hcsr04: { prefix: 'sonar', label: 'HC-SR04', colour: '#f0b429', fov: [15, 40], range: [0.5, 4], fovDeg: 30, rangeMax: 3 },
 };
 // Pico GPIO a sensor may use: not the VL53L0X's I2C (GP16, GP17), the Pico's own (GP23-25),
-// nor the carrier board's LEDs (GP22) and button (GP26)
-const PICO_RESERVED = [16, 17, 22, 23, 24, 25, 26];
+// nor the carrier board's status LEDs (GP0, GP1, GP6-9, GP22, GP27, GP28) and button (GP26)
+const PICO_RESERVED = [0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28];
 export const PICO_GPIO = Array.from({ length: 29 }, (_, g) => g).filter((g) => !PICO_RESERVED.includes(g));
 
 export const isLidar = (s) => s.type === 'rplidar_c1';
