@@ -13,7 +13,7 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Fernando Beltran",
+    maintainer="NandoMadrid",
     maintainer_email="BeskarCode@users.noreply.github.com",
     description="ROS2D2 bridge to the Pico that reads the distance sensors",
     license="MIT",
