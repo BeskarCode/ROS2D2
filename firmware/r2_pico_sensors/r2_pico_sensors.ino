@@ -158,7 +158,7 @@ void loop() {
   led(now);
 }
 
-// Core 1: the display, its button and the diagnostic LEDs
+// Core 1: the display, its button and the status LEDs
 void setup1() { display::setup(); }
 
 void loop1() { display::loop(); }

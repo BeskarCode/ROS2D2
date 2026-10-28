@@ -1,11 +1,10 @@
-// The carrier board's display (SSD1306 128x64 on I2C 0x3C), its button and the diagnostic
-// LEDs. Runs on the RP2350's second core (setup1/loop1), so the measuring never waits for it:
+// The carrier board's display (SSD1306 128x64 on I2C 0x3C), its button and the status
+// LEDs (one GPIO each). Runs on the RP2350's second core (setup1/loop1), so the measuring never waits for it:
 // the screen is drawn in RAM and sent one 128-byte page at a time, holding the I2C bus (shared
 // with the VL53L0X, see i2cLock) only for that page. Without a display, nothing changes.
 #pragma once
 
 #include <Adafruit_GFX.h>
-#include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include <pico/mutex.h>
@@ -21,16 +20,12 @@ extern mutex_t i2cLock;
 namespace display {
 
 constexpr uint8_t ADDRESS = 0x3C;
-constexpr uint32_t FRAME_MS = 200, PROBE_MS = 3000, LED_MS = 50;
-constexpr uint8_t BRIGHT = 25;          // of 255: the 9 LEDs stay under ~100 mA
+constexpr uint32_t FRAME_MS = 200, PROBE_MS = 3000, LED_MS = 20;
 
 GFXcanvas1 canvas(128, 64);
-Adafruit_NeoPixel leds(N_CONN, LED_PIN, NEO_GRB + NEO_KHZ800);
 Ui ui;
 bool present = false, lit = false;
 uint32_t lastProbe = 0, lastFrame = 0, lastLeds = 0;
-
-enum class State { NotConfigured, NotResponding, Ok };
 
 // The sensor on connector c: its state and its reading
 State stateOf(int c, int16_t* mm) {
@@ -141,26 +136,20 @@ void drawSensor() {
 void drawLeds(uint32_t now) {
   for (int c = 0; c < N_CONN; c++) {
     int16_t mm;
-    uint32_t col = 0;
-    if (!configured) {
-      if (now % 2000 < 300) col = leds.Color(0, 0, BRIGHT);              // waiting for the Pi
-    } else {
-      State s = stateOf(c, &mm);
-      if (s == State::Ok) col = leds.Color(0, BRIGHT, 0);
-      else if (s == State::NotResponding && (now / 400) % 2) col = leds.Color(BRIGHT, 0, 0);
-    }
-    if (ui.screen == Screen::Sensor && c == ui.shown && now % 1000 < 120) col = leds.Color(BRIGHT, BRIGHT, BRIGHT);
-    leds.setPixelColor(c, col);
+    State s = configured ? stateOf(c, &mm) : State::NotConfigured;
+    digitalWrite(CONN_LED[c], ledOn(configured, s, ui.screen == Screen::Sensor && c == ui.shown, now));
   }
-  leds.show();
+}
+
+void ledsOff() {
+  for (uint8_t p : CONN_LED) digitalWrite(p, LOW);
 }
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   ui.level = digitalRead(BUTTON_PIN);
-  leds.begin();
-  leds.clear();
-  leds.show();
+  for (uint8_t p : CONN_LED) pinMode(p, OUTPUT);
+  ledsOff();
 }
 
 void loop() {
@@ -177,10 +166,7 @@ void loop() {
   if (on != lit) {
     lit = on;
     if (present) power(on);
-    if (!on) {
-      leds.clear();
-      leds.show();
-    }
+    if (!on) ledsOff();
   }
   if (!on) return;
   if (present && now - lastFrame >= FRAME_MS) {

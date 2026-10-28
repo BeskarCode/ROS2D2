@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from r2_sensors.config import (SensorConfigError, angle_bounds, lidar_name, load_sensors,
+from r2_sensors.config import (PICO_RESERVED, SensorConfigError, angle_bounds, lidar_name, load_sensors,
                                parse_sensors, transforms)
 
 
@@ -100,7 +100,7 @@ def test_package_default_is_valid():
     assert len(load_sensors(path)) == 8
 
 
-@pytest.mark.parametrize("pin", [16, 17, 22, 23, 24, 25, 26])
+@pytest.mark.parametrize("pin", [0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28])
 def test_reserved_pico_pins_are_refused(pin):
     text = f"tof_x:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{xshut: {pin}}}\n"
     with pytest.raises(SensorConfigError, match=re.escape(f"GP{pin} is reserved (I2C or the board)")):
@@ -115,10 +115,10 @@ def test_pins_outside_the_board_keep_their_message():
 
 def test_at_most_twelve_pico_sensors():
     block = "s{i}:\n  type: hcsr04\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{trig: {t}, echo: {e}}}\n"
-    pins = [p for p in range(29) if p not in (16, 17, 22, 23, 24, 25, 26)]
-    text = "".join(block.format(i=i, t=pins[2 * i], e=pins[2 * i + 1]) for i in range(6))
-    text += "".join(f"v{i}:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{xshut: {pins[12 + i]}}}\n"
-                    for i in range(6))
+    pins = [p for p in range(29) if p not in PICO_RESERVED]     # 14 left with the carrier's LEDs
+    text = "".join(block.format(i=i, t=pins[2 * i], e=pins[2 * i + 1]) for i in range(2))
+    text += "".join(f"v{i}:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{xshut: {pins[4 + i]}}}\n"
+                    for i in range(10))
     assert len(parse_sensors(text)) == 12
     tofs = "".join(f"t{i}:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.2\n  pico: {{xshut: {p}}}\n"
                    for i, p in enumerate(pins[:13]))
