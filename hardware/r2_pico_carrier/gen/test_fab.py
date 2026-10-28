@@ -72,3 +72,6 @@ def test_jlcpcb_rotation_offsets():
     cpl = {r["Designator"]: r for r in rows(os.path.join(ROOT, "jlcpcb", "cpl.csv"))}
     assert float(cpl["JP1"]["Rotation"]) == float(cpl["JP2"]["Rotation"]) == 90.0
     assert float(cpl["US1"]["Rotation"]) == 90.0       # headers were right: unchanged
+    # PCA9517A: JLC/EasyEDA's TSSOP-8 model (C80799) has pin 1 bottom-left with pins 1-4 along the
+    # bottom; KiCad's VSSOP-8 has pins 1-4 down the left side: +270 (review 28 Oct 2026)
+    assert float(cpl["U1"]["Rotation"]) == 270.0

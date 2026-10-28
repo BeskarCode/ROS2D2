@@ -161,7 +161,7 @@ MAKER = {
     "C23186": ("UNI-ROYAL", "0603WAF5101T5E", "SMD"),
     "C165948": ("Korean Hroparts Elec", "TYPE-C-31-M-12", "SMD"),
     "C160390": ("JST", "BM04B-SRSS-TB(LF)(SN)", "SMD"),
-    "C14663": ("Samsung", "CL10B104KB8NNNC", "SMD"),
+    "C14663": ("YAGEO", "CC0603KRX7R9BB104", "SMD"),
     "C15850": ("Samsung", "CL21A106KAYNNNE", "SMD"),
     "C45783": ("Samsung", "CL21A226MAQNNNE", "SMD"),
     "C8678": ("MDD", "SS34", "SMD"),

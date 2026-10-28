@@ -76,6 +76,14 @@ def test_echo_divider():
         assert not any(r.startswith("JP") for r in refs_on(raw))      # 5 V never reaches the Pico
 
 
+def test_inputs_face_the_edge():
+    """J1's wire entry and J5's mouth both face the left edge (review 28 Oct 2026)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("make_pcb_place", os.path.join(os.path.dirname(__file__), "make_pcb.py"))
+    src = open(spec.origin, encoding="utf-8").read()
+    assert '"J1": (5.6, 59.0, 270)' in src and '"J5": (3.6, 75.0, 270)' in src
+
+
 def test_power_path():
     """Terminal J1 and USB-C J5 each through their own diode (neither feeds the other), then
     together through the fuse to +5V; +5V -> D2 -> VSYS."""

@@ -21,7 +21,7 @@ ROOT = os.path.normpath(os.path.join(HERE, ".."))
 PCB = os.path.join(ROOT, "r2_pico_carrier.kicad_pcb")
 CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\kicad-cli.exe")
 # JLCPCB library models that sit turned against KiCad's: degrees added in their CPL only
-JLC_ROTATION = {"C2905423": 90}
+JLC_ROTATION = {"C2905423": 90, "C80799": 270}     # 1x20 socket; PCA9517A TSSOP-8
 LAYERS = "F.Cu,B.Cu,F.Mask,B.Mask,F.Silkscreen,B.Silkscreen,F.Paste,B.Paste,Edge.Cuts"
 
 

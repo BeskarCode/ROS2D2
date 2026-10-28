@@ -65,13 +65,13 @@ def placement():
     p.update({"R2": (57.0, 7.0, 0), "R3": (61.0, 7.0, 0), "C4": (52.5, 6.0, 90),
               "C5": (57.0, 33.0, 90), "U1": (62.0, 33.0, 0),
               "R4": (68.0, 31.5, 0), "R5": (68.0, 34.5, 0),
-              "J1": (10.5, 63.0, 0), "F1": (21.5, 59.5, 0), "D1": (28.0, 59.5, 180),
+              "J1": (5.6, 59.0, 270), "F1": (21.5, 59.5, 0), "D1": (28.0, 59.5, 180),
               "C1": (21.5, 64.5, 0), "C2": (25.0, 64.5, 0),
               "D2": (35.0, 59.5, 180),
               "D4": (40.8, 59.5, 0), "R1": (44.0, 57.0, 0),
               "J2": (OLED_X - 3.81, OLED_TOP + 2.0, HEADER_ROT), "SW1": (38.0, 79.0, 0),
               # USB-C on the left edge under the terminal, its mouth flush with the edge
-              "J5": (4.0, 75.0, 270), "R6": (11.0, 73.0, 0), "R7": (11.0, 76.0, 0),
+              "J5": (3.6, 75.0, 270), "R6": (11.0, 73.0, 0), "R7": (11.0, 76.0, 0),
               "D5": (11.5, 81.0, 90),
               # expansion: Qwiic, and the 2.54 mm header between the Pico and the OLED
               "J3": (37.0, 64.5, 0), "J4": (30.5, 69.0, HEADER_ROT)})
@@ -200,7 +200,9 @@ def silkscreen(board):
     text(board, "< 50 cm", 66.0, 9.6, 0.9, bold=True)
     text(board, "> 50 cm", 66.0, 36.6, 0.9, bold=True)
     line(board, 54.0, 29.0, W - 0.5, 29.0)
-    text(board, "+5V  GND", 13.0, 56.6, 0.8, bold=True)
+    # J1 turned so its wires come in from the left edge: pin 1 (+5V) on top, pin 2 (GND) below
+    text(board, "+5V", 12.0, 59.0, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
+    text(board, "GND", 12.0, 64.08, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
     # the OLED, lying flat: its outline, its pins, what goes there
     x0 = OLED_X - OLED_W / 2
     rect(board, x0, OLED_TOP, x0 + OLED_W, OLED_TOP + OLED_H, pcbnew.F_SilkS)
