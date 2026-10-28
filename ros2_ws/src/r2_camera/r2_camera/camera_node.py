@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """R2 camera node: one instance per camera.
 
 Reads a USB webcam (V4L2) or a network stream (e.g. an ESP32 camera's MJPEG URL)

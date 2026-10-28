@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Write Logo.h: the Astromech Spain logo (r2_web/www/astromech-spain-logo.png) as a 128x20
 1-bit bitmap for the display (Adafruit GFX drawBitmap format: rows, MSB first).
 

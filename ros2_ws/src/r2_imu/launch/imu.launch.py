@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """MPU6050 plus a Madgwick filter that turns rotation + gravity into an orientation.
 
     ros2 launch r2_imu imu.launch.py

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Text protocol of ShadowMD's USB serial port (115200 baud, one command per line).
 
 Everything ROS sends starts with ROS:, so it stands apart from the console commands:

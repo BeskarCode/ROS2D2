@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The carrier board's display (SSD1306 128x64 on I2C 0x3C), its button and the status
 // LEDs (one GPIO each). Runs on the RP2350's second core (setup1/loop1), so the measuring never waits for it:
 // the screen is drawn in RAM and sent one 128-byte page at a time, holding the I2C bus (shared

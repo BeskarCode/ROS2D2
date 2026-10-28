@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // VL53L0X ToF sensors on one I2C bus (GP16 SDA, GP17 SCL). They all start at address 0x29,
 // so each has its XSHUT pin: woken one at a time, each gets its own address (0x30 + index).
 // One that does not answer stays off (XSHUT low) and is tried again every 2 s, so a sensor

@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Top-down map of the Navigation page (canvas, odom frame: x right, y up on screen).
 // Draws the room (in simulation), the droid at its pose, the safety circle, each distance
 // sensor's beam as long as its reading, the lidar's points, the goal, the chosen heading and

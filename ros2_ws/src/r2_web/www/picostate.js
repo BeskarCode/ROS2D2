@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // What the console says about the Pico and its sensors, from /pico/state (r2_pico_bridge)
 // and /range/<name>. Pure functions: tested with node --test.
 //   state:   the /pico/state JSON, or null if none has arrived

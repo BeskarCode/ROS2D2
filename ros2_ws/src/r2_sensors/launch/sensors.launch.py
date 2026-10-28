@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The droid's sensors: their poses on /tf_static from sensors.yaml, and the lidar.
 
     ros2 launch r2_sensors sensors.launch.py                # lidar:=auto

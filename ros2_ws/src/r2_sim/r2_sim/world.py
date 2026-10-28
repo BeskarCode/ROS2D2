@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The simulated room, without ROS: walls, obstacles with a height, R2's pose, and pretend
 sensors that see it the way the real ones would (a beam passes over anything lower than
 itself; ultrasonics get ghost echoes and lost echoes; everything jitters a little).

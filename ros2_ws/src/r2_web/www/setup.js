@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Camera setup: which cameras R2 uses, their number, size, direction and field of view.
 // Saves cameras.yaml on the Pi through the web console's /api/cameras.
 import { call, connect, setParam } from './rosbridge.js';

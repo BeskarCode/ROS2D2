@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """R2 face detector node: one instance per camera.
 
 Finds faces with OpenCV's YuNet detector (the same one the proof of concept used)

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The droid's distance sensors and lidar, shared by the TF publisher, the lidar launch,
 the web console's sensor setup and (later) the Pico bridge and the safety stop.
 

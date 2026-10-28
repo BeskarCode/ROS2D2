@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // r2_domecam: a camera for R2's dome, sent over WiFi to the Raspberry Pi. Runs on a
 // Seeed XIAO ESP32S3 Sense or an AI-Thinker ESP32-CAM, both with an OV2640. The dome turns, so no cables: power from the dome's 5 V, picture
 // by WiFi.

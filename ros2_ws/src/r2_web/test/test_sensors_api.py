@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 from r2_web.sensors_api import save_sensors, sensors_payload
 
 GOOD = "tof_front:\n  type: vl53l0x\n  x: 0.2\n  y: 0\n  z: 0.25\n  pico: {xshut: 2}\n"

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The navigator driving the simulated R2 round the simulated room, without ROS (closed_loop.py):
 the same checks as docker/nav_bench.sh, deterministic and in seconds."""
 import os

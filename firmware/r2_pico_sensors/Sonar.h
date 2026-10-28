@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // HC-SR04s, one at a time (so they do not hear each other's ping): a 10 us TRIG pulse, then
 // the ECHO edges are timed by an interrupt for up to 40 ms. Nothing waits: loop() looks at
 // the clock. ECHO has a pull-down, so an unwired one never rises and becomes 'N'.

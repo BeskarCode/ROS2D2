@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Bridge to the Pico that reads the distance sensors (VL53L0X, HC-SR04).
 
   in   sensors.yaml                  the Pico's sensors and pins (reloaded when saved)

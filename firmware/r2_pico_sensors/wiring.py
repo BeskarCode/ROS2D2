@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Generate firmware/r2_pico_sensors/wiring.svg (Pico 2 + 4 VL53L0X + 3 HC-SR04)."""
 import sys
 

@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Start one face detector per camera.
 
     ros2 launch r2_vision face_detectors.launch.py                  (cameras from r2_camera's config)

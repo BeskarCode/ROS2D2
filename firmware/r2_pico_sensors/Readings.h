@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // What each sensor last said, shared by Tof.h, Sonar.h and the sketch.
 #pragma once
 

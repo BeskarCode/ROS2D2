@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """R2 Mega bridge: the only node that talks to the ShadowMD Arduino Mega.
 
 Everything else in ROS publishes what it wants; this node turns it into ShadowMD's

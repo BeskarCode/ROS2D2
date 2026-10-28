@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """ROS 2 Lyrical removed the logger's warn() alias: a node calling get_logger().warn(...)
 crashes exactly when it tries to report a problem (a Mega unplugged, a camera lost...).
 Every package must use warning()."""

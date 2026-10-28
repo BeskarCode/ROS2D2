@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Where each sensor sits on the droid, on /tf_static (base_link -> <name>_link), from
 sensors.yaml. Saving the file from the web console moves them within a second.
 
