@@ -98,8 +98,9 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
 3. Sube `jlcpcb/bom.csv` y `jlcpcb/cpl.csv`.
 4. En la vista previa de colocación mira **la orientación** de D1, D2 y D5 (raya = cátodo), LED1-LED9,
    U1, D4, **J5** (la boca del USB-C hacia el borde), J3 y **SW1** (si el pulsador sale girado 90°, queda siempre pulsado). Si alguna está
-   girada, corrígela allí mismo. Los zócalos y tiras pueden verse desplazados en la vista previa
-   (su posición es la del pin 1): es normal.
+   girada, corrígela allí mismo. Cada tira y zócalo debe verse a lo largo
+   de su fila de agujeros y centrado en ella (el CPL da el centro de cada pieza: si algo sale
+   desplazado, es un error de verdad). U1: el punto del pin 1 arriba a la izquierda, junto a C5.
 5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
 
 ### PCBWay (`pcbway/`)
