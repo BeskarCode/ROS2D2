@@ -51,11 +51,13 @@ socat -d pty,raw,echo=0,link=/tmp/mega pty,raw,echo=0,link=/tmp/mega-side &
 SOCAT=$!
 sleep 1
 # A pretend Mega that logs what it receives (with a timestamp per line) and speaks the
-# autonomous-mode protocol: the dome only follows faces once PS + L2 is "pressed"
+# ROS2D2 protocol: the dome only follows faces once face tracking is switched on
 python3 /r2/docker/fake_mega.py /tmp/mega-side "$OUT/mega_rx.log" /tmp/mega-ctl &
 READER=$!
 
-cat > /tmp/cameras.yaml <<EOF
+# The cameras go where every node looks for them (camera, face detector and dome tracker)
+mkdir -p ~/.config/ros2d2
+cat > ~/.config/ros2d2/cameras.yaml <<EOF
 front:
   source: $VIDEO
   width: 640
@@ -67,7 +69,8 @@ EOF
 
 echo "== launch"
 state '{"phase": "starting"}'
-ros2 launch r2_bringup dome_tracker.launch.py port:=/tmp/mega config:=/tmp/cameras.yaml \
+# Only the dome tracker chain: no web console, lidar or Pico on the bench
+ros2 launch r2_bringup dome_tracker.launch.py port:=/tmp/mega web:=false lidar:=off pico:=false \
     > "$OUT/launch.log" 2>&1 &
 LAUNCH=$!
 sleep 6
@@ -80,8 +83,8 @@ if [ -n "$FEEDBACK" ]; then
     for _ in $(seq 600); do started && break; sleep 0.5; done
 fi
 
-echo "== autonomous mode on (pretend PS + L2)"
-echo button > /tmp/mega-ctl
+echo "== face tracking on (pretend PS + L2 on the dome Nav)"
+echo dome_button > /tmp/mega-ctl
 sleep 1
 
 echo "== recording ($SECS s)"
