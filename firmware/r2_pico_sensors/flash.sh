@@ -4,14 +4,18 @@
 # without touching BOOTSEL: the Pi asks the running firmware to restart into its USB
 # loader (1200 baud on its serial port), then copies the .uf2 to the drive that appears.
 #
-#   firmware/r2_pico_sensors/flash.sh            # PI=fernando@192.168.68.112 by default
-#   PI=fernando@r2pi.local firmware/r2_pico_sensors/flash.sh
+#   PI=<your-user>@<pi-address> firmware/r2_pico_sensors/flash.sh
+#   PI=<your-user>@r2pi.local firmware/r2_pico_sensors/flash.sh
 #
 # Needs arduino-cli with the rp2040:rp2040 core and the VL53L0X library (README.md).
 # The r2d2 service is stopped while flashing (it holds the port) and started again.
 set -euo pipefail
 
-PI=${PI:-fernando@192.168.68.112}
+PI=${PI:-}
+if [[ -z "$PI" ]]; then
+  echo "Tell me where the Pi is: PI=<your-user>@<pi-address> $0" >&2
+  exit 1
+fi
 KEY=${KEY:-$HOME/.ssh/r2pi_ed25519}
 HERE=$(cd "$(dirname "$0")" && pwd)
 UF2=$HERE/build/r2_pico_sensors.ino.uf2

@@ -72,7 +72,7 @@ shows up as a USB drive labelled `RP2350`; copy `build/r2_pico_sensors.ino.uf2` 
 From then on, from Git Bash on the computer:
 
 ```
-firmware/r2_pico_sensors/flash.sh        # PI=fernando@<pi address> if it is not 192.168.68.112
+PI=<your-user>@<pi-address> firmware/r2_pico_sensors/flash.sh
 ```
 
 It builds, copies the `.uf2` to the Pi, stops the `r2d2` service, restarts the Pico into
