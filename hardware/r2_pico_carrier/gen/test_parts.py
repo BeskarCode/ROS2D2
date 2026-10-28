@@ -47,11 +47,11 @@ def test_pico_pins():
     want = {4: "XSHUT1", 5: "XSHUT2", 6: "XSHUT3", 7: "XSHUT4",
             14: "TRIG1", 15: "ECHO1_P", 16: "TRIG2", 17: "ECHO2_P", 19: "TRIG3", 20: "ECHO3_P",
             21: "SDA", 22: "SCL", 24: "TRIG4", 25: "ECHO4_P", 26: "TRIG5", 27: "ECHO5_P",
-            31: "BTN", 36: "+3V3", 39: "VSYS"}
+            30: "RUN", 31: "BTN", 36: "+3V3", 39: "VSYS"}
     want.update(LED_PICO_PIN)
     want.update({p: "GND" for p in GND_PINS})
     assert {p: n for p, n in PICO_PIN_NET.items() if n} == want
-    assert PICO_PIN_NET[40] == "" and PICO_PIN_NET[30] == ""     # VBUS and RUN left alone
+    assert PICO_PIN_NET[40] == ""                 # VBUS left alone: the Pi's USB never meets our 5 V
 
 
 def test_pico_sockets_follow_the_pico():
@@ -74,13 +74,37 @@ def test_echo_divider():
 
 
 def test_power_path():
-    assert refs_on("5V_IN") == {"J1", "F1"}
-    f1_out = next(n for n in PARTS["F1"].pads.values() if n != "5V_IN")
-    assert refs_on(f1_out) == {"F1", "D1"} and PARTS["D1"].pads["2"] == f1_out    # anode
-    assert PARTS["D1"].pads["1"] == "+5V"                                          # cathode
+    """Terminal J1 and USB-C J5 each through their own diode (neither feeds the other), then
+    together through the fuse to +5V; +5V -> D2 -> VSYS."""
+    assert refs_on("5V_IN") == {"J1", "D1"} and PARTS["D1"].pads == {"1": "5V_OR", "2": "5V_IN"}
+    assert refs_on("VBUS_C") == {"J5", "D5"} and PARTS["D5"].pads == {"1": "5V_OR", "2": "VBUS_C"}
+    assert refs_on("5V_OR") == {"D1", "D5", "F1"} and set(PARTS["F1"].pads.values()) == {"5V_OR", "+5V"}
     assert refs_on("VSYS") == {"D2", "JP2"} and PARTS["D2"].pads == {"1": "VSYS", "2": "+5V"}
     assert not refs_on("VLED") and "D3" not in PARTS        # no LED rail any more
     assert not refs_on("VBUS")
+
+
+def test_usb_c_power_only():
+    """Any charger gives 5 V to a sink with 5.1k on each CC; data and SBU pins left free."""
+    j5 = PARTS["J5"].pads
+    assert PARTS["J5"].footprint == "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12"
+    assert all(j5[p] == "VBUS_C" for p in ("A4", "A9", "B4", "B9"))
+    assert all(j5[p] == "GND" for p in ("A1", "A12", "B1", "B12", "SH"))
+    assert all(j5[p] == "" for p in ("A6", "A7", "B6", "B7", "A8", "B8"))
+    for cc in ("A5", "B5"):
+        r = [x for x in refs_on(j5[cc]) if x.startswith("R")]
+        assert refs_on(j5[cc]) == {"J5", *r} and len(r) == 1 and PARTS[r[0]].value == "5.1k"
+        assert "GND" in PARTS[r[0]].pads.values()
+    assert j5["A5"] != j5["B5"]                                # one resistor per CC
+
+
+def test_expansion():
+    """Qwiic/STEMMA QT (JST-SH: GND 3V3 SDA SCL) and a 2.54 mm header 5V GND 3V3 SCL SDA RUN,
+    both on the short I2C bus (the one with the pull-ups)."""
+    assert [nets_of("J3")[str(p)] for p in range(1, 5)] == ["GND", "+3V3", "SDA", "SCL"]
+    assert PARTS["J3"].footprint == "Connector_JST:JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical"
+    assert [nets_of("J4")[str(p)] for p in range(1, 7)] == ["+5V", "GND", "+3V3", "SCL", "SDA", "RUN"]
+    assert refs_on("RUN") == {"J4", "JP2"}
 
 
 def test_status_leds():

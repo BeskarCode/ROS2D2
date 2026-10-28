@@ -9,7 +9,8 @@ Layout (top view, mm, origin at the top-left corner):
   - HC-SR04 connectors US1-US5 on the left (their GPIOs are on the Pico's left row), each
     with its ECHO divider and its LED;
   - VL53L0X connectors VL1-VL4 on the right (next to the I2C pins), VL3-VL4 marked > 50 cm;
-  - the 5 V input and its protection bottom left; display socket and button bottom right.
+  - the 5 V input (terminal, and USB-C on the left edge) and its protection bottom left;
+    display socket and button bottom right; the expansion (Qwiic + header) between them.
 """
 import os
 
@@ -32,7 +33,7 @@ W, H = 80.0, 90.0                     # board size
 PICO_X, PICO_TOP = 40.0, 2.0          # Pico centre line and top edge (USB end)
 ROW = 8.89                            # Pico pin rows at +-8.89 mm from its centre
 PIN1_Y = PICO_TOP + 1.37 + 0.0        # first pin, 1.37 mm under the Pico's top edge
-POWER_NETS = ("5V_IN", "5V_FUSED", "+5V", "VSYS", "+3V3", "GND")
+POWER_NETS = ("5V_IN", "VBUS_C", "5V_OR", "+5V", "VSYS", "+3V3", "GND")
 
 mm = pcbnew.FromMM
 
@@ -68,7 +69,12 @@ def placement():
               "C1": (21.5, 64.5, 0), "C2": (25.0, 64.5, 0),
               "D2": (35.0, 59.5, 180),
               "D4": (40.8, 59.5, 0), "R1": (44.0, 57.0, 0),
-              "J2": (OLED_X - 3.81, OLED_TOP + 2.0, HEADER_ROT), "SW1": (38.0, 79.0, 0)})
+              "J2": (OLED_X - 3.81, OLED_TOP + 2.0, HEADER_ROT), "SW1": (38.0, 79.0, 0),
+              # USB-C on the left edge under the terminal, its mouth flush with the edge
+              "J5": (4.0, 75.0, 270), "R6": (11.0, 73.0, 0), "R7": (11.0, 76.0, 0),
+              "D5": (11.5, 81.0, 90),
+              # expansion: Qwiic, and the 2.54 mm header between the Pico and the OLED
+              "J3": (37.0, 64.5, 0), "J4": (30.5, 69.0, HEADER_ROT)})
     for k, (dx, dy) in enumerate(((1.9, 2.0), (OLED_W - 1.9, 2.0), (1.9, OLED_H - 2.0), (OLED_W - 1.9, OLED_H - 2.0)), 5):
         p[f"H{k}"] = (OLED_X - OLED_W / 2 + dx, OLED_TOP + dy, 0)
     for k, (x, y) in enumerate(((3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)), 1):   # M3
@@ -86,7 +92,7 @@ def check(board):
             x, y = pcbnew.ToMM(pos.x), pcbnew.ToMM(pos.y)
             if not (0.5 <= x <= W - 0.5 and 0.5 <= y <= H - 0.5) and num:
                 bad.append(f"{ref} pad {num} at ({x:.1f}, {y:.1f}) is off the board")
-        if ref.startswith(("US", "VL")) or ref == "J2":
+        if ref.startswith(("US", "VL")) or ref in ("J2", "J4"):
             xs = [pcbnew.ToMM(pads[str(k)].x) for k in range(1, len(pads) + 1)]
             if xs != sorted(xs):
                 bad.append(f"{ref}: pin 1 is not on the left")
@@ -204,11 +210,17 @@ def silkscreen(board):
     text(board, "screen up, M2 standoffs 11 mm", OLED_X, OLED_TOP + 14.5, 0.8)
     text(board, "GND VCC SCL SDA", OLED_X, OLED_TOP + 16.7, 0.8)
     text(board, "DISPLAY", 38.0, 83.5, 0.8, bold=True)
+    logo(board, 21.0, 71.0, 13.0, pcbnew.F_SilkS)        # the free corner under the 5 V input
+    text(board, "USB-C 5V", 5.0, 81.2, 0.8, bold=True)
+    for k, name in enumerate(["5V", "G", "3V3", "SCL", "SDA", "RUN"]):
+        text(board, name, 30.5 + k * 2.54, 71.75, 0.8)
+    text(board, "EXP", 30.5 - 1.3, 66.6, 0.8, bold=True, justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
+    text(board, "QWIIC", 42.6, 64.5, 0.8, bold=True)
     text(board, "ROS2D2 · NandoMadrid · rev A", 22.0, 88.3, 0.8, bold=True)
     # Back: the branding, where there are no pads: "ROS2D2" between the Pico's rows,
     # the logo and the rest along the bottom strip
     text(board, "ROS2D2", PICO_X, 27.0, 5.0, pcbnew.B_SilkS, bold=True, angle=90)
-    logo(board, 35.0, 59.0, 30.0, pcbnew.B_SilkS)
+    logo(board, 35.0, 71.6, 17.0, pcbnew.B_SilkS)        # below the expansion header's pins
     text(board, "ROS2D2", 63.0, 69.0, 2.0, pcbnew.B_SilkS, bold=True)
     text(board, "by NandoMadrid", 63.0, 72.5, 1.4, pcbnew.B_SilkS, bold=True)
     text(board, "www.astromechspain.com", 63.0, 76.0, 1.2, pcbnew.B_SilkS)

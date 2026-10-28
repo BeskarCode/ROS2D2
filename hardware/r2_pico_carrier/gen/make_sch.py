@@ -63,9 +63,9 @@ def lib_symbol(lib_id):
 def placement():
     at = {}
     x = 30
-    for ref in ("J1", "F1", "D1", "C1", "C2", "D2", "C4", "D4", "R1"):
+    for ref in ("J1", "D1", "J5", "R6", "R7", "D5", "F1", "C1", "C2", "D2", "C4", "D4", "R1"):
         at[ref] = (x, 40)
-        x += 17
+        x += 16
     at["JP1"], at["JP2"] = (40, 125), (95, 125)
     for i, ref in enumerate(("R2", "R3", "U1", "C5", "R4", "R5")):
         at[ref] = (225 + i * 28, 45)
@@ -78,6 +78,7 @@ def placement():
         at[f"R{30 + k}"] = (160 + (k - 1) * 27, 215)
         at[f"LED{k}"] = (160 + (k - 1) * 27, 240)
     at["J2"], at["SW1"] = (40, 230), (85, 230)
+    at["J3"], at["J4"] = (40, 255), (85, 255)
     for k in range(1, 9):
         at[f"H{k}"] = (150 + (k - 1) * 12, 270)
     g = 1.27                                       # KiCad's connection grid
@@ -97,7 +98,7 @@ def main():
     if missing:
         raise SystemExit(f"no place for {sorted(missing)}")
     lib_blocks, out = {}, []
-    flags = {"+3V3", "GND", "+5V", "VSYS", "5V_IN"}      # PWR_FLAG: these nets are fed
+    flags = {"+3V3", "GND", "+5V", "VSYS", "5V_IN", "VBUS_C"}      # PWR_FLAG: these nets are fed
     for ref, part in PARTS.items():
         body, pins = lib_symbol(part.symbol)
         lib_blocks[part.symbol] = body
@@ -136,7 +137,7 @@ def main():
               ("I2C: VL1-VL2 short bus, U1 repeater to VL3-VL4 (> 50 cm)", 160, 25),
               ("VL53L0X connectors (GY-530 order)", 160, 85),
               ("HC-SR04 connectors, ECHO 1k/2k dividers", 160, 135),
-              ("Status LEDs, one GPIO each (LED1-4 = VL1-4, LED5-9 = US1-5)", 140, 200), ("Display and button", 25, 210)]
+              ("Status LEDs, one GPIO each (LED1-4 = VL1-4, LED5-9 = US1-5)", 140, 200), ("Display, button, expansion (Qwiic, header)", 25, 210)]
     for t, x, y in titles:
         out.append(f'(text "{t}" (exclude_from_sim no) (at {x} {y} 0) (effects (font (size 2 2) bold) (justify left)) '
                    f'(uuid "{uid("text", t)}"))')

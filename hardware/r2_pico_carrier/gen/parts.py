@@ -30,7 +30,7 @@ class Part:
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
 C0805 = "Capacitor_SMD:C_0805_2012Metric"
-LCSC_R = {"1k": "C21190", "2k": "C22975", "2.2k": "C4190", "4.7k": "C23162"}
+LCSC_R = {"1k": "C21190", "2k": "C22975", "2.2k": "C4190", "4.7k": "C23162", "5.1k": "C23186"}
 
 # Status LED k (LED1-4 = VL1-4, LED5-9 = US1-5) -> its Pico pin: the GPIO nearest each connector,
 # VL1-VL4 = GP28, GP27, GP22, GP9; US1-US5 = GP0, GP1, GP6, GP7, GP8 (firmware Board.h CONN_LED)
@@ -43,7 +43,7 @@ PICO_PIN_NET.update({4: "XSHUT1", 5: "XSHUT2", 6: "XSHUT3", 7: "XSHUT4",
                      14: "TRIG1", 15: "ECHO1_P", 16: "TRIG2", 17: "ECHO2_P",
                      19: "TRIG3", 20: "ECHO3_P", 21: "SDA", 22: "SCL",
                      24: "TRIG4", 25: "ECHO4_P", 26: "TRIG5", 27: "ECHO5_P",
-                     31: "BTN", 36: "+3V3", 39: "VSYS"})
+                     30: "RUN", 31: "BTN", 36: "+3V3", 39: "VSYS"})
 PICO_PIN_NET.update({pin: f"STAT{k}" for k, pin in LED_PIN.items()})
 
 PARTS = {}
@@ -70,14 +70,25 @@ add("JP1", "Pico 2 pins 1-20", SOCKET20, "C2905423", {k: PICO_PIN_NET[k] for k i
 add("JP2", "Pico 2 pins 40-21", SOCKET20, "C2905423", {k: PICO_PIN_NET[41 - k] for k in range(1, 21)},
     "Connector_Generic:Conn_01x20")
 
-# --- 5 V input: J1 -> F1 -> D1 -> +5V; +5V -> D2 -> VSYS -----------------------------------
+# --- 5 V input: terminal J1 -> D1 and USB-C J5 -> D5 (neither feeds the other), together
+# -> F1 -> +5V; +5V -> D2 -> VSYS ----------------------------------------------------------
 add("J1", "5V in", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
     "C474952", {1: "5V_IN", 2: "GND"}, "Connector:Screw_Terminal_01x02")  # KF128-5.08-2P
-add("F1", "0.75A", "Fuse:Fuse_1206_3216Metric", "C976305", {1: "5V_IN", 2: "5V_FUSED"},
+add("F1", "0.75A", "Fuse:Fuse_1206_3216Metric", "C976305", {1: "5V_OR", 2: "+5V"},
     "Device:Polyfuse")                                                    # BSMD1206-075-30V
 SS34 = ("Diode_SMD:D_SMA", "C8678", "Device:D_Schottky")                  # pad 1 K, pad 2 A
-for ref, k, a in (("D1", "+5V", "5V_FUSED"), ("D2", "VSYS", "+5V")):
+for ref, k, a in (("D1", "5V_OR", "5V_IN"), ("D5", "5V_OR", "VBUS_C"), ("D2", "VSYS", "+5V")):
     add(ref, "SS34", SS34[0], SS34[1], {1: k, 2: a}, SS34[2])
+# USB-C, power only: 5.1k on each CC asks any charger for its default 5 V; data/SBU left free
+USBC = {p: "" for p in ("A1", "A4", "A5", "A6", "A7", "A8", "A9", "A12",
+                        "B1", "B4", "B5", "B6", "B7", "B8", "B9", "B12", "SH")}
+USBC.update({p: "GND" for p in ("A1", "A12", "B1", "B12", "SH")})
+USBC.update({p: "VBUS_C" for p in ("A4", "A9", "B4", "B9")})
+USBC.update({"A5": "CC1", "B5": "CC2"})
+add("J5", "USB-C 5V in", "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12", "C165948", USBC,
+    "Connector:USB_C_Receptacle_USB2.0_16P")
+resistor("R6", "5.1k", "CC1", "GND")
+resistor("R7", "5.1k", "CC2", "GND")
 cap("C1", "22u", "+5V")
 cap("C2", "100n", "+5V")
 cap("C4", "10u", "+3V3")
@@ -126,6 +137,12 @@ add("J2", "OLED socket", "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vert
 add("SW1", "display", "Button_Switch_SMD:SW_Push_1P1T_XKB_TS-1187A", "C318884",
     {1: "BTN", 2: "GND"}, "Switch:SW_Push")
 
+# --- expansion: Qwiic/STEMMA QT and a 2.54 mm header, on the short I2C bus (the pull-ups) ---
+add("J3", "Qwiic", "Connector_JST:JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical", "C160390",
+    {1: "GND", 2: "+3V3", 3: "SDA", 4: "SCL"}, "Connector_Generic:Conn_01x04")
+add("J4", "expansion", HDR6, "C37208", {1: "+5V", 2: "GND", 3: "+3V3", 4: "SCL", 5: "SDA", 6: "RUN"},
+    "Connector_Generic:Conn_01x06")
+
 # --- M3 mounting holes; M2 holes for the OLED module lying flat on standoffs --------------
 for k in range(1, 5):
     add(f"H{k}", "M3", "MountingHole:MountingHole_3.2mm_M3", "", {}, "Mechanical:MountingHole")
@@ -140,6 +157,9 @@ MAKER = {
     "C22975": ("UNI-ROYAL", "0603WAF2001T5E", "SMD"),
     "C4190": ("UNI-ROYAL", "0603WAF2201T5E", "SMD"),
     "C23162": ("UNI-ROYAL", "0603WAF4701T5E", "SMD"),
+    "C23186": ("UNI-ROYAL", "0603WAF5101T5E", "SMD"),
+    "C165948": ("Korean Hroparts Elec", "TYPE-C-31-M-12", "SMD"),
+    "C160390": ("JST", "BM04B-SRSS-TB(LF)(SN)", "SMD"),
     "C14663": ("Samsung", "CL10B104KB8NNNC", "SMD"),
     "C15850": ("Samsung", "CL21A106KAYNNNE", "SMD"),
     "C45783": ("Samsung", "CL21A226MAQNNNE", "SMD"),
