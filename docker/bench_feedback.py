@@ -67,6 +67,7 @@ def main():
         rclpy.spin(node)
     except SystemExit:
         pass
+    post(node.url, {"phase": "done"})   # so the test page does not stay on "move"
     node.destroy_node()
     rclpy.try_shutdown()
 
