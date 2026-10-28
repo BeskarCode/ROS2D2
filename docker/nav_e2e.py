@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """End-to-end check of the navigation simulator (run by nav_bench.sh, with the sim running).
 
 1. PS + L2 on the fake Mega -> autonomous mode on, and its sound reaches the Mega

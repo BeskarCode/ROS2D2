@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """A fake smbus2 with a pretend MPU6050, for the test bench (no I2C on a PC).
 
     PYTHONPATH=/r2/docker/fakes ros2 launch r2_imu imu.launch.py

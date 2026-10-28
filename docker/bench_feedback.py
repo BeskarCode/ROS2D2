@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Tells the webcam test page what the bench sees while you move.
 
     python3 bench_feedback.py <state url> <seconds>

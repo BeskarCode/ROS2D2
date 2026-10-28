@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The sensor setup in 3D: the droid (either model, real size), the lidar as a flat slice
 // at its height, each distance sensor as a cone cut where it meets the floor, the test
 // object and the lidar's live points. Draws only when something changes.

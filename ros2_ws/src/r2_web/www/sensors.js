@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Setup -> Sensors: place the lidar and the distance sensors on the droid, see what they
 // cover and what they miss, and save sensors.yaml (the TF follows at once on the Pi).
 // Sensors are kept as in sensors.yaml (metres, degrees, ROS axes: + yaw = left).

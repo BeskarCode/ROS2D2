@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The navigator's logic, without ROS: go to a goal, steer round what the sensors see, stop at
 the safety circle, and when blocked run a short sequence (wait, back up, turn); give up after
 a few tries and stay stopped. The same code runs on the droid and in the simulator.

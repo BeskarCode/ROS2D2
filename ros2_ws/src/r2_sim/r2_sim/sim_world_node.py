@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The simulated room on ROS: R2 moves with what the Mega bridge really sends to the (fake)
 Mega, and its pretend sensors publish on the same topics as the real ones.
 

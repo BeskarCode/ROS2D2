@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """Drive the feet at a fixed number of Sabertooth units to measure how fast that is.
 
 The feet have no encoders, so the Mega bridge needs two numbers from the real droid:

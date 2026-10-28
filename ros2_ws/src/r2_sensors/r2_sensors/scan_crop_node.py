@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """/scan_raw -> /scan without the rays the droid's own body hides: the lidar sits on the
 front foot and only sees ahead. The angle comes from the lidar's fov_deg in sensors.yaml
 (our own node instead of laser_filters, which may not exist for every ROS release).

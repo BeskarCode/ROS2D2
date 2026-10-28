@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """R2 web console: serves the page that shows the cameras, their faces and a 3D R2
 whose dome turns with /dome/speed_cmd, plus the camera setup page.
 

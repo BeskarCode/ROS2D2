@@ -52,3 +52,7 @@ docker run --rm -v <this folder>:/r2 -v <video folder>:/media ros2d2-dev \
 With a webcam on Windows, `python docker/webcam_mjpeg.py 1` serves it as an MJPEG
 stream (the same format as an ESP32-CAM) and opens a test page at
 <http://localhost:8081/> with Start and Stop buttons. See the top of `docker/bench.sh`.
+
+## Credits
+
+ROS2D2 is created by **NandoMadrid** ([R2-D2 by NandoMadrid](https://www.astromechspain.com/droides/r2-d2-nandomadrid/)), member of [Astromech Spain](https://www.astromechspain.com).

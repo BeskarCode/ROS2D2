@@ -1,3 +1,4 @@
+// ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The R2 models the viewer can show. Each one becomes { root, dome }: root stands on
 // y = 0, about 3.8 units tall; turning dome.rotation.y turns the dome.
 //

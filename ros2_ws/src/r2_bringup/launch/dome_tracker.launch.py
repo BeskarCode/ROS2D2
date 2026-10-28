@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The whole dome tracker demo: cameras -> face detectors -> dome tracker -> Mega bridge,
 plus the sensors (their poses from sensors.yaml, and the lidar).
 

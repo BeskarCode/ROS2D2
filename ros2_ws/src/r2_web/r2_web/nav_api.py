@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """/api/nav for the Navigation page: read and save nav.yaml. No ROS here, so it can be tested
 on its own. The page also sets the navigator's parameters live; Save keeps them."""
 

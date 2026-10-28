@@ -1,4 +1,5 @@
 #!/bin/bash
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 # Navigation simulator, end to end: the simulated room and fake Mega with the real bridge, the
 # navigator, the sensor poses; then docker/nav_e2e.py drives it. On the Pi (after colcon build):
 #

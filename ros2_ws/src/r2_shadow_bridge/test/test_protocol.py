@@ -1,3 +1,4 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_line, foot_tick,
                                        is_error, parse_auto_line, parse_track_line, twist_to_units,
                                        units_to_twist, calibration_factor, is_auto_off_error)
