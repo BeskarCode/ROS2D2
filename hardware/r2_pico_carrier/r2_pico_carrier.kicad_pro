@@ -320,7 +320,11 @@
       },
       {
         "netclass": "Power",
-        "pattern": "5V_FUSED"
+        "pattern": "VBUS_C"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "5V_OR"
       },
       {
         "netclass": "Power",
