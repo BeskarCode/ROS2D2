@@ -67,6 +67,26 @@ int main() {
   uiTick(splash, 100 + AWAKE_MS + 1);
   check(splash.screen == Screen::Off, "the logo also goes off after 30 s");
 
+  // Status LEDs: one GPIO each, next to its connector (hardware parts.py LED_PIN)
+  const uint8_t ledPins[N_CONN] = {28, 27, 22, 9, 0, 1, 6, 7, 8};
+  for (int c = 0; c < N_CONN; c++) check(CONN_LED[c] == ledPins[c], "LED pin of each connector");
+  int reservedLeds = 0;
+  for (uint8_t p : CONN_LED)
+    for (uint8_t r : RESERVED) reservedLeds += p == r;
+  check(reservedLeds == N_CONN, "every LED pin is reserved (never offered for a sensor)");
+  // Patterns: on = measuring, blinking = not responding, off = not configured;
+  // waiting for the Pi = a short flash every 2 s; the connector on the display blinks inverted
+  check(ledOn(false, State::Ok, false, 100) && !ledOn(false, State::Ok, false, 500), "waiting: short flash");
+  check(!ledOn(false, State::Ok, false, 2100 + 300), "waiting: flash every 2 s");
+  check(ledOn(true, State::Ok, false, 500) && ledOn(true, State::Ok, false, 1500), "measuring: steady on");
+  check(!ledOn(true, State::NotConfigured, false, 500) && !ledOn(true, State::NotConfigured, false, 1500),
+        "no sensor there: off");
+  check(ledOn(true, State::NotResponding, false, 500) != ledOn(true, State::NotResponding, false, 900),
+        "not responding: blinking");
+  check(!ledOn(true, State::Ok, true, 50) && ledOn(true, State::Ok, true, 500), "on the display: a dark blip");
+  check(ledOn(true, State::NotConfigured, true, 50) && !ledOn(true, State::NotConfigured, true, 500),
+        "on the display, nothing configured: a light blip");
+
   if (failures) return 1;
   printf("all passed\n");
   return 0;

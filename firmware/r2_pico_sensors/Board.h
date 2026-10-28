@@ -7,11 +7,13 @@
 #include "Config.h"
 
 constexpr int N_CONN = 9;
-// In the order of the diagnostic LED chain (LED1 = VL1 ... LED9 = US5)
+// In the order of the status LEDs (LED1 = VL1 ... LED9 = US5)
 const char* const CONN_NAME[N_CONN] = {"VL1", "VL2", "VL3", "VL4", "US1", "US2", "US3", "US4", "US5"};
 constexpr uint8_t CONN_XSHUT[4] = {2, 3, 4, 5};
 constexpr uint8_t CONN_TRIG[5] = {10, 12, 14, 18, 20};   // ECHO is the next GPIO
-constexpr uint8_t LED_PIN = 22, BUTTON_PIN = 26;
+// Each connector's status LED, on its own GPIO (the nearest free one: hardware parts.py LED_PIN)
+constexpr uint8_t CONN_LED[N_CONN] = {28, 27, 22, 9, 0, 1, 6, 7, 8};
+constexpr uint8_t BUTTON_PIN = 26;
 
 // The connector a configured sensor sits on, or -1 if its pins are not one of the board's
 inline int connectorOf(const SensorCfg& s) {
@@ -23,6 +25,21 @@ inline int connectorOf(const SensorCfg& s) {
       if (s.a == CONN_TRIG[i] && s.b == CONN_TRIG[i] + 1) return 4 + i;
   }
   return -1;
+}
+
+enum class State { NotConfigured, NotResponding, Ok };
+
+// A status LED at time now: waiting for the Pi (not configured yet) = a short flash every 2 s;
+// then on = measuring, blinking = not responding, off = no sensor on that connector. The
+// connector on the display shows a short blip of the opposite every second.
+inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now) {
+  bool on;
+  if (!configured) on = now % 2000 < 300;
+  else if (s == State::Ok) on = true;
+  else if (s == State::NotResponding) on = (now / 400) % 2;
+  else on = false;
+  if (configured && onDisplay && now % 1000 < 120) on = !on;
+  return on;
 }
 
 // Display: off; a press shows the logo; the next one the last connector seen; then each

@@ -42,6 +42,11 @@ int main() {
   expectError("S:10:25", "pin 25 reserved");
   expectError("V:2 S:2:3", "pin 2 twice");
   expectError("V:22", "pin 22 reserved");   // the carrier board's LEDs
+  for (const char* led : {"V:0", "V:1", "V:6", "V:7", "V:8", "V:9", "V:27", "V:28"}) {
+    char want[24];
+    snprintf(want, sizeof want, "pin %s reserved", led + 2);
+    expectError(led, want);
+  }
   expectError("S:26:27", "pin 26 reserved");  // and its button
   expectError("S:10", "bad item 0");
   expectError("X:1", "bad item 0");
