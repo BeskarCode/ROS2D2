@@ -18,8 +18,7 @@ hembra-hembra recto va directo, sin cruzar nada. El pin 1 es el de la izquierda 
 
 | Conector | Pines (izquierda → derecha) | Para |
 |---|---|---|
-| **VL1, VL2** (< 50 cm) | 3V3 · GND · SCL · SDA · — (GPIO1, libre) · XSHUT | VL53L0X (GY-530) con cable corto |
-| **VL3, VL4** (> 50 cm) | igual | VL53L0X con cable largo: van por un repetidor I2C (PCA9517A) |
+| **VL1 … VL4** | 3V3 · GND · SCL · SDA · — (GPIO1, libre) · XSHUT | VL53L0X (GY-530) con cable de hasta 1 m: los cuatro van por el repetidor I2C (PCA9517A) |
 | **US1 … US5** | 5V · TRIG · ECHO · GND | HC-SR04. El divisor de ECHO (1 kΩ / 2 kΩ) ya está en la placa |
 | **OLED** (J2, tira macho) | GND · VCC · SCL · SDA | Pantalla 0,96" SSD1306/SSD1315 I2C de 4 pines: se suelda encima, tumbada, pantalla arriba |
 | **+5V / GND** (borna) | 5 V de la fuente del droide | Alimenta los HC-SR04 y la Pico |
@@ -32,8 +31,9 @@ Con el `sensors.yaml` de hoy: `tof_front_left` → VL1, `tof_front` → VL2, `to
 `tof_floor` → VL4, `sonar_front_left` → US1, `sonar_front_right` → US2, `sonar_rear` → US3.
 US4 y US5 son para los dos HC-SR04 de repuesto (GP18/19 y GP20/21).
 
-**Regla del cable:** si el cable de un VL53L0X mide más de 50 cm, enchúfalo en VL3 o VL4. Los
-HC-SR04 aguantan cables largos en cualquier US.
+**Regla del cable:** cualquier VL53L0X en cualquier VL, con cable de hasta **1 m** (los cuatro a
+la vez también: 4 × 1 m entran con margen en el bus del repetidor). Los HC-SR04 aguantan cables
+largos en cualquier US.
 
 ## Alimentación
 

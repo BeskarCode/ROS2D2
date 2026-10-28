@@ -35,7 +35,8 @@ draws it again). With today's `sensors.yaml`:
   TRIG goes straight (3.3 V triggers it).
 - VBUS is 5 V only while the Pico is powered by USB (it is: from the Pi).
 - About 20 mA per VL53L0X and 15 mA per HC-SR04: all seven fit on the Pi's USB.
-- Keep the I2C wires (SDA/SCL) short, under 50 cm. The VL53L0X's GPIO1 is not used.
+- Wired straight to the Pico, keep the I2C wires (SDA/SCL) short, under 50 cm (on the carrier board
+  every VL connector sits behind its I2C repeater and takes up to 1 m). The VL53L0X's GPIO1 is not used.
 - **Reserved, never for a sensor:** GP16 and GP17 (I2C); GP0, GP1, GP6-GP9, GP22, GP27 and
   GP28 (the carrier board's status LEDs) and GP26 (its button); GP23, GP24, GP25 (the Pico's own: GP25 is the LED). The console does not
   offer them.
