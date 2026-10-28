@@ -9,9 +9,9 @@ Connectors keep the module's own pin order, so a straight Dupont cable fits:
 VL1-VL2 sit on the I2C bus itself (cables < 50 cm); VL3-VL4 behind the U1 repeater (> 50 cm).
 
 Every LCSC number was checked on its jlcpcb.com part page (27 Oct 2026); JP1/JP2 and D4 were
-changed to parts JLCPCB had in stock when quoting (the first ones were out of stock), and the
-LEDs to the classic 5050 WS2812B-V5/W (the 2020 ones were out of stock or "difficult"). MAKER gives the
-maker and maker part number of each, for the PCBWay BOM (PCBWay does not use LCSC numbers).
+changed to parts JLCPCB had in stock when quoting (the first ones were out of stock). The status
+LEDs are plain 0603 ones, one GPIO each (the WS2812B were too big, or out of stock, or "difficult"
+for JLCPCB), the same part as the power LED. MAKER gives the maker and maker part number of each, for the PCBWay BOM (PCBWay does not use LCSC numbers).
 """
 from dataclasses import dataclass, field
 
@@ -30,16 +30,21 @@ class Part:
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
 C0805 = "Capacitor_SMD:C_0805_2012Metric"
-LCSC_R = {"1k": "C21190", "2k": "C22975", "2.2k": "C4190", "4.7k": "C23162", "33": "C23140"}
+LCSC_R = {"1k": "C21190", "2k": "C22975", "2.2k": "C4190", "4.7k": "C23162"}
 
-# Pico pin -> net. GP2-5 XSHUT, GP10-15/18-21 sonars, GP16/17 I2C, GP22 LEDs, GP26 button.
+# Status LED k (LED1-4 = VL1-4, LED5-9 = US1-5) -> its Pico pin: the GPIO nearest each connector,
+# VL1-VL4 = GP28, GP27, GP22, GP9; US1-US5 = GP0, GP1, GP6, GP7, GP8 (firmware Board.h CONN_LED)
+LED_PIN = {1: 34, 2: 32, 3: 29, 4: 12, 5: 1, 6: 2, 7: 9, 8: 10, 9: 11}
+
+# Pico pin -> net. GP2-5 XSHUT, GP10-15/18-21 sonars, GP16/17 I2C, LEDs above, GP26 button.
 PICO_PIN_NET = {p: "" for p in range(1, 41)}
 PICO_PIN_NET.update({p: "GND" for p in (3, 8, 13, 18, 23, 28, 33, 38)})
 PICO_PIN_NET.update({4: "XSHUT1", 5: "XSHUT2", 6: "XSHUT3", 7: "XSHUT4",
                      14: "TRIG1", 15: "ECHO1_P", 16: "TRIG2", 17: "ECHO2_P",
                      19: "TRIG3", 20: "ECHO3_P", 21: "SDA", 22: "SCL",
                      24: "TRIG4", 25: "ECHO4_P", 26: "TRIG5", 27: "ECHO5_P",
-                     29: "LED_DIN_P", 31: "BTN", 36: "+3V3", 39: "VSYS"})
+                     31: "BTN", 36: "+3V3", 39: "VSYS"})
+PICO_PIN_NET.update({pin: f"STAT{k}" for k, pin in LED_PIN.items()})
 
 PARTS = {}
 
@@ -65,17 +70,16 @@ add("JP1", "Pico 2 pins 1-20", SOCKET20, "C2905423", {k: PICO_PIN_NET[k] for k i
 add("JP2", "Pico 2 pins 40-21", SOCKET20, "C2905423", {k: PICO_PIN_NET[41 - k] for k in range(1, 21)},
     "Connector_Generic:Conn_01x20")
 
-# --- 5 V input: J1 -> F1 -> D1 -> +5V; +5V -> D2 -> VSYS; +5V -> D3 -> VLED -------------
+# --- 5 V input: J1 -> F1 -> D1 -> +5V; +5V -> D2 -> VSYS -----------------------------------
 add("J1", "5V in", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-2-5.08_1x02_P5.08mm_Horizontal",
     "C474952", {1: "5V_IN", 2: "GND"}, "Connector:Screw_Terminal_01x02")  # KF128-5.08-2P
 add("F1", "0.75A", "Fuse:Fuse_1206_3216Metric", "C976305", {1: "5V_IN", 2: "5V_FUSED"},
     "Device:Polyfuse")                                                    # BSMD1206-075-30V
 SS34 = ("Diode_SMD:D_SMA", "C8678", "Device:D_Schottky")                  # pad 1 K, pad 2 A
-for ref, k, a in (("D1", "+5V", "5V_FUSED"), ("D2", "VSYS", "+5V"), ("D3", "VLED", "+5V")):
+for ref, k, a in (("D1", "+5V", "5V_FUSED"), ("D2", "VSYS", "+5V")):
     add(ref, "SS34", SS34[0], SS34[1], {1: k, 2: a}, SS34[2])
 cap("C1", "22u", "+5V")
 cap("C2", "100n", "+5V")
-cap("C3", "10u", "VLED")
 cap("C4", "10u", "+3V3")
 add("D4", "red", "LED_SMD:LED_0603_1608Metric", "C2286", {1: "PWR_LED", 2: "+5V"}, "Device:LED")   # 5 V on (~3 mA)
 resistor("R1", "1k", "PWR_LED", "GND")
@@ -107,14 +111,10 @@ for n in range(1, 6):
     resistor(f"R{10 + n}", "1k", f"ECHO{n}", f"ECHO{n}_P")
     resistor(f"R{20 + n}", "2k", f"ECHO{n}_P", "GND")
 
-# --- diagnostic LEDs: one WS2812B-2020 per connector (VL1..VL4, US1..US5) -----------------
-resistor("R6", "33", "LED_DIN_P", "LED_DIN")
+# --- status LEDs: one per connector (VL1..VL4, US1..US5), GPIO -> 1k -> LED -> GND (~1.3 mA) --
 for k in range(1, 10):
-    # the classic 5 x 5 mm WS2812B (the 2 x 2 mm ones are "difficult" for JLCPCB): 1 VDD 2 DOUT 3 VSS 4 DIN
-    add(f"LED{k}", "WS2812B", "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm", "C2874885",      # WS2812B-V5/W
-        {1: "VLED", 2: f"LED_D{k}" if k < 9 else "", 3: "GND", 4: "LED_DIN" if k == 1 else f"LED_D{k - 1}"},
-        "LED:WS2812B")
-    cap(f"C{10 + k}", "100n", "VLED")
+    resistor(f"R{30 + k}", "1k", f"STAT{k}", f"STAT{k}_A")
+    add(f"LED{k}", "red", "LED_SMD:LED_0603_1608Metric", "C2286", {1: "GND", 2: f"STAT{k}_A"}, "Device:LED")
 
 # --- display socket and button -------------------------------------------------------------
 # J2: 4-pin female socket fitted at the factory. The OLED (any 0.96" 128x64 SSD1306/SSD1315 I2C
@@ -140,7 +140,6 @@ MAKER = {
     "C22975": ("UNI-ROYAL", "0603WAF2001T5E", "SMD"),
     "C4190": ("UNI-ROYAL", "0603WAF2201T5E", "SMD"),
     "C23162": ("UNI-ROYAL", "0603WAF4701T5E", "SMD"),
-    "C23140": ("UNI-ROYAL", "0603WAF330JT5E", "SMD"),
     "C14663": ("Samsung", "CL10B104KB8NNNC", "SMD"),
     "C15850": ("Samsung", "CL21A106KAYNNNE", "SMD"),
     "C45783": ("Samsung", "CL21A226MAQNNNE", "SMD"),
@@ -148,7 +147,6 @@ MAKER = {
     "C976305": ("BHFUSE", "BSMD1206-075-30V", "SMD"),
     "C2286": ("Hubei KENTO Elec", "KT-0603R", "SMD"),
     "C80799": ("NXP", "PCA9517ADP,118", "SMD"),
-    "C2874885": ("Worldsemi", "WS2812B-V5/W", "SMD"),
     "C318884": ("XKB Connection", "TS-1187A-B-A-B", "SMD"),
     "C2905423": ("Shenzhen Kinghelm Elec", "KH-2.54FH-1X20P-H8.5", "THT"),
     "C37208": ("BOOMELE", "2.54-1x6P male header, straight", "THT"),

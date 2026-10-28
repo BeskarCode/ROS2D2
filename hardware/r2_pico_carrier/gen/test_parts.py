@@ -11,6 +11,10 @@ from parts import PARTS, PICO_PIN_NET, nets_of
 KICAD_FP = os.environ.get(
     "KICAD_FP", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\share\kicad\footprints")
 GND_PINS = (3, 8, 13, 18, 23, 28, 33, 38)
+# Status LED k (LED1-4 = VL1-4, LED5-9 = US1-5): Pico pin -> its net. GPIOs nearest each
+# connector: VL1-VL4 = GP28, GP27, GP22, GP9; US1-US5 = GP0, GP1, GP6, GP7, GP8
+LED_PICO_PIN = {34: "STAT1", 32: "STAT2", 29: "STAT3", 12: "STAT4",
+                1: "STAT5", 2: "STAT6", 9: "STAT7", 10: "STAT8", 11: "STAT9"}
 
 
 def pads_on(net):
@@ -43,7 +47,8 @@ def test_pico_pins():
     want = {4: "XSHUT1", 5: "XSHUT2", 6: "XSHUT3", 7: "XSHUT4",
             14: "TRIG1", 15: "ECHO1_P", 16: "TRIG2", 17: "ECHO2_P", 19: "TRIG3", 20: "ECHO3_P",
             21: "SDA", 22: "SCL", 24: "TRIG4", 25: "ECHO4_P", 26: "TRIG5", 27: "ECHO5_P",
-            29: "LED_DIN_P", 31: "BTN", 36: "+3V3", 39: "VSYS"}
+            31: "BTN", 36: "+3V3", 39: "VSYS"}
+    want.update(LED_PICO_PIN)
     want.update({p: "GND" for p in GND_PINS})
     assert {p: n for p, n in PICO_PIN_NET.items() if n} == want
     assert PICO_PIN_NET[40] == "" and PICO_PIN_NET[30] == ""     # VBUS and RUN left alone
@@ -74,23 +79,21 @@ def test_power_path():
     assert refs_on(f1_out) == {"F1", "D1"} and PARTS["D1"].pads["2"] == f1_out    # anode
     assert PARTS["D1"].pads["1"] == "+5V"                                          # cathode
     assert refs_on("VSYS") == {"D2", "JP2"} and PARTS["D2"].pads == {"1": "VSYS", "2": "+5V"}
-    vled = refs_on("VLED")
-    assert "D3" in vled and PARTS["D3"].pads == {"1": "VLED", "2": "+5V"}
-    assert all(r.startswith(("LED", "C", "D3")) for r in vled)
+    assert not refs_on("VLED") and "D3" not in PARTS        # no LED rail any more
     assert not refs_on("VBUS")
 
 
-def test_led_chain():
-    r = next(x for x in refs_on("LED_DIN_P") if x.startswith("R"))
-    assert PARTS[r].value == "33" and refs_on("LED_DIN_P") == {r, "JP2"}
-    din = {"LED1": next(n for n in PARTS[r].pads.values() if n != "LED_DIN_P")}
+def test_status_leds():
+    """One plain 0603 LED per connector, each on its own GPIO: pin -> 1k -> anode, cathode -> GND."""
     for k in range(1, 10):
         led = PARTS[f"LED{k}"]
-        # WS2812B 5050: 1 VDD, 2 DOUT, 3 VSS, 4 DIN
-        assert led.pads["4"] == (din["LED1"] if k == 1 else f"LED_D{k - 1}")
-        assert led.pads["2"] == (f"LED_D{k}" if k < 9 else "")
-        assert led.pads["3"] == "GND" and led.pads["1"] == "VLED"
-        assert led.footprint == "LED_SMD:LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm"
+        assert led.footprint == "LED_SMD:LED_0603_1608Metric" and led.lcsc == PARTS["D4"].lcsc
+        assert led.pads == {"1": "GND", "2": f"STAT{k}_A"}                 # pad 1 = cathode
+        r = [x for x in refs_on(f"STAT{k}_A") if x.startswith("R")]
+        assert len(r) == 1 and PARTS[r[0]].value == "1k"
+        assert set(PARTS[r[0]].pads.values()) == {f"STAT{k}", f"STAT{k}_A"}
+        assert refs_on(f"STAT{k}") == {r[0], "JP1" if k in (4, 5, 6, 7, 8, 9) else "JP2"}
+    assert not any(n.startswith("LED_D") for p in PARTS.values() for n in p.pads.values())
 
 
 def test_every_part_has_lcsc_and_footprint():
@@ -101,7 +104,7 @@ def test_every_part_has_lcsc_and_footprint():
             assert re.fullmatch(r"C\d+", part.lcsc), ref
 
 
-@pytest.mark.parametrize("net", ["+5V", "+3V3", "VLED"])
+@pytest.mark.parametrize("net", ["+5V", "+3V3"])
 def test_rails_have_decoupling(net):
     assert any(r.startswith("C") for r in refs_on(net))
 

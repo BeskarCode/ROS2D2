@@ -32,7 +32,7 @@ W, H = 80.0, 90.0                     # board size
 PICO_X, PICO_TOP = 40.0, 2.0          # Pico centre line and top edge (USB end)
 ROW = 8.89                            # Pico pin rows at +-8.89 mm from its centre
 PIN1_Y = PICO_TOP + 1.37 + 0.0        # first pin, 1.37 mm under the Pico's top edge
-POWER_NETS = ("5V_IN", "5V_FUSED", "+5V", "VSYS", "VLED", "+3V3", "GND")
+POWER_NETS = ("5V_IN", "5V_FUSED", "+5V", "VSYS", "+3V3", "GND")
 
 mm = pcbnew.FromMM
 
@@ -55,18 +55,18 @@ def placement():
         p[f"US{i + 1}"] = (3.0, y, HEADER_ROT)
         p[f"R{11 + i}"] = (15.0, y - 1.2, 0)              # 1k
         p[f"R{21 + i}"] = (15.0, y + 1.6, 0)              # 2k
-        p[f"LED{5 + i}"] = (21.0, y, 0)
-        p[f"C{15 + i}"] = (26.5, y, 90)
+        p[f"LED{5 + i}"] = (21.0, y, 0)                  # cathode (GND) on the left
+        p[f"R{35 + i}"] = (24.0, y, 180)                  # its 1k, anode end facing the LED
     for i, y in enumerate(VL_Y):                          # VL1..VL4
         p[f"VL{i + 1}"] = (55.0, y, HEADER_ROT)
         p[f"LED{1 + i}"] = (72.6, y, 90)       # pads above and below: clear of the header
-        p[f"C{11 + i}"] = (78.3, y, 90)
+        p[f"R{31 + i}"] = (75.5, y, 90)
     p.update({"R2": (57.0, 7.0, 0), "R3": (61.0, 7.0, 0), "C4": (52.5, 6.0, 90),
-              "R6": (52.5, 35.5, 90), "C5": (57.0, 33.0, 90), "U1": (62.0, 33.0, 0),
+              "C5": (57.0, 33.0, 90), "U1": (62.0, 33.0, 0),
               "R4": (68.0, 31.5, 0), "R5": (68.0, 34.5, 0),
               "J1": (10.5, 63.0, 0), "F1": (21.5, 59.5, 0), "D1": (28.0, 59.5, 180),
               "C1": (21.5, 64.5, 0), "C2": (25.0, 64.5, 0),
-              "D2": (35.0, 59.5, 180), "D3": (35.0, 64.5, 180), "C3": (39.5, 64.5, 90),
+              "D2": (35.0, 59.5, 180),
               "D4": (40.8, 59.5, 0), "R1": (44.0, 57.0, 0),
               "J2": (OLED_X - 3.81, OLED_TOP + 2.0, HEADER_ROT), "SW1": (38.0, 79.0, 0)})
     for k, (dx, dy) in enumerate(((1.9, 2.0), (OLED_W - 1.9, 2.0), (1.9, OLED_H - 2.0), (OLED_W - 1.9, OLED_H - 2.0)), 5):

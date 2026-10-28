@@ -22,7 +22,7 @@ hembra-hembra recto va directo, sin cruzar nada. El pin 1 es el de la izquierda 
 | **VL3, VL4** (> 50 cm) | igual | VL53L0X con cable largo: van por un repetidor I2C (PCA9517A) |
 | **US1 … US5** | 5V · TRIG · ECHO · GND | HC-SR04. El divisor de ECHO (1 kΩ / 2 kΩ) ya está en la placa |
 | **OLED** (J2, hembra) | GND · VCC · SCL · SDA | Pantalla 0,96" SSD1306/SSD1315 I2C de 4 pines: se pincha tumbada, pantalla arriba |
-| **+5V / GND** (borna) | 5 V de la fuente del droide | Alimenta los HC-SR04, los LEDs y la Pico |
+| **+5V / GND** (borna) | 5 V de la fuente del droide | Alimenta los HC-SR04 y la Pico |
 | **DISPLAY** | pulsador | Enciende la pantalla y pasa de sensor |
 
 Con el `sensors.yaml` de hoy: `tof_front_left` → VL1, `tof_front` → VL2, `tof_front_right` → VL3,
@@ -35,13 +35,14 @@ HC-SR04 aguantan cables largos en cualquier US.
 ## Alimentación
 
 - **Borna +5V / GND**: 5 V de la fuente del droide. Lleva fusible rearmable (750 mA) y diodo
-  contra la polaridad invertida. El LED verde junto a la borna dice que hay 5 V.
+  contra la polaridad invertida. El LED rojo junto a la borna (D4) dice que hay 5 V.
 - **Conecta la borna con el USB de la Pico desenchufado y comprueba la polaridad.** El diodo
   solo protege si la placa no tiene otra masa: con el USB puesto, la masa de la Pi también es
   la de la placa, y unos cables al revés harían un corto por el cable USB que no pasa ni por el
   fusible ni por el diodo.
 - El **USB** de la Pico va a la Pi 4 para los datos. La Pico funciona con el USB o con la borna;
-  los HC-SR04 y los LEDs **solo con la borna**.
+  los HC-SR04 **solo con la borna** (los LEDs y la pantalla van a 3,3 V: funcionan también
+  solo con USB).
 
 ## Pinchar la Pico
 
@@ -52,8 +53,24 @@ Míralo dos veces antes de dar corriente.
 ## Pantalla y LEDs
 
 Apagados hasta que pulsas **DISPLAY**: primera pulsación, el logo; la siguiente, el último
-sensor visto; cada pulsación, el siguiente. A los 30 s sin pulsar se apaga todo. Un LED por
-conector: verde mide, rojo parpadeando no responde, apagado sin configurar, azul esperando a la Pi.
+sensor visto; cada pulsación, el siguiente. A los 30 s sin pulsar se apaga todo.
+
+Un LED rojo 0603 por conector, junto a él, cada uno en su propio GPIO (GPIO → 1 kΩ → LED → GND,
+~1,3 mA). Los estados van por parpadeo:
+
+| LED | Significa |
+|---|---|
+| encendido fijo | ese sensor mide |
+| parpadeando (0,4 s) | configurado pero no responde |
+| apagado | no hay sensor configurado en ese conector |
+| destello corto cada 2 s, todos | esperando a que la Pi mande la configuración |
+| un parpadeo breve invertido cada segundo | es el conector que sale en la pantalla |
+
+| Conector | VL1 | VL2 | VL3 | VL4 | US1 | US2 | US3 | US4 | US5 |
+|---|---|---|---|---|---|---|---|---|---|
+| GPIO del LED | GP28 | GP27 | GP22 | GP9 | GP0 | GP1 | GP6 | GP7 | GP8 |
+
+Por eso esos GPIO quedan reservados: el firmware y la consola no los ofrecen para sensores.
 
 ## Pedirla
 
@@ -65,12 +82,11 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
 2. Activa **PCB Assembly**, cara **Top**, tipo *Economic* si lo permite (si no, *Standard*:
    las tiras y zócalos son de agujero pasante).
 3. Sube `jlcpcb/bom.csv` y `jlcpcb/cpl.csv`.
-4. En la vista previa de colocación mira **la orientación** de D1-D3 (raya = cátodo), LED1-LED9,
+4. En la vista previa de colocación mira **la orientación** de D1-D2 (raya = cátodo), LED1-LED9,
    U1, D4 y **SW1** (si el pulsador sale girado 90°, queda siempre pulsado). Si alguna está
    girada, corrígela allí mismo. Los zócalos y tiras pueden verse desplazados en la vista previa
    (su posición es la del pin 1): es normal.
-5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
-6. Los LEDs WS2812B (5050) solo se montan en **Standard** (no Economic).
+5. Comprueba que las 17 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
 
 ### PCBWay (`pcbway/`)
 

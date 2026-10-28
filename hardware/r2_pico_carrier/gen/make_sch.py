@@ -63,7 +63,7 @@ def lib_symbol(lib_id):
 def placement():
     at = {}
     x = 30
-    for ref in ("J1", "F1", "D1", "C1", "C2", "D2", "D3", "C3", "C4", "D4", "R1"):
+    for ref in ("J1", "F1", "D1", "C1", "C2", "D2", "C4", "D4", "R1"):
         at[ref] = (x, 40)
         x += 17
     at["JP1"], at["JP2"] = (40, 125), (95, 125)
@@ -74,10 +74,9 @@ def placement():
     for n in range(1, 6):
         x0 = 165 + (n - 1) * 48
         at[f"US{n}"], at[f"R{10 + n}"], at[f"R{20 + n}"] = (x0, 150), (x0 + 22, 145), (x0 + 22, 170)
-    at["R6"] = (150, 215)
     for k in range(1, 10):
-        at[f"LED{k}"] = (170 + (k - 1) * 27, 215)
-        at[f"C{10 + k}"] = (170 + (k - 1) * 27, 240)
+        at[f"R{30 + k}"] = (160 + (k - 1) * 27, 215)
+        at[f"LED{k}"] = (160 + (k - 1) * 27, 240)
     at["J2"], at["SW1"] = (40, 230), (85, 230)
     for k in range(1, 9):
         at[f"H{k}"] = (150 + (k - 1) * 12, 270)
@@ -98,7 +97,7 @@ def main():
     if missing:
         raise SystemExit(f"no place for {sorted(missing)}")
     lib_blocks, out = {}, []
-    flags = {"+3V3", "GND", "VLED", "+5V", "VSYS", "5V_IN"}      # PWR_FLAG: these nets are fed
+    flags = {"+3V3", "GND", "+5V", "VSYS", "5V_IN"}      # PWR_FLAG: these nets are fed
     for ref, part in PARTS.items():
         body, pins = lib_symbol(part.symbol)
         lib_blocks[part.symbol] = body
@@ -137,7 +136,7 @@ def main():
               ("I2C: VL1-VL2 short bus, U1 repeater to VL3-VL4 (> 50 cm)", 160, 25),
               ("VL53L0X connectors (GY-530 order)", 160, 85),
               ("HC-SR04 connectors, ECHO 1k/2k dividers", 160, 135),
-              ("Diagnostic LEDs (VL1..VL4, US1..US5)", 140, 200), ("Display and button", 25, 210)]
+              ("Status LEDs, one GPIO each (LED1-4 = VL1-4, LED5-9 = US1-5)", 140, 200), ("Display and button", 25, 210)]
     for t, x, y in titles:
         out.append(f'(text "{t}" (exclude_from_sim no) (at {x} {y} 0) (effects (font (size 2 2) bold) (justify left)) '
                    f'(uuid "{uid("text", t)}"))')
