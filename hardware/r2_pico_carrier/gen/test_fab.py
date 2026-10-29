@@ -80,3 +80,22 @@ def test_jlcpcb_rotation_offsets():
     # resistors on the same LCSC part were not touched
     assert all(float(cpl[r]["Rotation"]) == 270.0 for r in ("R31", "R32", "R33", "R34"))
     assert float(cpl["R35"]["Rotation"]) == 180.0 and float(cpl["R11"]["Rotation"]) == 0.0
+
+
+def test_hand_header_packages():
+    """jlcpcb-sin-tiras/ and pcbway-sin-tiras/: the same gerbers, every assembled part but the pin
+    headers, placed exactly as in the full packages."""
+    from make_fab import HAND
+    assert HAND == {r for r, p in PARTS.items() if p.lcsc in ("C2691448", "C37208")}
+    for fab, centroid in (("jlcpcb", "cpl.csv"), ("pcbway", "centroid.csv")):
+        full, hand = os.path.join(ROOT, fab), os.path.join(ROOT, fab + "-sin-tiras")
+        with open(os.path.join(full, "gerber.zip"), "rb") as a, open(os.path.join(hand, "gerber.zip"), "rb") as b:
+            assert a.read() == b.read()
+        col = "LCSC Part #" if fab == "jlcpcb" else "Mfg Part #"
+        bom = rows(os.path.join(hand, "bom.csv"))
+        assert designators(bom, "Designator") == ASSEMBLED - HAND
+        assert all(r[col] for r in bom)
+        cpl_full = {r["Designator"]: r for r in rows(os.path.join(full, centroid))}
+        cpl_hand = {r["Designator"]: r for r in rows(os.path.join(hand, centroid))}
+        assert set(cpl_hand) == ASSEMBLED - HAND
+        assert all(cpl_hand[r] == cpl_full[r] for r in cpl_hand)

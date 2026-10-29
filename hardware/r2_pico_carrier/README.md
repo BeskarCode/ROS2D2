@@ -119,6 +119,22 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
 4. PCBWay revisa el BOM a mano y te da el precio final por correo; revisa las orientaciones en su
    vista previa igual que arriba.
 
+### Si prefieres soldar tú las tiras de pines (`jlcpcb-sin-tiras/`, `pcbway-sin-tiras/`)
+
+La misma placa (los gerbers son idénticos), pero la fábrica no monta las 11 tiras de pines:
+J2 (pantalla), US1-US5, VL1-VL4 y J4 (EXP). El resto, zócalos de la Pico incluidos, viene montado.
+Sale algo más barata (sin soldadura por ola de esas tiras) y en la revisión de JLCPCB apenas queda
+nada que marcar. Se pide igual que arriba, con los ficheros de esa carpeta (17 líneas de BOM).
+
+Compra aparte y suéldalas por arriba, rectas, con el plástico apoyado en la placa:
+
+| Tira | Cuántas | Dónde |
+|---|---|---|
+| Macho 1×4, 2,54 mm, recta | 6 | J2, US1-US5 |
+| Macho 1×6, 2,54 mm, recta | 5 | VL1-VL4, J4 |
+
+Vale también una tira larga 1×40 cortada a medida. Suelda J2 antes que la pantalla.
+
 ## Qué comprar aparte
 
 - Pantalla OLED 0,96" **128×64 SSD1306 (o SSD1315) I2C de 4 pines**, en orden
@@ -138,7 +154,7 @@ Todo sale de `gen/parts.py` (piezas, huellas, LCSC y la red de cada pad), con el
 $KPY gen/make_sch.py     # esquema (ERC limpio)
 $KPY gen/make_pcb.py     # placa sin pistas: contorno, colocación, serigrafía
 $KPY gen/route.py        # ruteo con Freerouting (Java 25 + freerouting-2.5.0.jar)
-$KPY gen/make_fab.py     # paquetes jlcpcb/ y pcbway/
+$KPY gen/make_fab.py     # paquetes jlcpcb/ y pcbway/ (y sus variantes -sin-tiras/)
 $KPY -m pytest gen       # comprobaciones (conexiones, esquema = parts.py, paquetes)
 kicad-cli pcb drc --schematic-parity --severity-all r2_pico_carrier.kicad_pcb
 ```

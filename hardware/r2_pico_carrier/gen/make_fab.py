@@ -5,6 +5,8 @@
   pcbway/  gerber.zip, bom.csv (Item #, Designator, Qty, Manufacturer, Mfg Part #, ...), centroid.csv
 
 Both assemble the top side only (everything is on top); the M3 holes are not parts.
+jlcpcb-sin-tiras/ and pcbway-sin-tiras/ are the same board with the pin headers (HAND) left out
+of the assembly, for whoever solders them: same gerbers, shorter BOM and CPL.
 
     $KPY hardware/r2_pico_carrier/gen/make_fab.py
 """
@@ -27,6 +29,9 @@ JLC_ROTATION = {"C2905423": 90, "C80799": 270}     # 1x20 socket; PCA9517A TSSOP
 # vertical 1k next to the VL LEDs, pad 1 at the top. A resistor either way round, but sent as they
 # left it the review has nothing to change.
 JLC_REF_ROTATION = {"R31": 180, "R32": 180, "R33": 180, "R34": 180}
+# Pin headers the "-sin-tiras" packages leave for hand soldering: OLED, sensors and EXP. The Pico
+# sockets stay assembled (40 pins each, they must sit straight).
+HAND = {"J2", "J4", "US1", "US2", "US3", "US4", "US5", "VL1", "VL2", "VL3", "VL4"}
 LAYERS = "F.Cu,B.Cu,F.Mask,B.Mask,F.Silkscreen,B.Silkscreen,F.Paste,B.Paste,Edge.Cuts"
 
 
@@ -64,11 +69,11 @@ def positions():
     return sorted(out)
 
 
-def groups():
+def groups(skip=()):
     """{lcsc: [refs]} for the assembled parts, in reference order."""
     g = {}
     for ref, part in sorted(PARTS.items(), key=lambda kv: (kv[0].rstrip("0123456789"), int("0" + "".join(c for c in kv[0] if c.isdigit())))):
-        if not ref.startswith("H"):
+        if not ref.startswith("H") and ref not in skip:
             g.setdefault(part.lcsc, []).append(ref)
     return g
 
@@ -80,16 +85,15 @@ def write_csv(path, header, rows):
         w.writerows(rows)
 
 
-def main():
-    pos = positions()
-    for fab in ("jlcpcb", "pcbway"):
-        os.makedirs(os.path.join(ROOT, fab), exist_ok=True)
-        gerbers(os.path.join(ROOT, fab, "gerber.zip"))
-    g = groups()
-    write_csv(os.path.join(ROOT, "jlcpcb", "bom.csv"), ["Comment", "Designator", "Footprint", "LCSC Part #"],
+def packages(suffix, pos, skip=()):
+    """jlcpcb<suffix>/ and pcbway<suffix>/ BOM and placement, leaving the parts in skip out."""
+    jlc, pcbway = os.path.join(ROOT, "jlcpcb" + suffix), os.path.join(ROOT, "pcbway" + suffix)
+    pos = [p for p in pos if p[0] not in skip]
+    g = groups(skip)
+    write_csv(os.path.join(jlc, "bom.csv"), ["Comment", "Designator", "Footprint", "LCSC Part #"],
               [[PARTS[refs[0]].value, ",".join(refs), PARTS[refs[0]].footprint.split(":")[1], lcsc]
                for lcsc, refs in g.items()])
-    write_csv(os.path.join(ROOT, "jlcpcb", "cpl.csv"), ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"],
+    write_csv(os.path.join(jlc, "cpl.csv"), ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"],
               [[r, f"{x:.3f}mm", f"{y:.3f}mm", "Top", f"{(rot + JLC_ROTATION.get(PARTS[r].lcsc, 0) + JLC_REF_ROTATION.get(r, 0)) % 360:.1f}"]
                for r, x, y, rot in pos])
     rows = []
@@ -101,13 +105,23 @@ def main():
             note += ". J2 is the OLED header: the OLED module is not supplied, it is soldered on later."
         rows.append([i, ",".join(refs), len(refs), maker, mpn, part.value, part.footprint.split(":")[1], kind,
                      note])
-    write_csv(os.path.join(ROOT, "pcbway", "bom.csv"),
+    write_csv(os.path.join(pcbway, "bom.csv"),
               ["Item #", "Designator", "Qty", "Manufacturer", "Mfg Part #", "Description / Value",
                "Package/Footprint", "Type", "Your Instructions / Notes"], rows)
-    write_csv(os.path.join(ROOT, "pcbway", "centroid.csv"), ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"],
+    write_csv(os.path.join(pcbway, "centroid.csv"), ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"],
               [[r, f"{x:.3f}", f"{y:.3f}", "Top", f"{rot:.1f}"] for r, x, y, rot in pos])
-    print("jlcpcb/ and pcbway/ written:", len(g), "BOM lines,", len(pos), "placed parts")
+    print(f"jlcpcb{suffix}/ and pcbway{suffix}/ written:", len(g), "BOM lines,", len(pos), "placed parts")
 
+
+def main():
+    pos = positions()
+    for fab in ("jlcpcb", "pcbway"):
+        for suffix in ("", "-sin-tiras"):
+            os.makedirs(os.path.join(ROOT, fab + suffix), exist_ok=True)
+        gerbers(os.path.join(ROOT, fab, "gerber.zip"))
+        shutil.copyfile(os.path.join(ROOT, fab, "gerber.zip"), os.path.join(ROOT, fab + "-sin-tiras", "gerber.zip"))
+    packages("", pos)
+    packages("-sin-tiras", pos, HAND)
 
 if __name__ == "__main__":
     main()
