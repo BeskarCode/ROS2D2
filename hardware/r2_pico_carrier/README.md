@@ -104,6 +104,11 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    de su fila de agujeros y centrado en ella (el CPL da el centro de cada pieza: si algo sale
    desplazado, es un error de verdad). U1: el punto del pin 1 arriba a la izquierda, junto a C5.
 5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
+6. Tras el pago, un ingeniero de JLCPCB revisa la colocación y te pide *Confirm Parts Placement*
+   (tienes ~3 días; si no contestas, fabrican igual). El CPL ya lleva la orientación que dejaron en
+   nuestro pedido (R31-R34 a 270°), pero pueden marcar como *revisadas* tiras de pines o resistencias
+   giradas 180° o sin cambio visible: no tienen polaridad, es normal. Activa *Show Revised Items*,
+   comprueba que nada con polaridad (LEDs, diodos, U1, J5) ha cambiado y confirma.
 
 ### PCBWay (`pcbway/`)
 
