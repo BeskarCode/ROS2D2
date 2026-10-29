@@ -23,6 +23,10 @@ PCB = os.path.join(ROOT, "r2_pico_carrier.kicad_pcb")
 CLI = os.environ.get("KICAD_CLI", r"C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\kicad-cli.exe")
 # JLCPCB library models that sit turned against KiCad's: degrees added in their CPL only
 JLC_ROTATION = {"C2905423": 90, "C80799": 270}     # 1x20 socket; PCA9517A TSSOP-8
+# Single parts their engineer turned in the placement review (SMT026102861860, 29 Oct 2026): the
+# vertical 1k next to the VL LEDs, pad 1 at the top. A resistor either way round, but sent as they
+# left it the review has nothing to change.
+JLC_REF_ROTATION = {"R31": 180, "R32": 180, "R33": 180, "R34": 180}
 LAYERS = "F.Cu,B.Cu,F.Mask,B.Mask,F.Silkscreen,B.Silkscreen,F.Paste,B.Paste,Edge.Cuts"
 
 
@@ -86,7 +90,7 @@ def main():
               [[PARTS[refs[0]].value, ",".join(refs), PARTS[refs[0]].footprint.split(":")[1], lcsc]
                for lcsc, refs in g.items()])
     write_csv(os.path.join(ROOT, "jlcpcb", "cpl.csv"), ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"],
-              [[r, f"{x:.3f}mm", f"{y:.3f}mm", "Top", f"{(rot + JLC_ROTATION.get(PARTS[r].lcsc, 0)) % 360:.1f}"]
+              [[r, f"{x:.3f}mm", f"{y:.3f}mm", "Top", f"{(rot + JLC_ROTATION.get(PARTS[r].lcsc, 0) + JLC_REF_ROTATION.get(r, 0)) % 360:.1f}"]
                for r, x, y, rot in pos])
     rows = []
     for i, (lcsc, refs) in enumerate(g.items(), 1):

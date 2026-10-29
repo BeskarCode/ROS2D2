@@ -76,3 +76,7 @@ def test_jlcpcb_rotation_offsets():
     # PCA9517A: JLC/EasyEDA's TSSOP-8 model (C80799) has pin 1 bottom-left with pins 1-4 along the
     # bottom; KiCad's VSSOP-8 has pins 1-4 down the left side: +270 (review 28 Oct 2026)
     assert float(cpl["U1"]["Rotation"]) == 270.0
+    # the 1k beside the VL LEDs, as JLCPCB's engineer left them (review 29 Oct 2026); the other
+    # resistors on the same LCSC part were not touched
+    assert all(float(cpl[r]["Rotation"]) == 270.0 for r in ("R31", "R32", "R33", "R34"))
+    assert float(cpl["R35"]["Rotation"]) == 180.0 and float(cpl["R11"]["Rotation"]) == 0.0
