@@ -135,10 +135,20 @@ void led(uint32_t now) {
   digitalWrite(LED, on);
 }
 
+// Wokwi (wokwi/README.md) emulates only one core and has no Pi: there the display runs on core 0
+// and the sketch configures itself, as the Pi would.
+#ifdef WOKWI
+constexpr char WOKWI_CFG[] = " V:2 V:3 V:4 S:10:11 S:12:13 S:14:15 S:18:19 S:20:21";
+#endif
+
 void setup() {
   pinMode(LED, OUTPUT);
   Serial.begin(115200);
   tof::setup();
+#ifdef WOKWI
+  display::setup();
+  onCfg(WOKWI_CFG);
+#endif
 }
 
 void loop() {
@@ -157,9 +167,14 @@ void loop() {
     sendReadings(now);
   }
   led(now);
+#ifdef WOKWI
+  display::loop();
+#endif
 }
 
+#ifndef WOKWI
 // Core 1: the display, its button and the status LEDs
 void setup1() { display::setup(); }
 
 void loop1() { display::loop(); }
+#endif

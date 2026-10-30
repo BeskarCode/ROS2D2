@@ -43,9 +43,10 @@ inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now) {
   return on;
 }
 
-// Display: off; a press shows the logo; the next one the last connector seen; then each
-// press the next connector. 30 s without a press: off again (display and LEDs).
-enum class Screen { Off, Splash, Sensor };
+// Display: off; a press shows the logo; the next one every sensor at once; then each press one
+// connector, VL1 to US5, and after US5 every sensor again. 30 s without a press: off again
+// (display and LEDs).
+enum class Screen { Off, Splash, All, Sensor };
 constexpr uint32_t AWAKE_MS = 30000, DEBOUNCE_MS = 50;
 
 struct Ui {
@@ -61,9 +62,18 @@ inline void uiPress(Ui& ui, uint32_t now) {
   if (ui.pressedOnce && now - ui.lastPress < DEBOUNCE_MS) return;
   ui.pressedOnce = true;
   ui.lastPress = now;
-  if (ui.screen == Screen::Off) ui.screen = Screen::Splash;
-  else if (ui.screen == Screen::Splash) ui.screen = Screen::Sensor;
-  else ui.shown = (ui.shown + 1) % N_CONN;
+  if (ui.screen == Screen::Off) {
+    ui.screen = Screen::Splash;
+  } else if (ui.screen == Screen::Splash) {
+    ui.screen = Screen::All;
+  } else if (ui.screen == Screen::All) {
+    ui.screen = Screen::Sensor;
+    ui.shown = 0;
+  } else if (ui.shown == N_CONN - 1) {
+    ui.screen = Screen::All;
+  } else {
+    ui.shown++;
+  }
 }
 
 // The button line as read (high = released). A press counts only when the line falls after
@@ -79,3 +89,13 @@ inline void uiButton(Ui& ui, bool high, uint32_t now) {
 inline void uiTick(Ui& ui, uint32_t now) {
   if (ui.screen != Screen::Off && now - ui.lastPress > AWAKE_MS) ui.screen = Screen::Off;
 }
+
+// The all-sensors screen: how many of a bar's n segments light for a reading of mm on a scale of
+// top mm. The nearer the obstacle, the taller; nothing in range (-1) or beyond the scale: none.
+inline int barSegments(int16_t mm, int top, int n) {
+  if (mm < 0 || mm >= top) return 0;
+  return (n * (top - mm) + top - 1) / top;
+}
+
+// A sensor not responding: the display says so, and every other 2 s where to look
+inline bool checkConnectionText(uint32_t now) { return (now / 2000) % 2; }
