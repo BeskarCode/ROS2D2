@@ -57,7 +57,7 @@ def diagram():
         wires += [[f"led{name}:A", f"pico:GP{led}", "green", []],
                   [f"led{name}:C", f"pico:GND.{1 + i % 4}", "black", []]]
     for i, (name, trig, _) in enumerate(US):
-        parts.append({"type": "wokwi-hc-sr04", "id": f"sonar{name}", "top": 260, "left": -260 + i * 230,
+        parts.append({"type": "wokwi-hc-sr04", "id": f"sonar{name}", "top": 260, "left": -300 + i * 260,
                       "attrs": {"distance": str([30, 60, 120, 200, 350][i])}})
         wires += [[f"sonar{name}:VCC", "pico:VBUS", "red", []],
                   [f"sonar{name}:GND", f"pico:GND.{3 + i % 4}", "black", []],
