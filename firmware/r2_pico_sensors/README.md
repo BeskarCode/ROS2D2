@@ -52,7 +52,7 @@ therefore reserved too, which leaves GP2-5, GP10-15 and GP18-21 for sensors. See
 
 The display: off until the button is pressed; then the logo; the next press every sensor at
 once, one bar each (taller the nearer the obstacle); then each press one connector, VL1 to US5,
-and after US5 every sensor again. 30 s without a press: off. `wokwi/` runs it in the browser
+and after US5 every sensor again. Held for 3 s, or 30 s without a press: off. `wokwi/` runs it in the browser
 (see its README).
 
 ## LED
