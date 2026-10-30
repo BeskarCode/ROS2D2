@@ -31,14 +31,17 @@ int main() {
   uiPress(ui, 1020);
   check(ui.screen == Screen::Splash, "a bounce 20 ms later counts as nothing");
   uiPress(ui, 2000);
-  check(ui.screen == Screen::Sensor && ui.shown == 0, "second press: the first connector");
+  check(ui.screen == Screen::All, "second press: every sensor at once");
   uiPress(ui, 3000);
+  check(ui.screen == Screen::Sensor && ui.shown == 0, "third press: the first connector");
+  uiPress(ui, 4000);
   check(ui.shown == 1, "next press: the next connector");
-  for (int i = 0; i < 7; i++) uiPress(ui, 4000 + i * 1000);
-  check(ui.shown == 8, "up to US5");
+  for (int i = 0; i < 7; i++) uiPress(ui, 5000 + i * 1000);
+  check(ui.screen == Screen::Sensor && ui.shown == 8, "up to US5");
   uiPress(ui, 12000);
-  check(ui.shown == 0, "after US5, VL1 again");
+  check(ui.screen == Screen::All, "after US5, every sensor again");
   uiPress(ui, 13000);
+  check(ui.screen == Screen::Sensor && ui.shown == 0, "and then VL1 again");
   uiTick(ui, 13000 + AWAKE_MS - 1);
   check(ui.screen == Screen::Sensor, "still on just before 30 s");
   uiTick(ui, 13000 + AWAKE_MS + 1);
@@ -46,7 +49,7 @@ int main() {
   uiPress(ui, 50000);
   check(ui.screen == Screen::Splash, "wakes to the logo");
   uiPress(ui, 51000);
-  check(ui.screen == Screen::Sensor && ui.shown == 1, "then the last connector seen");
+  check(ui.screen == Screen::All, "then every sensor");
   // The button line itself (high = released): a press bouncing on release is one step
   Ui b;
   uiButton(b, false, 1000);                       // press
@@ -58,10 +61,10 @@ int main() {
   uiButton(b, false, 2000);                       // next real press
   uiButton(b, true, 2005);                        // bouncing on the way down
   uiButton(b, false, 2010);
-  check(b.screen == Screen::Sensor && b.shown == 0, "press bounce is not a second press either");
+  check(b.screen == Screen::All, "press bounce is not a second press either");
   uiButton(b, true, 2300);
   uiButton(b, false, 2400);
-  check(b.shown == 1, "the next clean press moves on");
+  check(b.screen == Screen::Sensor && b.shown == 0, "the next clean press moves on");
 
   Ui splash;
   uiPress(splash, 100);
@@ -87,6 +90,18 @@ int main() {
   check(!ledOn(true, State::Ok, true, 50) && ledOn(true, State::Ok, true, 500), "on the display: a dark blip");
   check(ledOn(true, State::NotConfigured, true, 50) && !ledOn(true, State::NotConfigured, true, 500),
         "on the display, nothing configured: a light blip");
+
+  // The all-sensors screen: one bar per sensor, taller the nearer the obstacle
+  check(barSegments(-1, 1200, 12) == 0, "nothing in range: flat");
+  check(barSegments(1200, 1200, 12) == 0, "at the top of the scale: flat");
+  check(barSegments(5000, 3000, 12) == 0, "beyond it: flat");
+  check(barSegments(0, 1200, 12) == 12, "touching: full");
+  check(barSegments(1199, 1200, 12) == 1, "just inside the scale: one segment");
+  check(barSegments(600, 1200, 12) == 6, "halfway: half the segments");
+  check(barSegments(1500, 3000, 12) == 6, "halfway on the sonar scale too");
+
+  check(!checkConnectionText(500) && checkConnectionText(2500) && !checkConnectionText(4500),
+         "not responding / check connection, 2 s each");
 
   if (failures) return 1;
   printf("all passed\n");

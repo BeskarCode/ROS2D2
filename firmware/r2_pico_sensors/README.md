@@ -50,6 +50,11 @@ US1-US5 = GP0, GP1, GP6, GP7, GP8), and an OLED display with a button (GP26). Th
 handles them on the RP2350's second core; without the board, nothing changes. Those GPIOs are
 therefore reserved too, which leaves GP2-5, GP10-15 and GP18-21 for sensors. See its README.
 
+The display: off until the button is pressed; then the logo; the next press every sensor at
+once, one bar each (taller the nearer the obstacle); then each press one connector, VL1 to US5,
+and after US5 every sensor again. 30 s without a press: off. `wokwi/` runs it in the browser
+(see its README).
+
 ## LED
 
 - Slow blink (once a second): running, but the Pi has not sent the sensors yet.

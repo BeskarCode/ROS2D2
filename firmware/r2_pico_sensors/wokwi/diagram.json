@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "author": "NandoMadrid",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-pi-pico-2",
+      "id": "pico",
+      "top": 0,
+      "left": 0,
+      "attrs": {
+        "env": "arduino-community"
+      }
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled",
+      "top": -120,
+      "left": 200,
+      "attrs": {
+        "i2cAddress": "0x3c"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn",
+      "top": -110,
+      "left": 360,
+      "attrs": {
+        "color": "blue",
+        "label": "display"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledVL1",
+      "top": -60,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "VL1"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledVL2",
+      "top": -20,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "VL2"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledVL3",
+      "top": 20,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "VL3"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledVL4",
+      "top": 60,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "VL4"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledUS1",
+      "top": 100,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "US1"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledUS2",
+      "top": 140,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "US2"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledUS3",
+      "top": 180,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "US3"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledUS4",
+      "top": 220,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "US4"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledUS5",
+      "top": 260,
+      "left": -120,
+      "attrs": {
+        "color": "green",
+        "label": "US5"
+      }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "sonarUS1",
+      "top": 260,
+      "left": -100,
+      "attrs": {
+        "distance": "400"
+      }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "sonarUS2",
+      "top": 260,
+      "left": 60,
+      "attrs": {
+        "distance": "900"
+      }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "sonarUS3",
+      "top": 260,
+      "left": 220,
+      "attrs": {
+        "distance": "1400"
+      }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "sonarUS4",
+      "top": 260,
+      "left": 380,
+      "attrs": {
+        "distance": "1900"
+      }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "sonarUS5",
+      "top": 260,
+      "left": 540,
+      "attrs": {
+        "distance": "2400"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "oled:GND",
+      "pico:GND.8",
+      "black",
+      []
+    ],
+    [
+      "oled:VCC",
+      "pico:3V3",
+      "red",
+      []
+    ],
+    [
+      "oled:SDA",
+      "pico:GP16",
+      "blue",
+      []
+    ],
+    [
+      "oled:SCL",
+      "pico:GP17",
+      "green",
+      []
+    ],
+    [
+      "btn:1.l",
+      "pico:GP26",
+      "violet",
+      []
+    ],
+    [
+      "btn:2.l",
+      "pico:GND.7",
+      "black",
+      []
+    ],
+    [
+      "ledVL1:A",
+      "pico:GP28",
+      "green",
+      []
+    ],
+    [
+      "ledVL1:C",
+      "pico:GND.1",
+      "black",
+      []
+    ],
+    [
+      "ledVL2:A",
+      "pico:GP27",
+      "green",
+      []
+    ],
+    [
+      "ledVL2:C",
+      "pico:GND.2",
+      "black",
+      []
+    ],
+    [
+      "ledVL3:A",
+      "pico:GP22",
+      "green",
+      []
+    ],
+    [
+      "ledVL3:C",
+      "pico:GND.3",
+      "black",
+      []
+    ],
+    [
+      "ledVL4:A",
+      "pico:GP9",
+      "green",
+      []
+    ],
+    [
+      "ledVL4:C",
+      "pico:GND.4",
+      "black",
+      []
+    ],
+    [
+      "ledUS1:A",
+      "pico:GP0",
+      "green",
+      []
+    ],
+    [
+      "ledUS1:C",
+      "pico:GND.1",
+      "black",
+      []
+    ],
+    [
+      "ledUS2:A",
+      "pico:GP1",
+      "green",
+      []
+    ],
+    [
+      "ledUS2:C",
+      "pico:GND.2",
+      "black",
+      []
+    ],
+    [
+      "ledUS3:A",
+      "pico:GP6",
+      "green",
+      []
+    ],
+    [
+      "ledUS3:C",
+      "pico:GND.3",
+      "black",
+      []
+    ],
+    [
+      "ledUS4:A",
+      "pico:GP7",
+      "green",
+      []
+    ],
+    [
+      "ledUS4:C",
+      "pico:GND.4",
+      "black",
+      []
+    ],
+    [
+      "ledUS5:A",
+      "pico:GP8",
+      "green",
+      []
+    ],
+    [
+      "ledUS5:C",
+      "pico:GND.1",
+      "black",
+      []
+    ],
+    [
+      "sonarUS1:VCC",
+      "pico:VBUS",
+      "red",
+      []
+    ],
+    [
+      "sonarUS1:GND",
+      "pico:GND.3",
+      "black",
+      []
+    ],
+    [
+      "sonarUS1:TRIG",
+      "pico:GP10",
+      "orange",
+      []
+    ],
+    [
+      "sonarUS1:ECHO",
+      "pico:GP11",
+      "cyan",
+      []
+    ],
+    [
+      "sonarUS2:VCC",
+      "pico:VBUS",
+      "red",
+      []
+    ],
+    [
+      "sonarUS2:GND",
+      "pico:GND.4",
+      "black",
+      []
+    ],
+    [
+      "sonarUS2:TRIG",
+      "pico:GP12",
+      "orange",
+      []
+    ],
+    [
+      "sonarUS2:ECHO",
+      "pico:GP13",
+      "cyan",
+      []
+    ],
+    [
+      "sonarUS3:VCC",
+      "pico:VBUS",
+      "red",
+      []
+    ],
+    [
+      "sonarUS3:GND",
+      "pico:GND.5",
+      "black",
+      []
+    ],
+    [
+      "sonarUS3:TRIG",
+      "pico:GP14",
+      "orange",
+      []
+    ],
+    [
+      "sonarUS3:ECHO",
+      "pico:GP15",
+      "cyan",
+      []
+    ],
+    [
+      "sonarUS4:VCC",
+      "pico:VBUS",
+      "red",
+      []
+    ],
+    [
+      "sonarUS4:GND",
+      "pico:GND.6",
+      "black",
+      []
+    ],
+    [
+      "sonarUS4:TRIG",
+      "pico:GP18",
+      "orange",
+      []
+    ],
+    [
+      "sonarUS4:ECHO",
+      "pico:GP19",
+      "cyan",
+      []
+    ],
+    [
+      "sonarUS5:VCC",
+      "pico:VBUS",
+      "red",
+      []
+    ],
+    [
+      "sonarUS5:GND",
+      "pico:GND.3",
+      "black",
+      []
+    ],
+    [
+      "sonarUS5:TRIG",
+      "pico:GP20",
+      "orange",
+      []
+    ],
+    [
+      "sonarUS5:ECHO",
+      "pico:GP21",
+      "cyan",
+      []
+    ]
+  ],
+  "dependencies": {}
+}
