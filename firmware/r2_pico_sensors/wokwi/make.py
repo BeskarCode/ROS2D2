@@ -39,9 +39,9 @@ def sketch():
 
 def diagram():
     parts = [
-        {"type": "board-pi-pico-2", "id": "pico", "top": 0, "left": 0, "attrs": {"env": "arduino-community"}},
-        {"type": "board-ssd1306", "id": "oled", "top": -120, "left": 200, "attrs": {"i2cAddress": "0x3c"}},
-        {"type": "wokwi-pushbutton", "id": "btn", "top": -110, "left": 360, "attrs": {"color": "blue", "label": "display"}},
+        {"type": "board-pi-pico-2", "id": "pico", "top": 0, "left": 0, "attrs": {}},
+        {"type": "board-ssd1306", "id": "oled", "top": -120, "left": 100, "attrs": {"i2cAddress": "0x3c"}},
+        {"type": "wokwi-pushbutton", "id": "btn", "top": -60, "left": 260, "attrs": {"color": "blue", "label": "display"}},
     ]
     wires = [
         ["oled:GND", "pico:GND.8", "black", []],
@@ -57,8 +57,8 @@ def diagram():
         wires += [[f"led{name}:A", f"pico:GP{led}", "green", []],
                   [f"led{name}:C", f"pico:GND.{1 + i % 4}", "black", []]]
     for i, (name, trig, _) in enumerate(US):
-        parts.append({"type": "wokwi-hc-sr04", "id": f"sonar{name}", "top": 260, "left": -100 + i * 160,
-                      "attrs": {"distance": str(400 + i * 500)}})
+        parts.append({"type": "wokwi-hc-sr04", "id": f"sonar{name}", "top": 260, "left": -260 + i * 230,
+                      "attrs": {"distance": str([30, 60, 120, 200, 350][i])}})
         wires += [[f"sonar{name}:VCC", "pico:VBUS", "red", []],
                   [f"sonar{name}:GND", f"pico:GND.{3 + i % 4}", "black", []],
                   [f"sonar{name}:TRIG", f"pico:GP{trig}", "orange", []],

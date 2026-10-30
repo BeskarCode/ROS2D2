@@ -14,6 +14,7 @@
 #include "Board.h"
 #include "Logo.h"
 #include "Readings.h"
+#include "Tof.h"
 
 extern bool configured;
 extern mutex_t i2cLock;
@@ -39,12 +40,12 @@ State stateOf(int c, int16_t* mm) {
 }
 
 bool command(const uint8_t* c, size_t n) {
-  mutex_enter_blocking(&i2cLock);
+  i2cTake();
   Wire.beginTransmission(ADDRESS);
   Wire.write(0x00);
   Wire.write(c, n);
   bool ok = Wire.endTransmission() == 0;
-  mutex_exit(&i2cLock);
+  i2cGive();
   return ok;
 }
 
@@ -78,12 +79,12 @@ bool sendPage(int page) {
   const uint8_t where[] = {0x21, 0, 127, 0x22, (uint8_t)page, (uint8_t)page};
   if (!command(where, sizeof where)) return false;
   for (int x = 0; x < 128; x += CHUNK) {     // horizontal addressing: the column carries on
-    mutex_enter_blocking(&i2cLock);
+    i2cTake();
     Wire.beginTransmission(ADDRESS);
     Wire.write(0x40);
     Wire.write(data + x, CHUNK);
     bool ok = Wire.endTransmission() == 0;
-    mutex_exit(&i2cLock);
+    i2cGive();
     if (!ok) return false;
   }
   memcpy(sent[page], data, 128);
