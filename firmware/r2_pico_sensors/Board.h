@@ -44,10 +44,10 @@ inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now) {
 }
 
 // Display: off; a press shows the logo; the next one every sensor at once; then each press one
-// connector, VL1 to US5, and after US5 every sensor again. 30 s without a press: off again
-// (display and LEDs).
+// connector, VL1 to US5, and after US5 every sensor again. Held for 3 s, or 30 s without a
+// press: off again (display and LEDs).
 enum class Screen { Off, Splash, All, Sensor };
-constexpr uint32_t AWAKE_MS = 30000, DEBOUNCE_MS = 50;
+constexpr uint32_t AWAKE_MS = 30000, HOLD_MS = 3000, DEBOUNCE_MS = 50;
 
 struct Ui {
   Screen screen = Screen::Off;
@@ -86,8 +86,11 @@ inline void uiButton(Ui& ui, bool high, uint32_t now) {
   if (!high && steady) uiPress(ui, now);
 }
 
+// The line still low HOLD_MS after the press that counted: a hold
 inline void uiTick(Ui& ui, uint32_t now) {
-  if (ui.screen != Screen::Off && now - ui.lastPress > AWAKE_MS) ui.screen = Screen::Off;
+  if (ui.screen == Screen::Off) return;
+  bool held = !ui.level && now - ui.lastPress >= HOLD_MS;
+  if (held || now - ui.lastPress > AWAKE_MS) ui.screen = Screen::Off;
 }
 
 // The all-sensors screen: how many of a bar's n segments light for a reading of mm on a scale of

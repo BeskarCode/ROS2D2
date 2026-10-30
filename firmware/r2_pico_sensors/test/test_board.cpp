@@ -66,6 +66,27 @@ int main() {
   uiButton(b, false, 2400);
   check(b.screen == Screen::Sensor && b.shown == 0, "the next clean press moves on");
 
+  // Held for 3 s: off, whatever it showed, until the next press
+  Ui h;
+  uiPress(h, 1000);
+  uiPress(h, 2000);
+  check(h.screen == Screen::All, "on every sensor before the hold");
+  uiButton(h, false, 5000);                       // press (moves on) and hold...
+  uiButton(h, true, 5003);                        // ...bouncing at first
+  uiButton(h, false, 5006);
+  uiTick(h, 5006 + HOLD_MS - 10);
+  check(h.screen == Screen::Sensor, "held just under 3 s: still on");
+  uiTick(h, 5000 + HOLD_MS);
+  check(h.screen == Screen::Off, "held 3 s: off");
+  uiButton(h, true, 9000);                        // let go
+  uiTick(h, 9100);
+  check(h.screen == Screen::Off, "letting go leaves it off");
+  uiButton(h, false, 10000);
+  check(h.screen == Screen::Splash, "the next press wakes it");
+  uiButton(h, true, 10200);                       // a short press...
+  uiTick(h, 10000 + HOLD_MS + 1);
+  check(h.screen == Screen::Splash, "...released long ago is no hold");
+
   Ui splash;
   uiPress(splash, 100);
   uiTick(splash, 100 + AWAKE_MS + 1);
