@@ -8,8 +8,9 @@ simulated HC-SR04 (no Pico, no Pi).
 2. On wokwi.com: **New project → Raspberry Pi Pico 2 → Arduino**. Paste our `sketch.ino`,
    `diagram.json` and `libraries.txt` over the ones it opens with, and add a new file
    `r2_pico_sensors.h` (the arrow next to the file tabs → *New file...*) with ours.
-3. Start the simulation. The blue button is the display's; click a sensor to slide its
-   distance.
+3. Start the simulation. The blue button is the display's (hold it a moment: Wokwi runs at
+   about 15 % speed, so a quick click can be missed, and turning it off takes 3 simulated s,
+   some 20 s of yours); click a sensor to slide its distance.
 
 What it shows, built with `WOKWI`:
 
