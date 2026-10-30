@@ -123,7 +123,7 @@
       "type": "wokwi-hc-sr04",
       "id": "sonarUS1",
       "top": 260,
-      "left": -260,
+      "left": -300,
       "attrs": {
         "distance": "30"
       }
@@ -132,7 +132,7 @@
       "type": "wokwi-hc-sr04",
       "id": "sonarUS2",
       "top": 260,
-      "left": -30,
+      "left": -40,
       "attrs": {
         "distance": "60"
       }
@@ -141,7 +141,7 @@
       "type": "wokwi-hc-sr04",
       "id": "sonarUS3",
       "top": 260,
-      "left": 200,
+      "left": 220,
       "attrs": {
         "distance": "120"
       }
@@ -150,7 +150,7 @@
       "type": "wokwi-hc-sr04",
       "id": "sonarUS4",
       "top": 260,
-      "left": 430,
+      "left": 480,
       "attrs": {
         "distance": "200"
       }
@@ -159,7 +159,7 @@
       "type": "wokwi-hc-sr04",
       "id": "sonarUS5",
       "top": 260,
-      "left": 660,
+      "left": 740,
       "attrs": {
         "distance": "350"
       }
