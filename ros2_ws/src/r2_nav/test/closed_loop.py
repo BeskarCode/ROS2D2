@@ -2,7 +2,8 @@
 """The whole loop without ROS, for tests and debugging: the simulated room and sensors (r2_sim),
 the navigator (nav_core), the node's filter and ramps, and the bridge's unit conversion and limits.
 Deterministic with a seed. drive(...) returns the trace:
-(t, state, tries, x, y, heading deg, why, bump) per step; bump = it drove into something."""
+(t, state, tries, x, y, heading deg, why, bump, v, w) per step; bump = it drove into something,
+v and w = what reached the feet."""
 import math
 
 from r2_nav.nav_core import Navigator, RangeFilter, parse_nav, ramp
@@ -42,9 +43,9 @@ def drive(world, sensors, goal, cfg=None, seconds=120.0, seed=1, dt=0.1):
                 continue
             r = sim.range_of(world, pose, s)
             ranges[n] = filters.setdefault(n, RangeFilter()).update(r) if cfg["filter"] else r
-        d = nav.step(t, pose, lidar_points(sim, world, pose, lidar), ranges, True)
+        d = nav.step(t, pose, lidar_points(sim, world, pose, lidar), ranges, True, speed=v_out)
         v_out = ramp(v_out, d.v, cfg["accel"] * dt)
-        w_out = ramp(w_out, d.w, 2.5 * dt)
+        w_out = ramp(w_out, d.w, math.radians(cfg["turn_accel_deg"]) * dt)
         if d.state == "stop" and d.v == 0:
             v_out = min(v_out, 0.0)
         if not cfg["allow_reverse"]:
@@ -57,7 +58,7 @@ def drive(world, sensors, goal, cfg=None, seconds=120.0, seed=1, dt=0.1):
             nxt = (world.pose[0], world.pose[1], nxt[2])
         world.pose = list(nxt)
         trace.append((round(t, 1), d.state, d.tries, round(world.pose[0], 2), round(world.pose[1], 2),
-                      round(math.degrees(world.pose[2])), d.why, bump))
+                      round(math.degrees(world.pose[2])), d.why, bump, v, w))
         if d.state in ("arrived", "gave up"):
             break
         t += dt

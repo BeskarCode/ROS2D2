@@ -36,7 +36,6 @@ from r2_sensors.config import Reloader
 from r2_sensors.config import config_path as sensors_path
 
 STALE = 0.5          # s: a sensor older than this is not reporting
-TURN_ACCEL = 2.5     # rad/s²
 
 
 class NavigatorNode(Node):
@@ -170,14 +169,14 @@ class NavigatorNode(Node):
                 r = self.filters.setdefault(name, RangeFilter()).update(r)
             ranges[name] = r
             filtered[name] = r
-        d = self.nav.step(now, self.pose, scan_xy, ranges, self.auto_on)
+        d = self.nav.step(now, self.pose, scan_xy, ranges, self.auto_on, speed=self.out[0])
 
         v, w = self.out
         if not self.auto_on:
             v, w = 0.0, 0.0
         else:
             v = ramp(v, d.v, self.cfg["accel"] * dt)
-            w = ramp(w, d.w, TURN_ACCEL * dt)
+            w = ramp(w, d.w, math.radians(self.cfg["turn_accel_deg"]) * dt)
             if d.state == "stop" and d.v == 0:
                 v = min(v, 0.0)                      # a stop is a stop: no ramp down
             if not self.cfg["allow_reverse"]:

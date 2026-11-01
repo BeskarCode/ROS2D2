@@ -19,8 +19,12 @@ def cfg(**over):
     return c
 
 
+FLOOR = 0.28 / math.sin(math.radians(40))      # what the floor ToF reads on a flat floor
+
+
 def clear_ranges(**over):
     r = {n: None for n in SENSORS if n != "lidar"}
+    r["tof_floor"] = FLOOR
     r.update(over)
     return r
 
@@ -36,7 +40,31 @@ def run(nav, steps, pose=(0.0, 0.0, 0.0), scan=None, ranges=None, auto=True, t0=
 
 def test_defaults():
     c = parse_nav("")
-    assert c["max_turn_deg"] == 30 and c["safety_radius"] == 0.55 and c["sounds"]["give_up"] == "S1:$41"
+    assert c["max_turn_deg"] == 15 and c["safety_radius"] == 0.55 and c["sounds"]["give_up"] == "S1:$41"
+    # a 40 kg droid: gentle ramps, and power caps like ShadowMD's drivespeed / turnspeed
+    assert c["accel"] == 0.25 and c["turn_accel_deg"] == 20
+    assert c["max_drive_power"] == 40 and c["max_turn_power"] == 30
+
+
+def test_power_caps_speed_and_turn():
+    nav = Navigator(cfg(max_drive_power=10, max_turn_power=6), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    d = run(nav, 3)[-1]
+    assert 0 < d.v <= 10 / 50 + 1e-9                                 # 10 units at 50 units per m/s
+    nav.set_goal(0.0, 2.0)                                          # 90 degrees to the left: a big turn
+    d = run(nav, 1)[-1]
+    assert 0 < d.w <= 6 / 30 + 1e-9
+
+
+def test_braking_distance_counts():
+    # at 0.3 m/s with 0.25 m/s² it needs 0.18 m to stop: 0.45 m ahead is already too close
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    d = nav.step(0.0, (0, 0, 0), [], clear_ranges(tof_front=0.45), True, speed=0.3)
+    assert d.state == "stop" and d.stops["tof_front"] == pytest.approx(0.32 + 0.18, abs=0.01)
+    d2 = Navigator(cfg(), SENSORS)
+    d2.set_goal(2.0, 0.0)
+    assert d2.step(0.0, (0, 0, 0), [], clear_ranges(tof_front=0.45), True, speed=0.0).state != "stop"
 
 
 @pytest.mark.parametrize("text,needle", [
@@ -58,7 +86,7 @@ def test_stop_from_circle():
     s = stop_distances(SENSORS, cfg())
     assert s["tof_front"] == pytest.approx(0.32, abs=0.005)
     assert s["sonar_front_left"] == pytest.approx(0.35)            # its own, larger
-    assert s["tof_floor"] == 0 and s["lidar"] == 0
+    assert s["tof_floor"] == pytest.approx(FLOOR * 0.8) and s["lidar"] == 0     # shorter = something low
     s2 = stop_distances(SENSORS, cfg(sensors_may_stop_earlier=False))
     assert s2["sonar_front_left"] == pytest.approx(0.3115, abs=0.005)
 
@@ -214,3 +242,81 @@ def test_auto_on_event():
     nav = Navigator(cfg(), SENSORS)
     run(nav, 2, auto=False)
     assert "auto_on" in run(nav, 1, auto=True)[-1].events
+
+
+# ---------- the floor sensor ----------
+
+def test_floor_sensor_stops_for_something_low():
+    # a box under the lidar's plane cuts the floor beam short
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    d = run(nav, 1, ranges=clear_ranges(tof_floor=0.30))[-1]
+    assert d.state == "stop" and d.v == 0 and "tof_floor" in d.why
+
+
+@pytest.mark.parametrize("reading", [None, FLOOR * 1.6])
+def test_floor_sensor_stops_at_a_drop(reading):
+    # no floor where there should be one: a step down or a hole
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    run(nav, 1)                                                          # it has seen the floor
+    d = run(nav, 1, ranges=clear_ranges(tof_floor=reading), t0=0.1)[-1]
+    assert d.state == "stop" and d.v == 0 and "floor" in d.why
+
+
+def test_floor_sensor_on_a_flat_floor_lets_it_go():
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    assert run(nav, 3, ranges=clear_ranges(tof_floor=FLOOR * 1.05))[-1].v > 0
+    nav2 = Navigator(cfg(), SENSORS)
+    nav2.set_goal(2.0, 0.0)
+    r = clear_ranges()
+    del r["tof_floor"]                                       # not reporting: it does not stop R2
+    assert run(nav2, 3, ranges=r)[-1].v > 0
+
+
+def test_drifting_away_from_the_goal_counts_a_try():
+    # steering round things must not become a walk away from the goal: 0.5 m further than the
+    # closest it got counts as a failed try (and enough of them make it give up)
+    nav = Navigator(cfg(give_up_after=1), SENSORS)
+    nav.set_goal(1.0, 0.0)
+    nav.step(0.0, (0.6, 0.0, 0.0), [], clear_ranges(), True)            # 0.4 m to go
+    d = nav.step(0.1, (0.2, 0.0, 0.0), [], clear_ranges(), True)        # 0.8 m: not yet
+    assert d.tries == 0
+    d = nav.step(0.2, (0.0, 0.0, 0.0), [], clear_ranges(), True)        # 1.0 m: 0.6 further
+    assert d.tries == 1 and "blocked" in d.events
+    nav.step(0.3, (0.0, 0.0, 0.0), [], clear_ranges(), True)
+    d = nav.step(0.4, (-0.6, 0.0, 0.0), [], clear_ranges(), True)       # again: second try > 1
+    assert d.state == "gave up"
+
+
+def test_slows_down_near_things_even_beside_its_path():
+    # something 0.7 m away at 45 deg is not in the way, but R2 goes slower past it
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(3.0, 0.0)
+    free = run(nav, 3)[-1].v
+    nav2 = Navigator(cfg(), SENSORS)
+    nav2.set_goal(3.0, 0.0)
+    near = run(nav2, 3, scan=[(0.5, 0.5)])[-1].v
+    assert free == pytest.approx(cfg()["max_speed"]) and 0 < near <= 0.5 * free
+
+
+def test_floor_sensor_without_a_first_reading_does_not_stop():
+    # the filter needs 3 readings: 'nothing yet' at start-up is not 'no floor'
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    d = run(nav, 2, ranges=clear_ranges(tof_floor=None))[-1]
+    assert d.state != "stop" and d.tries == 0
+    run(nav, 1, ranges=clear_ranges())                                   # it has seen the floor
+    assert run(nav, 1, ranges=clear_ranges(tof_floor=None), t0=1.0)[-1].state == "stop"
+
+
+def test_coming_back_to_where_it_was_does_not_start_the_count_again():
+    # wander off (a try, 1.6 m to go), come back to 1.1 m and get blocked there: 0.5 m closer
+    # than the last try, but not closer than it ever was (1.0 m), so the count goes on
+    nav = Navigator(cfg(give_up_after=1), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    nav.step(0.0, (1.0, 0.0, 0.0), [], clear_ranges(), True)
+    assert nav.step(0.1, (0.4, 0.0, 0.0), [], clear_ranges(), True).tries == 1
+    d = nav.step(0.2, (0.9, 0.0, 0.0), [], clear_ranges(tof_front=0.1), True)
+    assert d.state == "gave up"

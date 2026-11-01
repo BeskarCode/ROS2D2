@@ -17,7 +17,7 @@ def test_package_file_when_nothing_saved(tmp_path):
     default, user = files(tmp_path)
     p = nav_payload(default, user)
     assert p["saved"] is False and p["file"] == default and p["error"] is None
-    assert p["nav"]["max_turn_deg"] == 30
+    assert p["nav"]["max_turn_deg"] == 15
 
 
 def test_saved_file_wins(tmp_path):
