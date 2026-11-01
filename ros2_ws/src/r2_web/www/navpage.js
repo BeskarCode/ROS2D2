@@ -69,6 +69,9 @@ subscribe('/r2/auto_mode', 'std_msgs/msg/Bool', (m) => {
   P.auto = m.data;
   $('automode').className = 'pill ' + (m.data ? 'ok' : '');
   $('automode').innerHTML = `<i class="fa-solid fa-gamepad"></i>auto: ${m.data ? 'ON' : 'off'}`;
+  // in simulation the page can press the fake Mega's PS + L2: ON when off, OFF when on
+  $('autobtn').innerHTML = m.data ? '<i class="fa-solid fa-stop"></i>Autonomous OFF' : '<i class="fa-solid fa-play"></i>Autonomous ON';
+  $('autobtn').className = m.data ? '' : 'primary';
 });
 subscribe('/mega/tx', 'std_msgs/msg/String', (m) => {
   if (m.data.startsWith('(not sent) ')) addLine('→ ' + m.data.slice(11) + '   (not sent)', 'unsent');
@@ -112,6 +115,8 @@ const map = createNavMap($('map'), {
 });
 $('cancel').onclick = () => { publish('/nav/cancel', 'std_msgs/msg/Empty', {}); addLine('· goal cancelled', 'info'); };
 $('reset').onclick = () => { worldCmd({ op: 'reset' }); P.trail = []; };
+$('autobtn').onclick = () => worldCmd({ op: 'press', what: 'button' });
+$('stickbtn').onclick = () => worldCmd({ op: 'press', what: 'stick' });
 $('del').onclick = () => { if (P.selected != null) worldCmd({ op: 'remove', id: P.selected }); };
 const add = (kind, x, y) => worldCmd({ op: 'add', kind, x, y });
 $('addpost').onclick = () => add('post', 0, -1.3);
