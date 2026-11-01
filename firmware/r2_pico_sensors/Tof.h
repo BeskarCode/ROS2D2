@@ -17,6 +17,22 @@
 
 extern mutex_t i2cLock;     // the display (core 1) shares the bus
 
+// The bus, held for one transfer. In Wokwi (wokwi/README.md) an interrupt (an HC-SR04 ECHO
+// edge) landing mid-transfer hangs its emulated I2C for good, so there interrupts wait too.
+inline void i2cTake() {
+  mutex_enter_blocking(&i2cLock);
+#ifdef WOKWI
+  noInterrupts();
+#endif
+}
+
+inline void i2cGive() {
+#ifdef WOKWI
+  interrupts();
+#endif
+  mutex_exit(&i2cLock);
+}
+
 namespace tof {
 
 constexpr uint8_t SDA_PIN = 16, SCL_PIN = 17;
@@ -74,6 +90,22 @@ void setup() {
   Wire.begin();
 }
 
+#ifdef WOKWI
+// Wokwi has no VL53L0X: the first two configured sweep from 5 cm to past the scale and back (one
+// every 9 s, the other every 12 s), the others never answer.
+void begin() {}
+
+void loop() {
+  int n = 0;
+  for (int i = 0; i < nSensors; i++) {
+    if (cfg[i].type != 'V' || n >= 2) continue;
+    uint32_t period = 9000 + 3000 * n++;
+    uint32_t p = millis() % period;
+    int32_t mm = 50 + (int32_t)(p < period / 2 ? p : period - p) * 2 * 1400 / period;
+    report(i, mm >= TOF_MAX_MM ? -1 : (int16_t)mm);
+  }
+}
+#else
 void begin() {
   for (int i = 0; i < nSensors; i++) {
     if (cfg[i].type != 'V') continue;
@@ -84,9 +116,9 @@ void begin() {
   delay(10);
   for (int i = 0; i < nSensors; i++) {
     if (cfg[i].type != 'V') continue;
-    mutex_enter_blocking(&i2cLock);
+    i2cTake();
     wake(i);
-    mutex_exit(&i2cLock);
+    i2cGive();
   }
   lastRetry = millis();
 }
@@ -117,19 +149,20 @@ void readOne(int i) {
 void loop() {
   for (int i = 0; i < nSensors; i++) {
     if (cfg[i].type != 'V' || !reading[i].answers) continue;
-    mutex_enter_blocking(&i2cLock);
+    i2cTake();
     readOne(i);
-    mutex_exit(&i2cLock);
+    i2cGive();
   }
   if (millis() - lastRetry >= RETRY_MS) {
     lastRetry = millis();
     for (int i = 0; i < nSensors; i++) {
       if (cfg[i].type != 'V' || reading[i].answers) continue;
-      mutex_enter_blocking(&i2cLock);
+      i2cTake();
       wake(i);
-      mutex_exit(&i2cLock);
+      i2cGive();
     }
   }
 }
+#endif
 
 }  // namespace tof

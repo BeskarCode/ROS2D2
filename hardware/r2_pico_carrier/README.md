@@ -104,6 +104,13 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    de su fila de agujeros y centrado en ella (el CPL da el centro de cada pieza: si algo sale
    desplazado, es un error de verdad). U1: el punto del pin 1 arriba a la izquierda, junto a C5.
 5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
+6. *Confirm Parts Placement* (en las opciones de PCB Assembly) es opcional y cuesta ~0,40 €. Con
+   *No*, JLCPCB aplica sus correcciones y fabrica sin preguntarte. Con *Yes*, tras el pago un
+   ingeniero revisa la colocación y te pide confirmarla (tienes ~3 días; si no contestas, fabrican
+   igual). El CPL ya lleva la orientación que dejaron en
+   nuestro pedido (R31-R34 a 270°), pero pueden marcar como *revisadas* tiras de pines o resistencias
+   giradas 180° o sin cambio visible: no tienen polaridad, es normal. Activa *Show Revised Items*,
+   comprueba que nada con polaridad (LEDs, diodos, U1, J5) ha cambiado y confirma.
 
 ### PCBWay (`pcbway/`)
 
@@ -113,6 +120,27 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    fabricante (y, de nota, el número LCSC por si lo buscan allí).
 4. PCBWay revisa el BOM a mano y te da el precio final por correo; revisa las orientaciones en su
    vista previa igual que arriba.
+
+### Si prefieres soldar tú las tiras de pines (`jlcpcb-sin-tiras/`, `pcbway-sin-tiras/`)
+
+La misma placa (los gerbers son idénticos), pero la fábrica no monta las 11 tiras de pines:
+J2 (pantalla), US1-US5, VL1-VL4 y J4 (EXP). El resto, zócalos de la Pico incluidos, viene montado.
+En la revisión de JLCPCB apenas queda nada que marcar. Se pide igual que arriba, con los ficheros
+de esa carpeta (17 líneas de BOM).
+
+**¿Compensa?** Poco. Presupuesto de JLCPCB para 5 placas (29 oct 2026, sin IVA ni envío): montaje
+44,69 € con tiras frente a 38,45 € sin ellas, unos 6 € el lote, algo más de 1 € por placa. Lo caro
+(zócalos de la Pico, tarifa de piezas extendidas) se queda igual. Restando lo que cuestan las tiras,
+el ahorro es de ~1 € por placa a cambio de soldar 11 conectores. Tú decides.
+
+Compra aparte y suéldalas por arriba, rectas, con el plástico apoyado en la placa:
+
+| Tira | Cuántas | Dónde |
+|---|---|---|
+| Macho 1×4, 2,54 mm, recta | 6 | J2, US1-US5 |
+| Macho 1×6, 2,54 mm, recta | 5 | VL1-VL4, J4 |
+
+Vale también una tira larga 1×40 cortada a medida. Suelda J2 antes que la pantalla.
 
 ## Qué comprar aparte
 
@@ -133,7 +161,7 @@ Todo sale de `gen/parts.py` (piezas, huellas, LCSC y la red de cada pad), con el
 $KPY gen/make_sch.py     # esquema (ERC limpio)
 $KPY gen/make_pcb.py     # placa sin pistas: contorno, colocación, serigrafía
 $KPY gen/route.py        # ruteo con Freerouting (Java 25 + freerouting-2.5.0.jar)
-$KPY gen/make_fab.py     # paquetes jlcpcb/ y pcbway/
+$KPY gen/make_fab.py     # paquetes jlcpcb/ y pcbway/ (y sus variantes -sin-tiras/)
 $KPY -m pytest gen       # comprobaciones (conexiones, esquema = parts.py, paquetes)
 kicad-cli pcb drc --schematic-parity --severity-all r2_pico_carrier.kicad_pcb
 ```

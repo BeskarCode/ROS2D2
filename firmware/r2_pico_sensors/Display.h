@@ -14,6 +14,7 @@
 #include "Board.h"
 #include "Logo.h"
 #include "Readings.h"
+#include "Tof.h"
 
 extern bool configured;
 extern mutex_t i2cLock;
@@ -39,12 +40,12 @@ State stateOf(int c, int16_t* mm) {
 }
 
 bool command(const uint8_t* c, size_t n) {
-  mutex_enter_blocking(&i2cLock);
+  i2cTake();
   Wire.beginTransmission(ADDRESS);
   Wire.write(0x00);
   Wire.write(c, n);
   bool ok = Wire.endTransmission() == 0;
-  mutex_exit(&i2cLock);
+  i2cGive();
   return ok;
 }
 
@@ -78,12 +79,12 @@ bool sendPage(int page) {
   const uint8_t where[] = {0x21, 0, 127, 0x22, (uint8_t)page, (uint8_t)page};
   if (!command(where, sizeof where)) return false;
   for (int x = 0; x < 128; x += CHUNK) {     // horizontal addressing: the column carries on
-    mutex_enter_blocking(&i2cLock);
+    i2cTake();
     Wire.beginTransmission(ADDRESS);
     Wire.write(0x40);
     Wire.write(data + x, CHUNK);
     bool ok = Wire.endTransmission() == 0;
-    mutex_exit(&i2cLock);
+    i2cGive();
     if (!ok) return false;
   }
   memcpy(sent[page], data, 128);
@@ -92,21 +93,63 @@ bool sendPage(int page) {
 
 void drawSplash() {
   canvas.fillScreen(0);
-  canvas.drawBitmap(0, 8, LOGO, LOGO_W, LOGO_H, 1);
+  // two-colour modules light rows 0-15 yellow: the title goes there, the logo (20 rows) below
   canvas.setTextSize(1);
-  canvas.setCursor(10, 40);
+  canvas.setCursor(22, 4);
   canvas.print("ROS2D2 sensors");
-  canvas.setCursor(10, 54);
+  canvas.drawBitmap(0, 22, LOGO, LOGO_W, LOGO_H, 1);
+  canvas.setCursor(10, 52);
   canvas.print("press for sensors >");
 }
 
-void drawSensor() {
+void drawWaiting() {
+  canvas.setCursor(4, 28);
+  canvas.print("Waiting for the Pi");
+}
+
+// Every sensor at once, like a graphic equaliser: one bar per connector, taller the nearer the
+// obstacle (12 segments over the same scale as drawSensor's: 1.2 m VL53L0X, 3 m HC-SR04), its
+// number at its foot and the kind along the bottom. A working sensor with nothing in range is a
+// flat line; not responding, a blinking x; nothing on that connector, only its number. The
+// nearest two segments reach the yellow band of two-colour modules.
+constexpr int SEGS = 12;
+
+void drawAll(uint32_t now) {
+  canvas.fillScreen(0);
+  canvas.setTextSize(1);
+  if (!configured) {
+    drawWaiting();
+    return;
+  }
+  canvas.setCursor(8, 57);
+  canvas.print("VL53L0X");
+  canvas.setCursor(72, 57);
+  canvas.print("HC-SR04");
+  for (int y = 0; y < 64; y += 2) canvas.drawPixel(57, y, 1);     // dotted: VL | HC
+  for (int c = 0; c < N_CONN; c++) {
+    bool vl = c < 4;
+    int x = vl ? 2 + c * 14 : 60 + (c - 4) * 14;
+    int16_t mm = -1;
+    State s = stateOf(c, &mm);
+    canvas.setCursor(x + 2, 48);
+    canvas.print(vl ? c + 1 : c - 3);
+    if (s == State::Ok) {
+      canvas.drawFastHLine(x, 46, 10, 1);
+      int lit = barSegments(mm, vl ? 1200 : 3000, SEGS);
+      for (int k = 0; k < lit; k++) canvas.fillRect(x, 43 - 3 * k, 10, 2, 1);
+    } else if (s == State::NotResponding && (now / 400) % 2) {
+      canvas.setCursor(x + 2, 30);
+      canvas.print('x');
+    }
+  }
+}
+
+void drawSensor(uint32_t now) {
   canvas.fillScreen(0);
   canvas.setTextSize(1);
   canvas.setCursor(0, 0);
   if (!configured) {
-    canvas.setCursor(4, 28);
-    canvas.print("Waiting for the Pi");
+    drawWaiting();
     return;
   }
   int c = ui.shown;
@@ -125,7 +168,8 @@ void drawSensor() {
     if (mm > 0) canvas.fillRect(0, 44, min(127, mm * 127 / top), 7, 1);
   } else {
     canvas.setTextSize(2);
-    canvas.print(s == State::NotResponding ? "NOT\nRESPONDING" : "NOT\nCONFIGURED");
+    if (s == State::NotConfigured) canvas.print("NOT\nCONFIGURED");
+    else canvas.print(checkConnectionText(now) ? "CHECK\nCONNECTION" : "NOT\nRESPONDING");
   }
   canvas.setTextSize(1);
   canvas.setCursor(0, 56);
@@ -173,7 +217,8 @@ void loop() {
   if (present && now - lastFrame >= FRAME_MS) {
     lastFrame = now;
     if (ui.screen == Screen::Splash) drawSplash();
-    else drawSensor();
+    else if (ui.screen == Screen::All) drawAll(now);
+    else drawSensor(now);
     for (int page = 0; page < 8 && present; page++) {
       present = sendPage(page);
       uiButton(ui, digitalRead(BUTTON_PIN), millis());     // a short tap is not missed
