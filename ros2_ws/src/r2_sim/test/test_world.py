@@ -114,3 +114,11 @@ def test_box_corners_are_round():
     w.apply({"op": "add", "kind": "box", "x": 0.2, "y": 0.0, "w": 0.8, "h": 0.5})
     assert not blocked_move(w, (0.84, -0.50, 0.0))
     assert blocked_move(w, (0.75, -0.40, 0.0))
+
+
+def test_floor_sensor_cone_sees_a_low_box_a_little_to_the_side():
+    # the VL53L0X's 25 deg cone, not one ray: a box 5 cm off the centre line is still seen (the cone is ~±7 cm wide where it meets the floor)
+    w = World.empty()
+    w.apply({"op": "add", "kind": "low", "x": 0.45 + 0.15, "y": 0.05 + 0.15})
+    d = SensorSim(seed=1).range_of(w, ORIGIN, SENSORS["tof_floor"])
+    assert d < 0.28 / math.sin(math.radians(40)) * 0.8

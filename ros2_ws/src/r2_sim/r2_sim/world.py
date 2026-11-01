@@ -179,9 +179,13 @@ class SensorSim:
         if s.get("pitch_deg", 0) > 30:                       # looking at the floor
             p = math.radians(s["pitch_deg"])
             x, y, a0 = sensor_pose(pose, s)
-            # the beam goes down as it goes out: a low thing in the way cuts it short
-            h = world.cast(x, y, a0, s["z"] / math.tan(p), lambda d: s["z"] - d * math.tan(p))
-            d = s["z"] / math.sin(p) if h is None else h / math.cos(p)
+            # the beam goes down as it goes out: a low thing in the way cuts it short. 5 rays
+            # across the cone, like the other sensors; the nearest wins
+            half = math.radians(s["fov_deg"] / 2)
+            hits = [world.cast(x, y, a0 + k * half / 2, s["z"] / math.tan(p), lambda d: s["z"] - d * math.tan(p))
+                    for k in (-2, -1, 0, 1, 2)]
+            hits = [h for h in hits if h is not None]
+            d = s["z"] / math.sin(p) if not hits else min(hits) / math.cos(p)
             return d + (self.rng.gauss(0, 0.015) if world.noise else 0.0)
         x, y, a0 = sensor_pose(pose, s)
         half = math.radians(s["fov_deg"] / 2)
