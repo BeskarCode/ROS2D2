@@ -39,7 +39,7 @@ tof_floor:
   x: 0.2
   y: 0.0
   z: 0.28
-  pitch_deg: 55
+  pitch_deg: 40
   pico: {xshut: 5}
 sonar_front_left:
   type: hcsr04
