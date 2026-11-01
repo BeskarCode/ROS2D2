@@ -2,7 +2,9 @@
 // Navigation page: watch the navigator drive R2 (the real one or the simulated one), give it a
 // goal, edit the simulated room, and read the telemetry and what goes to the Mega.
 import { connect, publish, subscribe } from './rosbridge.js';
+import { MODELS } from './models.js';
 import { createNavMap } from './navmap.js';
+import { createNavView3d } from './navview3d.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
@@ -196,6 +198,26 @@ export function frameState() {
   };
 }
 export const drawers = [];
+
+// ---------- 3D ----------
+const view3d = createNavView3d($('view3d'));
+$('bar3d').innerHTML = `<label class="chk"><input type="checkbox" id="follow" checked><i class="fa-solid fa-crosshairs"></i>follow R2</label>
+  <label class="chk"><input type="checkbox" id="room3d" checked><i class="fa-solid fa-border-all"></i>show the room</label>
+  <label class="chk"><i class="fa-solid fa-robot"></i><select id="model3d" aria-label="3D model">${Object.entries(MODELS)
+    .map(([k, m]) => `<option value="${k}">${m.label}</option>`).join('')}</select></label>
+  <span class="hint" style="padding:0">drag to orbit · wheel to zoom</span>`;
+$('follow').onchange = () => { view3d.opts.follow = $('follow').checked; view3d.redraw(); };
+$('room3d').onchange = () => { view3d.opts.room = $('room3d').checked; view3d.redraw(); };
+let model = 'simple';
+try { model = localStorage.getItem('r2web.model') || 'simple'; } catch { /* private window */ }
+$('model3d').value = MODELS[model] ? model : 'simple';
+const pickModel = () => {
+  try { localStorage.setItem('r2web.model', $('model3d').value); } catch { /* private window */ }
+  view3d.setModel($('model3d').value).catch((e) => addLine(`· could not load the model: ${e}`, 'info'));
+};
+$('model3d').onchange = pickModel;
+pickModel();
+drawers.push((st) => view3d.draw(st));
 (function frame() {
   if (!document.hidden) {
     const st = frameState();
