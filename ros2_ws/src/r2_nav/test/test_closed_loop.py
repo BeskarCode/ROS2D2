@@ -1,6 +1,7 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The navigator driving the simulated R2 round the simulated room, without ROS (closed_loop.py):
 the same checks as docker/nav_bench.sh, deterministic and in seconds."""
+import math
 import os
 import sys
 
@@ -35,3 +36,11 @@ def test_never_drives_into_things(goal):
     trace = drive(world_mod.World.default(), SENSORS, goal, seconds=120, seed=4)
     bumps = [row[:6] for row in trace if row[7]]
     assert bumps == []
+
+
+def test_turns_are_smooth():
+    # what reaches the feet never changes its turn rate faster than turn_accel_deg allows
+    trace = drive(world_mod.World.default(), SENSORS, (2.2, 1.2), seconds=60, seed=2)
+    limit = math.radians(20) * 0.1 + 1 / 30 + 1e-6            # one step of the ramp + one Sabertooth unit
+    jumps = [abs(b[9] - a[9]) for a, b in zip(trace, trace[1:])]
+    assert max(jumps) <= limit, max(jumps)

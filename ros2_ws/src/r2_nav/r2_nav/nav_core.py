@@ -11,8 +11,11 @@ nav.yaml (the web console's Navigation page edits it):
     safety_radius: 0.55       # m from the body centre: the droid keeps everything outside it
     slow_from: 0.80           # m beyond the circle where it starts slowing down
     max_speed: 0.35           # m/s (the Mega bridge caps at 0.4)
-    max_turn_deg: 30          # deg/s (the bridge caps at 0.6 rad/s = 34)
-    accel: 0.5                # m/s²: ramps applied by the node to what goes to the feet
+    max_turn_deg: 15          # deg/s (the bridge caps at 0.6 rad/s = 34)
+    accel: 0.25               # m/s²: ramps applied by the node to what goes to the feet (40 kg)
+    turn_accel_deg: 20        # deg/s²: the same for turning
+    max_drive_power: 40       # Sabertooth units, like ShadowMD's drivespeed: a cap on top of max_speed
+    max_turn_power: 30        # Sabertooth units, like ShadowMD's turnspeed
     goal_tolerance: 0.25      # m
     sensors_may_stop_earlier: true   # a sensor's own stop_distance wins when larger
     filter: true              # median of 5 + smoothing on the distance sensors
@@ -34,13 +37,15 @@ import yaml
 USER_CONFIG = os.path.expanduser("~/.config/ros2d2/nav.yaml")
 EVENTS = ("auto_on", "obstacle", "blocked", "give_up", "arrived")
 DEFAULTS = {
-    "safety_radius": 0.55, "slow_from": 0.80, "max_speed": 0.35, "max_turn_deg": 30, "accel": 0.5,
+    "safety_radius": 0.55, "slow_from": 0.80, "max_speed": 0.35, "max_turn_deg": 15, "accel": 0.25,
+    "turn_accel_deg": 20, "max_drive_power": 40, "max_turn_power": 30,
     "goal_tolerance": 0.25, "sensors_may_stop_earlier": True, "filter": True, "on_blocked": "turn",
     "allow_reverse": True, "give_up_after": 3,
     "sounds": {"auto_on": "S1:$11", "obstacle": "S1:$21", "blocked": "S1:$31", "give_up": "S1:$41", "arrived": "S1:$W"},
 }
 RANGES = {"safety_radius": (0.25, 1.5), "slow_from": (0.1, 3.0), "max_speed": (0.05, 0.4), "max_turn_deg": (5, 34),
-          "accel": (0.05, 2.0), "goal_tolerance": (0.05, 1.0), "give_up_after": (1, 20)}
+          "accel": (0.05, 2.0), "turn_accel_deg": (5, 180), "max_drive_power": (5, 127), "max_turn_power": (5, 127),
+          "goal_tolerance": (0.05, 1.0), "give_up_after": (1, 20)}
 BLOCKED_MODES = ("turn", "reverse", "wait")
 SOUND = re.compile(r"^(S1|S3|MD):[ -~]{1,20}$")
 
@@ -51,6 +56,12 @@ OBSTACLE_QUIET = 3.0     # s between two "obstacle" sounds
 STUCK_AFTER = 12.0       # s without getting 0.15 m closer counts as a try
 FREE_STEPS = 8           # steps with the front clear before heading for the goal again
 PROGRESS_RESETS = 0.5    # m closer to the goal since the last failed try: the count starts again
+DRIFT_AWAY = 0.5         # m further from the goal than the closest it got: counts as a try
+DRIVE_UNITS_PER_MPS = 50   # the Mega bridge's conversion (r2_shadow_bridge): units = m/s * 50
+TURN_UNITS_PER_RADPS = 30  # and rad/s * 30
+SIDE_SLOW_MIN = 0.3        # things beside the path slow R2 down to this fraction at most
+FLOOR_NEAR = 0.8         # floor sensor reading below 80% of the floor: something low in the way
+FLOOR_FAR = 1.4          # above 140% of the floor (or no echo): a step down or a hole
 
 
 class NavConfigError(ValueError):
@@ -139,6 +150,19 @@ def is_floor(s):
     return s.get("pitch_deg", 0) > 30
 
 
+def floor_distance(s):
+    """What a sensor looking down at the floor reads on a flat floor."""
+    return s["z"] / math.sin(math.radians(s["pitch_deg"]))
+
+
+def floor_problem(s, d):
+    """'something low' / 'no floor' / None for a floor sensor's reading (None = no echo)."""
+    e = floor_distance(s)
+    if d is None or d > e * FLOOR_FAR:
+        return "no floor"
+    return "something low" if d < e * FLOOR_NEAR else None
+
+
 def is_lidar(s):
     return s["type"] == "rplidar_c1"
 
@@ -151,12 +175,26 @@ def to_circle(s, radius):
     return max(0.0, -pu + math.sqrt(max(0.0, pu * pu - (pp - radius * radius))))
 
 
+def braking(speed, cfg):
+    """Metres it takes to stop from `speed` with the configured deceleration."""
+    return speed * speed / (2 * cfg["accel"])
+
+
+def nearest_ahead(points):
+    """Distance from the body centre to the nearest thing in the front half (3.0 if none)."""
+    return min((math.hypot(x, y) for x, y in points if x > 0), default=3.0)
+
+
 def stop_distances(sensors, cfg):
-    """{name: metres}: where each sensor stops the droid. 0 = never (lidar, floor sensor)."""
+    """{name: metres}: where each sensor stops the droid. 0 = never (lidar). A floor sensor stops
+    it when it reads less than this (something low) or much more (no floor)."""
     out = {}
     for name, s in sensors.items():
-        if is_lidar(s) or is_floor(s):
+        if is_lidar(s):
             out[name] = 0.0
+            continue
+        if is_floor(s):
+            out[name] = floor_distance(s) * FLOOR_NEAR
             continue
         d = to_circle(s, cfg["safety_radius"])
         if cfg["sensors_may_stop_earlier"]:
@@ -188,7 +226,13 @@ def points_from(scan_xy, ranges, sensors):
     pts = list(scan_xy or [])
     for name, d in ranges.items():
         s = sensors.get(name)
-        if s is None or d is None or is_lidar(s) or is_floor(s):
+        if s is None or d is None or is_lidar(s):
+            continue
+        if is_floor(s):
+            if floor_problem(s, d) == "something low":      # where the beam hit it, on the ground
+                h = d * math.cos(math.radians(s["pitch_deg"]))
+                a = math.radians(s["yaw_deg"])
+                pts.append((s["x"] + h * math.cos(a), s["y"] + h * math.sin(a)))
             continue
         a = math.radians(s["yaw_deg"])
         pts.append((s["x"] + d * math.cos(a), s["y"] + d * math.sin(a)))
@@ -243,6 +287,7 @@ class Navigator:
         self.tries = 0
         self.last_t = None
         self.last_obstacle = -1e9
+        self.floor_seen = set()        # floor sensors that have given a reading since start-up
 
     def _reset_try_state(self):
         self.phase = None
@@ -253,7 +298,8 @@ class Navigator:
         self.was_blocked = False
         self.best_d = math.inf
         self.best_t = None
-        self.try_d = math.inf          # distance to the goal at the last failed try
+        self.try_d = math.inf          # the closest it had been to the goal at the last failed try
+        self.closest = math.inf        # the closest it has been to the goal
 
     def set_goal(self, x, y):
         self.goal = (x, y)
@@ -275,14 +321,19 @@ class Navigator:
     def _rear(self):
         return next((n for n, s in self.sensors.items() if not is_lidar(s) and not is_floor(s) and abs(s["yaw_deg"]) > 150), None)
 
-    def step(self, now, pose, scan_xy, ranges, auto_on):
+    def step(self, now, pose, scan_xy, ranges, auto_on, speed=0.0):
         """One decision. scan_xy: lidar points in base_link, or None when the lidar is silent.
         ranges: {name: metres | None (sees nothing)} for the sensors that are reporting; a
-        sensor that stopped reporting is missing from the dict."""
+        sensor that stopped reporting is missing from the dict. speed: what the feet are doing
+        now (m/s): the front sensors stop it earlier by the distance it needs to brake."""
         dt = 0.1 if self.last_t is None else max(0.0, min(0.5, now - self.last_t))
         self.last_t = now
         cfg = self.cfg
         stops = stop_distances(self.sensors, cfg)
+        brake = braking(max(0.0, speed), cfg)
+        for n in self._front():
+            if stops.get(n):
+                stops[n] += brake
         d = Decision(tries=self.tries, stops=stops)
         if auto_on and not self.prev_auto:
             d.events.append("auto_on")
@@ -312,30 +363,46 @@ class Navigator:
         pts = points_from(scan_xy, ranges, self.sensors)
         heading, clear = choose_heading(pts, want, cfg)
         too_close = next((n for n in front if ranges.get(n) is not None and stops[n] > 0 and ranges[n] < stops[n]), None)
+        floor_why = None
+        if too_close is None:
+            for n, s in self.sensors.items():
+                if is_floor(s) and ranges.get(n) is not None:
+                    self.floor_seen.add(n)
+                # no echo before the first reading is the filter starting up, not a drop
+                if is_floor(s) and n in self.floor_seen and n in ranges and floor_problem(s, ranges[n]):
+                    too_close, floor_why = n, floor_problem(s, ranges[n])
+                    break
 
         near = min((ranges[n] for n in front if ranges.get(n) is not None), default=math.inf)
         if near < cfg["slow_from"] and now - self.last_obstacle >= OBSTACLE_QUIET:
             self.last_obstacle = now
             d.events.append("obstacle")
 
-        R, wm = cfg["safety_radius"], math.radians(cfg["max_turn_deg"])
-        w = max(-wm, min(wm, 2.0 * heading))
-        v = cfg["max_speed"] * max(0.0, min(1.0, (clear - R) / cfg["slow_from"])) * max(0.0, math.cos(heading))
+        R = cfg["safety_radius"]
+        wm = min(math.radians(cfg["max_turn_deg"]), cfg["max_turn_power"] / TURN_UNITS_PER_RADPS)
+        vmax = min(cfg["max_speed"], cfg["max_drive_power"] / DRIVE_UNITS_PER_MPS)
+        w = max(-wm, min(wm, 1.0 * heading))
+        # slower the closer things are: fully for what is in the way, partly for what is beside it
+        slow = lambda dist: max(0.0, min(1.0, (dist - R) / cfg["slow_from"]))   # noqa: E731
+        v = vmax * min(slow(clear), max(SIDE_SLOW_MIN, slow(nearest_ahead(pts)))) * max(0.0, math.cos(heading))
         state = "avoiding" if abs(wrap(heading - want)) > math.radians(12) else "going"
         why = ("steering round an obstacle" if state == "avoiding" else "heading for the goal") + f", {gd:.2f} m to go"
         blocked = too_close is not None or clear < R
 
-        # progress watchdog: going round in circles or stuck in a corner counts as a try too
+        self.closest = min(self.closest, gd)
+        # progress watchdog: going round in circles, stuck in a corner or wandering away from the
+        # goal while steering round things counts as a try too
         if self.best_t is None or gd < self.best_d - 0.15:
             self.best_d, self.best_t = gd, now
-        stuck = now - self.best_t > STUCK_AFTER
+        stuck = now - self.best_t > STUCK_AFTER or gd > self.best_d + DRIFT_AWAY
         if stuck:
             self.best_d, self.best_t = gd, now
         if (blocked and not self.was_blocked) or stuck:
             # brushing past a table blocks it briefly again and again while it gets closer:
-            # only count tries that come without real progress since the previous one
+            # only count tries that come without real progress since the previous one (closer
+            # than it had ever been then: wandering off and coming back is not progress)
             self.tries = 1 if self.try_d - gd >= PROGRESS_RESETS else self.tries + 1
-            self.try_d = gd
+            self.try_d = self.closest
             if self.tries > cfg["give_up_after"]:
                 n = cfg["give_up_after"]
                 self.gave_up = f"could not get past after {n} {'tries' if n > 1 else 'try'}: stopped until a new goal"
@@ -375,11 +442,15 @@ class Navigator:
             if blocked or self.free_steps < FREE_STEPS:
                 self.free_steps = 0 if blocked else self.free_steps + 1
                 side = "left" if self.turn_dir > 0 else "right"
-                v = 0.0 if blocked else min(v, cfg["max_speed"] * 0.5)
-                w = min(0.8, wm) * self.turn_dir
+                v = 0.0 if blocked else min(v, vmax * 0.5)
+                w = 0.7 * wm * self.turn_dir
                 state = "stop" if too_close else "turning"
-                why = (f"STOP: {too_close} reads {ranges[too_close]:.2f} m < {stops[too_close]:.2f} m, turning {side}"
-                       if too_close else f"turning {side} until the way is clear")
+                if floor_why:
+                    why = f"STOP: {too_close}: {floor_why} ahead, turning {side}"
+                elif too_close:
+                    why = f"STOP: {too_close} reads {ranges[too_close]:.2f} m < {stops[too_close]:.2f} m, turning {side}"
+                else:
+                    why = f"turning {side} until the way is clear"
             else:
                 self.phase, self.turn_dir, self.free_steps = None, 0, 0
         d.v, d.w, d.state, d.why, d.heading = v, w, state, why, heading

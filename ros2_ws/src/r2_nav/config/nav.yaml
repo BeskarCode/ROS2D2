@@ -3,8 +3,11 @@
 safety_radius: 0.55     # m from the body centre: the droid keeps everything outside it
 slow_from: 0.80         # m beyond the circle where it starts slowing down
 max_speed: 0.35         # m/s (the Mega bridge caps at 0.4)
-max_turn_deg: 30        # deg/s (the bridge caps at 0.6 rad/s = 34)
-accel: 0.5              # m/s²
+max_turn_deg: 15        # deg/s (the bridge caps at 0.6 rad/s = 34)
+accel: 0.25             # m/s²: gentle for a 40 kg droid
+turn_accel_deg: 20      # deg/s²
+max_drive_power: 40     # Sabertooth units, like ShadowMD drivespeed (caps max_speed)
+max_turn_power: 30      # Sabertooth units, like ShadowMD turnspeed
 goal_tolerance: 0.25    # m
 sensors_may_stop_earlier: true   # a sensor's own stop_distance (sensors.yaml) wins when larger
 filter: true            # median of 5 + smoothing on the distance sensors
