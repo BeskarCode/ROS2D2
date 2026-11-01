@@ -177,7 +177,11 @@ class SensorSim:
     def range_of(self, world, pose, s):
         """What a VL53L0X or HC-SR04 reads: the nearest of 5 rays across its cone, or None."""
         if s.get("pitch_deg", 0) > 30:                       # looking at the floor
-            d = s["z"] / math.sin(math.radians(s["pitch_deg"]))
+            p = math.radians(s["pitch_deg"])
+            x, y, a0 = sensor_pose(pose, s)
+            # the beam goes down as it goes out: a low thing in the way cuts it short
+            h = world.cast(x, y, a0, s["z"] / math.tan(p), lambda d: s["z"] - d * math.tan(p))
+            d = s["z"] / math.sin(p) if h is None else h / math.cos(p)
             return d + (self.rng.gauss(0, 0.015) if world.noise else 0.0)
         x, y, a0 = sensor_pose(pose, s)
         half = math.radians(s["fov_deg"] / 2)

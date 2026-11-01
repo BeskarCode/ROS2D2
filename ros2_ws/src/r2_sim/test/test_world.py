@@ -39,8 +39,22 @@ def test_tof_sees_a_post():
 
 
 def test_floor_sensor_reads_the_floor():
+    assert SENSORS["tof_floor"]["pitch_deg"] == 40                   # sees low things ~0.5 m ahead
     d = SensorSim(seed=1).range_of(World.empty(), ORIGIN, SENSORS["tof_floor"])
-    assert d == pytest.approx(0.28 / math.sin(math.radians(55)), abs=0.01)
+    assert d == pytest.approx(0.28 / math.sin(math.radians(40)), abs=0.01)
+
+
+def test_floor_sensor_sees_a_low_box():
+    # the beam leaves at 0.28 m going down 40 deg: it meets the floor 0.53 m from the body
+    # centre, so a 10 cm box whose face is 0.45 m ahead cuts it short (lidar and ToFs miss it)
+    w = World.empty()
+    w.apply({"op": "add", "kind": "low", "x": 0.45 + 0.15, "y": 0.0})        # 30 x 30 cm
+    d = SensorSim(seed=1).range_of(w, ORIGIN, SENSORS["tof_floor"])
+    assert d == pytest.approx((0.45 - 0.2) / math.cos(math.radians(40)), abs=0.01)
+    w2 = World.empty()
+    w2.apply({"op": "add", "kind": "low", "x": 0.7 + 0.15, "y": 0.0})         # beyond where it looks
+    d2 = SensorSim(seed=1).range_of(w2, ORIGIN, SENSORS["tof_floor"])
+    assert d2 == pytest.approx(0.28 / math.sin(math.radians(40)), abs=0.01)
 
 
 def test_noise_is_repeatable_and_switchable():
