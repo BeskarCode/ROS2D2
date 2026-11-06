@@ -7,6 +7,8 @@ cameras.yaml either names the cameras one by one:
       source: /dev/v4l/by-id/usb-...-video-index0
       yaw_deg: -30        # where it points: degrees from the dome's front, + = right
       hfov_deg: 60        # horizontal field of view
+      detect: camera      # optional: the camera finds the faces itself (r2_domecam on an
+                          # ESP32-S3); default `pi`, the Pi searches the picture
       width: 640 ...      # anything else goes to the camera node as parameters
 
 or asks for them to be found:
@@ -31,6 +33,7 @@ import os
 import yaml
 
 GEOMETRY = ("yaw_deg", "hfov_deg")
+NOT_FOR_CAMERA_NODE = GEOMETRY + ("detect", "faces_url")   # detect: pi (default) or camera
 BY_PATH = "/dev/v4l/by-path"
 USER_CONFIG = os.path.expanduser("~/.config/ros2d2/cameras.yaml")
 
@@ -87,7 +90,11 @@ def load_cameras(path, found=None):
 
 def node_params(params):
     """The camera node's own parameters (without the geometry the tracker uses)."""
-    out = {k: v for k, v in params.items() if k not in GEOMETRY}
+    out = {k: v for k, v in params.items() if k not in NOT_FOR_CAMERA_NODE}
     if "source" in out:
         out["source"] = str(out["source"])   # `source: 0` in YAML is an int
+    if params.get("detect") == "camera":
+        # It sends the faces on its own; its video is only for looking at it, and sending
+        # video slows its face finder down
+        out.setdefault("on_demand", True)
     return out

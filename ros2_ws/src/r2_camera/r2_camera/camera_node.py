@@ -14,6 +14,11 @@ Topics (relative to the node, e.g. /cameras/front/...):
 Parameters can be changed while running (ros2 param set, or the web console);
 changing the source or the picture size reopens the camera. `available_modes` lists the
 sizes a USB camera offers in its pixel format ("640x480@30"), for the web console's menu.
+
+on_demand: the picture is only read while somebody watches it (image_raw or its JPEG).
+For a camera that finds the faces itself (r2_domecam): sending video slows its face finder
+down, and the video is only for looking at it. camera_info keeps going out once a second
+with the size seen when the camera was first opened.
 """
 
 import threading
@@ -56,6 +61,8 @@ class CameraNode(Node):
             description="JPEG copy for the web console and for remote viewers"))
         p("jpeg_quality", 70)
         p("reconnect_sec", 2.0)
+        p("on_demand", False, ParameterDescriptor(
+            description="Read the picture only while somebody subscribes to it"))
         p("available_modes", Parameter.Type.STRING_ARRAY, ParameterDescriptor(
             description="Sizes the camera offers (filled in when it opens; setting it does nothing)"))
 
@@ -69,6 +76,7 @@ class CameraNode(Node):
         self._reopen = threading.Event()
         self._stop = threading.Event()
         self._frames = 0
+        self._size = None             # (height, width) as published, once known
         self.add_on_set_parameters_callback(self._on_params)
         self.add_post_set_parameters_callback(self._after_params)
         self.create_timer(5.0, self._report_fps)
@@ -110,9 +118,26 @@ class CameraNode(Node):
                 self.set_parameters([Parameter("available_modes", Parameter.Type.STRING_ARRAY, modes)])
         return cap
 
+    def _watched(self):
+        return (self.pub_raw.get_subscription_count() > 0
+                or self.pub_jpeg.get_subscription_count() > 0)
+
+    def _idle(self, cap):
+        """on_demand and nobody watching: let go of the camera, keep camera_info going."""
+        if cap is not None:
+            cap.release()
+            self.get_logger().info("nobody watching: camera closed until somebody does")
+        if self._size is not None and self.pub_info.get_subscription_count() > 0:
+            self._publish_info(self._size, self.get_clock().now().to_msg())
+        self._stop.wait(1.0)
+
     def _capture_loop(self):
         cap = None
         while not self._stop.is_set():
+            if self.param("on_demand") and self._size is not None and not self._watched():
+                self._idle(cap)
+                cap = None
+                continue
             if cap is None or self._reopen.is_set():
                 if cap is not None:
                     cap.release()
@@ -159,14 +184,18 @@ class CameraNode(Node):
             frame = cv2.flip(frame, flip)
         return frame
 
+    def _publish_info(self, size, stamp):
+        info = CameraInfo()
+        info.header.stamp = stamp
+        info.header.frame_id = self.param("frame_id")
+        info.height, info.width = size
+        self.pub_info.publish(info)
+
     def _publish(self, frame, stamp):
         frame_id = self.param("frame_id")
+        self._size = frame.shape[:2]
         if self.pub_info.get_subscription_count() > 0:
-            info = CameraInfo()
-            info.header.stamp = stamp
-            info.header.frame_id = frame_id
-            info.height, info.width = frame.shape[:2]
-            self.pub_info.publish(info)
+            self._publish_info(self._size, stamp)
         if self.param("publish_raw") and self.pub_raw.get_subscription_count() > 0:
             msg = Image()
             msg.header.stamp = stamp
