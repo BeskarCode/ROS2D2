@@ -7,7 +7,7 @@ import { createSensorsTab } from './sensors.js';
 const $ = (id) => document.getElementById(id);
 const TRACKER = '/dome_tracker';
 
-let rows = [];           // one per camera: { use, num, name, source, id, title, modes, mode, yaw, hfov, extra, running }
+let rows = [];           // one per camera: { use, num, name, source, id, title, modes, mode, yaw, hfov, rotate, extra, running }
 let running = [];        // camera names the tracker uses right now
 let fileText = '';
 let cameraFile = '';
@@ -59,12 +59,13 @@ function makeRow(entry, order, found) {
   const [name, p] = entry || [null, {}];
   const w = p.width ?? 640, h = p.height ?? 480, fps = p.fps ?? 30;
   const extra = { ...p };
-  for (const k of ['source', 'yaw_deg', 'hfov_deg', 'width', 'height', 'fps']) delete extra[k];
+  for (const k of ['source', 'yaw_deg', 'hfov_deg', 'width', 'height', 'fps', 'rotate']) delete extra[k];
   return {
     use: !!entry, name, num: entry ? order : null,
     source: entry ? String(p.source) : found.source, id: found.id,
     title: found.title, modes: found.modes, mode: `${w}x${h}@${fps}`,
-    yaw: Number(p.yaw_deg ?? 0), hfov: Number(p.hfov_deg ?? 60), extra, running: running.includes(name),
+    yaw: Number(p.yaw_deg ?? 0), hfov: Number(p.hfov_deg ?? 60), rotate: Number(p.rotate ?? 0),
+    extra, running: running.includes(name),
     missing: !!found.missing,
   };
 }
@@ -92,6 +93,7 @@ function render() {
           <label><input type="checkbox" class="use"> <i class="fa-solid fa-power-off"></i>use</label></div>
         <div class="row"><label><i class="fa-solid fa-hashtag"></i>number</label><div class="step"><button data-a="left"><i class="fa-solid fa-chevron-left"></i></button><b>${r.num}</b><button data-a="right"><i class="fa-solid fa-chevron-right"></i></button></div></div>
         <div class="row"><label><i class="fa-solid fa-expand"></i>size</label><select class="mode">${modes.map((m) => `<option>${m}</option>`).join('')}</select></div>
+        <div class="row"><label><i class="fa-solid fa-rotate-right"></i>turn</label><select class="rotate">${[0, 90, 180, 270].map((d) => `<option value="${d}">${d}°</option>`).join('')}</select></div>
         <div class="row"><label><i class="fa-solid fa-compass"></i>points to</label><div class="slider"><input type="range" class="yawr" min="-180" max="180" step="1"><b class="yaw"></b></div></div>
         <div class="row"><label><i class="fa-solid fa-eye"></i>field of view</label><div class="slider"><input type="range" class="hfovr" min="20" max="170" step="1"><b class="hfov"></b></div></div>
       </div>`;
@@ -125,6 +127,13 @@ function render() {
         const node = `/cameras/${r.name}/camera`;
         setParam(node, 'width', w).then(() => setParam(node, 'height', h)).then(() => setParam(node, 'fps', Math.round(fps)));
       }
+    });
+    el.querySelector('.rotate').value = r.rotate;
+    el.querySelector('.rotate').addEventListener('change', (e) => {
+      // Live: the camera node turns the picture, and the face finder its boxes (a camera that
+      // finds the faces itself is told by it to turn its own picture too)
+      r.rotate = Number(e.target.value); dirty();
+      if (r.running) for (const node of [`/cameras/${r.name}/camera`, `/cameras/${r.name}/face_detector`]) setParam(node, 'rotate', r.rotate);
     });
     el.querySelectorAll('button[data-a]').forEach((b) => b.addEventListener('click', () => act(r, b.dataset.a)));
     el.querySelector('.yawr').value = r.yaw;

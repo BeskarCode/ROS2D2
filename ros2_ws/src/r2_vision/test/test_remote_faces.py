@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pytest
 
-from r2_vision.remote_faces import faces_url, iter_lines, orient_box, parse_line
+from r2_vision.remote_faces import control_url, faces_url, iter_lines, orient_box, parse_line
 
 ROTATIONS = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
 FLIPS = {"h": 1, "v": 0, "both": -1}
@@ -65,3 +65,8 @@ def test_iter_lines_gives_each_line_as_soon_as_it_arrives():
     assert next(lines) == '{"seq":1}'
     assert stream.pieces == [b'\n', b'{"seq":', b'2}\n{"seq":3}\n']   # nothing read ahead
     assert list(lines) == ["", '{"seq":2}', '{"seq":3}']
+
+
+def test_control_url_from_faces_url():
+    assert control_url("http://r2-domecam1.local:82/faces", "rotate", 90) ==         "http://r2-domecam1.local/control?var=rotate&val=90"
+    assert control_url("", "rotate", 0) is None

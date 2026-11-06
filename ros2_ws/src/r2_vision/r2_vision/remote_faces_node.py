@@ -26,7 +26,7 @@ from sensor_msgs.msg import CompressedImage, Image
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
 from r2_vision.image_utils import image_to_bgr, pixelate
-from r2_vision.remote_faces import iter_lines, orient_box, parse_line
+from r2_vision.remote_faces import control_url, iter_lines, orient_box, parse_line
 
 
 class RemoteFacesNode(Node):
@@ -52,6 +52,10 @@ class RemoteFacesNode(Node):
         self.create_timer(1.0, self._watch_debug)
         self.create_timer(5.0, self._report)
 
+        # rotate is decided here (cameras.yaml, or live from the web console): the camera is
+        # told to turn its picture the same way, so its detector sees the faces upright
+        self.add_post_set_parameters_callback(self._after_params)
+
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._read_loop, daemon=True)
         self._thread.start()
@@ -65,6 +69,7 @@ class RemoteFacesNode(Node):
             try:
                 with urllib.request.urlopen(self.param("url"), timeout=5.0) as stream:
                     self.get_logger().info("receiving faces from the camera")
+                    self._tell_rotate()
                     for line in iter_lines(stream):
                         if self._stop.is_set():
                             return
@@ -73,6 +78,18 @@ class RemoteFacesNode(Node):
                 self.get_logger().warning(f"no faces from {self.param('url')} ({e}), retrying",
                                           throttle_duration_sec=30.0)
             self._stop.wait(self.param("reconnect_sec"))
+
+    def _after_params(self, params):
+        if any(prm.name == "rotate" for prm in params):
+            threading.Thread(target=self._tell_rotate, daemon=True).start()
+
+    def _tell_rotate(self):
+        url = control_url(self.param("url"), "rotate", self.param("rotate") % 360)
+        try:
+            with urllib.request.urlopen(url, timeout=3.0) as r:
+                r.read()
+        except Exception as e:   # an older camera without rotate: the boxes are turned here
+            self.get_logger().warning(f"could not set the camera's rotate ({e})")
 
     def _on_line(self, line):
         d = parse_line(line)
