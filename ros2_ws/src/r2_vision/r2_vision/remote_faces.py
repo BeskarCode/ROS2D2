@@ -14,6 +14,12 @@ def faces_url(source):
     return f"http://{host}:{FACES_PORT}/faces" if host else None
 
 
+def control_url(url, var, val):
+    """http://cam:82/faces -> http://cam/control?var=rotate&val=90 (the camera's settings)."""
+    host = urlparse(url).hostname
+    return f"http://{host}/control?var={var}&val={val}" if host else None
+
+
 def iter_lines(stream):
     """The lines of a chunked HTTP answer, each one as soon as it arrives. Looping over the
     response itself waits to fill an 8 KB buffer first: some 200 lines, seconds of lag."""
