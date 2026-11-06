@@ -26,6 +26,7 @@ import json
 import os
 import subprocess
 import threading
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import rclpy
@@ -42,6 +43,7 @@ from r2_web.nav_api import nav_payload, save_nav
 from r2_web.sensors_api import save_sensors, sensors_payload
 
 SERVICE = "r2d2"
+STARTED = time.time()   # tells the setup page a restart has really happened
 
 
 def camera_name(path):
@@ -106,7 +108,7 @@ class Handler(SimpleHTTPRequestHandler):
         except (OSError, yaml.YAMLError) as e:
             return self._json(500, {"error": str(e)})
         self._json(200, {"file": path, "saved": path == USER_CONFIG, "yaml": text,
-                         "cameras": cameras, "detected": detected_cameras()})
+                         "cameras": cameras, "detected": detected_cameras(), "started": STARTED})
 
     def do_POST(self):
         route = self.path.split("?")[0]
