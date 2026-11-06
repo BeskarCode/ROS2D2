@@ -255,20 +255,48 @@ async function save(restart) {
     if (!restart) return status(`Saved in ${res.file}.`, 'ok');
   }
   if (!restart) return;
+  const before = await serverStarted();
   busy(true);
-  status('Saved. Restarting ROS2D2… the page reloads when it is back.', 'warn');
+  status('Saved. Restarting ROS2D2…', 'warn');
   await fetch('api/restart', { method: 'POST' });
-  waitForRestart();
+  waitForRestart(before);
 }
 
-function waitForRestart() {
-  let gone = false;
-  const t = setInterval(async () => {
-    try {
-      const r = await fetch('api/cameras', { cache: 'no-store' });
-      if (r.ok && gone) { clearInterval(t); setTimeout(() => location.reload(), 4000); }
-    } catch { gone = true; }
-  }, 1000);
+async function serverStarted() {
+  try { return (await (await fetch('api/cameras', { cache: 'no-store' })).json()).started; } catch { return null; }
+}
+
+// The page stays (it is cached): a spinner on top while ROS2D2 restarts, asking every second
+// until the web server is a new one and ROS answers again, then the settings load afresh
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function waitForRestart(before) {
+  const step = (text) => { $('restart-step').textContent = text; };
+  $('restarting').hidden = false;
+  const until = Date.now() + 120000;
+  step('stopping…');
+  for (;;) {
+    if (Date.now() > until) return restartFailed();
+    const now = await serverStarted();
+    if (now !== null && now !== before) break;
+    if (now === null) step('starting…');
+    await wait(1000);
+  }
+  step('waiting for ROS…');
+  while (!(await call(`${TRACKER}/get_parameters`, 'rcl_interfaces/srv/GetParameters', { names: ['cameras'] }))) {
+    if (Date.now() > until) return restartFailed();
+    await wait(1000);
+  }
+  $('restarting').hidden = true;
+  busy(false);
+  await load();
+  sensorsTab.load();
+  status('Restarted.', 'ok');
+}
+
+function restartFailed() {
+  $('restarting').hidden = true;
+  busy(false);
+  status('ROS2D2 did not come back in 2 minutes: look at it on the Pi (journalctl -u r2d2).', 'bad');
 }
 
 // Tabs: Cameras, Sensors, and File (the text of whichever of the two was open last)
