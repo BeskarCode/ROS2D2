@@ -3,6 +3,7 @@
 // Saves cameras.yaml on the Pi through the web console's /api/cameras.
 import { call, connect, setParam } from './rosbridge.js';
 import { createSensorsTab } from './sensors.js';
+import { showStream, stopStream } from './mjpeg.js';
 
 const $ = (id) => document.getElementById(id);
 const TRACKER = '/dome_tracker';
@@ -79,7 +80,7 @@ function renumber() {
 // ---------- render ----------
 function render() {
   const box = $('cams');
-  box.querySelectorAll('img').forEach((i) => { i.src = ''; });   // close the old MJPEG connections
+  box.querySelectorAll('img').forEach(stopStream);   // close the old MJPEG connections
   box.textContent = '';
   for (const r of rows) {
     const el = document.createElement('div');
@@ -113,8 +114,8 @@ function render() {
       // The face detector's picture (pixelated when that is on), as MJPEG from web_video_server
       const img = el.querySelector('img');
       img.onload = () => { msg.textContent = ''; };
-      img.src = `http://${location.hostname}:8081/stream?topic=/cameras/${r.name}/faces/image` +
-                '&type=ros_compressed&qos_profile=sensor_data';
+      showStream(img, `http://${location.hostname}:8081/stream?topic=/cameras/${r.name}/faces/image` +
+                      '&type=ros_compressed&qos_profile=sensor_data');
       msg.textContent = 'waiting for the picture…';
     } else {
       msg.textContent = r.use ? 'Not running yet: Save and restart to start it.' : 'Not used.';
