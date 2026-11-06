@@ -41,3 +41,9 @@ def test_spread_three():
 
 def test_node_params_drop_the_geometry():
     assert node_params({"source": 0, "yaw_deg": 5, "hfov_deg": 60, "width": 640}) == {"source": "0", "width": 640}
+
+
+def test_node_params_camera_that_finds_faces_sends_video_on_demand():
+    assert node_params({"source": "http://cam/stream", "detect": "camera"})["on_demand"] is True
+    assert "on_demand" not in node_params({"source": 0})
+    assert node_params({"source": "x", "detect": "camera", "on_demand": False})["on_demand"] is False
