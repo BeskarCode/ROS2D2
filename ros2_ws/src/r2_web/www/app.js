@@ -5,6 +5,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
 import { picoPill } from './picostate.js';
+import { showStream, stopStream } from './mjpeg.js';
 
 const params = new URLSearchParams(location.search);
 const WS_URL = params.get('ws') || `ws://${location.hostname || 'localhost'}:9090`;
@@ -152,7 +153,7 @@ function setPill(id, text, cls) {
 function setCameras(list) {
   for (const c of cams) {
     for (const t of ['faces', 'camera_info']) send({ op: 'unsubscribe', topic: `/cameras/${c.name}/${t}` });
-    c.tile.querySelector('img').src = '';      // closes the MJPEG connection
+    stopStream(c.tile.querySelector('img'));
   }
   cams = list.sort((a, b) => a.yaw - b.yaw).map((c) => ({ ...c, width: null, frames: 0, latest: null }));
   const box = $('cams');
@@ -165,7 +166,7 @@ function setCameras(list) {
     c.tile.innerHTML = '<img alt=""><div class="offline">OFFLINE</div><div class="num"></div><div class="aim"><span>simulated dome</span></div>';
     c.tile.querySelector('.num').textContent = i + 1;
     c.tile.querySelector('img').alt = `camera ${i + 1} with detected faces`;
-    c.tile.querySelector('img').src = VIDEO(`/cameras/${c.name}/faces/image`);
+    showStream(c.tile.querySelector('img'), VIDEO(`/cameras/${c.name}/faces/image`));
     box.append(c.tile);
     const base = `/cameras/${c.name}`;
     // One faces message per picture the detector handled: it counts the fps and tells
