@@ -1,0 +1,7 @@
+# ROS2D2 r2_domecam: one big app (the face detector library is large) and no OTA.
+# Fits any board with 4 MB of flash or more (ESP32-CAM, XIAO ESP32S3 Sense, ESP32-S3 CAM).
+# Name,   Type, SubType, Offset,   Size
+nvs,      data, nvs,     0x9000,   0x5000
+otadata,  data, ota,     0xe000,   0x2000
+app0,     app,  factory, 0x10000,  0x3E0000
+coredump, data, coredump, 0x3F0000, 0x10000

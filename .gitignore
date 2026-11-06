@@ -12,3 +12,4 @@ docs/
 .superpowers/
 # Firmware secrets (WiFi passwords): each sketch has a config.example.h to copy
 firmware/**/config.h
+firmware/*/build/

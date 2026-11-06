@@ -25,6 +25,7 @@ setup(
     entry_points={
         "console_scripts": [
             "face_detector = r2_vision.face_detector_node:main",
+            "remote_faces = r2_vision.remote_faces_node:main",
         ],
     },
 )
