@@ -15,9 +15,13 @@ and a small HTTP API for what ROS topics cannot do:
                       it is valid; the sensors' poses follow at once (sensor_tf reloads it)
   GET  /api/nav       nav.yaml in use (the navigator's settings) and any error in it
   POST /api/nav       save nav.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid
+  GET  /api/modes     modes.yaml in use (combo of each mode, follow settings), any error in it,
+                      and the combo names the page may offer
+  POST /api/modes     save modes.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid;
+                      then publishes /r2/modes/reload so the Mega bridge sends the new bindings
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
 
-http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera and sensor setup
+http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera, sensor and mode setup
 """
 
 import functools
@@ -34,11 +38,14 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from rcl_interfaces.msg import ParameterDescriptor
 from rclpy.node import Node
+from std_msgs.msg import Empty
 
 from r2_camera.config import USER_CONFIG, config_path, load_cameras, usb_cameras
 from r2_camera.source import list_modes
 from r2_sensors.config import USER_CONFIG as SENSORS_USER_CONFIG
+from r2_nav.modes import USER_MODES
 from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
+from r2_web.modes_api import modes_payload, save_modes
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.sensors_api import save_sensors, sensors_payload
 
@@ -76,6 +83,8 @@ class Handler(SimpleHTTPRequestHandler):
     default_config = ""
     sensors_default = ""
     nav_default = ""
+    modes_default = ""
+    on_modes_saved = staticmethod(lambda: None)
 
     def log_message(self, fmt, *args):
         pass
@@ -96,6 +105,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.split("?")[0] == "/api/nav":
             return self._json(200, nav_payload(self.nav_default, NAV_USER_CONFIG))
+        if self.path.split("?")[0] == "/api/modes":
+            return self._json(200, modes_payload(self.modes_default, USER_MODES))
         if self.path.split("?")[0] == "/api/sensors":
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
         if self.path.split("?")[0] != "/api/cameras":
@@ -124,6 +135,15 @@ class Handler(SimpleHTTPRequestHandler):
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             return self._json(*save_nav(text, NAV_USER_CONFIG))
+        if route == "/api/modes":
+            try:
+                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            code, body = save_modes(text, USER_MODES)
+            if code == 200:
+                self.on_modes_saved()
+            return self._json(code, body)
         if route == "/api/sensors":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
@@ -159,6 +179,9 @@ class WebServerNode(Node):
         Handler.default_config = os.path.join(get_package_share_directory("r2_camera"), "config", "cameras.yaml")
         Handler.sensors_default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
         Handler.nav_default = os.path.join(get_package_share_directory("r2_nav"), "config", "nav.yaml")
+        Handler.modes_default = os.path.join(get_package_share_directory("r2_nav"), "config", "modes.yaml")
+        self.pub_reload = self.create_publisher(Empty, "/r2/modes/reload", 10)
+        Handler.on_modes_saved = staticmethod(lambda: self.pub_reload.publish(Empty()))
         handler = functools.partial(Handler, directory=root)
         self.httpd = ThreadingHTTPServer(("0.0.0.0", port), handler)
         self.httpd.daemon_threads = True

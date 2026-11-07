@@ -3,6 +3,7 @@
 // Saves cameras.yaml on the Pi through the web console's /api/cameras.
 import { call, connect, setParam } from './rosbridge.js';
 import { createSensorsTab } from './sensors.js';
+import { createModesTab } from './modes.js';
 import { showStream, stopStream } from './mjpeg.js';
 
 const $ = (id) => document.getElementById(id);
@@ -240,6 +241,7 @@ function toYaml() {
 // Which settings the File tab and the Save buttons work on
 let section = 'cameras';
 const sensorsTab = createSensorsTab({ status });
+const modesTab = createModesTab({ status });
 
 async function save(restart) {
   const fromFile = !$('file').hidden;
@@ -247,6 +249,10 @@ async function save(restart) {
     const text = fromFile ? $('yaml').value : null;
     if (!(await sensorsTab.save(text))) return;
     if (fromFile) sensorsTab.load();
+  } else if (section === 'modes') {
+    const text = fromFile ? $('yaml').value : null;
+    if (!(await modesTab.save(text))) return;
+    if (fromFile) modesTab.load();
   } else {
     const text = fromFile ? $('yaml').value : toYaml();
     const res = await (await fetch('api/cameras', { method: 'POST', body: JSON.stringify({ yaml: text }) })).json();
@@ -291,6 +297,7 @@ async function waitForRestart(before) {
   busy(false);
   await load();
   sensorsTab.load();
+  modesTab.load();
   status('Restarted.', 'ok');
 }
 
@@ -300,21 +307,27 @@ function restartFailed() {
   status('ROS2D2 did not come back in 2 minutes: look at it on the Pi (journalctl -u r2d2).', 'bad');
 }
 
-// Tabs: Cameras, Sensors, and File (the text of whichever of the two was open last)
+// Tabs: Cameras, Sensors, Modes, and File (the text of whichever of the others was open last)
 function showTab(name) {
   if (name !== 'file') section = name;
   $('form').hidden = name !== 'cameras';
   $('sensors').hidden = name !== 'sensors';
+  $('modes').hidden = name !== 'modes';
   $('file').hidden = name !== 'file';
   $('tab-form').classList.toggle('on', name === 'cameras');
   $('tab-sensors').classList.toggle('on', name === 'sensors');
+  $('tab-modes').classList.toggle('on', name === 'modes');
   $('tab-file').classList.toggle('on', name === 'file');
   $('identify').hidden = name !== 'cameras';
   if (name === 'sensors') sensorsTab.show(); else sensorsTab.hide();
+  if (name === 'modes') modesTab.show(); else modesTab.hide();
   if (name !== 'file') return;
   if (section === 'sensors') {
     $('yaml').value = sensorsTab.fileText();
     $('filename').textContent = sensorsTab.fileName();
+  } else if (section === 'modes') {
+    $('yaml').value = modesTab.fileText();
+    $('filename').textContent = modesTab.fileName();
   } else {
     $('yaml').value = needsRestart || $('status').classList.contains('warn') ? toYaml() : fileText;
     $('filename').textContent = cameraFile;
@@ -325,9 +338,11 @@ $('save').addEventListener('click', () => save(false));
 $('restart').addEventListener('click', () => save(true));
 $('tab-form').addEventListener('click', () => showTab('cameras'));
 $('tab-sensors').addEventListener('click', () => showTab('sensors'));
+$('tab-modes').addEventListener('click', () => showTab('modes'));
 $('tab-file').addEventListener('click', () => showTab('file'));
-$('yaml').addEventListener('input', () => dirty(section === 'cameras'));
+$('yaml').addEventListener('input', () => (section === 'cameras' ? dirty(true) : status('Changed: Save to keep it.', 'warn')));
 sensorsTab.onError(() => { section = 'sensors'; showTab('file'); });
+modesTab.onError(() => { if (section === 'modes') showTab('file'); });
 
 // While ROS2D2 restarts: spinning icon on the button, nothing else to press
 function busy(on) {
@@ -358,3 +373,6 @@ setInterval(async () => {
 
 connect(load);
 sensorsTab.load();   // from the web server: works without rosbridge
+modesTab.load();
+// Setup -> Modes straight away with setup.html#modes
+if (location.hash === '#modes') showTab('modes');

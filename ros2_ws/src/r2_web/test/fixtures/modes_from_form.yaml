@@ -1,0 +1,27 @@
+# ROS2D2 modes, saved from the web console (Setup -> Modes). Hand edits are fine too:
+# the page reads this same file. combo: a name from r2_nav/modes.py or null; DOME_PS_L2 is face tracking.
+goto:
+  combo: FOOT_PS_L2
+  sound_on: ""
+  sound_off: ""
+forward:
+  combo: null
+  sound_on: "MD:$PS1"
+  sound_off: ""
+patrol:
+  combo: DOME_LEFT_L2_CROSS
+  sound_on: ""
+  sound_off: ""
+follow:
+  combo: FOOT_UP_PS
+  sound_on: "S1:$12"
+  sound_off: "S1:$13"
+  sound_lost: "S1:$22"
+  camera: cam1
+  color: {h: 104, s: 201, v: 88}   # OpenCV h 0-179, s and v 0-255, picked on the camera
+  hue_tol: 8   # 2-40
+  light_tol: 55   # 10-120 (s and v)
+  area_ref: 0.07123   # fraction of the picture it filled when picked
+  distance: 2.2   # m, 0.8-4
+  max_speed: 0.25   # m/s, 0.05-0.4
+  search_s: 0   # s searching with the dome, 0-20
