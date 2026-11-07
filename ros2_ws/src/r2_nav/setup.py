@@ -25,6 +25,7 @@ setup(
     entry_points={
         "console_scripts": [
             "navigator = r2_nav.navigator_node:main",
+            "follow = r2_nav.follow_node:main",
         ],
     },
 )

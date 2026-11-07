@@ -15,7 +15,9 @@ Topics:
   in   /r2/track_mode                  std_msgs/Bool    face tracking, PS + L2 on the dome Nav (latched);
                                                         off = the dome is left alone. Independent of
                                                         the autonomous mode of the feet
-  out  ~/status                        std_msgs/String  disabled | track off | no face | tracking
+  in   /r2/mode                        std_msgs/String  which mode is on (latched); while one is, this node
+                                                        publishes nothing (the mode moves the dome)
+  out  ~/status                        std_msgs/String  disabled | mode | track off | no face | tracking
   out  /dome/angle_estimate            std_msgs/Float32 degrees, + = right; worked out from the speeds
                                                         sent, as the dome has no position sensor
   in   /dome/angle_reset               std_msgs/Empty   "the dome is facing front now": angle = 0
@@ -104,6 +106,8 @@ class DomeTrackerNode(Node):
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
                              reliability=ReliabilityPolicy.RELIABLE)
         self.create_subscription(Bool, "/r2/track_mode", self._on_track_mode, latched)
+        self.mode = ""             # /r2/mode: "" = none; any mode (follow...) owns the dome
+        self.create_subscription(String, "/r2/mode", self._on_mode, latched)
         self.pub_speed = self.create_publisher(Int16, "/dome/speed_cmd", 10)
         self.pub_status = self.create_publisher(String, "~/status", 10)
         self.pub_angle = self.create_publisher(Float32, "/dome/angle_estimate", 10)
@@ -179,6 +183,9 @@ class DomeTrackerNode(Node):
         else:
             self.tracker.face(err, best[0])
 
+    def _on_mode(self, msg):
+        self.mode = msg.data
+
     def _on_track_mode(self, msg):
         self.track_on = msg.data
 
@@ -192,6 +199,13 @@ class DomeTrackerNode(Node):
 
     def _step(self, now):
         """Publish this tick's speed and status; returns the speed the dome turns at."""
+        if self.mode:
+            # a mode is on: it drives the dome, this node stays silent (not even a zero)
+            if self._was_enabled:
+                self.tracker.reset()
+            self._was_enabled = False
+            self.pub_status.publish(String(data="mode"))
+            return 0
         if not self.param("enabled") or not self.track_on:
             if self._was_enabled:
                 self.pub_speed.publish(Int16(data=0))   # one stop, then quiet: the controller is free

@@ -113,3 +113,11 @@ def bindings(cfg):
 def modes_path(default):
     """~/.config/ros2d2/modes.yaml wins over the installed one (same pattern as nav.yaml)."""
     return USER_MODES if os.path.isfile(USER_MODES) else default
+
+
+def drives_in(mode, mine):
+    """Does the node of mode `mine` move the droid when /r2/mode says `mode`? None = the mode has
+    not arrived (an old bridge never sends it): the navigator then counts as goto, as before."""
+    if mode is None:
+        return mine == "goto"
+    return mode == mine
