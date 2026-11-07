@@ -1,7 +1,7 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_line, foot_tick,
                                        is_error, parse_auto_line, parse_track_line, twist_to_units, bind_lines,
-                                       parse_bind_reply, lines_for_mega_line,
+                                       parse_bind_reply, lines_for_mega_line, auto_transition,
                                        units_to_twist, calibration_factor, is_auto_off_error)
 
 PREFIXES = ["MD:", "S1:", "S3:"]
@@ -186,3 +186,18 @@ def test_bridge_resends_bindings_after_boot():
     assert lines_for_mega_line("[MD] xAUTO OFF boot", b) == bind_lines(b)
     assert lines_for_mega_line("AUTO OFF stick", b) == []
     assert lines_for_mega_line("AUTO ON goto", b) == []
+
+
+def test_auto_transition_sounds():
+    assert auto_transition("", True, "follow") == ("follow", "", ("sound_on", "follow"))
+    assert auto_transition("goto", True, "follow") == ("follow", "", ("sound_on", "follow"))   # switch
+    assert auto_transition("follow", True, "follow") == ("follow", "", None)
+    assert auto_transition("follow", False, "button") == ("", "button", ("sound_off", "follow"))
+    assert auto_transition("follow", False, "stick") == ("", "stick", ("sound_off", "follow"))
+    assert auto_transition("follow", False, "pi") == ("", "pi", ("sound_off", "follow"))
+
+
+def test_auto_transition_quiet_off_reasons():
+    assert auto_transition("follow", False, "boot") == ("", "boot", None)
+    assert auto_transition("follow", False, "disconnected") == ("", "disconnected", None)
+    assert auto_transition("", False, "button") == ("", "button", None)

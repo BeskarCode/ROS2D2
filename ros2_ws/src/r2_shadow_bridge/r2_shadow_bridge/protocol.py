@@ -141,6 +141,25 @@ def parse_bind_reply(line):
     return ("ERR", m.group(1)) if m else None
 
 
+SILENT_OFF_REASONS = ("boot", "disconnected")
+
+
+def auto_transition(old_mode, on, detail):
+    """What an AUTO line means: (mode, reason, sound) for the new state.
+
+    detail is the mode when on, the reason when off. mode is "" when off, reason "" when on.
+    sound is None, ("sound_on", mode) when a mode switched on or changed, or
+    ("sound_off", old_mode) when a mode went off for a real reason (not boot or a lost port).
+    """
+    mode = detail if on else ""
+    reason = "" if on else detail
+    if on and mode != old_mode:
+        return mode, reason, ("sound_on", mode)
+    if not on and old_mode and reason not in SILENT_OFF_REASONS:
+        return mode, reason, ("sound_off", old_mode)
+    return mode, reason, None
+
+
 def lines_for_mega_line(line, bindings):
     """What to send back for a line the Mega printed: the bindings after it boots, else nothing."""
     if parse_auto_line(line) == (False, "boot"):
