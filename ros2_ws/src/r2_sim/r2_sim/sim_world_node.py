@@ -9,6 +9,10 @@ Mega, and its pretend sensors publish on the same topics as the real ones.
   out  /odom             nav_msgs/Odometry and TF odom -> base_link
   out  /scan_raw         sensor_msgs/LaserScan   the lidar (scan_crop cuts it into /scan)
   out  /range/<name>     sensor_msgs/Range       each VL53L0X / HC-SR04 of sensors.yaml
+  in   /r2/mode          std_msgs/String   (latched) while it is "follow" the person wearing the colour
+                                           (marker: true) is published on /marker at 15 Hz, as
+                                           color_marker_node would: it is not launched with sim:=true
+  out  /marker           std_msgs/String   JSON {seen, bearing, area, cx, cy, t}
   out  /sim/world        std_msgs/String   JSON: room, obstacles, pose, noise, scenes, bump, error (latched)
   out  /sim/sensors      std_msgs/String   JSON list of the sensors being simulated (latched)
 
@@ -66,6 +70,10 @@ class SimWorld(Node):
         self.pub_scan = self.create_publisher(LaserScan, "/scan_raw", 10)
         self.pub_world = self.create_publisher(String, "/sim/world", latched)
         self.pub_list = self.create_publisher(String, "/sim/sensors", latched)
+        self.pub_marker = self.create_publisher(String, "/marker", 10)
+        self.mode = None
+        self.create_subscription(String, "/r2/mode", self._on_mode, latched)
+        self.create_timer(1 / 15, self._marker_tick)
         self.pub_range = {}
         self.create_subscription(String, "/mega/tx", self._on_tx, 50)
         self.create_subscription(String, "/sim/world_cmd", self._on_cmd, 10)
@@ -94,6 +102,17 @@ class SimWorld(Node):
         foot = parse_foot(m.data)
         if foot is not None:
             self.foot = (time.monotonic(), *foot)
+
+    def _on_mode(self, m):
+        self.mode = m.data
+
+    def _marker_tick(self):
+        if self.mode != "follow":
+            return
+        v = self.world.marker_view(self.world.pose)
+        d = {"seen": False, "bearing": 0.0, "area": 0.0, "cx": 0.5, "cy": 0.5} if v is None else v
+        d["t"] = self.get_clock().now().nanoseconds / 1e9
+        self.pub_marker.publish(String(data=json.dumps(d)))
 
     def _on_cmd(self, m):
         try:

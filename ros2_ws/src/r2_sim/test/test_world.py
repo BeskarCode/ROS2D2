@@ -122,3 +122,31 @@ def test_floor_sensor_cone_sees_a_low_box_a_little_to_the_side():
     w.apply({"op": "add", "kind": "low", "x": 0.45 + 0.15, "y": 0.05 + 0.15})
     d = SensorSim(seed=1).range_of(w, ORIGIN, SENSORS["tof_floor"])
     assert d < 0.28 / math.sin(math.radians(40)) * 0.8
+
+
+def test_marker_view_in_front():
+    w = World.empty()
+    w.apply({"op": "add", "kind": "post", "x": 1.5, "y": 0.0, "r": 0.15, "height": 1.7, "marker": True})
+    v = w.marker_view(ORIGIN)
+    assert v["seen"] and v["bearing"] == pytest.approx(0.0) and v["cx"] == pytest.approx(0.5)
+    assert 0.03 < v["area"] < 0.12
+    far = w.marker_view((-1.0, 0.0, 0.0))
+    assert far["area"] < v["area"]                                     # further away: smaller
+    left = w.marker_view((0.5, -0.5, 0.0))                             # the person is to its left
+    assert left["bearing"] > 0 and left["cx"] < 0.5
+    assert w.marker_view((0.0, 0.0, math.pi)) is None                  # looking the other way
+    w.apply({"op": "marker", "id": 1, "on": False})
+    assert w.marker_view(ORIGIN) is None                               # no shirt
+
+
+def test_marker_hidden_behind_box():
+    w = World.empty()
+    w.apply({"op": "add", "kind": "post", "x": 2.0, "y": 0.0, "r": 0.15, "height": 1.7, "marker": True})
+    w.apply({"op": "add", "kind": "box", "x": 1.0, "y": 0.0, "w": 0.5, "h": 0.5, "height": 1.3})
+    assert w.marker_view(ORIGIN) is None
+    w.apply({"op": "move", "id": 2, "x": 1.0, "y": 1.0})               # the box is no longer in the way
+    assert w.marker_view(ORIGIN)["seen"]
+    w.apply({"op": "move", "id": 2, "x": 1.0, "y": 0.0})
+    w.apply({"op": "add", "kind": "low", "x": 1.0, "y": 0.0})
+    w.apply({"op": "remove", "id": 2})
+    assert w.marker_view(ORIGIN)["seen"]                               # a low box does not hide a shirt
