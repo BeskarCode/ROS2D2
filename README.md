@@ -1,5 +1,10 @@
 # ROS2D2
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="media/ros2d2-logo-dark.png">
+  <img src="media/ros2d2-logo.png" alt="ROS2D2: R2-D2 come to life" width="600">
+</picture>
+
 A ROS 2 brain for an R2-D2 that runs ShadowMD. A Raspberry Pi 4 sits on top of the
 droid's Arduino Mega: the Pi handles the senses (cameras, voice, later a lidar) and
 decides what to do, and the Mega keeps driving the motors, sounds and lights.
