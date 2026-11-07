@@ -45,8 +45,8 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Empty, Int16, String
 from std_srvs.srv import Trigger
 
-from r2_nav.modes import ModesConfigError, bindings, load_modes, modes_path
-from r2_shadow_bridge.protocol import (bind_lines, command_allowed, dome_line, dome_tick, foot_tick,
+from r2_nav.modes import bindings, load_modes, modes_path
+from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_line, dome_tick, foot_tick,
                                        is_auto_off_error, is_error, lines_for_mega_line,
                                        parse_auto_line, parse_bind_reply, parse_track_line, twist_to_units)
 
@@ -219,12 +219,13 @@ class MegaBridgeNode(Node):
     # --- modes ---------------------------------------------------------------------------
 
     def _load_modes(self):
-        """Read modes.yaml; on a broken file log it and keep what we had."""
-        default = os.path.join(get_package_share_directory("r2_nav"), "config", "modes.yaml")
-        path = self.param("modes_config") or modes_path(default)
+        """Read modes.yaml; on any problem log it and keep what we had. Never raises: it runs
+        in the serial reader thread."""
         try:
+            default = os.path.join(get_package_share_directory("r2_nav"), "config", "modes.yaml")
+            path = self.param("modes_config") or modes_path(default)
             self.modes = load_modes(path)
-        except (OSError, ModesConfigError) as e:
+        except Exception as e:  # noqa: BLE001 - OSError, ModesConfigError, bad encoding, no package...
             self.get_logger().error(f"modes.yaml: {e} (the Mega keeps the bindings it had)")
             return False
         self.bindings = bindings(self.modes)
@@ -265,22 +266,19 @@ class MegaBridgeNode(Node):
 
     def _set_auto(self, on, detail):
         """Publish the autonomous mode, only when it changes. detail: the mode when on, else the reason."""
-        mode = detail if on else ""
-        reason = "" if on else detail
+        old_mode = self.mode
+        mode, reason, sound = auto_transition(old_mode, on, detail)
         if (on, reason, mode) == (self.auto_on, self.auto_reason, self.mode):
             return
         changed_on = on != self.auto_on or self.auto_reason is None
-        old_mode = self.mode
         self.auto_on, self.auto_reason, self.mode = on, reason, mode
+        self.pub_mode.publish(String(data=mode))
         self.pub_auto_reason.publish(String(data=reason))
         self.pub_auto.publish(Bool(data=on))
-        self.pub_mode.publish(String(data=mode))
         if changed_on or mode != old_mode:
             self.get_logger().info(f"autonomous mode ON ({mode})" if on else f"autonomous mode OFF ({reason})")
-        if on and mode != old_mode:
-            self._mode_sound("sound_on", mode)
-        elif not on and old_mode and reason not in ("boot", "disconnected"):
-            self._mode_sound("sound_off", old_mode)
+        if sound:
+            self._mode_sound(*sound)
 
     def _set_track(self, on, reason):
         """Publish face tracking, only when it changes."""
