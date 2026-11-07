@@ -19,6 +19,12 @@ proof of concept, split into ROS 2 nodes.
  camera ──image_raw──> face detector ──faces──> dome tracker ──/dome/speed_cmd──> Mega bridge ──DM:<speed>──> Mega
 ```
 
+## Hardware
+
+What ROS2D2 adds to a ShadowMD droid, how it connects and the bill of materials: [HARDWARE.md](HARDWARE.md).
+
+[![How the ROS2D2 hardware connects](media/hardware.png)](HARDWARE.md)
+
 ## Packages (`ros2_ws/src`)
 
 | Package | Node | What it does |
