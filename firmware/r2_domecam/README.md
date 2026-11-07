@@ -72,7 +72,7 @@ then **Save and restart**. Fine-tune its direction and field of view with the sl
 | `http://r2-domecam1.local/` | Page with the picture and the status |
 | `http://r2-domecam1.local/status` | JSON: fps, WiFi signal (RSSI), chip temperature, uptime, free memory |
 | `http://r2-domecam1.local/capture` | One JPEG |
-| `http://r2-domecam1.local/control?var=framesize&val=5` | Change `framesize`, `quality`, `vflip`, `hmirror` until the next reboot |
+| `http://r2-domecam1.local/control?var=framesize&val=5` | Change `framesize`, `quality`, `vflip`, `hmirror` until the next reboot. `var=detect&val=0` pauses the face finding (video only, `/faces` sends just keep-alives), `val=1` resumes; 404 on boards without face detection |
 
 Picture sizes for `framesize`: 5 = QVGA 320x240, 8 = VGA 640x480, 9 = SVGA 800x600.
 

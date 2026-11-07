@@ -42,6 +42,7 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
         g.strokeStyle = sel ? '#3b82f6' : o.kind === 'low' ? '#f85149' : '#8b949e'; g.lineWidth = sel ? 3 : 1.5;
         if (o.kind === 'post') { g.beginPath(); g.arc(...P(o.x, o.y), Math.max(o.r * S(), 4), 0, 7); g.fill(); g.stroke(); }
         else { const [x, y] = P(o.x - o.w / 2, o.y + o.h / 2); g.fillRect(x, y, o.w * S(), o.h * S()); g.strokeRect(x, y, o.w * S(), o.h * S()); }
+        if (o.marker) { g.strokeStyle = '#ff4fa3'; g.lineWidth = 3; g.beginPath(); g.arc(...P(o.x, o.y), Math.max((o.r || 0.15) * S(), 4) + 5, 0, 7); g.stroke(); }
       }
     }
     if (st.showTrail && st.trail.length > 1) {

@@ -19,6 +19,9 @@ Topics:
   out  /mega/tx               std_msgs/String     every line sent to the Mega; "(not sent) ..." when
                                                   the port is closed
   out  /r2/auto_mode          std_msgs/Bool       autonomous mode on or off (latched)
+  out  /r2/mode               std_msgs/String     which mode is on (goto|forward|patrol|follow), "" when
+                                                  off (latched)
+  in   /r2/modes/reload       std_msgs/Empty      re-read modes.yaml and send the combo bindings
   out  /r2/auto_mode/reason   std_msgs/String     why it went off: boot, button, stick,
                                                   controller, pi or disconnected (latched)
   out  /r2/track_mode         std_msgs/Bool       face tracking on or off (latched)
@@ -29,20 +32,23 @@ Services:
   /r2/track_mode/disable      std_srvs/Trigger    switch face tracking off
 """
 
+import os
 import threading
 import time
 
 import rclpy
+from ament_index_python.packages import get_package_share_directory
 import serial
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Bool, Int16, String
+from std_msgs.msg import Bool, Empty, Int16, String
 from std_srvs.srv import Trigger
 
-from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_tick,
-                                       is_auto_off_error, is_error,
-                                       parse_auto_line, parse_track_line, twist_to_units)
+from r2_nav.modes import bindings, load_modes, modes_path
+from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_line, dome_tick, foot_tick,
+                                       is_auto_off_error, is_error, lines_for_mega_line,
+                                       parse_auto_line, parse_bind_reply, parse_track_line, twist_to_units)
 
 
 class MegaBridgeNode(Node):
@@ -63,6 +69,7 @@ class MegaBridgeNode(Node):
         p("max_linear", 0.4)         # m/s; the Mega has its own, harder limit
         p("max_angular", 0.6)        # rad/s
         p("foot_cmd_timeout", 0.3)
+        p("modes_config", "")        # modes.yaml; empty = ~/.config/ros2d2 or the installed one
 
         self.ser = None
         self.lock = threading.Lock()
@@ -76,6 +83,9 @@ class MegaBridgeNode(Node):
         self.auto_reason = None
         self.track_on = False
         self.track_reason = None
+        self.mode = ""               # which mode is on ("" = none)
+        self.modes = None            # modes.yaml, None while it is broken or unread
+        self.bindings = {}
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_connected = self.create_publisher(Bool, "/mega/connected", latched)
@@ -83,16 +93,19 @@ class MegaBridgeNode(Node):
         self.pub_tx = self.create_publisher(String, "/mega/tx", 50)
         self.pub_auto = self.create_publisher(Bool, "/r2/auto_mode", latched)
         self.pub_auto_reason = self.create_publisher(String, "/r2/auto_mode/reason", latched)
+        self.pub_mode = self.create_publisher(String, "/r2/mode", latched)
         self.pub_track = self.create_publisher(Bool, "/r2/track_mode", latched)
         self.pub_track_reason = self.create_publisher(String, "/r2/track_mode/reason", latched)
         self.create_subscription(Int16, "/dome/speed_cmd", self._on_dome, 10)
         self.create_subscription(Twist, "/foot/cmd_vel", self._on_foot, 10)
         self.create_subscription(String, "/mega/command", self._on_command, 10)
+        self.create_subscription(Empty, "/r2/modes/reload", lambda _m: self._send_bindings(), 10)
         self.create_service(Trigger, "/r2/auto_mode/disable", self._on_disable)
         self.create_service(Trigger, "/r2/track_mode/disable", self._on_track_disable)
         self.create_timer(1.0 / self.get_parameter("rate_hz").value, self._tick)
 
         self.pub_connected.publish(Bool(data=False))
+        self.pub_mode.publish(String(data=""))
         self._set_auto(False, "boot")
         self._set_track(False, "boot")
         self._stop = threading.Event()
@@ -123,6 +136,7 @@ class MegaBridgeNode(Node):
         self._set_track(False, "boot")
         self._write("ROS:AUTO:?\n")
         self._write("ROS:TRACK:?\n")
+        self._send_bindings()
         return True
 
     def _lost(self, why):
@@ -178,6 +192,14 @@ class MegaBridgeNode(Node):
                 if not line:
                     continue
                 self.pub_log.publish(String(data=line))
+                if lines_for_mega_line(line, {}) and self._load_modes():   # the Mega just booted
+                    for out in lines_for_mega_line(line, self.bindings):
+                        self._write(out)
+                bind = parse_bind_reply(line)
+                if bind is not None:
+                    if bind[0] == "ERR":
+                        self.get_logger().error(f"Mega refused a binding: {bind[1]}")
+                    continue
                 auto = parse_auto_line(line)
                 if auto is not None:
                     self._set_auto(*auto)
@@ -193,6 +215,32 @@ class MegaBridgeNode(Node):
                     self._write("ROS:AUTO:?\n")
                 if is_error(line):
                     self.get_logger().warning(f"Mega: {line}")
+
+    # --- modes ---------------------------------------------------------------------------
+
+    def _load_modes(self):
+        """Read modes.yaml; on any problem log it and keep what we had. Never raises: it runs
+        in the serial reader thread."""
+        try:
+            default = os.path.join(get_package_share_directory("r2_nav"), "config", "modes.yaml")
+            path = self.param("modes_config") or modes_path(default)
+            self.modes = load_modes(path)
+        except Exception as e:  # noqa: BLE001 - OSError, ModesConfigError, bad encoding, no package...
+            self.get_logger().error(f"modes.yaml: {e} (the Mega keeps the bindings it had)")
+            return False
+        self.bindings = bindings(self.modes)
+        return True
+
+    def _send_bindings(self):
+        if not self._load_modes():
+            return
+        for line in bind_lines(self.bindings):
+            self._write(line)
+
+    def _mode_sound(self, key, mode):
+        cmd = (self.modes or {}).get(mode, {}).get(key, "")
+        if cmd and command_allowed(cmd, self.param("command_prefixes")):
+            self._write(cmd + "\n")
 
     # --- commands ----------------------------------------------------------------------
 
@@ -216,16 +264,21 @@ class MegaBridgeNode(Node):
         response.message = "sent ROS:TRACK:0" if response.success else "Mega not connected"
         return response
 
-    def _set_auto(self, on, reason):
-        """Publish the autonomous mode, only when it changes."""
-        if (on, reason) == (self.auto_on, self.auto_reason):
+    def _set_auto(self, on, detail):
+        """Publish the autonomous mode, only when it changes. detail: the mode when on, else the reason."""
+        old_mode = self.mode
+        mode, reason, sound = auto_transition(old_mode, on, detail)
+        if (on, reason, mode) == (self.auto_on, self.auto_reason, self.mode):
             return
         changed_on = on != self.auto_on or self.auto_reason is None
-        self.auto_on, self.auto_reason = on, reason
+        self.auto_on, self.auto_reason, self.mode = on, reason, mode
+        self.pub_mode.publish(String(data=mode))
         self.pub_auto_reason.publish(String(data=reason))
         self.pub_auto.publish(Bool(data=on))
-        if changed_on:
-            self.get_logger().info("autonomous mode ON" if on else f"autonomous mode OFF ({reason})")
+        if changed_on or mode != old_mode:
+            self.get_logger().info(f"autonomous mode ON ({mode})" if on else f"autonomous mode OFF ({reason})")
+        if sound:
+            self._mode_sound(*sound)
 
     def _set_track(self, on, reason):
         """Publish face tracking, only when it changes."""

@@ -1,0 +1,18 @@
+# ROS2D2 modes: which controller combination starts each mode, and the mode's own settings.
+# combo: one of the names in r2_nav/modes.py (null = none). DOME_PS_L2 is face tracking: not assignable.
+goto:    {combo: FOOT_PS_L2, sound_on: "", sound_off: ""}   # the navigator has its own sounds
+forward: {combo: null, sound_on: "", sound_off: ""}
+patrol:  {combo: null, sound_on: "", sound_off: ""}
+follow:
+  combo: null
+  sound_on: "S1:$12"
+  sound_off: "S1:$13"
+  sound_lost: "S1:$22"
+  camera: cam1          # from cameras.yaml; the dome ESP32
+  color: null           # {h: 0-179, s: 0-255, v: 0-255} in OpenCV units, set by the console
+  hue_tol: 12           # 2-40
+  light_tol: 70         # 10-120 (s and v)
+  area_ref: null        # fraction of the image it filled when picked (at `distance` m)
+  distance: 1.5         # m, 0.8-4
+  max_speed: 0.3        # m/s, 0.05-0.4
+  search_s: 5           # s searching with the dome before giving up, 0-20

@@ -19,6 +19,9 @@ KINDS = {                 # defaults for each kind of obstacle
     "box": {"w": 0.5, "h": 0.5, "height": 0.6},
     "low": {"w": 0.3, "h": 0.3, "height": 0.10},   # under the lidar
 }
+CAMERA_Z = 0.9            # m: the dome camera's height
+SHIRT_Z = 1.2             # m: where the coloured shirt is, on a person
+SHIRT_W = 0.5             # m: how wide it looks
 FOOT = re.compile(r"^ROS:FOOT:(-?\d+),(-?\d+)$")
 
 
@@ -99,8 +102,19 @@ class World:
                 o = {"id": self.next_id, "kind": kind, "x": float(cmd["x"]), "y": float(cmd["y"])}
                 for k, v in KINDS[kind].items():
                     o[k] = float(cmd.get(k, v))
+                if cmd.get("marker"):
+                    o["marker"] = True
                 self.next_id += 1
                 self.obstacles.append(o)
+                return None
+            if op == "marker":
+                o = self._find(cmd["id"])
+                if o is None:
+                    return f"no obstacle {cmd['id']}"
+                if cmd.get("on"):
+                    o["marker"] = True
+                else:
+                    o.pop("marker", None)
                 return None
             if op == "move":
                 o = self._find(cmd["id"])
@@ -125,10 +139,37 @@ class World:
                 return None
         except (KeyError, TypeError, ValueError) as e:
             return f"{op}: missing or bad value ({e})"
-        return "op must be add, move, remove, reset, place or noise"
+        return "op must be add, marker, move, remove, reset, place or noise"
 
     def _find(self, oid):
         return next((o for o in self.obstacles if o["id"] == oid), None)
+
+    # ---------- what the dome camera sees ----------
+    def marker_view(self, pose, hfov_deg=72.0):
+        """The coloured shirt as the forward-looking camera sees it, as /marker would say it
+        ({seen, bearing (+ left), area, cx, cy}), or None: no person with a shirt, outside the
+        field of view, or behind something tall enough to hide it."""
+        x, y, th = pose
+        hfov = math.radians(hfov_deg)
+        best = None
+        for o in self.obstacles:
+            if not o.get("marker"):
+                continue
+            dx, dy = o["x"] - x, o["y"] - y
+            dist = math.hypot(dx, dy)
+            bearing = math.atan2(math.sin(math.atan2(dy, dx) - th), math.cos(math.atan2(dy, dx) - th))
+            if dist < 0.05 or abs(bearing) > hfov / 2:
+                continue
+            reach = o["r"] if o["kind"] == "post" else max(o["w"], o["h"]) / 2
+            hit = self.cast(x, y, math.atan2(dy, dx), dist,
+                            lambda d: CAMERA_Z + (SHIRT_Z - CAMERA_Z) * min(1.0, d / dist))
+            if hit is not None and hit < dist - reach - 0.02:
+                continue
+            frac = 2 * math.atan2(SHIRT_W / 2, dist) / hfov
+            if best is None or dist < best[0]:
+                best = (dist, {"seen": True, "bearing": bearing, "area": min(1.0, frac * frac),
+                               "cx": 0.5 - bearing / hfov, "cy": 0.4})
+        return best[1] if best else None
 
     # ---------- what a beam hits ----------
     def cast(self, x, y, angle, max_d, z_at):

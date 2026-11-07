@@ -5,6 +5,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
 import { picoPill } from './picostate.js';
+import { MODE_LABELS } from './modesform.js';
 import { showStream, stopStream } from './mjpeg.js';
 
 const params = new URLSearchParams(location.search);
@@ -68,6 +69,14 @@ function showPico() {
 }
 setInterval(showPico, 1000);
 
+// The mode the controller switched on (/r2/mode from the Mega bridge, latched; "" = none)
+function showMode(mode) {
+  const el = $('modepill');
+  el.className = 'pill ' + (mode ? 'ok' : '');
+  el.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
+  el.append(mode ? `mode: ${MODE_LABELS[mode] || mode}` : 'mode: off');
+}
+
 $('rate').addEventListener('change', () => {
   const v = Number($('rate').value);
   if (v > 0) setParam(TRACKER, 'deg_per_s_at_80', 'double', v);
@@ -111,6 +120,7 @@ function connect() {
       showPico();
     });
     subscribe('/dome/angle_estimate', 'std_msgs/msg/Float32', (m) => { angleDeg = m.data; });
+    subscribe('/r2/mode', 'std_msgs/msg/String', (m) => showMode(m.data));
     send({ op: 'advertise', topic: '/dome/angle_reset', type: 'std_msgs/msg/Empty' });
     readParams();
   };

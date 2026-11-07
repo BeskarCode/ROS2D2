@@ -24,3 +24,19 @@ def test_state_json():
         assert k in j
     assert j["goal"] == [2.0, 1.0] and j["filtered"]["tof_front"] is None and j["heading"] == 1.2
     assert json.loads(state_json(d, None, None, {}, {}))["goal"] is None
+
+
+def test_navigator_silent_in_other_mode():
+    from r2_nav.modes import drives_in
+    assert drives_in("follow", "goto") is False
+    assert drives_in("goto", "goto") is True
+    assert drives_in(None, "goto") is True      # an old bridge never says the mode: it is goto
+    assert drives_in("", "goto") is False
+
+
+def test_follow_silent_in_other_mode():
+    from r2_nav.modes import drives_in
+    assert drives_in("goto", "follow") is False
+    assert drives_in("follow", "follow") is True
+    assert drives_in(None, "follow") is False
+    assert drives_in("", "follow") is False

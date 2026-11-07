@@ -76,6 +76,8 @@ SemaphoreHandle_t lock;
 FaceResult latest = {};
 volatile float detFps = 0;
 volatile int rotation = 0;
+volatile bool detectOn = true;       // false: the task sleeps on a notification, using no CPU
+TaskHandle_t detectHandle = nullptr;
 volatile float msrScore = SCORE_THR, mnpScore = SCORE_THR;   // changed from /control
 
 // A test picture waiting to be searched (detectJpeg), and its result
@@ -111,6 +113,7 @@ void detectTask(void *) {
   uint32_t count = 0, t0 = millis();
   float msrNow = SCORE_THR, mnpNow = SCORE_THR;
   for (;;) {
+    while (!detectOn) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);   // paused: no pictures taken, no CPU
     if (msrNow != msrScore) { msrNow = msrScore; msr.set_score_thr(msrNow); }
     if (mnpNow != mnpScore) { mnpNow = mnpScore; mnp.setScore(mnpNow); }
     bool test = testJpeg != nullptr && !testDone;
@@ -187,6 +190,15 @@ bool setFaceRotate(int deg) {
 
 int faceRotate() { return rotation; }
 
+bool setFaceDetect(bool on) {
+  if (!detectHandle) return false;
+  detectOn = on;
+  if (on) xTaskNotifyGive(detectHandle);   // wakes the task if it was paused
+  return true;
+}
+
+bool faceDetect() { return detectOn; }
+
 bool setFaceScore(int stage, int percent) {
   if (percent < 1 || percent > 99 || (stage != 1 && stage != 2)) return false;
   (stage == 1 ? msrScore : mnpScore) = percent / 100.0f;
@@ -199,7 +211,7 @@ bool startFaceDetection(int rotate) {
   setFaceRotate(rotate);
   lock = xSemaphoreCreateMutex();
   // Core 1, away from WiFi (core 0). Priority 1, like setup() and loop(): higher would starve them
-  return xTaskCreatePinnedToCore(detectTask, "faces", 16384, nullptr, 1, nullptr, 1) == pdPASS;
+  return xTaskCreatePinnedToCore(detectTask, "faces", 16384, nullptr, 1, &detectHandle, 1) == pdPASS;
 }
 
 bool waitFaces(FaceResult &out, uint32_t afterSeq, uint32_t timeoutMs) {
@@ -234,6 +246,8 @@ float faceFps() { return detFps; }
 bool startFaceDetection(int) { return false; }
 bool setFaceRotate(int) { return false; }
 bool setFaceScore(int, int) { return false; }
+bool setFaceDetect(bool) { return false; }
+bool faceDetect() { return false; }
 int faceScore(int) { return 0; }
 int faceRotate() { return 0; }
 bool waitFaces(FaceResult &, uint32_t, uint32_t timeoutMs) { delay(timeoutMs); return false; }

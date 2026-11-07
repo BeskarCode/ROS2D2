@@ -47,6 +47,14 @@ def generate_launch_description():
             share("r2_camera", "launch", "cameras.launch.py"))),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             share("r2_vision", "launch", "face_detectors.launch.py"))),
+        Node(
+            package="r2_vision",
+            executable="color_marker",
+            name="color_marker",
+            output="screen",
+            # follow-a-colour needs the real cameras
+            condition=IfCondition(PythonExpression(["'", LaunchConfiguration("sim"), "'.lower() != 'true'"])),
+        ),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(
             share("r2_sensors", "launch", "sensors.launch.py")),
             # in the simulation the room provides the lidar (/scan_raw)
