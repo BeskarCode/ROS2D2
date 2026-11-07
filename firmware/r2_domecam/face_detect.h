@@ -29,6 +29,11 @@ struct FaceResult {
 bool startFaceDetection(int rotate);
 bool setFaceRotate(int rotate);   // false if not 0/90/180/270
 int faceRotate();
+// Pauses (false) or resumes (true) the search. Paused, the task sleeps without using CPU and
+// takes no pictures, so the video gets the whole camera; waitFaces() then just times out.
+// False on boards without detection.
+bool setFaceDetect(bool on);
+bool faceDetect();
 // Lowest score kept, in percent: stage 1 = MSR (candidates), stage 2 = MNP (final check).
 // Lower finds more (and harder) faces, but also more false ones. Default 50.
 bool setFaceScore(int stage, int percent);

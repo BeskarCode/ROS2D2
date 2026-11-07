@@ -70,3 +70,8 @@ def test_iter_lines_gives_each_line_as_soon_as_it_arrives():
 def test_control_url_from_faces_url():
     assert control_url("http://r2-domecam1.local:82/faces", "rotate", 90) ==         "http://r2-domecam1.local/control?var=rotate&val=90"
     assert control_url("", "rotate", 0) is None
+
+
+def test_control_url_detect():
+    assert control_url("http://r2-domecam1.local:82/faces", "detect", 0) == "http://r2-domecam1.local/control?var=detect&val=0"
+    assert control_url("http://r2-domecam1.local:82/faces", "detect", 1) == "http://r2-domecam1.local/control?var=detect&val=1"
