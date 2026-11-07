@@ -16,7 +16,12 @@ Everything ROS sends starts with ROS:, so it stands apart from the console comma
                            Nav) can switch it on. It has nothing to do with the autonomous mode.
   ROS:TRACK:?              ask for the state
 
-The Mega answers state changes with "AUTO ON" or "AUTO OFF <reason>"
+  ROS:BIND:CLEAR          forget the combo bindings (answers "BIND CLEAR")
+  ROS:BIND:<COMBO>,<mode> bind a controller combo to a mode (goto|forward|patrol|follow; none frees it);
+                           answers "BIND OK <COMBO> <mode>". ROS:BIND:RESET restores the default
+                           (FOOT_PS_L2 -> goto). Errors: ERR BIND FULL, ERR unknown combo/mode.
+
+The Mega answers state changes with "AUTO ON <mode>" (plain "AUTO ON" on old firmware) or "AUTO OFF <reason>"
 (reason: boot, button, stick, controller, pi), and "TRACK ON" or "TRACK OFF <reason>"
 (reason: boot, button, controller, pi).
 
@@ -89,7 +94,9 @@ def foot_tick(fresh, auto_on, drive, turn, stopped):
     return None, True
 
 
-_AUTO_LINE = re.compile(r"AUTO (ON|OFF ([a-z]+))$")
+_AUTO_LINE = re.compile(r"AUTO (?:ON(?: ([a-z]+))?|OFF ([a-z]+))$")
+_BIND_OK = re.compile(r"BIND OK ([A-Z0-9_]+) ([a-z]+)$")
+_BIND_ERR = re.compile(r"ERR (BIND FULL|unknown combo|unknown mode)$")
 _TRACK_LINE = re.compile(r"TRACK (ON|OFF ([a-z]+))$")
 
 
@@ -101,11 +108,44 @@ def _parse_mode_line(pattern, line):
 
 
 def parse_auto_line(line):
-    """"AUTO ON" -> (True, ""), "AUTO OFF <reason>" -> (False, reason), anything else -> None.
+    """"AUTO ON <mode>" -> (True, mode), plain "AUTO ON" (old firmware) -> (True, "goto"),
+    "AUTO OFF <reason>" -> (False, reason), anything else -> None.
 
     Matched at the end of the line: the MarcDuino echo can leave a partial line in front.
     """
-    return _parse_mode_line(_AUTO_LINE, line)
+    m = _AUTO_LINE.search(line.strip())
+    if m is None:
+        return None
+    if m.group(2) is not None:
+        return False, m.group(2)
+    return True, m.group(1) or "goto"
+
+
+def bind_lines(bindings):
+    """The lines that give the Mega its combo bindings: clear, then one per combo (sorted)."""
+    return ["ROS:BIND:CLEAR\n"] + [f"ROS:BIND:{c},{m}\n" for c, m in sorted(bindings.items())]
+
+
+def parse_bind_reply(line):
+    """The Mega's answer to ROS:BIND: ("OK", combo, mode), ("CLEAR",), ("RESET",),
+    ("ERR", text), or None for any other line."""
+    line = line.strip()
+    m = _BIND_OK.search(line)
+    if m:
+        return "OK", m.group(1), m.group(2)
+    if line.endswith("BIND CLEAR"):
+        return ("CLEAR",)
+    if line.endswith("BIND RESET"):
+        return ("RESET",)
+    m = _BIND_ERR.search(line)
+    return ("ERR", m.group(1)) if m else None
+
+
+def lines_for_mega_line(line, bindings):
+    """What to send back for a line the Mega printed: the bindings after it boots, else nothing."""
+    if parse_auto_line(line) == (False, "boot"):
+        return bind_lines(bindings)
+    return []
 
 
 def parse_track_line(line):
