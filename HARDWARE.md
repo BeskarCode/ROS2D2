@@ -41,8 +41,8 @@ paid or checked them.
 | Part | Qty | What for | Price |
 |---|---|---|---|
 | Raspberry Pi Pico 2 | 1 | Reads the distance sensors, sends them to the Pi over USB (`firmware/r2_pico_sensors`) | |
-| Pico 2 carrier board (`hardware/r2_pico_carrier`), assembled by JLCPCB | 1 (order of 5) | Sensor connectors, I2C repeater, one LED per sensor, OLED | €80.06 for 5, shipping and VAT included |
-| 0.96" SSD1306 I2C OLED, 128×64 | 1 | Sensor status on the Pico board | |
+| Pico 2 carrier board (`hardware/r2_pico_carrier`), assembled by JLCPCB: **optional** | 1 (order of 5) | Joins all the sensors to the Pico: connectors, I2C repeater, one LED per sensor, OLED. Without it, wire the sensors to the Pico by hand | €80.06 for 5, shipping and VAT included |
+| 0.96" SSD1306 I2C OLED, 128×64 | 1 | Sensor status on the Pico board (only with the board) | |
 | Servo hub (our own board), assembled by JLCPCB | 1 (order of 5) | The dome's 16 servos with their own 5-6 V supply | €51.57 for 5 (quote) |
 
 ### Dome position
