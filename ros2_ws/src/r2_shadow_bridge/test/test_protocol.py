@@ -1,6 +1,7 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 from r2_shadow_bridge.protocol import (command_allowed, dome_line, dome_tick, foot_line, foot_tick,
-                                       is_error, parse_auto_line, parse_track_line, twist_to_units,
+                                       is_error, parse_auto_line, parse_track_line, twist_to_units, bind_lines,
+                                       parse_bind_reply, lines_for_mega_line,
                                        units_to_twist, calibration_factor, is_auto_off_error)
 
 PREFIXES = ["MD:", "S1:", "S3:"]
@@ -98,7 +99,7 @@ def test_foot_tick_silent_when_auto_off():
 
 
 def test_parse_auto_lines():
-    assert parse_auto_line("AUTO ON") == (True, "")
+    assert parse_auto_line("AUTO ON") == (True, "goto")
     assert parse_auto_line("AUTO OFF boot") == (False, "boot")
     assert parse_auto_line("AUTO OFF stick") == (False, "stick")
     assert parse_auto_line("OK forwarded to Serial1") is None
@@ -131,7 +132,7 @@ def test_twist_to_units_nan_or_inf_means_stop():
 def test_parse_auto_line_after_marcduino_echo():
     # The MarcDuino echo can leave a partial line in front of the Mega's own line
     assert parse_auto_line("[MD] xyzAUTO OFF stick") == (False, "stick")
-    assert parse_auto_line("[MD] *ON00AUTO ON") == (True, "")
+    assert parse_auto_line("[MD] *ON00AUTO ON") == (True, "goto")
     assert parse_auto_line("NOT AUTO ONLY") is None
 
 
@@ -152,3 +153,36 @@ def test_parse_track_lines():
 def test_auto_and_track_lines_do_not_mix():
     assert parse_auto_line("TRACK ON") is None
     assert parse_auto_line("TRACK OFF button") is None
+
+
+def test_auto_on_with_mode():
+    assert parse_auto_line("AUTO ON follow") == (True, "follow")
+    assert parse_auto_line("[MD] *ON00AUTO ON patrol") == (True, "patrol")
+    assert parse_auto_line("AUTO ON bogus!") is None
+
+
+def test_auto_on_plain_is_goto():
+    assert parse_auto_line("AUTO ON") == (True, "goto")
+
+
+def test_bind_lines_clear_first():
+    assert bind_lines({}) == ["ROS:BIND:CLEAR\n"]
+    assert bind_lines({"FOOT_UP": "patrol", "FOOT_PS_L2": "goto"}) == [
+        "ROS:BIND:CLEAR\n", "ROS:BIND:FOOT_PS_L2,goto\n", "ROS:BIND:FOOT_UP,patrol\n"]
+
+
+def test_parse_bind_reply():
+    assert parse_bind_reply("BIND OK FOOT_UP follow") == ("OK", "FOOT_UP", "follow")
+    assert parse_bind_reply("BIND CLEAR") == ("CLEAR",)
+    assert parse_bind_reply("BIND RESET") == ("RESET",)
+    assert parse_bind_reply("ERR BIND FULL") == ("ERR", "BIND FULL")
+    assert parse_bind_reply("ERR unknown combo") == ("ERR", "unknown combo")
+    assert parse_bind_reply("AUTO ON") is None
+
+
+def test_bridge_resends_bindings_after_boot():
+    b = {"FOOT_PS_L2": "goto"}
+    assert lines_for_mega_line("AUTO OFF boot", b) == bind_lines(b)
+    assert lines_for_mega_line("[MD] xAUTO OFF boot", b) == bind_lines(b)
+    assert lines_for_mega_line("AUTO OFF stick", b) == []
+    assert lines_for_mega_line("AUTO ON goto", b) == []
