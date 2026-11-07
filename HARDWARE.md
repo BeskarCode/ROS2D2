@@ -8,7 +8,8 @@ Teal: what ROS2D2 adds. Dashed: ordered, to buy or not fitted yet.
 
 ## Bill of materials
 
-Only what you add to a ShadowMD droid. Status as of 7 November 2026; prices only where we have
+**This is an inventory of what we are using while testing, not a shopping list:** ROS2D2 is still
+being tested on the droid. Only what we add to a ShadowMD droid. Status as of 7 November 2026; prices only where we have
 paid or checked them.
 
 ### Brain
