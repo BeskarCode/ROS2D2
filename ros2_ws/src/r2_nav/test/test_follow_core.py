@@ -130,3 +130,51 @@ def test_no_data():
     f = follower()
     d = f.step(0.0, marker(0.0), None, {})
     assert d.state == "no data" and d.v == 0 and d.w == 0 and d.dome == 0
+
+
+def until_following(f, t0, mk, scan):
+    """Steps from t0 until it moves; returns the decisions up to and including that one."""
+    out = []
+    for i in range(100):
+        t = t0 + i * DT
+        out.append(f.step(t, mk(t), scan, clear_ranges()))
+        if out[-1].v > 0:
+            break
+    return out
+
+
+def test_found_mid_search_recentres_first():
+    f = follower(search_s=5)
+    before = run(f, 5, scan=person(3.0))
+    lost = run(f, 15, scan=person(3.0), mk=lambda t: None, t0=0.5)      # 1.5 s: dome well to one side
+    assert abs(sum(d.dome * DT for d in lost)) > DOME_SEARCH * 0.5
+    back = until_following(f, 2.0, lambda t: marker(t, bearing=0.3), person(3.0, 0.3))
+    assert "found" in back[0].events and back[0].state == "recentring"
+    recentring = back[:-1]
+    assert recentring and all(d.state == "recentring" and d.v == 0 and d.w == 0 and d.dome < 0 for d in recentring)
+    assert abs(sum(d.dome * DT for d in before + lost + recentring)) < 1e-6   # facing forward again
+    assert back[-1].dome == 0 and back[-1].state == "following"
+
+
+def test_no_data_mid_search_then_recentres():
+    f = follower(search_s=5)
+    run(f, 5, scan=person(3.0))
+    lost = run(f, 10, scan=person(3.0), mk=lambda t: None, t0=0.5)
+    blind = [f.step(1.5 + i * DT, None, None, {}) for i in range(5)]
+    assert all(d.state == "no data" and d.dome == 0 for d in blind)
+    back = until_following(f, 2.0, lambda t: marker(t), person(3.0))
+    assert back[0].state == "recentring" and all(d.v == 0 for d in back[:-1])
+    assert abs(sum(d.dome * DT for d in lost + blind + back)) < 1e-6
+    assert back[-1].state == "following"
+
+
+def test_blocked_wiggles_the_dome():
+    f = follower(area_ref=0.1, distance=1.5)
+    out = run(f, 80, scan=[], ranges=clear_ranges(tof_front=0.1), mk=lambda t: marker(t, area=0.025))
+    i = next(i for i, d in enumerate(out) if "blocked" in d.events)
+    moving = [d.dome for d in out if d.dome]
+    assert out[i].dome == DOME_SEARCH and set(moving) == {DOME_SEARCH, -DOME_SEARCH}
+    assert abs(len(moving) * DT - 2.0) <= 2 * DT                       # about 2 s, right after the event
+    assert all(d.dome == 0 for d in out[:i])
+    assert abs(sum(d.dome * DT for d in out)) < 1e-6
+    assert all(d.v == 0 and d.state == "blocked" for d in out)

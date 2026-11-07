@@ -27,7 +27,14 @@ DOME_SEARCH = 25             # DM: units while looking around
 BLOCKED_AFTER = 4.0          # s blocked before saying so
 BLOCKED_REPEAT = 15.0        # s between two "blocked" while it lasts
 TURN_ROOM = 0.4              # m: something closer than this to the centre and it does not even turn
-STATES = ("following", "waiting", "blocked", "searching", "lost", "no data")
+WIGGLE = 2.0                 # s of dome side to side each time it says it is blocked
+STATES = ("following", "waiting", "blocked", "searching", "lost", "recentring", "no data")
+
+
+def sweep(e, length):
+    """Dome units for a look round of `length` s, e s in: + a quarter, - half, + a quarter (net 0)."""
+    q = length / 4
+    return DOME_SEARCH if e < q or e >= 3 * q else -DOME_SEARCH
 
 
 @dataclass
@@ -48,6 +55,10 @@ class Follower:
         self.blocked_since = None
         self.next_blocked = None     # when the next "blocked" event is due
         self.floor_seen = set()
+        self.offset = 0.0            # DM: units x s it has turned the dome away from the front
+        self.dome = 0                # what it asked of the dome last step
+        self.wiggle_since = None     # dome side to side after saying it is blocked
+        self.dt = 0.1
 
     def reconfigure(self, follow_cfg=None, nav_cfg=None, sensors=None):
         self.fcfg = follow_cfg or self.fcfg
@@ -76,34 +87,54 @@ class Follower:
         d.state = state
         return d
 
+    def _recentre(self, d):
+        """Dome units that bring it back to the front (0 once there). The marker's bearing is
+        relative to the camera: it only follows with the dome facing forward."""
+        if self.dt <= 0 or round(self.offset / self.dt) == 0:
+            return False
+        d.dome = int(max(-DOME_SEARCH, min(DOME_SEARCH, round(-self.offset / self.dt))))
+        return True
+
     def step(self, now, marker, scan_xy, ranges):
         """One decision. marker: the /marker dict or None; scan_xy: lidar points in base_link or
         None when the lidar is silent; ranges: {name: metres | None} of the sensors reporting."""
         dt = 0.1 if self.last_t is None else max(0.0, min(0.5, now - self.last_t))
-        self.last_t = now
+        self.last_t, self.dt = now, dt
+        self.offset += self.dome * dt
+        d = self._step(now, marker, scan_xy, ranges, dt)
+        self.dome = d.dome
+        return d
+
+    def _step(self, now, marker, scan_xy, ranges, dt):
         cfg, f = self.cfg, self.fcfg
         d = FollowDecision()
         front = self._front()
         if scan_xy is None and not any(n in ranges for n in front):
-            self.blocked_since = None
+            self.blocked_since = self.wiggle_since = None
             return self._stop(d, "no data")
 
         # ---- lost: stop, look around with the dome, then wait still
         seen = marker is not None and marker.get("seen") and now - marker.get("t", -math.inf) <= STALE
         if not seen:
-            self.blocked_since = None
+            self.blocked_since = self.wiggle_since = None
             if self.lost_since is None:
                 self.lost_since = now
                 d.events.append("lost")
             e, s = now - self.lost_since, f["search_s"]
             if e < s:
-                q = s / 4
-                d.dome = DOME_SEARCH if e < q or e >= 3 * q else -DOME_SEARCH
+                d.dome = sweep(e, s)
                 return self._stop(d, "searching")
+            self._recentre(d)
             return self._stop(d, "lost")
         if self.lost_since is not None:
             d.events.append("found")
         self.lost_since = None
+        if self.wiggle_since is not None and now - self.wiggle_since < WIGGLE:
+            d.dome = sweep(now - self.wiggle_since, WIGGLE)
+            return self._stop(d, "blocked")
+        self.wiggle_since = None
+        if self._recentre(d):
+            return self._stop(d, "recentring")
 
         # ---- what it would like to do
         bearing = marker["bearing"]
@@ -143,6 +174,8 @@ class Follower:
             if now >= self.next_blocked - 1e-9:
                 d.events.append("blocked")
                 self.next_blocked += BLOCKED_REPEAT
+                self.wiggle_since = now
+                d.dome = sweep(0.0, WIGGLE)
         else:
             self.blocked_since = None
 
