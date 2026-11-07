@@ -102,7 +102,7 @@ function sendGoal(x, y) {
     { header: { frame_id: 'odom' }, pose: { position: { x, y, z: 0 }, orientation: { x: 0, y: 0, z: 0, w: 1 } } });
   addLine(`· goal x ${x.toFixed(2)}, y ${y.toFixed(2)}`, 'info');
 }
-function select(id) { P.selected = id; $('del').disabled = id == null; }
+function select(id) { P.selected = id; $('del').disabled = $('shirt').disabled = id == null; }
 let moveTimer = 0;
 const map = createNavMap($('map'), {
   onGoal: sendGoal,
@@ -121,6 +121,11 @@ $('del').onclick = () => { if (P.selected != null) worldCmd({ op: 'remove', id: 
 const add = (kind, x, y) => worldCmd({ op: 'add', kind, x, y });
 $('addpost').onclick = () => add('post', 0, -1.3);
 $('addbox').onclick = () => add('box', -1.5, 1.2);
+$('addperson').onclick = () => worldCmd({ op: 'add', kind: 'post', x: 0, y: -1.3, r: 0.15, height: 1.7, marker: true });
+$('shirt').onclick = () => {
+  const o = P.world && P.world.obstacles.find((q) => q.id === P.selected);
+  if (o) worldCmd({ op: 'marker', id: o.id, on: !o.marker });
+};
 $('addlow').onclick = () => add('low', 0.6, -1.4);
 addEventListener('keydown', (e) => {
   if ((e.key === 'Delete' || e.key === 'Backspace') && P.selected != null && !e.target.closest('input, select, textarea')) {
