@@ -34,6 +34,12 @@ def test_parse_pick_clamps_and_rejects():
     assert parse_pick('{"x":NaN,"y":0.5,"hue_tol":1,"light_tol":1}') is None
 
 
+def test_parse_pick_survives_overflow_and_clamps_tolerances():
+    assert parse_pick('{"x":0.5,"y":0.5,"hue_tol":Infinity,"light_tol":1}') is None
+    assert parse_pick('{"x":1' + "0" * 400 + ',"y":0.5,"hue_tol":12,"light_tol":70}') is None
+    assert parse_pick('{"x":0.5,"y":0.5,"hue_tol":999,"light_tol":-5}') == (0.5, 0.5, 40, 10)
+
+
 def test_pick_result_on_orange():
     r = pick_result(orange_picture(), 0.5, 0.5, 12, 70)
     assert r["warning"] is None and r["match"] > 0.05 and r["area"] > 0.05

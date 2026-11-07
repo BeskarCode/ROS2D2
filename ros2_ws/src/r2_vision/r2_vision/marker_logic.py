@@ -27,11 +27,12 @@ def parse_pick(text):
         d = json.loads(text)
         x, y = float(d["x"]), float(d["y"])
         hue_tol, light_tol = int(d["hue_tol"]), int(d["light_tol"])
-    except (ValueError, KeyError, TypeError):
+    except (ValueError, KeyError, TypeError, OverflowError):
         return None
     if not (math.isfinite(x) and math.isfinite(y)):
         return None
-    return min(max(x, 0.0), 1.0), min(max(y, 0.0), 1.0), hue_tol, light_tol
+    return (min(max(x, 0.0), 1.0), min(max(y, 0.0), 1.0),
+            min(max(hue_tol, 2), 40), min(max(light_tol, 10), 120))   # modes.yaml ranges
 
 
 def pick_result(bgr, x, y, hue_tol, light_tol):
