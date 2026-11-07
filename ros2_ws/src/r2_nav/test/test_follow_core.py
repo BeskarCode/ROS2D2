@@ -178,3 +178,23 @@ def test_blocked_wiggles_the_dome():
     assert all(d.dome == 0 for d in out[:i])
     assert abs(sum(d.dome * DT for d in out)) < 1e-6
     assert all(d.v == 0 and d.state == "blocked" for d in out)
+
+
+def test_grace_after_start_no_lost_until_expired():
+    from r2_nav.follow_core import GRACE
+    f = Follower(follow_cfg(), parse_nav(""), SENSORS)
+    f.start(0.0)
+    steps = int(GRACE / DT) - 1
+    out = run(f, steps, scan=[], ranges=clear_ranges(), mk=lambda t: None)
+    assert all(d.events == [] and d.dome == 0 and d.v == 0 and d.w == 0 for d in out)
+    out = run(f, 30, scan=[], ranges=clear_ranges(), mk=lambda t: None, t0=steps * DT)
+    assert sum(d.events.count("lost") for d in out) == 1
+    assert any(d.dome != 0 for d in out)
+
+
+def test_grace_ends_with_first_marker():
+    f = Follower(follow_cfg(), parse_nav(""), SENSORS)
+    f.start(0.0)
+    run(f, 3, scan=[], ranges=clear_ranges(), mk=lambda t: marker(t))
+    out = run(f, 5, scan=[], ranges=clear_ranges(), mk=lambda t: marker(t, seen=False), t0=0.3)
+    assert sum(d.events.count("lost") for d in out) == 1      # a marker that says "not seen" is lost at once

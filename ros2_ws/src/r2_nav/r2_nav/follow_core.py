@@ -28,6 +28,7 @@ BLOCKED_AFTER = 4.0          # s blocked before saying so
 BLOCKED_REPEAT = 15.0        # s between two "blocked" while it lasts
 TURN_ROOM = 0.4              # m: something closer than this to the centre and it does not even turn
 WIGGLE = 2.0                 # s of dome side to side each time it says it is blocked
+GRACE = 1.0                  # s after start(): no marker yet is not "lost" (the camera needs a moment)
 STATES = ("following", "waiting", "blocked", "searching", "lost", "recentring", "no data")
 
 
@@ -59,6 +60,11 @@ class Follower:
         self.dome = 0                # what it asked of the dome last step
         self.wiggle_since = None     # dome side to side after saying it is blocked
         self.dt = 0.1
+        self.entered = None          # set by start(): until the first marker or GRACE, silence
+
+    def start(self, now):
+        """Follow has just been switched on: give the camera GRACE s to deliver a first marker."""
+        self.entered = now
 
     def reconfigure(self, follow_cfg=None, nav_cfg=None, sensors=None):
         self.fcfg = follow_cfg or self.fcfg
@@ -112,6 +118,13 @@ class Follower:
         if scan_xy is None and not any(n in ranges for n in front):
             self.blocked_since = self.wiggle_since = None
             return self._stop(d, "no data")
+
+        # ---- just started and no marker yet: wait still, silently, before calling it lost
+        if marker is None and self.entered is not None and now - self.entered < GRACE:
+            self.blocked_since = self.wiggle_since = None
+            return self._stop(d, "waiting")
+        if marker is not None:
+            self.entered = None
 
         # ---- lost: stop, look around with the dome, then wait still
         seen = marker is not None and marker.get("seen") and now - marker.get("t", -math.inf) <= STALE

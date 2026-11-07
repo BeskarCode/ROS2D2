@@ -166,6 +166,7 @@ class FollowNode(Node):
             self.active = True
             self.marker = None
             self.follower = Follower(self.follow_cfg, self.nav_cfg, self.sensors)
+            self.follower.start(self._now())
 
         now = self._now()
         scan_xy = self.scan[1] if self.scan and now - self.scan[0] < STALE else None
