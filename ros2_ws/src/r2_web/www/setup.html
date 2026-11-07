@@ -136,6 +136,40 @@
   .pin { color: var(--muted); font-size: 12px; }
   .pin.clash select { border-color: var(--red); color: var(--red); }
   .sadd { display: flex; gap: 6px; margin-top: 8px; }
+
+  /* Modes */
+  .mlayout { display: grid; grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.3fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 1200px) { .mlayout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .mlayout > :first-child { grid-column: 1 / -1; } }
+  @media (max-width: 800px) { .mlayout { grid-template-columns: 1fr; } }
+  .mcard { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+  .mcard h4 { margin: 4px 0 0; font-size: 12px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+  .mcard h4 i { margin-right: 6px; }
+  .mrow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; background: var(--bg); }
+  .mrow.active { border-color: var(--green); }
+  .mrow .mname { display: flex; align-items: center; gap: 8px; }
+  .mrow .mname i { width: 16px; text-align: center; color: var(--muted); }
+  .mrow .mname code { color: var(--muted); font-size: 11px; }
+  .mrow .mname .badge { margin-left: auto; padding: 0 8px; border-radius: 999px; font-size: 11px; }
+  .mrow .mname .badge i { color: inherit; width: auto; margin-right: 4px; }
+  .mrow select { width: 100%; }
+  .mwarn, .mwarning { color: var(--amber); font-size: 12px; }
+  .mwarn i, .mwarning i, .mmatch i { margin-right: 6px; }
+  .mpic { position: relative; background: #000; border-radius: 8px; overflow: hidden; min-height: 200px; }
+  .mpic img { width: 100%; height: auto; display: block; cursor: crosshair; min-height: 200px; }
+  .mpic .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted);
+               font-size: 12px; text-align: center; padding: 20px; pointer-events: none; }
+  .mpic .cross { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; border: 2px solid #f0b429; border-radius: 50%;
+                 box-shadow: 0 0 0 1px #000; pointer-events: none; }
+  .mpic .cross[hidden] { display: none; }
+  .swrow { display: flex; align-items: center; gap: 12px; }
+  .swatch { width: 46px; height: 46px; border-radius: 8px; border: 2px solid var(--text); flex: none; }
+  .swatch.empty { background: repeating-linear-gradient(45deg, #2a313c 0 6px, transparent 6px 12px); border-style: dashed; }
+  .mmatch { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 13px; justify-self: start; }
+  .mmatch.ok { background: rgba(63,185,80,.15); color: var(--green); }
+  .mmatch.bad { background: rgba(248,81,73,.15); color: var(--red); }
+  .mcard .row label { width: 120px; flex: none; }
+  .mcard .slider input[type=range] { width: auto; flex: 1; }
+  .mcard .slider b { min-width: 72px; }
 </style>
 </head>
 <body>
@@ -153,6 +187,7 @@
   <div class="tabs">
     <button id="tab-form" class="on"><i class="fa-solid fa-video"></i>Cameras</button>
     <button id="tab-sensors"><i class="fa-solid fa-satellite-dish"></i>Sensors</button>
+    <button id="tab-modes"><i class="fa-solid fa-gamepad"></i>Modes</button>
     <button id="tab-file"><i class="fa-solid fa-file-code"></i>File</button>
     <button id="identify"><i class="fa-solid fa-hashtag"></i>Identify</button>
   </div>
@@ -213,6 +248,34 @@
         <div id="slist"></div>
         <div class="sadd"><select id="s-addtype"><option value="vl53l0x">VL53L0X</option><option value="hcsr04">HC-SR04</option>
           <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="modes" hidden>
+    <p class="help">Each mode starts with a combination on the controller; pressing it again switches the mode off.
+      A combination given to a mode <b>no longer plays its MarcDuino action</b>. Dome PS + L2 is face tracking and cannot be
+      given to a mode. For <b>Follow a colour</b>, wear something of a clear colour, click on it in the picture and check
+      how much of the picture it matches. <b>Save</b> applies at once: the Mega gets the new combinations.</p>
+    <p class="status bad" id="m-locked" hidden><i class="fa-solid fa-triangle-exclamation"></i>modes.yaml has a
+      mistake, so this view only shows it: fix the file in the <b>File</b> tab and Save.</p>
+    <div class="mlayout">
+      <div class="mcard">
+        <h4><i class="fa-solid fa-gamepad"></i>Modes and their combination</h4>
+        <div id="mlist" style="display:grid;gap:8px"></div>
+      </div>
+      <div class="mcard">
+        <h4><i class="fa-solid fa-video"></i>Camera <span id="m-camname"></span> · click on the colour to follow</h4>
+        <div class="mpic"><img id="m-pic" alt="the follow camera"><div class="cross" id="m-cross" hidden></div><div class="msg" id="m-picmsg"></div></div>
+        <div class="help" id="m-picnote"></div>
+      </div>
+      <div class="mcard">
+        <h4><i class="fa-solid fa-palette"></i>Colour to follow</h4>
+        <div class="swrow"><span class="swatch empty" id="m-swatch"></span><span id="m-rgb"></span></div>
+        <div class="mmatch" id="m-match" hidden></div>
+        <div class="mwarning" id="m-warning" hidden></div>
+        <div class="row"><label><i class="fa-solid fa-video"></i>camera</label><select id="m-camera"></select></div>
+        <div id="m-sliders" style="display:grid;gap:8px"></div>
       </div>
     </div>
   </section>

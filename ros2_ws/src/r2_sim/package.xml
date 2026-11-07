@@ -19,6 +19,7 @@
   <exec_depend>python3-yaml</exec_depend>
   <exec_depend>r2_sensors</exec_depend>
   <exec_depend>r2_shadow_bridge</exec_depend>
+  <exec_depend>r2_nav</exec_depend>
   <exec_depend>tf2_msgs</exec_depend>
   <exec_depend>python3-serial</exec_depend>
   <exec_depend>socat</exec_depend>

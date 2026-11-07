@@ -1,5 +1,5 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-"""The navigator alone (the simulation and the main launch include it).
+"""The navigator and the follow node (one drives per mode) (the simulation and the main launch include it).
 
     ros2 launch r2_nav nav.launch.py
 """
@@ -20,5 +20,7 @@ def generate_launch_description():
         DeclareLaunchArgument("nav_config", default_value=default,
                               description="nav.yaml (the one in ~/.config/ros2d2 wins if it exists)"),
         Node(package="r2_nav", executable="navigator", name="navigator",
+             parameters=[{"config": LaunchConfiguration("nav_config")}], output="screen"),
+        Node(package="r2_nav", executable="follow", name="follow",
              parameters=[{"config": LaunchConfiguration("nav_config")}], output="screen"),
     ])

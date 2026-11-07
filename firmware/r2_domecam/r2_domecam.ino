@@ -321,7 +321,7 @@ static esp_err_t controlHandler(httpd_req_t *req) {
   if (httpd_req_get_url_query_str(req, query, sizeof(query)) != ESP_OK ||
       httpd_query_key_value(query, "var", var, sizeof(var)) != ESP_OK ||
       httpd_query_key_value(query, "val", val, sizeof(val)) != ESP_OK) {
-    return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "use ?var=framesize|quality|vflip|hmirror|zoom|xclk|brightness|ae_level|aec2|gainceiling|rotate|score1|score2&val=N");
+    return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "use ?var=framesize|quality|vflip|hmirror|zoom|xclk|brightness|ae_level|aec2|gainceiling|rotate|score1|score2|detect&val=N");
   }
   sensor_t *s = esp_camera_sensor_get();
   int v = atoi(val), r = -1;
@@ -338,6 +338,10 @@ static esp_err_t controlHandler(httpd_req_t *req) {
   else if (!strcmp(var, "rotate")) r = setFaceRotate(v) ? 0 : -1;
   else if (!strcmp(var, "score1")) r = setFaceScore(1, v) ? 0 : -1;
   else if (!strcmp(var, "score2")) r = setFaceScore(2, v) ? 0 : -1;
+  else if (!strcmp(var, "detect")) {                                              // 0 pauses the face finding, 1 resumes
+    if (!setFaceDetect(v != 0)) return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "no face detection on this board");
+    r = 0;
+  }
   if (r != 0) return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "unknown var or value");
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
   return httpd_resp_sendstr(req, "ok\n");
