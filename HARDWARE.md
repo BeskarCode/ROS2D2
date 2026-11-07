@@ -1,7 +1,7 @@
 # ROS2D2 hardware
 
 What ROS2D2 adds to an R2-D2 that already runs ShadowMD, and how it connects. Grey: the droid as
-it was (ShadowMD on the Mega ADK, MarcDuino/BetterDuino, Sabertooth, SyRen, battery, controllers).
+it was ([ShadowMD Lite](https://github.com/BeskarCode/ShadowMDLite) or the classic Shadow MD, [SHADOW_MD_EEBEL](https://github.com/BeskarCode/SHADOW_MD_EEBEL), on the Mega ADK, MarcDuino/BetterDuino, Sabertooth, SyRen, battery, controllers).
 Teal: what ROS2D2 adds. Dashed: ordered, to buy or not fitted yet.
 
 ![How the ROS2D2 hardware connects](media/hardware.png)
