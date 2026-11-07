@@ -8,6 +8,7 @@ the autonomous mode is on (switched on with the controller, PS + L2).
   in   /scan              sensor_msgs/LaserScan      the lidar, already cut to what R2 does not hide
   in   /range/<name>      sensor_msgs/Range          each distance sensor of sensors.yaml
   in   /r2/auto_mode      std_msgs/Bool              from the Mega bridge (latched)
+  in   /r2/mode           std_msgs/String            which mode is on (latched); it drives only in goto
   out  /foot/cmd_vel      geometry_msgs/Twist        10 Hz, with acceleration ramps
   out  /mega/command      std_msgs/String            the sound of each event (S1:$..)
   out  /nav/state         std_msgs/String            JSON for the web console (see nav_core.state_json)
@@ -30,6 +31,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, Range
 from std_msgs.msg import Bool, Empty, String
 
+from r2_nav.modes import drives_in
 from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, RangeFilter, clamp_param,
                              config_path, is_lidar, load_nav, ramp, state_json)
 from r2_sensors.config import Reloader
@@ -64,6 +66,7 @@ class NavigatorNode(Node):
 
         self.pose = (0.0, 0.0, 0.0)
         self.auto_on = False
+        self.mode = None            # /r2/mode; None until it arrives (an old bridge never sends it)
         self.scan = None            # (time, points in base_link)
         self.ranges = {}            # name -> (time, metres | None)
         self.filters = {}
@@ -79,6 +82,7 @@ class NavigatorNode(Node):
         self.create_subscription(Empty, "/nav/cancel", lambda _m: self.nav.cancel(), 10)
         self.create_subscription(Odometry, "/odom", self._on_odom, 10)
         self.create_subscription(LaserScan, "/scan", self._on_scan, qos_profile_sensor_data)
+        self.create_subscription(String, "/r2/mode", self._on_mode, latched)
         self.create_subscription(Bool, "/r2/auto_mode", self._on_auto, latched)
         self._subscribe_ranges()
         self.create_timer(1.0, self._reload_sensors)
@@ -111,6 +115,9 @@ class NavigatorNode(Node):
         q = m.pose.pose.orientation
         th = math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z))
         self.pose = (m.pose.pose.position.x, m.pose.pose.position.y, th)
+
+    def _on_mode(self, m):
+        self.mode = m.data
 
     def _on_auto(self, m):
         self.auto_on = m.data
@@ -156,6 +163,13 @@ class NavigatorNode(Node):
 
     # ---------- the 10 Hz loop ----------
     def _tick(self):
+        if self.mode and not drives_in(self.mode, "goto"):
+            # another mode (follow...) owns the feet: one zero on the way in, then silence
+            if self.out != (0.0, 0.0):
+                self.out = (0.0, 0.0)
+                self.pub_cmd.publish(Twist())
+            self.last = None
+            return
         now = self._now()
         dt = 0.1 if self.last is None else max(0.01, min(0.5, now - self.last))
         self.last = now
@@ -169,10 +183,11 @@ class NavigatorNode(Node):
                 r = self.filters.setdefault(name, RangeFilter()).update(r)
             ranges[name] = r
             filtered[name] = r
-        d = self.nav.step(now, self.pose, scan_xy, ranges, self.auto_on, speed=self.out[0])
+        auto = self.auto_on and drives_in(self.mode, "goto")
+        d = self.nav.step(now, self.pose, scan_xy, ranges, auto, speed=self.out[0])
 
         v, w = self.out
-        if not self.auto_on:
+        if not auto:
             v, w = 0.0, 0.0
         else:
             v = ramp(v, d.v, self.cfg["accel"] * dt)
