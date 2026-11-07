@@ -90,6 +90,10 @@ B de U1 no puede compartir bus con ellos.
 
 ## Pedirla
 
+> **Todavía no está probada.** Los paquetes de pedido (Gerber, BOM y colocación) se publicarán aquí
+> cuando lleguen las placas y comprobemos que todo funciona. Hasta entonces, estas instrucciones son
+> las que usamos nosotros para encargarla.
+
 Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje antes de pagar.**
 
 ### JLCPCB (`jlcpcb/`)

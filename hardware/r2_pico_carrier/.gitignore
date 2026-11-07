@@ -6,3 +6,9 @@ fp-info-cache
 *.dsn
 *.ses
 renders/*.svg
+
+# Order packages (Gerber, BOM, placement): published once the board is tested
+jlcpcb/
+jlcpcb-sin-tiras/
+pcbway/
+pcbway-sin-tiras/
