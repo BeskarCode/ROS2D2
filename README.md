@@ -53,6 +53,25 @@ sudo bash setup/setup_r2_brain.sh
 It installs ROS 2 Jazzy, the camera and web tools, and the serial port permissions.
 Takes 1.5 to 2.5 hours, mostly waiting on the microSD: use a fast A2 card.
 
+### Naming the USB devices (lidar, Mega, Pico)
+
+ROS2D2 finds its USB serial devices by fixed names: `/dev/r2-mega`, `/dev/r2-lidar` and
+`/dev/r2-pico`. Genuine Megas and the Pico get theirs on their own. The RPLIDAR C1's USB
+adapter uses a common chip (CP210x) that a Mega clone can also have, so it is named by its
+serial number, once:
+
+```
+./setup/r2-usb-names.sh                       # lists the ports: plug in the lidar and find its line
+sudo ./setup/r2-usb-names.sh r2-lidar ttyUSB0 # the device now on ttyUSB0 is /dev/r2-lidar from now on
+sudo systemctl restart r2d2
+```
+
+With `/dev/r2-lidar` present, the lidar starts with the droid (`lidar:=auto`) and its scan
+shows in the web console (Sensors and Navigation). If `/etc/default/r2d2` still has
+`sim:=true` or `lidar:=sim` in `R2D2_ARGS` (from testing without the lidar), take it out:
+in the simulation the real lidar is not started. The same command names a Mega clone
+(`r2-mega`).
+
 ## Test bench on a PC (Docker)
 
 The same ROS 2 Jazzy in a container, with a video file or a webcam instead of the
