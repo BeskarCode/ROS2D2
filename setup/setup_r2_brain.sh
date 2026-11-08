@@ -164,12 +164,12 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0010", SYMLINK+="r
 # Mega ADK (the ShadowMD board) and Mega ADK R3
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="003f", SYMLINK+="r2-mega"
 SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0044", SYMLINK+="r2-mega"
-# Clones with CH340 / FTDI / CP210x USB-serial chips
+# Clones with CH340 / FTDI USB-serial chips
 SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="r2-mega"
 SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="r2-mega"
-# TODO when the RPLIDAR C1 arrives: its USB adapter is probably a CP210x too. Check
-# with lsusb and give it its own rule (/dev/r2-lidar), by serial number if needed.
-SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="r2-mega"
+# No generic CP210x (10c4:ea60) rule: the RPLIDAR C1's USB adapter uses that chip too, and the
+# lidar must not become /dev/r2-mega. A Mega clone with a CP210x, and the lidar itself, get
+# their names by serial number with setup/r2-usb-names.sh (sudo ./r2-usb-names.sh r2-lidar ttyUSB0).
 EOF
 cat > /etc/udev/rules.d/99-r2-pico.rules <<'EOF'
 # The Raspberry Pi Pico 2 with firmware/r2_pico_sensors (distance sensors). Only its serial
