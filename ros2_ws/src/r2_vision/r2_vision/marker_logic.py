@@ -4,21 +4,24 @@
 import json
 import math
 
-from r2_vision.color_marker import (bearing, color_warning, find_marker, match_fraction,
+from r2_vision.color_marker import (Marker, bearing, color_warning, find_marker, match_fraction,
                                     model_from_pixel)
 
 
-def wants_video(mode, preview):
-    """The camera only sends video while someone needs it (it is on_demand)."""
-    return mode == "follow" or bool(preview)
+def wants_video(mode, preview, color_on_camera=False):
+    """The camera only sends video while someone needs it (it is on_demand). A camera that finds
+    the colour itself (detect: camera) sends where the colour is instead: then only the console's
+    preview needs its video."""
+    return bool(preview) or (mode == "follow" and not color_on_camera)
 
 
 def detect_value(old_mode, new_mode, detect_on_camera):
-    """What to tell the dome camera's own face finder when the mode changes: 0 on entering
-    follow, 1 on leaving it, None for nothing (other camera kinds, or no change)."""
+    """What to tell a dome camera that searches itself (detect: camera) when the mode changes:
+    2 on entering follow (search the colour instead of faces), 1 on leaving it (faces again),
+    None for nothing (other camera kinds, or no change)."""
     if not detect_on_camera or (old_mode == "follow") == (new_mode == "follow"):
         return None
-    return 0 if new_mode == "follow" else 1
+    return 2 if new_mode == "follow" else 1
 
 
 def parse_pick(text):
@@ -51,3 +54,18 @@ def marker_json(marker, hfov_deg, t):
         return json.dumps({"seen": False, "bearing": 0.0, "area": 0.0, "cx": 0.0, "cy": 0.0, "t": t})
     return json.dumps({"seen": True, "bearing": bearing(marker, hfov_deg), "area": marker.area,
                        "cx": marker.cx, "cy": marker.cy, "t": t})
+
+
+def color_controls(model):
+    """The camera's /control settings for the colour to search (detect=2), sent before detect."""
+    return [("color_h", model.h), ("color_s", model.s), ("color_v", model.v),
+            ("color_htol", model.hue_tol), ("color_ltol", model.light_tol)]
+
+
+def marker_from_raw(text):
+    """/cameras/<camera>/marker_raw JSON -> Marker, or None (not seen, or unreadable)."""
+    try:
+        d = json.loads(text)
+        return Marker(float(d["cx"]), float(d["cy"]), float(d["area"])) if d.get("seen") else None
+    except (ValueError, KeyError, TypeError):
+        return None
