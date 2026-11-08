@@ -11,6 +11,9 @@ Topics (relative to the node, e.g. /cameras/cam2/...):
                                                                    picture, biggest face first)
   out  faces/image/compressed        sensor_msgs/CompressedImage   the camera picture with the
                                                                    boxes drawn, only when watched
+  out  marker_raw                    std_msgs/String               {"seen","cx","cy","area","lat_ms"}
+                                                                   while the camera searches the
+                                                                   follow colour (detect=2)
   in   image_raw                     sensor_msgs/Image             only while someone watches
 """
 
@@ -23,10 +26,11 @@ from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CompressedImage, Image
+from std_msgs.msg import String
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
 from r2_vision.image_utils import image_to_bgr, pixelate
-from r2_vision.remote_faces import control_url, iter_lines, orient_box, parse_line
+from r2_vision.remote_faces import control_url, iter_lines, marker_raw, orient_box, parse_line
 
 
 class RemoteFacesNode(Node):
@@ -46,6 +50,7 @@ class RemoteFacesNode(Node):
         self._qos = qos
         self.pub_faces = self.create_publisher(Detection2DArray, "faces", 10)
         self.pub_debug = self.create_publisher(CompressedImage, "faces/image/compressed", qos)
+        self.pub_marker = self.create_publisher(String, "marker_raw", 10)
         self._image_sub = None
         self._latest = None           # (faces in the turned picture, its width, height)
         self._count = 0
@@ -95,6 +100,14 @@ class RemoteFacesNode(Node):
         d = parse_line(line)
         if d is None:
             return
+        rotate = (self.param("rotate") - d["rot"]) % 360   # what the camera has not turned yet
+        if d["mode"] == "color":
+            # Searching the follow colour instead of faces (detect=2): only where the colour is
+            out_m = String()
+            out_m.data = marker_raw(d, rotate, self.param("flip"))
+            self.pub_marker.publish(out_m)
+            self._count += 1
+            return
         # The camera says how old the picture is: stamp it with when it was taken
         stamp = (self.get_clock().now() - Duration(nanoseconds=int(d["lat_ms"] * 1e6))).to_msg()
         out = Detection2DArray()
@@ -102,7 +115,6 @@ class RemoteFacesNode(Node):
         out.header.frame_id = self.param("frame_id")
         turned = []
         width, height = d["w"], d["h"]
-        rotate = (self.param("rotate") - d["rot"]) % 360   # what the camera has not turned yet
         for x, y, w, h, score in d["faces"]:
             x, y, w, h, width, height = orient_box(x, y, w, h, d["w"], d["h"], rotate, self.param("flip"))
             turned.append((x, y, w, h, score))

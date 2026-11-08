@@ -35,7 +35,12 @@ def iter_lines(stream):
 
 
 def parse_line(line):
-    """One line from /faces -> dict(lat_ms, w, h, rot, faces=[(x, y, w, h, score), ...]) or None.
+    """One line from /faces -> dict(lat_ms, w, h, rot, mode, faces=[(x, y, w, h, score), ...],
+    marker=(cx, cy, area) or None) or None.
+
+    mode: "faces", or "color" when the camera searches the follow colour instead (detect=2);
+    then marker is the colour blob (fractions of the picture), None when it is not seen. Older
+    cameras send no mode: "faces".
 
     rot: the camera already turned the picture this much (clockwise) before searching it, so
     w, h and the boxes are those of the turned picture. Empty lines are the camera's keep-alive.
@@ -51,6 +56,8 @@ def parse_line(line):
             "h": int(d["h"]),
             "rot": int(d.get("rot", 0)) % 360,
             "faces": [tuple(float(v) for v in f[:5]) for f in d.get("faces", [])],
+            "mode": "color" if d.get("mode") == "color" else "faces",
+            "marker": tuple(float(v) for v in d["marker"][:3]) if d.get("marker") else None,
         }
     except (ValueError, KeyError, TypeError, IndexError):
         return None
@@ -73,3 +80,19 @@ def orient_box(x, y, w, h, width, height, rotate=0, flip="none"):
     if flip in ("v", "both"):
         y = height - (y + h)
     return x, y, w, h, width, height
+
+
+def orient_point(cx, cy, width, height, rotate=0, flip="none"):
+    """A point given in fractions of the sensor's picture -> fractions of the turned picture."""
+    x, y, _w, _h, w2, h2 = orient_box(cx * width, cy * height, 0, 0, width, height, rotate, flip)
+    return x / w2, y / h2
+
+
+def marker_raw(d, rotate=0, flip="none"):
+    """The colour blob of a parsed colour line, as the marker_raw JSON, turned `rotate` degrees
+    (what the camera has not turned yet) and flipped like the camera node does."""
+    m = d.get("marker")
+    if m is None:
+        return json.dumps({"seen": False, "cx": 0.0, "cy": 0.0, "area": 0.0, "lat_ms": d["lat_ms"]})
+    cx, cy = orient_point(m[0], m[1], d["w"], d["h"], rotate, flip)
+    return json.dumps({"seen": True, "cx": cx, "cy": cy, "area": m[2], "lat_ms": d["lat_ms"]})
