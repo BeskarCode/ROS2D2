@@ -209,17 +209,25 @@ static esp_err_t streamHandler(httpd_req_t *req) {
 // ---------------------------------------------------------------- faces (port 82)
 
 // One line per picture searched, as soon as it is ready:
-//   {"seq":12,"lat_ms":48,"w":320,"h":240,"rot":0,"faces":[[x,y,w,h,score],...]}   biggest first
+//   {"seq":12,"lat_ms":48,"w":320,"h":240,"rot":0,"mode":"faces","faces":[[x,y,w,h,score],...]}   biggest first
+// Searching a colour (detect=2) instead: "mode":"color","faces":[],"marker":[cx,cy,area] (fractions
+// 0-1 of the turned picture), or "marker":null when the colour is not in the picture.
 // lat_ms is how long ago the picture was taken, so the Pi knows how old the faces are.
 // The boxes are in the picture as searched: turned `rot` degrees clockwise (CAM_ROTATE).
 static int facesJson(const FaceResult &r, char *line, size_t size) {
-  int n = snprintf(line, size, "{\"seq\":%lu,\"lat_ms\":%lu,\"w\":%u,\"h\":%u,\"rot\":%u,\"faces\":[",
-                   (unsigned long)r.seq, (unsigned long)(millis() - r.grabbedMs), r.width, r.height, r.rotate);
+  int n = snprintf(line, size, "{\"seq\":%lu,\"lat_ms\":%lu,\"w\":%u,\"h\":%u,\"rot\":%u,\"mode\":\"%s\",\"faces\":[",
+                   (unsigned long)r.seq, (unsigned long)(millis() - r.grabbedMs), r.width, r.height, r.rotate,
+                   r.mode == 2 ? "color" : "faces");
   for (int i = 0; i < r.count; i++) {
     const Face &f = r.faces[i];
     n += snprintf(line + n, size - n, "%s[%d,%d,%d,%d,%.2f]", i ? "," : "", f.x, f.y, f.w, f.h, f.score);
   }
-  n += snprintf(line + n, size - n, "]}\n");
+  if (r.mode == 2 && r.marker.seen)
+    n += snprintf(line + n, size - n, "],\"marker\":[%.3f,%.3f,%.4f]}\n", r.marker.cx, r.marker.cy, r.marker.area);
+  else if (r.mode == 2)
+    n += snprintf(line + n, size - n, "],\"marker\":null}\n");
+  else
+    n += snprintf(line + n, size - n, "]}\n");
   return n;
 }
 
@@ -285,11 +293,11 @@ static esp_err_t statusHandler(httpd_req_t *req) {
   snprintf(json, sizeof(json),
            "{\"name\":\"%s\",\"ip\":\"%s\",\"rssi\":%d,\"fps\":%.1f,\"streaming\":%s,"
            "\"frames\":%lu,\"framesize\":%d,\"quality\":%d,\"vflip\":%d,\"hmirror\":%d,"
-           "\"faces_fps\":%.1f,\"faces_sending\":%s,\"rotate\":%d,"
+           "\"faces_fps\":%.1f,\"faces_sending\":%s,\"rotate\":%d,\"detect\":%d,"
            "\"temp_c\":%.1f,\"uptime_s\":%lu,\"heap\":%lu,\"psram_free\":%lu}",
            CAM_HOSTNAME, WiFi.localIP().toString().c_str(), WiFi.RSSI(), fps, streaming ? "true" : "false",
            (unsigned long)framesSent, s->status.framesize, s->status.quality, s->status.vflip, s->status.hmirror,
-           faceFps(), facesSending ? "true" : "false", faceRotate(), temperatureRead(), (unsigned long)(millis() / 1000), (unsigned long)ESP.getFreeHeap(),
+           faceFps(), facesSending ? "true" : "false", faceRotate(), detectMode(), temperatureRead(), (unsigned long)(millis() / 1000), (unsigned long)ESP.getFreeHeap(),
            (unsigned long)ESP.getFreePsram());
   httpd_resp_set_type(req, "application/json");
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -338,9 +346,19 @@ static esp_err_t controlHandler(httpd_req_t *req) {
   else if (!strcmp(var, "rotate")) r = setFaceRotate(v) ? 0 : -1;
   else if (!strcmp(var, "score1")) r = setFaceScore(1, v) ? 0 : -1;
   else if (!strcmp(var, "score2")) r = setFaceScore(2, v) ? 0 : -1;
-  else if (!strcmp(var, "detect")) {                                              // 0 pauses the face finding, 1 resumes
-    if (!setFaceDetect(v != 0)) return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "no face detection on this board");
+  else if (!strcmp(var, "detect")) {        // 0 nothing, 1 faces, 2 the colour (never both)
+    if (v < 0 || v > 2) return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "detect is 0, 1 or 2");
+    if (!setDetectMode(v)) return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "no detection on this board");
     r = 0;
+  }
+  else if (!strncmp(var, "color_", 6)) {   // the colour for detect=2, as modes.yaml on the Pi
+    ColorModel m = colorModel();
+    if (!strcmp(var, "color_h") && v >= 0 && v <= 179) { m.h = v; r = 0; }
+    else if (!strcmp(var, "color_s") && v >= 0 && v <= 255) { m.s = v; r = 0; }
+    else if (!strcmp(var, "color_v") && v >= 0 && v <= 255) { m.v = v; r = 0; }
+    else if (!strcmp(var, "color_htol") && v >= 2 && v <= 40) { m.htol = v; r = 0; }
+    else if (!strcmp(var, "color_ltol") && v >= 10 && v <= 120) { m.ltol = v; r = 0; }
+    if (r == 0) setColorModel(m);
   }
   if (r != 0) return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "unknown var or value");
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");

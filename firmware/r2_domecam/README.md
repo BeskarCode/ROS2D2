@@ -72,7 +72,7 @@ then **Save and restart**. Fine-tune its direction and field of view with the sl
 | `http://r2-domecam1.local/` | Page with the picture and the status |
 | `http://r2-domecam1.local/status` | JSON: fps, WiFi signal (RSSI), chip temperature, uptime, free memory |
 | `http://r2-domecam1.local/capture` | One JPEG |
-| `http://r2-domecam1.local/control?var=framesize&val=5` | Change `framesize`, `quality`, `vflip`, `hmirror` until the next reboot. `var=detect&val=0` pauses the face finding (video only, `/faces` sends just keep-alives), `val=1` resumes; 404 on boards without face detection |
+| `http://r2-domecam1.local/control?var=framesize&val=5` | Change `framesize`, `quality`, `vflip`, `hmirror` until the next reboot. `var=detect&val=0` pauses the search (video only, `/faces` sends just keep-alives), `val=1` searches faces, `val=2` searches the colour set with `color_h` (0-179), `color_s`, `color_v` (0-255), `color_htol` (2-40) and `color_ltol` (10-120), the same values as `modes.yaml` on the Pi; never faces and colour at once. In colour mode each `/faces` line has `"mode":"color"` and `"marker":[cx,cy,area]` (fractions of the picture) or `"marker":null`; 404 on boards without detection |
 
 Picture sizes for `framesize`: 5 = QVGA 320x240, 8 = VGA 640x480, 9 = SVGA 800x600.
 
