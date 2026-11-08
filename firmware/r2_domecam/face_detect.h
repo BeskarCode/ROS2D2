@@ -5,6 +5,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include "color_detect.h"
 
 #define MAX_FACES 5
 
@@ -21,6 +22,8 @@ struct FaceResult {
   uint16_t detectMs;       // how long decoding + searching took
   uint8_t count;
   Face faces[MAX_FACES];   // biggest first, in the turned picture
+  uint8_t mode;            // what was searched: 1 faces, 2 colour
+  ColorBlob marker;        // the colour found (mode 2), in the turned picture
 };
 
 // Starts the detector in its own task. False on boards that cannot run it (ESP32-CAM).
@@ -29,7 +32,14 @@ struct FaceResult {
 bool startFaceDetection(int rotate);
 bool setFaceRotate(int rotate);   // false if not 0/90/180/270
 int faceRotate();
-// Pauses (false) or resumes (true) the search. Paused, the task sleeps without using CPU and
+// What the camera searches: 0 nothing, 1 faces, 2 the colour set with setColorModel. Never
+// faces and colour at once. False if out of range or on boards without detection.
+bool setDetectMode(int mode);
+int detectMode();
+// The colour searched in mode 2 (same values and ranges as modes.yaml on the Pi).
+void setColorModel(const ColorModel &m);
+ColorModel colorModel();
+// Pauses (false) or resumes (true) the face search (setDetectMode 0 or 1). Paused, the task sleeps without using CPU and
 // takes no pictures, so the video gets the whole camera; waitFaces() then just times out.
 // False on boards without detection.
 bool setFaceDetect(bool on);

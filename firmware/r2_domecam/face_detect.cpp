@@ -76,7 +76,8 @@ SemaphoreHandle_t lock;
 FaceResult latest = {};
 volatile float detFps = 0;
 volatile int rotation = 0;
-volatile bool detectOn = true;       // false: the task sleeps on a notification, using no CPU
+volatile int searchMode = 1;         // 0: the task sleeps on a notification, using no CPU; 1 faces; 2 colour
+ColorModel colour = {120, 200, 200, 10, 60};   // changed from /control (under lock)
 TaskHandle_t detectHandle = nullptr;
 volatile float msrScore = SCORE_THR, mnpScore = SCORE_THR;   // changed from /control
 
@@ -107,13 +108,28 @@ dl::image::img_t turn(const dl::image::img_t &src, int deg) {
   return dst;
 }
 
+// The newest result for waitFaces, and the searches per second
+void publish(FaceResult &r, uint32_t &count, uint32_t &t0) {
+  xSemaphoreTake(lock, portMAX_DELAY);
+  r.seq = latest.seq + 1;
+  latest = r;
+  xSemaphoreGive(lock);
+  if (++count == 20) {
+    detFps = 20000.0f / (millis() - t0);
+    count = 0;
+    t0 = millis();
+  }
+}
+
+ColorBlob lastBlob = {};   // the last colour found, to keep following the same blob
+
 void detectTask(void *) {
   MSR msr;
   MNP mnp;
   uint32_t count = 0, t0 = millis();
   float msrNow = SCORE_THR, mnpNow = SCORE_THR;
   for (;;) {
-    while (!detectOn) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);   // paused: no pictures taken, no CPU
+    while (searchMode == 0) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);   // paused: no pictures taken, no CPU
     if (msrNow != msrScore) { msrNow = msrScore; msr.set_score_thr(msrNow); }
     if (mnpNow != mnpScore) { mnpNow = mnpScore; mnp.setScore(mnpNow); }
     bool test = testJpeg != nullptr && !testDone;
@@ -142,13 +158,29 @@ void detectTask(void *) {
       if (!img.data) { vTaskDelay(pdMS_TO_TICKS(20)); continue; }
     }
 
-    std::list<dl::detect::result_t> &found = mnp.run(img, msr.run(img));
-
     FaceResult r = {};
     r.grabbedMs = grabbed;
     r.width = img.width;
     r.height = img.height;
     r.rotate = rot;
+    if (!test && searchMode == 2) {
+      // The colour instead of faces: the blob nearest to the last one, like the Pi does
+      xSemaphoreTake(lock, portMAX_DELAY);
+      ColorModel m = colour;
+      xSemaphoreGive(lock);
+      r.mode = 2;
+      r.marker = findColor((const uint8_t *)img.data, img.width, img.height, m, &lastBlob);
+      lastBlob = r.marker;
+      r.detectMs = millis() - grabbed;
+      heap_caps_free(img.data);
+      publish(r, count, t0);
+      continue;
+    }
+    lastBlob = {};
+
+    std::list<dl::detect::result_t> &found = mnp.run(img, msr.run(img));
+
+    r.mode = 1;
     r.detectMs = millis() - grabbed;
     for (const auto &f : found) {
       if (r.count == MAX_FACES) break;
@@ -167,16 +199,7 @@ void detectTask(void *) {
       testDone = true;
       continue;
     }
-    xSemaphoreTake(lock, portMAX_DELAY);
-    r.seq = latest.seq + 1;
-    latest = r;
-    xSemaphoreGive(lock);
-
-    if (++count == 20) {
-      detFps = 20000.0f / (millis() - t0);
-      count = 0;
-      t0 = millis();
-    }
+    publish(r, count, t0);
   }
 }
 
@@ -190,14 +213,31 @@ bool setFaceRotate(int deg) {
 
 int faceRotate() { return rotation; }
 
-bool setFaceDetect(bool on) {
-  if (!detectHandle) return false;
-  detectOn = on;
-  if (on) xTaskNotifyGive(detectHandle);   // wakes the task if it was paused
+bool setDetectMode(int mode) {
+  if (!detectHandle || mode < 0 || mode > 2) return false;
+  searchMode = mode;
+  if (mode) xTaskNotifyGive(detectHandle);   // wakes the task if it was paused
   return true;
 }
 
-bool faceDetect() { return detectOn; }
+int detectMode() { return searchMode; }
+
+bool setFaceDetect(bool on) { return setDetectMode(on ? 1 : 0); }
+
+bool faceDetect() { return searchMode != 0; }
+
+void setColorModel(const ColorModel &m) {
+  if (lock) xSemaphoreTake(lock, portMAX_DELAY);
+  colour = m;
+  if (lock) xSemaphoreGive(lock);
+}
+
+ColorModel colorModel() {
+  if (lock) xSemaphoreTake(lock, portMAX_DELAY);
+  ColorModel m = colour;
+  if (lock) xSemaphoreGive(lock);
+  return m;
+}
 
 bool setFaceScore(int stage, int percent) {
   if (percent < 1 || percent > 99 || (stage != 1 && stage != 2)) return false;
@@ -248,6 +288,10 @@ bool setFaceRotate(int) { return false; }
 bool setFaceScore(int, int) { return false; }
 bool setFaceDetect(bool) { return false; }
 bool faceDetect() { return false; }
+bool setDetectMode(int) { return false; }
+int detectMode() { return 0; }
+void setColorModel(const ColorModel &) {}
+ColorModel colorModel() { return ColorModel(); }
 int faceScore(int) { return 0; }
 int faceRotate() { return 0; }
 bool waitFaces(FaceResult &, uint32_t, uint32_t timeoutMs) { delay(timeoutMs); return false; }
