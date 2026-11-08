@@ -8,12 +8,16 @@ Topics:
   in   /r2/modes/reload                     std_msgs/Empty     modes.yaml was saved: read it again
   in   /marker/preview                      std_msgs/Bool      Setup -> Modes -> Follow is open
   in   /marker/pick                         std_msgs/String    {"x","y","hue_tol","light_tol"}
+  in   /cameras/<follow.camera>/marker_raw  std_msgs/String    while following with a camera that finds
+                                                              the colour itself (detect: camera)
   out  /marker/pick_result                  std_msgs/String    {"h","s","v","rgb","warning","match","area"}
   out  /marker                              std_msgs/String    {"seen","bearing","area","cx","cy","t"}
   out  /marker/mask/compressed              sensor_msgs/CompressedImage  matches painted, preview only
 
-While follow is on, a dome camera that finds faces itself (detect: camera) is told to stop
-(detect=0); it gets detect=1 back when follow ends.
+A dome camera that searches itself (detect: camera) is told the colour and detect=2 when follow
+starts, so it looks for the colour instead of faces and sends only where it is (marker_raw, no
+video); it gets detect=1 (faces) back when follow ends. Its video is then only for the console's
+preview. Other cameras (detect: pi) send pictures and the colour is searched here.
 """
 
 import json
@@ -33,7 +37,8 @@ from r2_camera.config import config_path, load_cameras
 from r2_nav.modes import load_modes, modes_path
 from r2_vision.color_marker import ColorModel, find_marker, match_mask
 from r2_vision.image_utils import image_to_bgr
-from r2_vision.marker_logic import detect_value, marker_json, parse_pick, pick_result, wants_video
+from r2_vision.marker_logic import (color_controls, detect_value, marker_from_raw, marker_json, parse_pick,
+                                    pick_result, wants_video)
 from r2_vision.remote_faces import control_url, faces_url
 
 MASK_PERIOD = 0.2   # at most 5 mask pictures per second
@@ -56,6 +61,8 @@ class ColorMarkerNode(Node):
         self.camera = None           # name of the camera we use
         self._sub = None
         self._sub_camera = None
+        self._raw_sub = None         # marker_raw of a camera that finds the colour itself
+        self._raw_camera = None
         self._last = None            # last picture (BGR)
         self._prev = None            # last Marker, to keep the same blob
         self._last_mask = 0.0
@@ -90,13 +97,28 @@ class ColorMarkerNode(Node):
         self._model = ColorModel(c["h"], c["s"], c["v"], f["hue_tol"], f["light_tol"]) if c else None
         self._prev = None
         self._update_subscription()
+        if self.mode == "follow" and self._color_on_camera() and self._model is not None:
+            self._tell_async(self.camera, color_controls(self._model))   # the new colour, while following
 
     def _cam_params(self):
         return self.cameras.get(self.camera, {})
 
+    def _color_on_camera(self, camera=None):
+        name = camera or (self.follow["camera"] if self.follow else None)
+        return self.cameras.get(name, {}).get("detect") == "camera"
+
     def _update_subscription(self):
         name = self.follow["camera"] if self.follow else None
-        want = name is not None and wants_video(self.mode, self.preview)
+        on_camera = self._color_on_camera(name)
+        want = name is not None and wants_video(self.mode, self.preview, on_camera)
+        want_raw = name is not None and on_camera and self.mode == "follow"
+        if self._raw_sub is not None and (not want_raw or name != self._raw_camera):
+            self.destroy_subscription(self._raw_sub)
+            self._raw_sub = None
+            self._raw_camera = None
+        if want_raw and self._raw_sub is None:
+            self._raw_sub = self.create_subscription(String, f"/cameras/{name}/marker_raw", self._on_raw, 10)
+            self._raw_camera = name
         if self._sub is not None and (not want or name != self._sub_camera):
             self.destroy_subscription(self._sub)
             self._sub = None
@@ -112,23 +134,32 @@ class ColorMarkerNode(Node):
     def _on_mode(self, msg):
         old, self.mode = self.mode, msg.data
         self._prev = None
-        v = detect_value(old, self.mode, self._cam_params().get("detect") == "camera")
-        if v is not None:
-            threading.Thread(target=self._tell_detect, args=(self.camera, v), daemon=True).start()
+        v = detect_value(old, self.mode, self._color_on_camera())
+        if v == 2 and self._model is not None:
+            # the colour first, then switch the camera from faces to it
+            self._tell_async(self.camera, color_controls(self._model) + [("detect", 2)])
+        elif v is not None:
+            self._tell_async(self.camera, [("detect", v)])
         self._update_subscription()
 
     def _on_preview(self, msg):
         self.preview = bool(msg.data)
         self._update_subscription()
 
-    def _tell_detect(self, camera, val):
+    def _tell_async(self, camera, settings):
+        threading.Thread(target=self._tell, args=(camera, settings), daemon=True).start()
+
+    def _tell(self, camera, settings):
+        """Sets the camera's /control values, in order; stops at the first that fails."""
         params = self.cameras.get(camera, {})
-        url = control_url(params.get("faces_url") or faces_url(str(params.get("source", ""))), "detect", val)
-        try:
-            with urllib.request.urlopen(url, timeout=3.0) as r:
-                r.read()
-        except Exception as e:   # the camera is off or too old: only worth a line
-            self.get_logger().warning(f"could not set detect={val} on {camera} ({e})")
+        base = params.get("faces_url") or faces_url(str(params.get("source", "")))
+        for var, val in settings:
+            try:
+                with urllib.request.urlopen(control_url(base, var, val), timeout=3.0) as r:
+                    r.read()
+            except Exception as e:   # the camera is off or too old: only worth a line
+                self.get_logger().warning(f"could not set {var}={val} on {camera} ({e})")
+                return
 
     def _on_pick(self, msg):
         pick = parse_pick(msg.data)
@@ -152,7 +183,7 @@ class ColorMarkerNode(Node):
         marker = None
         if self._model is not None and (self.mode == "follow" or self.preview):
             marker = find_marker(frame, self._model, self._prev if self.mode == "follow" else None)
-        if self.mode == "follow":
+        if self.mode == "follow" and not self._color_on_camera():   # else the camera says where it is
             self._prev = marker
             out = String()
             out.data = marker_json(marker, hfov, now)
@@ -160,6 +191,15 @@ class ColorMarkerNode(Node):
         if self.preview and self._model is not None and now - self._last_mask >= MASK_PERIOD:
             self._last_mask = now
             self._publish_mask(frame, msg.header)
+
+    def _on_raw(self, msg):
+        """Where the camera found the colour itself (detect=2) -> /marker, as from a picture."""
+        if self.mode != "follow":
+            return
+        out = String()
+        out.data = marker_json(marker_from_raw(msg.data), float(self._cam_params().get("hfov_deg", 60.0)),
+                               self.get_clock().now().nanoseconds / 1e9)
+        self.pub_marker.publish(out)
 
     def _publish_mask(self, frame, header):
         img = frame.copy()

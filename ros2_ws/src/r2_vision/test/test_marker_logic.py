@@ -2,8 +2,9 @@ import json
 
 import numpy as np
 
-from r2_vision.color_marker import Marker
-from r2_vision.marker_logic import detect_value, marker_json, parse_pick, pick_result, wants_video
+from r2_vision.color_marker import ColorModel, Marker
+from r2_vision.marker_logic import (color_controls, detect_value, marker_from_raw, marker_json, parse_pick,
+                                    pick_result, wants_video)
 
 
 def orange_picture():
@@ -17,11 +18,19 @@ def test_wants_video():
     assert not wants_video("", False) and not wants_video("patrol", False)
 
 
+def test_wants_video_with_the_colour_found_on_the_camera():
+    # the dome camera finds the colour itself: only the console's preview needs its video
+    assert not wants_video("follow", False, color_on_camera=True)
+    assert wants_video("follow", True, color_on_camera=True)
+    assert wants_video("", True, color_on_camera=True)
+
+
 def test_detect_value():
-    assert detect_value("", "follow", True) == 0
+    # entering follow: the camera searches the colour instead of faces (2); leaving: faces (1)
+    assert detect_value("", "follow", True) == 2
     assert detect_value("follow", "", True) == 1
     assert detect_value("follow", "goto", True) == 1
-    assert detect_value("goto", "follow", True) == 0
+    assert detect_value("goto", "follow", True) == 2
     assert detect_value("goto", "patrol", True) is None
     assert detect_value("follow", "follow", True) is None
     assert detect_value("", "follow", False) is None
@@ -56,3 +65,15 @@ def test_marker_json():
     assert d["seen"] and d["bearing"] > 0 and d["area"] == 0.1 and d["t"] == 12.5
     d = json.loads(marker_json(None, 60.0, 1.0))
     assert d["seen"] is False and d["area"] == 0.0
+
+
+def test_color_controls_in_the_order_the_camera_takes_them():
+    assert color_controls(ColorModel(4, 200, 180, 10, 60)) == [
+        ("color_h", 4), ("color_s", 200), ("color_v", 180), ("color_htol", 10), ("color_ltol", 60)]
+
+
+def test_marker_from_raw():
+    m = marker_from_raw(json.dumps({"seen": True, "cx": 0.3, "cy": 0.6, "area": 0.02, "lat_ms": 40}))
+    assert (m.cx, m.cy, m.area) == (0.3, 0.6, 0.02)
+    assert marker_from_raw(json.dumps({"seen": False, "cx": 0, "cy": 0, "area": 0, "lat_ms": 40})) is None
+    assert marker_from_raw("not json") is None
