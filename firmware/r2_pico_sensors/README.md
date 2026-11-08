@@ -8,6 +8,12 @@ The Pico has no pins built in. The Pi sends it the sensors and their pins from
 `sensors.yaml` (Setup → Sensors in the web console), so moving a sensor to another pin
 needs no new firmware: change it in the console, save, and move the wire.
 
+## Try it in the browser
+
+The display, the button, the LEDs and the HC-SR04 sensors run in [Wokwi](https://wokwi.com), with a slider to change each sensor's distance. Press play (the first build can wait 2-3 minutes in the free queue):
+
+[![ROS2D2 Pico sensors display on Wokwi](https://thumbs.wokwi.com/projects/479319770579184641/thumbnail.jpg?tile&dark=1)](https://wokwi.com/projects/479319770579184641)
+
 ## Wiring
 
 ![Wiring](wiring.svg)
@@ -53,7 +59,7 @@ therefore reserved too, which leaves GP2-5, GP10-15 and GP18-21 for sensors. See
 The display: off until the button is pressed; then the logo; the next press every sensor at
 once, one bar each (taller the nearer the obstacle); then each press one connector, VL1 to US5,
 and after US5 every sensor again. Held for 3 s, or 30 s without a press: off. `wokwi/` runs it in the browser
-(see its README).
+([online demo](https://wokwi.com/projects/479319770579184641); see its README).
 
 ## LED
 
