@@ -50,6 +50,19 @@ export function inRobot(x, y) {
   return R2.feet.some((f) => Math.abs(x - f.x) <= f.l / 2 && Math.abs(y - f.y) <= f.w / 2);
 }
 
+/**
+ * The free circle: distance from the droid's centre to the nearest lidar point, in metres, or
+ * null with no points. Points on the droid itself (body, feet: its own reflections) are skipped.
+ * points: [[x, y], ...] in base_link.
+ */
+export const freeText = (r) => `${Math.round(r * 100)} cm free`;
+
+export function freeRadius(points) {
+  let best = Infinity;
+  for (const [x, y] of points || []) if (!inRobot(x, y)) best = Math.min(best, Math.hypot(x, y));
+  return Number.isFinite(best) ? best : null;
+}
+
 /** Distance from (x, y) to the droid's outline (body circle or a foot). */
 export function edgeDistance(x, y) {
   return Math.min(Math.hypot(x, y) - R2.bodyR,

@@ -6,6 +6,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { loadModelMetres } from './models.js';
+import { textSprite } from './label3d.js';
+import { freeText } from './sensormath.js';
 
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const rad = (d) => d * Math.PI / 180;
@@ -37,7 +39,7 @@ export function createNavView3d(container) {
   const mounted = new THREE.Group(); droid.add(mounted);   // sensor cones, rebuilt with the readings
   const world = new THREE.Group(); scene.add(world);       // point cloud, goal, arrow (odom)
   let model = null, dirty = true;
-  let keys = { world: '', readings: null, scan: null, goal: '', model: '', radius: -1, arrow: null };
+  let keys = { world: '', readings: null, scan: null, goal: '', model: '', radius: -1, free: -1, arrow: null };
   const opts = { follow: true, room: true };
   orbit.addEventListener('change', () => { dirty = true; });
 
@@ -97,7 +99,7 @@ export function createNavView3d(container) {
     }
   }
 
-  let arrow = null, ring = null;
+  let arrow = null, ring = null, freeRing = null;
   function draw(st) {
     if (!st.pose) return;
     const lidar = Object.values(st.sensors).find((s) => s.type === 'rplidar_c1');
@@ -116,6 +118,26 @@ export function createNavView3d(container) {
         const d = V(x, y, 0.3).sub(orbit.target);
         orbit.target.add(d); cam.position.add(d); orbit.update();
       }
+    }
+    // the free circle (green), rebuilt when it changes by a centimetre
+    const fk = st.free ? Math.round(st.free * 100) : 0;
+    if (fk !== keys.free) {
+      keys.free = fk;
+      if (freeRing) {
+        const l = freeRing.userData.label;
+        if (l) { droid.remove(l); l.material.map.dispose(); l.material.dispose(); }
+        droid.remove(freeRing); dispose(freeRing); freeRing = null;
+      }
+      if (fk) {
+        freeRing = new THREE.Mesh(new THREE.RingGeometry(st.free - 0.015, st.free + 0.015, 96),
+          new THREE.MeshBasicMaterial({ color: '#56d364', side: THREE.DoubleSide }));
+        freeRing.rotation.x = -Math.PI / 2; freeRing.position.y = 0.004;
+        // the size on the ring, straight ahead of R2 (in the droid group: three.js Z is forward)
+        const label = textSprite(freeText(st.free)); label.position.set(0, 0.06, st.free);
+        freeRing.userData.label = label; droid.add(label);
+        droid.add(freeRing);
+      }
+      dirty = true;
     }
     // the safety ring and the heading arrow are rebuilt only when they change
     if ((st.radius || 0) !== keys.radius) {
