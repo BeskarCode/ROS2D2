@@ -42,10 +42,13 @@ assign() {
   pid=$(prop "/dev/$tty" ID_MODEL_ID)
   serial=$(prop "/dev/$tty" ID_SERIAL_SHORT)
   path=$(prop "/dev/$tty" ID_PATH)
+  # the lidar's driver is a service that follows it being plugged in and out (r2d2-lidar.service)
+  local extra=""
+  [[ $name == r2-lidar ]] && extra=', TAG+="systemd", ENV{SYSTEMD_WANTS}+="r2d2-lidar.service"'
   if [[ -n "$serial" ]]; then
-    rule="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$vid\", ATTRS{idProduct}==\"$pid\", ATTRS{serial}==\"$serial\", SYMLINK+=\"$name\""
+    rule="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$vid\", ATTRS{idProduct}==\"$pid\", ATTRS{serial}==\"$serial\", SYMLINK+=\"$name\"$extra"
   elif [[ -n "$path" ]]; then
-    rule="SUBSYSTEM==\"tty\", ENV{ID_PATH}==\"$path\", SYMLINK+=\"$name\""
+    rule="SUBSYSTEM==\"tty\", ENV{ID_PATH}==\"$path\", SYMLINK+=\"$name\"$extra"
     echo "No USB serial number: the name follows the USB port ($path). Keep the device in that port."
   else
     echo "Cannot tell /dev/$tty apart (no serial number, no port path)." >&2
