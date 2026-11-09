@@ -69,7 +69,10 @@ sudo systemctl restart r2d2
 ```
 
 With `/dev/r2-lidar` present, the lidar starts with the droid (`lidar:=auto`) and its scan
-shows in the web console (Sensors and Navigation). If `/etc/default/r2d2` still has
+shows in the web console (Sensors and Navigation). Its driver runs in its own service,
+`r2d2-lidar` (installed by `setup_r2_brain.sh`): udev starts it when the lidar is plugged in and
+systemd stops it when it is unplugged, so the lidar comes back on its own after being unplugged,
+without restarting the rest (`journalctl -u r2d2-lidar -f` to watch it). If `/etc/default/r2d2` still has
 `sim:=true` or `lidar:=sim` in `R2D2_ARGS` (from testing without the lidar), take it out:
 in the simulation the real lidar is not started. The same command names a Mega clone
 (`r2-mega`).

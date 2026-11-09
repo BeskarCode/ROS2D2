@@ -243,6 +243,8 @@ if [[ -f "$SCRIPT_DIR/r2d2.service" ]]; then
   # (systemd environment files take no comments at the end of a line)
   [[ -f /etc/default/r2d2 ]] || printf '%s
 ' '# Remove mega:=false once the Mega is plugged in' 'R2D2_ARGS="mega:=false"' > /etc/default/r2d2
+  # the lidar's driver: started by udev when the lidar is plugged in (nothing to enable)
+  [[ -f "$SCRIPT_DIR/r2d2-lidar.service" ]] && sed -e "s#@USER@#${R2_USER}#g" -e "s#@HOME@#${R2_HOME}#g"     -e "s#@DISTRO@#${ROS_DISTRO}#g" "$SCRIPT_DIR/r2d2-lidar.service" > /etc/systemd/system/r2d2-lidar.service
   systemctl daemon-reload
   systemctl enable r2d2
   echo "Enabled r2d2.service: it starts once the workspace is built (cd ~/r2_ws && colcon build)"
