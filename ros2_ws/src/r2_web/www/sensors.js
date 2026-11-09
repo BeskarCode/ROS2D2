@@ -254,6 +254,8 @@ export function createSensorsTab({ status }) {
     return `<div class="row"><label>${label}</label><div class="slider"><input type="range" data-k="${key}" data-scale="${scale}" ` +
            `min="${min}" max="${max}" step="${step}" value="${s[key] / scale}"><b>${fmt(s[key])}</b></div></div>`;
   }
+  // quick buttons under "points to" (+ = left, as in ROS)
+  const SNAPS = [[90, '90° left'], [0, 'ahead'], [-90, '90° right'], [180, 'back']];
   const FMT = {
     yaw_deg: (v) => sideText(v),
     pitch_deg: (v) => (v ? `${Math.round(v)}° down` : 'level'),
@@ -293,6 +295,8 @@ export function createSensorsTab({ status }) {
         <div class="edit">
           <div class="row"><label><i class="fa-solid fa-tag"></i>name</label><input class="name" spellcheck="false"></div>
           ${slider(s, 'yaw_deg', '<i class="fa-solid fa-compass"></i>points to', -180, 180, 1, FMT.yaw_deg)}
+          <div class="row"><span></span><div class="snaps">${SNAPS.map(([v, t]) =>
+            `<button data-yaw="${v}"${s.yaw_deg === v || (v === 180 && s.yaw_deg === -180) ? ' class="on"' : ''}>${t}</button>`).join('')}</div></div>
           ${isLidar(s) ? '' : slider(s, 'pitch_deg', '<i class="fa-solid fa-arrow-down"></i>tilt down', -10, 80, 1, FMT.pitch_deg)}
           ${slider(s, 'fov_deg', `<i class="fa-solid fa-eye"></i>${isLidar(s) ? 'not hidden by R2' : 'field of view'}`, T.fov[0], T.fov[1], 1, FMT.fov_deg)}
           ${slider(s, 'range_max', '<i class="fa-solid fa-ruler"></i>range', T.range[0], T.range[1], 0.05, FMT.range_max)}
@@ -337,8 +341,15 @@ export function createSensorsTab({ status }) {
           rename(s);
           if (s.name !== old) { el.dataset.name = s.name; el.querySelector('.sub').textContent = s.name; name.value = s.name; }
         }
+        if (k === 'yaw_deg') el.querySelectorAll('.snaps button').forEach((o) =>
+          o.classList.toggle('on', Number(o.dataset.yaw) === (s.yaw_deg === -180 ? 180 : s.yaw_deg)));
         if (k === 'range_max') s.stop_distance = Math.min(s.stop_distance, r3(s.range_max - 0.01));
         touched();
+      }));
+      el.querySelectorAll('.snaps button').forEach((b) => b.addEventListener('click', () => {
+        const yaw = el.querySelector('input[data-k=yaw_deg]');
+        yaw.value = b.dataset.yaw;
+        yaw.dispatchEvent(new Event('input'));
       }));
       el.querySelectorAll('select[data-pin]').forEach((sel) => sel.addEventListener('change', () => {
         s.pico[sel.dataset.pin] = Number(sel.value);
