@@ -6,7 +6,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { loadModelMetres } from './models.js';
-import { TYPES, isLidar, reach, toThree } from './sensormath.js';
+import { TYPES, freeText, isLidar, reach, toThree } from './sensormath.js';
+import { textSprite } from './label3d.js';
 
 const rad = (d) => d * Math.PI / 180;
 const V = (x, y, z) => new THREE.Vector3(...toThree(x, y, z));
@@ -88,6 +89,15 @@ export function createSensorView3d(container) {
         new THREE.MeshStandardMaterial({ color: seen ? '#3fb950' : '#e6edf3' }));
       post.position.copy(V(ob.x, ob.y, ob.heightTop / 2));
       dyn.add(post);
+    }
+    if (state.free) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(state.free - 0.015, state.free + 0.015, 96),
+        new THREE.MeshBasicMaterial({ color: '#56d364', side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.y = 0.004;
+      dyn.add(ring);
+      const label = textSprite(freeText(state.free));
+      label.position.copy(V(state.free, 0, 0.06));       // on the ring, straight ahead
+      dyn.add(label);
     }
     if (state.scan && state.scan.length) {
       const lidar = state.sensors.find(isLidar);

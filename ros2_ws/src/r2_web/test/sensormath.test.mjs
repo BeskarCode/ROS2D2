@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName,
+  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius,
 } from '../www/sensormath.js';
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -102,4 +102,19 @@ test('the Pico pins offered leave out the I2C and the board\'s own', async () =>
   for (const g of [0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28]) assert.ok(!PICO_GPIO.includes(g), `GP${g} offered`);
   for (const g of [2, 5, 10, 15, 18, 21]) assert.ok(PICO_GPIO.includes(g), `GP${g} missing`);
   assert.equal(PICO_GPIO.length, 14);
+});
+
+test('free circle: the nearest lidar point from the droid centre', () => {
+  near(freeRadius([[1.5, 0], [0, -0.8], [-2, 2]]), 0.8);
+  near(freeRadius([[0.6, 0.8]]), 1.0);                 // centre distance, not just x
+});
+
+test('free circle: points on the droid itself (body, feet) do not count', () => {
+  near(freeRadius([[0.05, 0.05], [0, 0.1], [0.9, 0]]), 0.9);
+});
+
+test('free circle: no points, no circle', () => {
+  assert.equal(freeRadius([]), null);
+  assert.equal(freeRadius(null), null);
+  assert.equal(freeRadius([[0.01, 0]]), null);          // only the droid's own reflections
 });

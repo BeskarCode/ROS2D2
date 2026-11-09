@@ -2,7 +2,7 @@
 // Top-down map of the droid and its sensors, in metres, front up (SVG). Sensors and the
 // test object are dragged with the mouse; they never leave the view (one outside after
 // zooming in is drawn on the edge, where it can be picked up again).
-import { R2, TYPES, isLidar, reach, toMap, fromMap } from './sensormath.js';
+import { R2, TYPES, freeText, isLidar, reach, toMap, fromMap } from './sensormath.js';
 
 const rad = (d) => d * Math.PI / 180;
 const ZOOM0 = 1.6;
@@ -57,6 +57,13 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
         const [sx, sy] = toMap(x, y);
         o += `<circle cx="${sx.toFixed(3)}" cy="${sy.toFixed(3)}" r="${sw * 2.2}" fill="#f85149" fill-opacity="${e <= 0.5 ? 0.75 : 0.35}"/>`;
       }
+    }
+    // the free circle: as far as the nearest thing the lidar sees
+    if (state.free) {
+      o += `<circle r="${state.free}" fill="#56d364" fill-opacity="0.10" stroke="#56d364" stroke-width="${sw * 4}" ` +
+           `stroke-dasharray="${sw * 14} ${sw * 7}"/>` +
+           `<text y="${-state.free - sw * 6}" text-anchor="middle" font-size="${v / 20}" font-weight="700" fill="#56d364" ` +
+           `stroke="#0d1117" stroke-width="${sw * 3}" paint-order="stroke">${freeText(state.free)}</text>`;
     }
     if (state.scan) {
       for (const [x, y] of state.scan) {

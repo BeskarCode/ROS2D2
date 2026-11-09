@@ -5,6 +5,7 @@ import { connect, publish, subscribe } from './rosbridge.js';
 import { MODELS } from './models.js';
 import { createNavMap } from './navmap.js';
 import { createNavView3d } from './navview3d.js';
+import { freeRadius, freeText } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
@@ -40,7 +41,7 @@ subscribe('/odom', 'nav_msgs/msg/Odometry', (m) => {
 subscribe('/scan', 'sensor_msgs/msg/LaserScan', (m) => {
   const lidar = Object.values(P.sensors).find((s) => s.type === 'rplidar_c1');
   if (!lidar || !P.pose) return;
-  const { x, y, th } = P.pose, pts = [];
+  const { x, y, th } = P.pose, pts = [], base = [];
   let nearest = Infinity;
   for (let i = 0; i < m.ranges.length; i++) {
     const r = m.ranges[i];
@@ -48,9 +49,11 @@ subscribe('/scan', 'sensor_msgs/msg/LaserScan', (m) => {
     nearest = Math.min(nearest, r);
     const a = m.angle_min + i * m.angle_increment + lidar.yaw_deg * Math.PI / 180;
     const lx = lidar.x + r * Math.cos(a), ly = lidar.y + r * Math.sin(a);
+    base.push([lx, ly]);
     pts.push([x + lx * Math.cos(th) - ly * Math.sin(th), y + lx * Math.sin(th) + ly * Math.cos(th)]);
   }
   P.scan = pts;
+  P.free = freeRadius(base);
   P.lidarNearest = nearest;
   P.scanAt = performance.now();
 }, 200);
@@ -183,7 +186,7 @@ function telemetry() {
   const col = { ok: 'var(--green)', warn: 'var(--amber)', bad: 'var(--red)' }[STATE_CLASS[state]] || 'var(--muted)';
   $('navstate').innerHTML = `<div class="big" style="color:${col}"></div><div class="why"></div>
     <div style="color:var(--muted);margin-top:4px">/foot/cmd_vel: ${(st.v ?? 0).toFixed(2)} m/s, ${Math.round((st.w ?? 0) * 180 / Math.PI)}°/s
-    · tries ${st.tries ?? 0} · lidar ${P.scan.length} points</div>`;
+    · tries ${st.tries ?? 0} · lidar ${P.scan.length} points${lidarFree() ? ` · ${freeText(lidarFree())}` : ''}</div>`;
   $('navstate').querySelector('.big').textContent = state;
   $('navstate').querySelector('.why').textContent = st.why || '';
   $('hz').textContent = `${P.stateTimes.length / 2} Hz`;
@@ -205,6 +208,8 @@ function addLine(text, cls) {
 }
 
 // ---------- drawing: at the screen's rate, R2 sliding between the 10 Hz poses ----------
+// the free circle only while the lidar is talking
+const lidarFree = () => (P.scanAt && performance.now() - P.scanAt < 1000 ? P.free : null);
 function interpolatedPose() {
   if (!P.pose) return null;
   if (!P.prevPose) return P.pose;
@@ -214,7 +219,7 @@ function interpolatedPose() {
 }
 export function frameState() {
   return {
-    world: P.world, pose: interpolatedPose(), scan: P.scan, sensors: P.sensors, readings: P.state.filtered || {},
+    world: P.world, pose: interpolatedPose(), scan: P.scan, free: lidarFree(), sensors: P.sensors, readings: P.state.filtered || {},
     stops: P.state.stops || {}, radius: P.nav.safety_radius, goal: P.state.goal, heading: P.state.heading,
     state: P.state.state, v: P.state.v, selected: P.selected, trail: P.trail,
     showRays: $('rays').checked, showTrail: $('trail').checked,
