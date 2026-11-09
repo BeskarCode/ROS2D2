@@ -7,7 +7,7 @@ import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { picoPill, sensorBadge } from './picostate.js';
-import { PICO_GPIO, R2, TYPES, coverage, defaultName, freeRadius, isLidar, sees, sideText, uniqueName } from './sensormath.js';
+import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const OBJECTS = {
@@ -176,7 +176,7 @@ export function createSensorsTab({ status }) {
         const b = isLidar(s) ? null : badge(s)[0], r = reading(s.name, now);
         return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
       }));
-      const state = { sensors, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, free: freeRadius(scan), readings: live, hidden };
+      const state = { sensors, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint(scan), readings: live, hidden };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);

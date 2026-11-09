@@ -39,7 +39,7 @@ export function createNavView3d(container) {
   const mounted = new THREE.Group(); droid.add(mounted);   // sensor cones, rebuilt with the readings
   const world = new THREE.Group(); scene.add(world);       // point cloud, goal, arrow (odom)
   let model = null, dirty = true;
-  let keys = { world: '', readings: null, scan: null, goal: '', model: '', radius: -1, free: -1, arrow: null };
+  let keys = { world: '', readings: null, scan: null, goal: '', model: '', radius: -1, free: null, arrow: null };
   const opts = { follow: true, room: true };
   orbit.addEventListener('change', () => { dirty = true; });
 
@@ -120,12 +120,13 @@ export function createNavView3d(container) {
       }
     }
     // the free circle (green), rebuilt when it changes by a centimetre
-    const fk = st.free ? Math.round(st.free * 100) : 0;
+    const fk = st.near ? [Math.round(st.near.x * 100), Math.round(st.near.y * 100)].join() : '';
     if (fk !== keys.free) {
       keys.free = fk;
       if (freeRing) {
-        const l = freeRing.userData.label;
-        if (l) { droid.remove(l); l.material.map.dispose(); l.material.dispose(); }
+        for (const o of freeRing.userData.extra || []) {
+          droid.remove(o); if (o.material.map) o.material.map.dispose(); o.material.dispose(); if (!o.isSprite) o.geometry?.dispose();
+        }
         droid.remove(freeRing); dispose(freeRing); freeRing = null;
       }
       if (fk) {
@@ -134,7 +135,14 @@ export function createNavView3d(container) {
         freeRing.rotation.x = -Math.PI / 2; freeRing.position.y = 0.004;
         // the size on the ring, straight ahead of R2 (in the droid group: three.js Z is forward)
         const label = textSprite(freeText(st.free)); label.position.set(0, 0.06, st.free);
-        freeRing.userData.label = label; droid.add(label);
+        // and a line from R2 to the nearest point (base_link -> three.js: X = y, Z = x)
+        const nx = st.near.y, nz = st.near.x;
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.012, 0), new THREE.Vector3(nx, 0.012, nz)]),
+          new THREE.LineBasicMaterial({ color: '#ffa657', depthTest: false }));
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 8), new THREE.MeshBasicMaterial({ color: '#ffa657', depthTest: false }));
+        dot.position.set(nx, 0.018, nz);
+        line.renderOrder = dot.renderOrder = 9;        // over the droid, however close
+        freeRing.userData.extra = [label, line, dot]; droid.add(label, line, dot);
         droid.add(freeRing);
       }
       dirty = true;

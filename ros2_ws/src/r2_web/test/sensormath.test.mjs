@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius,
+  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius, nearestPoint,
 } from '../www/sensormath.js';
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -117,4 +117,9 @@ test('free circle: no points, no circle', () => {
   assert.equal(freeRadius([]), null);
   assert.equal(freeRadius(null), null);
   assert.equal(freeRadius([[0.01, 0]]), null);          // only the droid's own reflections
+});
+
+test('nearest point: where the free circle touches, for the line to it', () => {
+  assert.deepEqual(nearestPoint([[1.5, 0], [0, -0.8], [0.05, 0.05]]), { x: 0, y: -0.8, r: 0.8 });
+  assert.equal(nearestPoint([]), null);
 });
