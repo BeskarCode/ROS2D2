@@ -17,7 +17,7 @@ const HEIGHT = 3.8;
 export const MODELS = {
   simple: { label: 'Simple' },
   vladimirov: {
-    label: 'R2-D2 · ivan.vladimirov08',
+    label: 'Detailed',            // its author is credited under the 3D view (credit, below)
     url: 'models/r2d2-vladimirov.glb',
     // The head leans: cut along the blue line at the bottom of the dome
     domeFrom: 0.748,   // placed by eye with ?tune=1
