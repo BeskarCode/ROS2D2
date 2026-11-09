@@ -80,12 +80,15 @@ export function createSensorView3d(container) {
       if (isLidar(s)) dyn.add(...slice(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, 1.5)));
       else dyn.add(cone(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, Math.max(1.5, reach(s)))));
     }
-    const ob = state.object, rr = Math.max(ob.size, 0.02) / 2;
-    const seen = state.sensors.some((s) => state.hits[s.name] != null);
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, ob.heightTop, 24),
-      new THREE.MeshStandardMaterial({ color: seen ? '#3fb950' : '#e6edf3' }));
-    post.position.copy(V(ob.x, ob.y, ob.heightTop / 2));
-    dyn.add(post);
+    const ob = state.object;     // null: no test object
+    if (ob) {
+      const rr = Math.max(ob.size, 0.02) / 2;
+      const seen = state.sensors.some((s) => state.hits[s.name] != null);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, ob.heightTop, 24),
+        new THREE.MeshStandardMaterial({ color: seen ? '#3fb950' : '#e6edf3' }));
+      post.position.copy(V(ob.x, ob.y, ob.heightTop / 2));
+      dyn.add(post);
+    }
     if (state.scan && state.scan.length) {
       const lidar = state.sensors.find(isLidar);
       const z = lidar ? lidar.z : 0.1;
