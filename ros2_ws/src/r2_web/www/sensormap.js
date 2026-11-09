@@ -37,14 +37,15 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
       o += `<circle r="${m}" fill="none" stroke="#1f2630" stroke-width="${sw}"/>`;
       if (Math.abs(m % 1) < 1e-9) o += `<text x="${m * 0.71 + sw * 3}" y="${-m * 0.71}" fill="#4a5361" font-size="${v / 28}">${m} m</text>`;
     }
-    for (const s of state.sensors) {
+    const shown = (s) => !(state.hidden && state.hidden.has(s.name));
+    for (const s of state.sensors.filter(shown)) {
       const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected;
       const R = state.fullRange ? reach(s) : Math.min(reach(s), 1.5);
       o += `<path d="M${fan(s, R)} Z" fill="${T.colour}" fill-opacity="${missing ? 0.04 : on ? 0.28 : 0.13}" ` +
            `stroke="${T.colour}" stroke-width="${sw * (on ? 2 : 1)}"${missing ? ` stroke-dasharray="${sw * 6} ${sw * 6}"` : ''}/>`;
     }
     // what each sensor measures now: its fan filled up to the reading
-    for (const s of state.sensors) {
+    for (const s of state.sensors.filter(shown)) {
       const r = state.readings && state.readings[s.name];
       if (r == null || !Number.isFinite(r)) continue;
       const T = TYPES[s.type];

@@ -74,6 +74,7 @@ export function createSensorView3d(container) {
       const dot = new THREE.Mesh(new THREE.SphereGeometry(on ? 0.028 : 0.02, 16, 8), new THREE.MeshBasicMaterial({ color: T.colour }));
       dot.position.copy(V(s.x, s.y, s.z));
       dyn.add(dot);
+      if (state.hidden && state.hidden.has(s.name)) continue;
       const mat = new THREE.MeshBasicMaterial({ color: T.colour, transparent: true, opacity: missing ? 0.04 : on ? 0.3 : 0.14,
         side: THREE.DoubleSide, depthWrite: false, clippingPlanes: [floor] });
       if (isLidar(s)) dyn.add(...slice(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, 1.5)));
