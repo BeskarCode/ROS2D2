@@ -73,9 +73,9 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
          `<path d="M0 ${-R2.bodyR + 0.01} l-0.03 0.05 h0.06 z" fill="#e6edf3"/>` +
          `<text y="${v / 60}" text-anchor="middle" font-size="${v / 22}" fill="#8b949e">R2</text>`;
     // test object and who sees it
-    const ob = state.object;
-    const [ox, oy] = at(ob.x, ob.y);
-    for (const s of state.sensors) {
+    const ob = state.object;     // null: no test object
+    const [ox, oy] = ob ? at(ob.x, ob.y) : [0, 0];
+    for (const s of ob ? state.sensors : []) {
       if (state.hits[s.name] == null) continue;
       const [x, y] = toMap(s.x, s.y);
       o += `<line x1="${x}" y1="${y}" x2="${ox}" y2="${oy}" stroke="#3fb950" stroke-width="${sw * 1.5}" stroke-dasharray="${sw * 5} ${sw * 4}"/>`;
@@ -90,7 +90,7 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
            `stroke="${T.colour}" stroke-width="${sw * (isLidar(s) ? 3.5 : 2.5)}"/></g>`;
     }
     const seen = state.sensors.some((s) => state.hits[s.name] != null);
-    o += `<g data-name="" data-object="1" style="cursor:grab"><circle cx="${ox}" cy="${oy}" r="${Math.max(ob.size / 2, sw * 7)}" ` +
+    if (ob) o += `<g data-name="" data-object="1" style="cursor:grab"><circle cx="${ox}" cy="${oy}" r="${Math.max(ob.size / 2, sw * 7)}" ` +
          `fill="${seen ? '#3fb950' : '#e6edf3'}" fill-opacity=".9" stroke="#0d1117" stroke-width="${sw}"/></g>`;
     svg.innerHTML = o;
   }

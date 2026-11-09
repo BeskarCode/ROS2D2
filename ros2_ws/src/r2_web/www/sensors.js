@@ -11,6 +11,7 @@ import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, sees, sideText, u
 
 const $ = (id) => document.getElementById(id);
 const OBJECTS = {
+  none: { label: 'none', none: true },
   chair: { label: 'chair leg Ø4 cm', size: 0.04, heightTop: 0.75 },
   person: { label: 'person Ø30 cm', size: 0.30, heightTop: 1.7 },
   wall: { label: 'wall-ish Ø60 cm', size: 0.60, heightTop: 1.0 },
@@ -29,7 +30,7 @@ export function createSensorsTab({ status }) {
   let locked = false;       // sensors.yaml is broken: fix it in the File tab first
   let selected = null;
   let simulated = false;
-  let object = { ...OBJECT0, ...OBJECTS.chair };
+  let object = { ...OBJECT0, ...OBJECTS.none };
   let errorCb = () => {};
   let visible = false;
   // beams hidden on the map and in 3D (the sensor's dot and the lidar's points stay), per browser
@@ -167,7 +168,7 @@ export function createSensorsTab({ status }) {
   function redraw() {
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
-      const hits = Object.fromEntries(sensors.map((s) => [s.name, s.found === false ? null
+      const hits = Object.fromEntries(sensors.map((s) => [s.name, s.found === false || object.none ? null
         : sees(s, object.x, object.y, object.size, object.heightTop)]));
       const cov = coverage(sensors);
       const now = Date.now();
@@ -175,7 +176,7 @@ export function createSensorsTab({ status }) {
         const b = isLidar(s) ? null : badge(s)[0], r = reading(s.name, now);
         return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
       }));
-      const state = { sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, readings: live, hidden };
+      const state = { sensors, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, readings: live, hidden };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
@@ -455,7 +456,7 @@ export function createSensorsTab({ status }) {
 
   const objSel = $('s-object');
   objSel.innerHTML = Object.entries(OBJECTS).map(([k, o]) => `<option value="${k}">${o.label}</option>`).join('');
-  objSel.addEventListener('change', () => { object = { ...object, ...OBJECTS[objSel.value] }; redraw(); });
+  objSel.addEventListener('change', () => { object = { ...object, none: false, ...OBJECTS[objSel.value] }; redraw(); });
   setInterval(async () => {
     if (!visible) return;
     try {
