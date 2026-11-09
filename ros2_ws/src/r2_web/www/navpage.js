@@ -12,7 +12,9 @@ const STATE_CLASS = { going: 'ok', arrived: 'ok', avoiding: 'warn', turning: 'wa
                       stop: 'bad', 'gave up': 'bad', 'no data': 'bad' };
 
 export const page = {
-  sensors: {}, nav: {}, world: null, simSensors: null, pose: null, prevPose: null, poseAt: 0,
+  // until /odom arrives (it needs the Mega or the simulator) the droid stands at the origin,
+  // so the lidar and the sensors still show with R2 on the bench
+  sensors: {}, nav: {}, world: null, simSensors: null, pose: { x: 0, y: 0, th: 0 }, prevPose: null, poseAt: 0,
   scan: [], state: {}, auto: null, selected: null, trail: [], stateTimes: [],
 };
 const P = page;
@@ -78,6 +80,16 @@ subscribe('/mega/tx', 'std_msgs/msg/String', (m) => {
   else addLine('→ ' + m.data, /^(S1|S3|MD):/.test(m.data) ? 'sound' : 'tx');
 });
 subscribe('/mega/log', 'std_msgs/msg/String', (m) => addLine('← ' + m.data, 'rx'));
+// without the Mega the telemetry still shows (lidar, Pico), but nothing reaches the feet
+// and there is no /odom: R2 stays drawn at the origin
+let megaConnected = false;
+subscribe('/mega/connected', 'std_msgs/msg/Bool', (m) => { megaConnected = m.data; showMega(); });
+function showMega() {
+  $('megapill').className = 'pill ' + (megaConnected ? 'ok' : 'bad');
+  $('megapill').innerHTML = `<i class="fa-solid fa-microchip"></i>mega: ${megaConnected ? 'connected' : 'not connected'}`;
+  if (!$('simpill').hidden) return;
+  $('megahint').textContent = megaConnected ? 'connected' : 'not connected: telemetry only, the feet will not move';
+}
 
 connect(() => {
   $('conn').className = 'pill ok';
@@ -88,7 +100,8 @@ connect(() => {
 function simMode(on) {
   $('simpill').hidden = !on;
   document.querySelectorAll('.simonly').forEach((e) => { e.hidden = !on; });
-  $('megahint').textContent = on ? 'simulated Mega' : '–';
+  if (on) $('megahint').textContent = 'simulated Mega';
+  else showMega();
   $('maphint').textContent = on
     ? 'Click the floor to send R2 there. Drag an obstacle to move it; click it and press Delete (or right-click it) to remove it.'
     : 'Click the floor to send R2 there (in the odometry frame).';
