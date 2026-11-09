@@ -1,7 +1,8 @@
 // ROS2D2 - RPLIDAR C1 tilt mount, built on the real lidar base (baselidar.stl).
 // The lidar hangs upside down under the base. Two ears on the base and the two wings of a U
 // (screwed to the droid) each have an arc slot; one M4 bolt + wing nut per side runs through both
-// slots, so the lidar tilts +-30 degrees around the middle of the ears.
+// slots, so the lidar tilts around the middle of the ears (the long slots allow far more than the
+// lidar can turn before it touches the droid).
 //
 //   openscad -o lidar-base.stl -D 'part="base"' lidar_mount.scad
 //   openscad -o lidar-u.stl    -D 'part="u"'    lidar_mount.scad
@@ -25,12 +26,13 @@ EAR_H    = 36;      // ear height above the plate
 PC_Z     = BASE_T + 17;   // tilt centre: middle of the ears
 SLOT_R   = 11;      // arc slot radius around the tilt centre
 SLOT_W   = 4.4;     // M4 + play
-SLOT_A   = 30;      // +- degrees each slot allows
+SLOT_A_U   = 75;    // degrees each slot runs from the top towards the U's web
+SLOT_A_OUT = 50;    // degrees each slot runs from the top away from the web
 GAP      = 0.3;     // between an ear and its wing
 GUSSET   = 5;       // stiffening fillet at the root of each ear (inside)
 
 // ---------- U ----------
-STANDOFF = 25;      // from the base's back edge to the U's web (lidar clears the droid at +30)
+STANDOFF = 25;      // from the base's back edge to the U's web (lidar clears the droid down to about -30)
 WEB_T    = 4;
 M3       = 3.4;     // droid screws, countersunk
 M3_HEAD  = 6.5;
@@ -45,8 +47,8 @@ $fn = 96;
 // a 2D shape in (Y, Z) extruded EAR_T along X, starting at x
 module side(x) { translate([x, 0, 0]) rotate([90, 0, 90]) linear_extrude(EAR_T) children(); }
 
-module arc_slot() {   // around (CY, PC_Z), straight above at 0 degrees, +-SLOT_A
-    for (a = [90 - SLOT_A : 1 : 90 + SLOT_A - 1])
+module arc_slot() {   // around (CY, PC_Z), straight above at 0 degrees, SLOT_A_U towards the web, SLOT_A_OUT away
+    for (a = [90 - SLOT_A_U : 1 : 90 + SLOT_A_OUT - 1])
         hull() for (b = [a, a + 1])
             translate([CY + SLOT_R * cos(b), PC_Z + SLOT_R * sin(b)]) circle(d = SLOT_W, $fn = 24);
 }
