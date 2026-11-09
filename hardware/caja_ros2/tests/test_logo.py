@@ -37,6 +37,26 @@ def test_no_feature_thinner_than_08mm(k):
     assert min_feature_mm(clean(m == k, px_mm=0.1), px_mm=0.1) >= 0.8
 
 
+def _pinches(m):
+    a, b, c, d = m[:-1, :-1], m[:-1, 1:], m[1:, :-1], m[1:, 1:]
+    return int(((a & d & ~b & ~c) | (b & c & ~a & ~d)).sum())
+
+
+def test_fix_pinches_removes_corner_only_contacts():
+    from gen_logo import fix_pinches
+    m = np.zeros((4, 4), bool)
+    m[1, 1] = m[2, 2] = True
+    assert _pinches(m) == 1 and _pinches(fix_pinches(m)) == 0
+
+
+@pytest.mark.skipif(not PNG.exists(), reason="the logo PNG lives in ROS2D2/docs (local only)")
+def test_inlays_have_no_pinches_and_do_not_share_pixels():
+    from gen_logo import masks
+    neg, azu = masks(px_mm=0.1)
+    assert _pinches(neg) == 0 and _pinches(azu) == 0 and _pinches(neg | azu) == 0
+    assert not (neg & azu).any()
+
+
 def test_min_feature_detects_thin_line():
     m = np.zeros((40, 40), bool)
     m[10:30, 20:23] = True               # 0.3 mm wide at 0.1 mm/px

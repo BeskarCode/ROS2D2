@@ -108,6 +108,45 @@ def clean(mask, px_mm=0.1, min_mm=MIN_MM):
     return keep[labels] & mask
 
 
+def _pinch_sites(m):
+    """2x2 blocks touching only at a corner: (rows, cols, which) — which 0: a&d, 1: b&c."""
+    a, b, c, d = m[:-1, :-1], m[:-1, 1:], m[1:, :-1], m[1:, 1:]
+    return (a & d & ~b & ~c), (b & c & ~a & ~d)
+
+
+def fix_pinches(m):
+    """Fill one pixel of every corner-only contact so the extruded mesh stays closed."""
+    m = m.copy()
+    for _ in range(50):
+        p1, p2 = _pinch_sites(m)
+        if not (p1.any() or p2.any()):
+            return m
+        m[:-1, 1:] |= p1          # a&d -> fill b
+        m[:-1, :-1] |= p2         # b&c -> fill a
+    raise RuntimeError("pinches do not converge")
+
+
+def masks(px_mm=0.1, png=PNG, width_mm=WIDTH_MM):
+    """Black and blue inlays: clean, disjoint, no corner-only contacts in either or in both."""
+    k = classify(load_png(px_mm, png, width_mm))
+    neg = fix_pinches(clean(k == 1, px_mm))
+    azu = clean(k == 2, px_mm) & ~neg
+    for _ in range(50):
+        azu = fix_pinches(azu) & ~neg
+        both = neg | azu
+        p1, p2 = _pinch_sites(both)
+        if not (p1.any() or p2.any()) and not _pinch_sites(azu)[0].any() and not _pinch_sites(azu)[1].any():
+            return neg, azu
+        # close the union's pinch with the colour of the pixel that made it
+        fill_b = np.zeros_like(neg); fill_b[:-1, 1:] = p1
+        fill_a = np.zeros_like(neg); fill_a[:-1, :-1] = p2
+        src_b = np.zeros_like(neg); src_b[:-1, 1:] = p1 & neg[:-1, :-1]
+        src_a = np.zeros_like(neg); src_a[:-1, :-1] = p2 & neg[:-1, 1:]
+        neg = fix_pinches(neg | src_b | src_a)
+        azu = azu | ((fill_b | fill_a) & ~neg)
+    raise RuntimeError("inlay pinches do not converge")
+
+
 def mask_to_svg(mask, px_mm, path):
     """One <path> of rectangles: runs per row, merged downwards while they repeat."""
     h, w = mask.shape
@@ -134,9 +173,8 @@ def mask_to_svg(mask, px_mm, path):
 
 
 def main(png=PNG, out_dir=HERE, width_mm=WIDTH_MM, px_mm=0.1):
-    k = classify(load_png(px_mm, png, width_mm))
-    for name, v in (("negro", 1), ("azul", 2)):
-        n = mask_to_svg(clean(k == v, px_mm), px_mm, pathlib.Path(out_dir) / f"logo_{name}.svg")
+    for name, m in zip(("negro", "azul"), masks(px_mm, png, width_mm)):
+        n = mask_to_svg(m, px_mm, pathlib.Path(out_dir) / f"logo_{name}.svg")
         print(f"logo_{name}.svg: {n} rectangles")
 
 

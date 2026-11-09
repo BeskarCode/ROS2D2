@@ -23,6 +23,10 @@ module ghost_pico() {
     box_from([x0 + 40 - 8, y - 16, zt], [x0 + 40 + 8, y, zt + pico_usb_clear - 0.5]);
     // 5 V terminal J1 and USB-C J5 on the left edge: their wires come in from the left
     box_from([wall + 0.5, wall + 0.5, zt - 82], [x0, y, zt - 50]);
+    // side channels: the sensor cables (US1-5 left, VL1-4 right) run past the board's edges
+    // to the back; nothing printed may sit in them
+    for (xs = [[wall + 0.5, x0], [x0 + pico_w, W - wall - 0.5]])
+        box_from([xs[0], wall + 0.5, zb + 5], [xs[1], y + pcb_t + 3, zt]);
 }
 
 // --- Raspberry Pi 4: standing on its bracket, ports to the back -------------------------
