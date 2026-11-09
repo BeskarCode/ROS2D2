@@ -59,4 +59,4 @@ Notes:
 - One bolt per side means the angle is held by the wing nuts alone. If the droid's knocks move
   it, a second bolt per side as a fixed pivot is the next step.
 
-Still to be printed and tried on the droid.
+Printed and test-fitted under the skirt; still to be tried with R2 on the move.
