@@ -59,11 +59,12 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
       }
     }
     // the free circle: as far as the nearest thing the lidar sees
-    if (state.free) {
-      o += `<circle r="${state.free}" fill="#56d364" fill-opacity="0.10" stroke="#56d364" stroke-width="${sw * 4}" ` +
+    if (state.near) {
+      const free = state.near.r;
+      o += `<circle r="${free}" fill="#56d364" fill-opacity="0.10" stroke="#56d364" stroke-width="${sw * 4}" ` +
            `stroke-dasharray="${sw * 14} ${sw * 7}"/>` +
-           `<text y="${-state.free - sw * 6}" text-anchor="middle" font-size="${v / 20}" font-weight="700" fill="#56d364" ` +
-           `stroke="#0d1117" stroke-width="${sw * 3}" paint-order="stroke">${freeText(state.free)}</text>`;
+           `<text y="${-free - sw * 6}" text-anchor="middle" font-size="${v / 20}" font-weight="700" fill="#56d364" ` +
+           `stroke="#0d1117" stroke-width="${sw * 3}" paint-order="stroke">${freeText(free)}</text>`;
     }
     if (state.scan) {
       for (const [x, y] of state.scan) {
@@ -79,6 +80,11 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
     o += `<circle r="${R2.bodyR}" fill="#161b22" stroke="#8b949e" stroke-width="${sw * 1.5}"/>` +
          `<path d="M0 ${-R2.bodyR + 0.01} l-0.03 0.05 h0.06 z" fill="#e6edf3"/>` +
          `<text y="${v / 60}" text-anchor="middle" font-size="${v / 22}" fill="#8b949e">R2</text>`;
+    if (state.near) {     // on top of the droid, so it shows however close the thing is
+      const [nx, ny] = toMap(state.near.x, state.near.y);
+      o += `<line x1="0" y1="0" x2="${nx}" y2="${ny}" stroke="#ffa657" stroke-width="${sw * 3}"/>` +
+           `<circle cx="${nx}" cy="${ny}" r="${sw * 5}" fill="#ffa657" stroke="#0d1117" stroke-width="${sw}"/>`;
+    }
     // test object and who sees it
     const ob = state.object;     // null: no test object
     const [ox, oy] = ob ? at(ob.x, ob.y) : [0, 0];

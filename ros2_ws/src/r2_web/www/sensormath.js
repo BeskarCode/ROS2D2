@@ -58,9 +58,19 @@ export function inRobot(x, y) {
 export const freeText = (r) => `${Math.round(r * 100)} cm free`;
 
 export function freeRadius(points) {
-  let best = Infinity;
-  for (const [x, y] of points || []) if (!inRobot(x, y)) best = Math.min(best, Math.hypot(x, y));
-  return Number.isFinite(best) ? best : null;
+  const n = nearestPoint(points);
+  return n ? n.r : null;
+}
+
+/** The nearest lidar point off the droid: { x, y, r } in base_link (r from the centre), or null. */
+export function nearestPoint(points) {
+  let best = null;
+  for (const [x, y] of points || []) {
+    if (inRobot(x, y)) continue;
+    const r = Math.hypot(x, y);
+    if (!best || r < best.r) best = { x, y, r };
+  }
+  return best;
 }
 
 /** Distance from (x, y) to the droid's outline (body circle or a foot). */
