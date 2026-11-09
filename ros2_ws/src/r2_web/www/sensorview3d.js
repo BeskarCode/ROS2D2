@@ -90,13 +90,20 @@ export function createSensorView3d(container) {
       post.position.copy(V(ob.x, ob.y, ob.heightTop / 2));
       dyn.add(post);
     }
-    if (state.free) {
-      const ring = new THREE.Mesh(new THREE.RingGeometry(state.free - 0.015, state.free + 0.015, 96),
+    if (state.near) {
+      const free = state.near.r;
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(0, 0, 0.012), V(state.near.x, state.near.y, 0.012)]),
+        new THREE.LineBasicMaterial({ color: '#ffa657', depthTest: false }));
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 8), new THREE.MeshBasicMaterial({ color: '#ffa657', depthTest: false }));
+      dot.position.copy(V(state.near.x, state.near.y, 0.018));
+      line.renderOrder = dot.renderOrder = 9;          // over the droid, however close
+      dyn.add(line, dot);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(free - 0.015, free + 0.015, 96),
         new THREE.MeshBasicMaterial({ color: '#56d364', side: THREE.DoubleSide }));
       ring.rotation.x = -Math.PI / 2; ring.position.y = 0.004;
       dyn.add(ring);
-      const label = textSprite(freeText(state.free));
-      label.position.copy(V(state.free, 0, 0.06));       // on the ring, straight ahead
+      const label = textSprite(freeText(free));
+      label.position.copy(V(free, 0, 0.06));             // on the ring, straight ahead
       dyn.add(label);
     }
     if (state.scan && state.scan.length) {

@@ -73,7 +73,7 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
     g.fillStyle = '#39c5cf';
     for (const [x, y] of st.scan) { g.beginPath(); g.arc(...P(x, y), 2.3, 0, 7); g.fill(); }
     // the free circle: as far as the nearest thing the lidar sees
-    if (st.free) {
+    if (st.free && st.near) {
       g.setLineDash([12, 6]); g.strokeStyle = '#56d364'; g.lineWidth = 3;
       g.beginPath(); g.arc(...P(pose.x, pose.y), st.free * S(), 0, 7); g.stroke(); g.setLineDash([]);
       g.fillStyle = 'rgba(86,211,100,.10)'; g.fill();
@@ -96,6 +96,14 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
     g.fillStyle = '#161b22'; g.beginPath(); g.arc(0, 0, R2.bodyR * S(), 0, 7); g.fill(); g.stroke();
     g.fillStyle = '#e6edf3'; g.beginPath(); g.moveTo(R2.bodyR * S() - 4, 0); g.lineTo(R2.bodyR * S() - 16, -7); g.lineTo(R2.bodyR * S() - 16, 7); g.fill();
     g.restore();
+    // a line from R2 to the nearest point, on top of the droid
+    if (st.free && st.near) {
+      const [cx, cy] = P(pose.x, pose.y);
+      const [px, py] = toOdom(pose, st.near.x, st.near.y);
+      g.strokeStyle = '#ffa657'; g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(cx, cy); g.lineTo(...P(px, py)); g.stroke();
+      g.fillStyle = '#ffa657'; g.beginPath(); g.arc(...P(px, py), 4.5, 0, 7); g.fill();
+    }
     if (st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data'].includes(st.state)) {
       const [x0, y0] = P(pose.x, pose.y), L = 30 + 160 * Math.abs(st.v || 0);
       g.strokeStyle = { stop: '#f85149', avoiding: '#d29922', turning: '#d29922', reversing: '#d29922', waiting: '#d29922' }[st.state] || '#3fb950';
