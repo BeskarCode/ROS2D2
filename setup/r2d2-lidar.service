@@ -1,0 +1,27 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
+# ROS2D2: the RPLIDAR C1's driver, running while /dev/r2-lidar is plugged in.
+# Installed by setup_r2_brain.sh as /etc/systemd/system/r2d2-lidar.service; nothing to enable:
+#  - udev starts it when the lidar appears (the rule from setup/r2-usb-names.sh r2-lidar ...),
+#  - systemd stops it when the lidar goes (BindsTo), so unplugging and plugging the lidar back
+#    brings it up again on its own (sllidar_ros2 does not reopen a port that went away),
+#  - r2d2.service starts it if the lidar is already there, and stopping or restarting r2d2
+#    does the same to it (PartOf).
+# With sim:=true, lidar:=sim or lidar:=off in /etc/default/r2d2 the real lidar stays off.
+#   sudo systemctl status r2d2-lidar        journalctl -u r2d2-lidar -f
+[Unit]
+Description=ROS2D2 lidar (RPLIDAR C1 on /dev/r2-lidar)
+BindsTo=dev-r2\x2dlidar.device
+After=dev-r2\x2dlidar.device
+PartOf=r2d2.service
+
+[Service]
+User=@USER@
+Environment=R2D2_ARGS=
+Environment=ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+Environment=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+EnvironmentFile=-/etc/default/r2d2
+ExecStart=/bin/bash -c 'case " $R2D2_ARGS " in *" sim:=true "*|*" lidar:=sim "*|*" lidar:=off "*) echo "R2D2_ARGS asks for no real lidar: not starting it"; exit 0;; esac; source /opt/ros/@DISTRO@/setup.bash && source @HOME@/r2_ws/install/setup.bash && export ROS_DOMAIN_ID=2 && exec ros2 launch r2_sensors lidar_driver.launch.py'
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=10
