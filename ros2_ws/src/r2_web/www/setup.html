@@ -121,6 +121,9 @@
   .sensor .reading { font-variant-numeric: tabular-nums; font-size: 12px; }
   .sensor.hit .reading { color: var(--green); font-weight: 600; }
   .sensor .badge { margin-left: auto; white-space: nowrap; }
+  .sensor .eye { background: none; border: 0; padding: 2px 4px; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .sensor .eye:hover { color: var(--text, #e6edf3); }
+  .sensor .eye.off { opacity: .55; }
   .badge.ok { background: rgba(63,185,80,.15); color: var(--green); }
   .badge.sim { background: rgba(59,130,246,.15); color: var(--blue); }
   .badge.bad { background: rgba(248,81,73,.15); color: var(--red); }
