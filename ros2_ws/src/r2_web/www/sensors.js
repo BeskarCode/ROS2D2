@@ -35,6 +35,11 @@ export function createSensorsTab({ status }) {
   // beams hidden on the map and in 3D (the sensor's dot and the lidar's points stay), per browser
   let hidden = new Set();
   try { hidden = new Set(JSON.parse(localStorage.getItem('r2web.hiddenBeams') || '[]')); } catch { /* private window */ }
+  const moveHidden = (from, to) => {
+    let moved = false;
+    for (const k of ['', '#points']) if (hidden.delete(from + k)) { hidden.add(to + k); moved = true; }
+    if (moved) saveHidden();
+  };
   const saveHidden = () => { try { localStorage.setItem('r2web.hiddenBeams', JSON.stringify([...hidden])); } catch { /* private window */ } };
   let scan = null;          // live lidar points in base_link: [[x, y]]
   let scanHz = 0;
@@ -115,6 +120,7 @@ export function createSensorsTab({ status }) {
     return ['bad', '<i class="fa-solid fa-plug-circle-xmark"></i> offline'];
   }
 
+  const lidarPointsShown = () => { const l = sensors.find(isLidar); return !l || !hidden.has(l.name + '#points'); };
   const hz = () => (scan && scanHz ? ` · /scan ${Math.round(scanHz)} Hz` : '');
 
   // The lidar's points, at most twice a second, in base_link from where the lidar is now
@@ -132,7 +138,10 @@ export function createSensorsTab({ status }) {
     }
     const first = !scan;
     scan = pts;
-    scanHz = m.scan_time > 0 ? 1 / m.scan_time : 0;   // the lidar's own rate (we only get 2 a second)
+    // the lidar's own rate (we only get 2 a second); it runs at about 10.5 Hz, so only move the
+    // shown number when it is 1 Hz off, or the badge flickers between 10 and 11
+    const hzNow = m.scan_time > 0 ? 1 / m.scan_time : 0;
+    if (!scanHz || Math.abs(hzNow - scanHz) >= 1) scanHz = Math.round(hzNow);
     scanAt = Date.now();
     if (first) renderList();
     redraw();
@@ -146,7 +155,7 @@ export function createSensorsTab({ status }) {
     const old = s.name;
     s.name = defaultName(s, taken(s));
     if (selected === old) selected = s.name;
-    if (s.name !== old && hidden.delete(old)) { hidden.add(s.name); saveHidden(); }
+    if (s.name !== old) moveHidden(old, s.name);
   }
   function touched() {
     changed = true;
@@ -166,7 +175,7 @@ export function createSensorsTab({ status }) {
         const b = isLidar(s) ? null : badge(s)[0], r = reading(s.name, now);
         return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
       }));
-      const state = { sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan, readings: live, hidden };
+      const state = { sensors, selected, object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, readings: live, hidden };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
@@ -278,7 +287,9 @@ export function createSensorsTab({ status }) {
         <div class="top"><span class="title">${T.label}</span><span class="sub"></span><span class="reading">—</span>
           <span class="badge ${cls}">${text}</span>
           <button class="eye${hidden.has(s.name) ? ' off' : ''}" title="${hidden.has(s.name) ? 'Show' : 'Hide'} its beam on the map">
-            <i class="fa-solid ${hidden.has(s.name) ? 'fa-eye-slash' : 'fa-eye'}"></i></button></div>
+            <i class="fa-solid ${hidden.has(s.name) ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+          ${isLidar(s) ? `<button class="eye pts${hidden.has(s.name + '#points') ? ' off' : ''}" title="${hidden.has(s.name + '#points') ? 'Show' : 'Hide'} what it measures (its points) on the map">
+            <i class="fa-solid ${hidden.has(s.name + '#points') ? 'fa-circle' : 'fa-braille'}"></i></button>` : ''}</div>
         <div class="edit">
           <div class="row"><label><i class="fa-solid fa-tag"></i>name</label><input class="name" spellcheck="false"></div>
           ${slider(s, 'yaw_deg', '<i class="fa-solid fa-compass"></i>points to', -180, 180, 1, FMT.yaw_deg)}
@@ -295,10 +306,9 @@ export function createSensorsTab({ status }) {
         </div>`;
       el.querySelector('.sub').textContent = s.name;
       if (el.querySelector('.port')) el.querySelector('.port').textContent = s.port;
-      el.querySelector('.eye').addEventListener('click', () => {
-        if (hidden.has(s.name)) hidden.delete(s.name); else hidden.add(s.name);
-        saveHidden(); renderList(); redraw();
-      });
+      const toggle = (key) => { if (hidden.has(key)) hidden.delete(key); else hidden.add(key); saveHidden(); renderList(); redraw(); };
+      el.querySelector('.eye').addEventListener('click', () => toggle(s.name));
+      el.querySelector('.eye.pts')?.addEventListener('click', () => toggle(s.name + '#points'));
       const name = el.querySelector('.name');
       name.value = s.name;
       name.addEventListener('change', () => {
@@ -308,7 +318,7 @@ export function createSensorsTab({ status }) {
           return status('That name is empty, already used, or not lower case letters, digits and _.', 'bad');
         }
         if (selected === s.name) selected = n;
-        if (hidden.delete(s.name)) { hidden.add(n); saveHidden(); }
+        moveHidden(s.name, n);
         s.name = n;
         s.nameEdited = n !== defaultName(s, taken(s));
         renderList();
