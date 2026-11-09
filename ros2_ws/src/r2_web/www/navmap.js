@@ -3,7 +3,7 @@
 // Draws the room (in simulation), the droid at its pose, the safety circle, each distance
 // sensor's beam as long as its reading, the lidar's points, the goal, the chosen heading and
 // the trail. Click the floor = goal; drag an obstacle = move it; right-click = remove it.
-import { R2 } from './sensormath.js';
+import { R2, freeText } from './sensormath.js';
 
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const rad = (d) => d * Math.PI / 180;
@@ -72,6 +72,16 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
     }
     g.fillStyle = '#39c5cf';
     for (const [x, y] of st.scan) { g.beginPath(); g.arc(...P(x, y), 2.3, 0, 7); g.fill(); }
+    // the free circle: as far as the nearest thing the lidar sees
+    if (st.free) {
+      g.setLineDash([12, 6]); g.strokeStyle = '#56d364'; g.lineWidth = 3;
+      g.beginPath(); g.arc(...P(pose.x, pose.y), st.free * S(), 0, 7); g.stroke(); g.setLineDash([]);
+      g.fillStyle = 'rgba(86,211,100,.10)'; g.fill();
+      g.fillStyle = '#56d364'; g.font = 'bold 14px system-ui, sans-serif'; g.textAlign = 'center';
+      const [cx, cy] = P(pose.x, pose.y);
+      g.fillText(freeText(st.free), cx, cy - st.free * S() - 6);
+      g.textAlign = 'start';
+    }
     // the safety circle and the droid
     if (st.radius) {
       g.setLineDash([8, 6]); g.strokeStyle = 'rgba(248,81,73,.8)'; g.lineWidth = 2;
