@@ -70,15 +70,41 @@ module usb_cable() {
     color(METAL) translate(u + [-6, 0, -2.5]) cube([12, 14, 5]);
 }
 
+// --- the wiring, for the pictures -------------------------------------------------------------
+RED = [0.85, 0.1, 0.1];  BLK = [0.1, 0.1, 0.1];  YEL = [0.95, 0.8, 0.1];  SENS = [0.55, 0.55, 0.58];
+module cable(pts, c, d = 2.2) {
+    color(c) for (i = [0 : len(pts) - 2]) hull() { translate(pts[i]) sphere(d = d, $fn = 10); translate(pts[i + 1]) sphere(d = d, $fn = 10); }
+}
+module wiring() {
+    cw = function(i) [conv_pos[0] + conv_wire_x - 5.25 + i * 3.5, conv_pos[1] + conv[1] + conv_wires - 1, wall + conv_lift + 10];
+    sw = [sw_c[0], D - sw_panel_t - sw_depth, sw_c[1]];
+    xt = [xt60_c[0], D - xt60_depth + xt60_flange_t, xt60_c[1]];
+    // 24 V: XT60 + -> switch -> converter IN+ ; XT60 - -> converter IN-
+    cable([cw(0), cw(0) + [-6, 0, -1], sw + [4, 0, 0]], RED);
+    cable([sw + [-4, 0, 0], sw + [-12, 2, 5], xt + [0, 0, 3.2]], RED);
+    cable([cw(1), cw(1) + [-14, -4, -8], [22, D - 21, 12], xt + [0, 0, -3.2]], BLK);
+    // 5 V: converter OUT -> USB-C of the Pi (its plug on the top edge) and -> terminal J1
+    pc = [pi_x_pcb() - 4, pi_y0() + 11.2, pi_z0() + pi_w + 10];
+    for (k = [0, 1]) cable([cw(2 + k), cw(2 + k) + [10, -2, 8], [72 + 2 * k, 95, 96], [86, 62, 101], pc + [0, 0, 2]], [YEL, BLK][k], 2.6);
+    j1 = pico2world(0, 59) + [0.5, -5, 0];
+    for (k = [0, 1]) cable([cw(2 + k), cw(2 + k) + [-12, -8, -8], [9 + 2 * k, 75, 9], [8 + 2 * k, 30, 26], j1 + [0, 0, -1.5 + 3 * k]], [YEL, BLK][k], 1.8);
+    // the Pico's micro-USB: out to the left, along the top to the back slot
+    u = pico2world(40, 0) + [0, -11, 6];
+    cable([u, u + [-12, 0, 0], [10, u[1], u[2]], [9, 45, 101], [12, D - 12, 100], [sensor_slot_c[0] + 8, D - 6, sensor_slot_c[1]]], BLK, 3.5);
+    // sensor cables: left bundle (US1-5) and right bundle (VL1-4) to the back slot and out
+    cable([pico2world(6, 30) - [0, 26, 0], [6, 14, 72], [6, 60, 98], [14, D - 10, 100], [16, D + 25, 100]], SENS, 6);
+    cable([pico2world(66, 30) - [0, 26, 0], [99, 14, 72], [99, 60, 93], [98, D - 10, 93], [36, D - 6, 100], [36, D + 25, 100]], SENS, 6);
+}
+
 if (scene == "abierta") {
-    base_assembly(); front_assembly(); hw_group("base_bottom");
+    base_assembly(); front_assembly(); hw_group("base_bottom"); wiring();
 }
 else if (scene == "montada") {
-    base_assembly(); front_assembly(); hw_group("base_bottom"); usb_cable();
+    base_assembly(); front_assembly(); hw_group("base_bottom"); usb_cable(); wiring();
     shell(0.25); hw_group("carcasa");
 }
 else if (scene == "montada_atras") {
-    base_assembly(); front_assembly(); hw_group("base_bottom"); usb_cable();
+    base_assembly(); front_assembly(); hw_group("base_bottom"); usb_cable(); wiring();
     shell(); hw_group("carcasa");
 }
 else if (scene == "despiece") {
@@ -130,7 +156,7 @@ else if (scene == "paso") {
     }
     else if (step == 8) {                                      // USB out the back, onto the R2
         base_assembly(); front_assembly(); hw_group("base_bottom");
-        shell(); hw_group("carcasa"); usb_cable();
+        shell(0.35); hw_group("carcasa"); usb_cable(); wiring();
         hw_group("ears", 16);
     }
 }
