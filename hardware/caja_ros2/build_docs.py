@@ -16,12 +16,16 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = pathlib.Path(__file__).resolve().parent
 OPENSCAD = os.environ.get("OPENSCAD", r"C:\Program Files\OpenSCAD\openscad.com")
 BROWSERS = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
             r"C:\Program Files\Google\Chrome\Application\chrome.exe"]
 IMG = HERE / "montaje" / "img"
+REPO = HERE.parents[1]
+LOGO_ROS2D2 = REPO / "media" / "ros2d2-logo.png"
+LOGO_ASTROMECH = REPO / "hardware" / "r2_pico_carrier" / "gen" / "astromech-spain-logo-circular.png"   # dark on white
 
 # scene -> (extra -D, camera rotation x, z)
 VIEWS = {
@@ -273,7 +277,8 @@ def step_hw(table, n, lang):
 def write_guide(lang, table, path):
     t = TXT[lang]
     i = 0 if lang == "es" else 1
-    L = [f"# {t['title']}", "", t["other_lang"], "", t["intro"], "",
+    L = ['<img src="../../media/ros2d2-logo.png" alt="ROS2D2" width="420">', "",
+         f"# {t['title']}", "", t["other_lang"], "", t["intro"], "",
          f"| {t['built']} | {t['back']} |", "|---|---|",
          "| ![](montaje/img/montada.png) | ![](montaje/img/montada_atras.png) |", "",
          f"## {t['inside']}", "", "![](montaje/img/interior.png)", "",
@@ -325,7 +330,10 @@ td, th {{ border-bottom: 1px solid #ddd; padding: 1.2mm 2mm; text-align: left; v
 .chip {{ display: inline-block; border: 1.5px solid #222; border-radius: 2mm; padding: .6mm 2mm; margin: 0 1.5mm 1.5mm 0;
         font-weight: 600; }}
 .none {{ color: #888; }} code {{ font-size: 9pt; }} .pb {{ page-break-before: always; }}
+.logos {{ display: flex; align-items: center; justify-content: space-between; margin: 0 0 5mm; }}
+.logos .r {{ height: 16mm; }} .logos .a {{ height: 26mm; }}
 </style>
+<div class=logos><img class=r src='{LOGO_ROS2D2.as_uri()}' alt="ROS2D2"><img class=a src='{LOGO_ASTROMECH.as_uri()}' alt="Astromech Spain"></div>
 <h1>{e(t['title'])}</h1><p>{e(t['intro'])}</p>
 <div class=cover><img src='{img("montada")}'><img src='{img("montada_atras")}'></div>
 <h2>{e(t['exploded'])}</h2><img class=wide src='{img("despiece")}'>
@@ -347,8 +355,12 @@ def render_images():
             args += ["-D", d]
         args += ["--imgsize=1600,1200", f"--camera=0,0,0,{rx},0,{rz},0", "--viewall", "--autocenter",
                  "--colorscheme=Tomorrow", str(HERE / "montaje.scad")]
-        r = subprocess.run(args, capture_output=True, text=True, timeout=1800)
-        if r.returncode or "ERROR" in r.stdout + r.stderr:
+        for attempt in range(4):           # Windows sometimes holds the PNG a moment (viewer, antivirus)
+            r = subprocess.run(args, capture_output=True, text=True, timeout=1800)
+            if "Can't open file" not in r.stdout + r.stderr:
+                break
+            time.sleep(3)
+        if r.returncode or "ERROR" in r.stdout + r.stderr or "Can't open file" in r.stdout + r.stderr:
             raise RuntimeError(f"{name}: {(r.stdout + r.stderr)[-1500:]}")
         print("ok", name, flush=True)
 

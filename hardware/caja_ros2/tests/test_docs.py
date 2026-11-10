@@ -55,3 +55,15 @@ def test_guide_shows_the_wiring(tmp_path, table, lang, name):
     md = (tmp_path / name).read_text(encoding="utf8")
     assert f"montaje/img/conexiones_{lang}.svg" in md
     assert f"montaje/img/conectores_{lang}.svg" in md          # which way the angled plugs go
+
+
+@pytest.mark.parametrize("lang", ["es", "en"])
+def test_pdf_and_guide_carry_the_logos(tmp_path, table, lang):
+    from build_docs import write_html
+    h = tmp_path / "g.html"
+    write_html(lang, table, h)
+    html = h.read_text(encoding="utf8")
+    assert "ros2d2-logo.png" in html and "astromech-spain-logo-circular.png" in html   # the one readable on white
+    write_guide(lang, table, tmp_path / "g.md")
+    md = (tmp_path / "g.md").read_text(encoding="utf8")
+    assert "../../media/ros2d2-logo.png" in md

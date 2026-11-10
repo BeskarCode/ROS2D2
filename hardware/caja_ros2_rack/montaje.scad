@@ -69,9 +69,39 @@ module usb_cable() {
     color(METAL) translate(u + [-6, 0, -2.5]) cube([12, 14, 5]);
 }
 
-if (scene == "abierta") { base_assembly(); pared_assembly(); hw_group("base_bottom"); }
-else if (scene == "montada") { base_assembly(); pared_assembly(); hw_group("base_bottom"); usb_cable(); tapa_part(0.25); hw_group("tapa"); }
-else if (scene == "montada_atras") { base_assembly(); pared_assembly(); hw_group("base_bottom"); usb_cable(); tapa_part(); hw_group("tapa"); }
+// --- the wiring, for the pictures -------------------------------------------------------------
+RED = [0.85, 0.1, 0.1];  BLK = [0.1, 0.1, 0.1];  YEL = [0.95, 0.8, 0.1];  SENS = [0.55, 0.55, 0.58];
+module cable(pts, c, d = 2.2) {
+    color(c) for (i = [0 : len(pts) - 2]) hull() { translate(pts[i]) sphere(d = d, $fn = 10); translate(pts[i + 1]) sphere(d = d, $fn = 10); }
+}
+module wiring() {
+    p = conv_p0();
+    cw = function(i) p + [4.75 + i * 3.5, -conv_wires + 1, 31];          // ends of the converter's 4 leads (in+, in-, out+, out-)
+    xt = [wall + xt60_depth - xt60_flange_t, xt60_c[0], xt60_c[1]];      // back of the XT60's body
+    sw = [wall + sw_depth, sw_c[0], sw_c[1]];                            // back of the switch
+    pass = [(div_x[0] + div_x[1]) / 2, (div_pass[0] + div_pass[1]) / 2, wall + 5];
+    // 24 V: XT60 + -> switch -> through the divider's gap -> converter IN+ ; XT60 - -> converter IN-
+    cable([xt + [0, 3.2, 0], xt + [6, 15, -2], sw + [0, -4, -2]], RED);
+    cable([sw + [0, 4, 0], sw + [8, -4, -4], pass + [0, -3, 0], [50, 40, wall + 4], [cw(0)[0], 16, 12], cw(0)], RED);
+    cable([xt + [0, -3.2, 0], xt + [8, 6, -3], pass + [0, -7, -1], [54, 38, wall + 3], [cw(1)[0], 14, 14], cw(1)], BLK);
+    // 5 V: converter OUT -> the Pi's USB-C (hanging under its bottom edge) and -> terminal J1
+    pc = [pi_x_pcb() + pcb_t + 4, pi_y0() + 11.2, pi_z0() - 12];
+    for (k = [0, 1]) cable([cw(2 + k), cw(2 + k) + [0, -4, 6], [60 + 2 * k, 10, 50], pc + [6, 0, 0], pc], [YEL, BLK][k], 2.6);
+    j1 = pico2world(0, 59) + [-5, 0.8, 0];
+    for (k = [0, 1]) cable([cw(2 + k), cw(2 + k) + [0, -3, -14], [58, 30, wall + 4], pass + [0, 4 + 2 * k, 0],
+                            [26 + 2 * k, 86, wall + 6], [26 + 2 * k, 89, 40], j1 + [0, 0, -1.5 + 3 * k]], [YEL, BLK][k], 1.8);
+    // the Pico's micro-USB: out to the side, towards the back notch
+    u = pico2world(40, 0) + [-11, 0, 6];
+    cable([u, u + [0, 10, 0], [u[0], D - 12, usb_notch_c[1]], [usb_notch_c[0], D - 6, usb_notch_c[1]]], BLK, 3.5);
+    // sensor cables: two bundles up from the headers to the slot in the main face and out
+    s = sensor_slot_c;
+    cable([pico2world(6, 30) - [26, 0, 0], [6, 82, 80], [5, s[0] + 18, s[1]], [-25, s[0] + 18, s[1] + 4]], SENS, 6);
+    cable([pico2world(66, 30) - [26, 0, 0], [6, 22, 80], [5, s[0] - 18, s[1]], [-25, s[0] - 18, s[1] + 4]], SENS, 6);
+}
+
+if (scene == "abierta") { base_assembly(); pared_assembly(); hw_group("base_bottom"); wiring(); }
+else if (scene == "montada") { base_assembly(); pared_assembly(); hw_group("base_bottom"); usb_cable(); wiring(); tapa_part(0.25); hw_group("tapa"); }
+else if (scene == "montada_atras") { base_assembly(); pared_assembly(); hw_group("base_bottom"); usb_cable(); wiring(); tapa_part(); hw_group("tapa"); }
 else if (scene == "despiece") {
     base_assembly(conv = false, pi = false);
     translate([45, 0, 0]) { model_conv(); hw_group("conv", 12); }
@@ -118,7 +148,7 @@ else if (scene == "paso") {
     }
     else if (step == 8) {                                       // USB out the back, onto the R2
         base_assembly(); pared_assembly(); hw_group("base_bottom");
-        tapa_part(); hw_group("tapa"); usb_cable();
+        tapa_part(0.35); hw_group("tapa"); usb_cable(); wiring();
         hw_group("ears", 16);
     }
 }

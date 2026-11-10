@@ -1,3 +1,5 @@
+<img src="../../media/ros2d2-logo.png" alt="ROS2D2" width="420">
+
 # ROS2 box · Assembly instructions
 
 [Versión en castellano](MONTAJE.md)

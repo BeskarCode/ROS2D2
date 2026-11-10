@@ -8,7 +8,7 @@ la salida de los cables de sensores van detrás. Lleva rejillas en el techo y en
 Medidas exteriores: **107 × 133 × 125 mm** (ancho × fondo × alto), más las 4 orejetas de
 fijación al R2.
 
-![Montaje](renders/montaje.png)
+![Montaje](montaje/img/montada.png)
 
 **Instrucciones de montaje paso a paso, con despiece y lista de tornillería:**
 [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf) — English: [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf)
