@@ -5,16 +5,8 @@
 // and two bands on each side, low (air in) and high (air out).
 include <params.scad>
 
-slot_w = 2;  slot_pitch = 4.5;     // vent slots and the ribs between them
-side_band_low = [8, 30];           // z range of the low side vents
-side_band_high = [H - 35, H - 8];
-side_slot_y = [14, D - 14];        // y range of the side vents
 roof_slot_x = [12, W - 12];
 roof_slot_y = [16, D - 16];        // roof slots run along Y, clear of the roof screws
-screw_keepout = 7;                 // no side slot this close to a side screw (y)
-
-function side_slots_y() = [for (y = [side_slot_y[0] : slot_pitch : side_slot_y[1] - slot_w])
-    if (min([for (s = shell_screw_y()) abs(y + slot_w / 2 - s)]) > screw_keepout) y];
 function roof_slots_x() = [for (x = [roof_slot_x[0] : slot_pitch : roof_slot_x[1] - slot_w]) x];
 
 module carcasa_vents() {

@@ -108,6 +108,61 @@ def clean(mask, px_mm=0.1, min_mm=MIN_MM):
     return keep[labels] & mask
 
 
+def _disk(min_mm, px_mm):
+    r = min_mm / (2 * px_mm) - 0.5
+    ri = int(np.ceil(r))
+    return [(dy, dx) for dy in range(-ri, ri + 1) for dx in range(-ri, ri + 1) if dy * dy + dx * dx <= r * r]
+
+
+def _shift_all(m, offs, combine):
+    h, w = m.shape
+    p = max(max(abs(a), abs(b)) for a, b in offs)
+    pad = np.pad(m, p, constant_values=False)
+    out = None
+    for dy, dx in offs:
+        s = pad[p + dy:p + dy + h, p + dx:p + dx + w]
+        out = s.copy() if out is None else combine(out, s)
+    return out
+
+
+def opening(m, min_mm, px_mm):
+    """Morphological opening with a disk of diameter min_mm: what a min_mm pen could draw."""
+    offs = _disk(min_mm, px_mm)
+    return _shift_all(_shift_all(m, offs, np.logical_and), offs, np.logical_or)
+
+
+def _thin_clusters(m, px_mm, min_mm, keep_px=20):
+    """Pixels a min_mm pen cannot reach, in clusters bigger than keep_px (corners stay)."""
+    thin = m & ~opening(m, min_mm, px_mm)
+    if not thin.any():
+        return thin, 0
+    labels, n = _label(thin)
+    sizes = np.bincount(labels.ravel())
+    sizes[0] = 0
+    big = sizes > keep_px
+    return big[labels], int(sizes.max())
+
+
+def thin_parts(m, px_mm=0.1, min_mm=MIN_MM):
+    """Size (px) of the largest cluster thinner than min_mm."""
+    return _thin_clusters(m, px_mm, min_mm)[1]
+
+
+def thicken(neg, azu, px_mm=0.1, min_mm=MIN_MM):
+    """Thin blue goes black; thin black grows (into white first, then blue) until a 0.8 mm pen fits."""
+    grow = _disk(0.5, px_mm)
+    for _ in range(8):
+        tb, _ = _thin_clusters(azu, px_mm, min_mm)
+        neg = neg | tb
+        azu = azu & ~tb
+        tk, _ = _thin_clusters(neg, px_mm, min_mm)
+        if not tk.any() and not _thin_clusters(azu, px_mm, min_mm)[0].any():
+            return neg, azu
+        neg = neg | _shift_all(tk, grow, np.logical_or)
+        azu = azu & ~neg
+    return neg, azu
+
+
 def _pinch_sites(m):
     """2x2 blocks touching only at a corner: (rows, cols, which) — which 0: a&d, 1: b&c."""
     a, b, c, d = m[:-1, :-1], m[:-1, 1:], m[1:, :-1], m[1:, 1:]
@@ -129,8 +184,9 @@ def fix_pinches(m):
 def masks(px_mm=0.1, png=PNG, width_mm=WIDTH_MM):
     """Black and blue inlays: clean, disjoint, no corner-only contacts in either or in both."""
     k = classify(load_png(px_mm, png, width_mm))
-    neg = fix_pinches(clean(k == 1, px_mm))
-    azu = clean(k == 2, px_mm) & ~neg
+    neg, azu = thicken(clean(k == 1, px_mm), clean(k == 2, px_mm) & ~clean(k == 1, px_mm), px_mm)
+    neg = fix_pinches(neg)
+    azu = azu & ~neg
     for _ in range(50):
         azu = fix_pinches(azu) & ~neg
         both = neg | azu

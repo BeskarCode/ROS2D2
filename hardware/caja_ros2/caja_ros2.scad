@@ -12,15 +12,40 @@ include <carcasa.scad>
 part = "montaje";
 ga = "pico";  gb = "pi";        // check_ghost_pair
 dz = 0;                         // check_shell_slide
+press = 0;                      // check_rod_*
 
 module echo_layout() {
     echo("W", W); echo("D", D); echo("H", H); echo("wall", wall);
     echo("pico_x0", pico_x0()); echo("pico_ztop", pico_ztop());
     echo("oled_view_center", oled_view_center());
+    echo("pi_port_face", pi_y0() + pi_l + pi_port_out);
     cube(0.01);
 }
 
+module echo_oled_view() {
+    c = oled_view_center();
+    echo("dist", pico_y() - oled_thick - wall);
+    echo("win_inner", oled_win_inner());
+    echo("active", [c[0] - oled_active[0] / 2, c[1] - oled_active[1] / 2, c[0] + oled_active[0] / 2, c[1] + oled_active[1] / 2]);
+    cube(0.01);
+}
+
+module echo_back() {
+    echo("sw_cut", sw_cut); echo("xt60_hole_pitch", xt60_hole_pitch);
+    echo("xt60_body", xt60_body); echo("m3_clear", m3_clear);
+    cube(0.01);
+}
+
+module back_tab_wedge() {      // the 45 deg zone under the back top tab, 0.1 mm inside
+    t = top_tab; y = top_tab_y()[1]; zb = H - wall - t[2];
+    translate([W / 2 - t[0] / 2 + 0.1, y - t[1] / 2, zb]) hull() {
+        translate([0, 0.2, -0.11]) cube([t[0] - 0.2, t[1] - 0.2, 0.01]);
+        translate([0, t[1] - 0.11, -t[1] + 0.3]) cube([t[0] - 0.2, 0.01, 0.01]);
+    }
+}
+
 module echo_frontal() {
+    echo("col_d", col_d);
     echo("W", W);
     echo("oled_win_center", oled_win_center()); echo("oled_win_top", oled_win_top());
     echo("oled_view_center", oled_view_center());
@@ -51,6 +76,28 @@ else if (part == "check_logo_overlap") linear_extrude(1) intersection() { logo_2
 else if (part == "check_columns_short") intersection() { pico_columns(0.2); pico_pcb(); }
 else if (part == "check_columns_touch") intersection() { pico_columns(-0.2); pico_pcb(); }
 else if (part == "echo_frontal") echo_frontal();
+else if (part == "echo_oled_view") echo_oled_view();
+else if (part == "check_window_vs_columns") intersection() {
+    pico_columns();
+    scale([1, 20, 1]) oled_window();     // the real cut-out, stretched back through the columns
+}
+else if (part == "echo_back") echo_back();
+// --- push rod ---
+else if (part == "pulsador") print_rod() pulsador();
+else if (part == "echo_pulsador") {
+    echo("flange_d", rod_flange[0]); echo("bore_d", rod_bore); echo("tip_y", -rod_proud);
+    cube(0.01);
+}
+else if (part == "check_rod_vs_ghosts") intersection() { pulsador(); ghost_all(); }
+else if (part == "check_rod_vs_front") intersection() { pulsador(press); frontal(); }
+else if (part == "check_rod_on_button") intersection() {
+    pulsador(press);
+    s = sw1_world(); translate([s[0] - 3, pico_y() - sw1_h, s[2] - 3]) cube([6, sw1_h, 6]);
+}
+else if (part == "check_guide_vs_window") intersection() { rod_guide(); scale([1, 20, 1]) oled_window(); }
+else if (part == "check_back_tab_supported") difference() { back_tab_wedge(); base(); }
+else if (part == "check_conv_insert_floor") intersection() { conv_insert_holes(); translate([-50, -50, -1]) cube([300, 300, 2.5]); }
+else if (part == "check_right_vents_open") intersection() { base(); right_low_vents(); }
 // --- base ---
 else if (part == "base" || part == "base_montada") base();
 else if (part == "check_base_vs_ghosts") intersection() { base(); ghost_all(); }
@@ -85,6 +132,7 @@ else if (part == "montaje") {
     color("gray", 0.5) carcasa();
     color("black") frontal_logo("negro");
     color("royalblue") frontal_logo("azul");
+    color("orange") pulsador();
     %ghost_all();
 }
 else assert(false, str("unknown part ", part));

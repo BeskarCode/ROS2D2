@@ -95,9 +95,16 @@ def is_empty(part, defs=None):
 
 
 def stl_volume(path):
-    """Volume (mm^3) of an ASCII STL, by the divergence theorem."""
+    """Volume (mm^3) of an ASCII or binary STL, by the divergence theorem."""
     data = pathlib.Path(path).read_bytes()
-    v = [tuple(map(float, m)) for m in re.findall(rb"vertex\s+(\S+)\s+(\S+)\s+(\S+)", data)]
+    if data[:5] == b"solid" and b"facet" in data[:1024]:
+        v = [tuple(map(float, m)) for m in re.findall(rb"vertex\s+(\S+)\s+(\S+)\s+(\S+)", data)]
+    else:
+        import struct
+        v = []
+        for t in range(struct.unpack_from("<I", data, 80)[0]):
+            vals = struct.unpack_from("<12f", data, 84 + t * 50)
+            v += [vals[3:6], vals[6:9], vals[9:12]]
     vol = 0.0
     for i in range(0, len(v) - 2, 3):
         a, b, c = v[i:i + 3]
