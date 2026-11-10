@@ -70,6 +70,12 @@ else if (part == "check_top_screws_hit_tabs") intersection() {
 }
 else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { frontal(); base(ears = false); carcasa(); }
+else if (part == "carcasa_montada") carcasa();
+else if (part == "vista_frontal") {
+    color("white") frontal();
+    color("black") frontal_logo("negro");
+    color("royalblue") frontal_logo("azul");
+}
 else if (part == "montaje") {
     color("white") frontal();
     color("lightgray") base();
