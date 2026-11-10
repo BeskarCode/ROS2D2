@@ -58,6 +58,7 @@ module frontal() {
             cube([W, wall, H]);
             pico_columns();
             front_tabs();
+            top_tab(top_tab_y()[0]);
         }
         oled_window();
         logo_svg("todo");

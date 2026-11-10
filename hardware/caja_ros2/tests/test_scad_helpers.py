@@ -13,3 +13,7 @@ def test_overlap_is_a_collision():
 
 def test_apart_is_empty():
     assert is_empty("check_selftest", {"gap": 1})
+
+
+def test_two_separate_touches_are_not_a_collision():
+    assert is_empty("check_selftest_two_touches")
