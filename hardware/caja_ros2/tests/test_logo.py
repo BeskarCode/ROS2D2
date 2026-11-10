@@ -19,18 +19,20 @@ def svg_size_mm(path):
 
 
 def test_classify_colours():
-    px = np.array([[[255, 255, 255, 255], [10, 10, 20, 255], [20, 60, 170, 255], [0, 0, 0, 0]]], np.uint8)
-    assert classify(px).tolist() == [[0, 1, 2, 0]]
+    # white, navy, blue, transparent, then the frame's grey (black at 65 % alpha) inside / outside the frame columns
+    px = np.array([[[255, 255, 255, 255], [13, 34, 64, 255], [60, 110, 175, 255], [0, 0, 0, 0],
+                    [0, 7, 13, 165], [0, 7, 13, 165]]], np.uint8)
+    assert classify(px, frame_cols=5).tolist() == [[0, 1, 2, 0, 3, 0]]
 
 
-@pytest.mark.parametrize("c", ["negro", "azul"])
+@pytest.mark.parametrize("c", ["marino", "azul", "gris"])
 def test_svgs_exist_with_logo_width(c):
     w, h = svg_size_mm(LOGO_DIR / f"logo_{c}.svg")
-    assert w == pytest.approx(80, abs=0.2) and h == pytest.approx(24.8, abs=0.5)
+    assert w == pytest.approx(92, abs=0.2) and h == pytest.approx(15.4, abs=0.2)
 
 
 @pytest.mark.skipif(not PNG.exists(), reason="the logo PNG lives in ROS2D2/docs (local only)")
-@pytest.mark.parametrize("k", [1, 2])
+@pytest.mark.parametrize("k", [1, 2, 3])
 def test_no_feature_thinner_than_08mm(k):
     m = classify(load_png(px_mm=0.1))
     from gen_logo import clean
@@ -52,9 +54,13 @@ def test_fix_pinches_removes_corner_only_contacts():
 @pytest.mark.skipif(not PNG.exists(), reason="the logo PNG lives in ROS2D2/docs (local only)")
 def test_inlays_have_no_pinches_and_do_not_share_pixels():
     from gen_logo import masks
-    neg, azu = masks(px_mm=0.1)
-    assert _pinches(neg) == 0 and _pinches(azu) == 0 and _pinches(neg | azu) == 0
-    assert not (neg & azu).any()
+    ms = masks(px_mm=0.1)
+    for m in ms:
+        assert _pinches(m) == 0
+    assert _pinches(ms[0] | ms[1] | ms[2]) == 0
+    for i in range(3):
+        for j in range(i + 1, 3):
+            assert not (ms[i] & ms[j]).any()
 
 
 def test_min_feature_detects_thin_line():

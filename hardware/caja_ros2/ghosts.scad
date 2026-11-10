@@ -61,7 +61,8 @@ module pi_ports(ext = 0) {
 module ghost_conv() {
     p = [conv_pos[0], conv_pos[1], wall + conv_lift];
     box_from(p, p + conv);
-    box_from([p[0] - conv_wires, p[1] + 15, p[2]], [p[0], p[1] + 45, p[2] + conv[2]]);   // wires
+    box_from([p[0] + conv_wire_x - 8, p[1] + conv[1], p[2] + 4],
+             [p[0] + conv_wire_x + 8, p[1] + conv[1] + conv_wires, p[2] + 18]);              // wires
 }
 
 // --- XT60E-F and KCD1 on the back: the part behind the back wall --------------------------

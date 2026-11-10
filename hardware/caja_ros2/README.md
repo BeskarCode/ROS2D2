@@ -10,6 +10,9 @@ fijación al R2.
 
 ![Montaje](renders/montaje.png)
 
+**Instrucciones de montaje paso a paso, con despiece y lista de tornillería:**
+[MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf) — English: [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf)
+
 ## Piezas
 
 | STL | Qué es | Cómo imprimir |
@@ -97,6 +100,7 @@ y Python 3 con Pillow y numpy.
 ```bash
 python -I hardware/caja_ros2/logo/gen_logo.py      # logo PNG -> logo/logo_negro.svg, logo/logo_azul.svg
 python -I hardware/caja_ros2/build.py              # stl/, 3MF y renders/
+python -I hardware/caja_ros2/build_docs.py         # guía de montaje: imágenes, MONTAJE.md, ASSEMBLY.md y PDF
 python -m pytest hardware/caja_ros2/tests          # medidas, choques y alineaciones (~40 min la 1ª vez)
 ```
 

@@ -15,16 +15,19 @@ function oled_win_top() = oled_win_center()[1] + oled_win[1] / 2 + wall;   // ou
 function oled_win_inner() = [oled_win_x()[0], oled_win_center()[1] - oled_win[1] / 2,
                              oled_win_x()[1], oled_win_center()[1] + oled_win[1] / 2];
 
-LOGO_H = 24.8;                     // logo SVG height for 80 mm width
+
+// the offset out and back in rebuilds each outline: without it the rectangle-built SVGs leave
+// an "open mesh" that sends CGAL into a very slow fallback (one front took over an hour)
+module logo_clean() { offset(delta = -0.005) offset(delta = 0.005) children(); }
 
 module logo_2d(c) {
-    if (c == "todo") union() { import("logo/logo_negro.svg"); import("logo/logo_azul.svg"); }
-    else import(str("logo/logo_", c, ".svg"));
+    if (c == "todo") logo_clean() union() for (k = logo_colours) import(str("logo/logo_", k, ".svg"));
+    else logo_clean() import(str("logo/logo_", c, ".svg"));
 }
 
-// "negro", "azul" or "todo" (both, joined in 2D first: two touching solids break CGAL)
+// one of logo_colours, or "todo" (all of them, joined in 2D first: touching solids break CGAL)
 module logo_svg(c, depth = logo_depth) {
-    translate([W / 2 - logo_w / 2, 0, logo_zc - LOGO_H / 2])
+    translate([W / 2 - logo_w / 2, 0, logo_zc - logo_h / 2])
         translate([0, depth, 0]) rotate([90, 0, 0])
             linear_extrude(depth) logo_2d(c);
 }

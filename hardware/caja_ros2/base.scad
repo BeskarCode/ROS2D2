@@ -83,11 +83,15 @@ module conv_bosses() {
 module shell_bosses() {
     for (y = shell_screw_y()) for (side = [0, 1]) {
         x = side == 0 ? wall + fit : W - wall - fit - shell_boss[0];
-        translate([x, y - shell_boss[1] / 2, wall - 0.01]) difference() {
-            cube([shell_boss[0], shell_boss[1], shell_boss[2] + 0.01]);
-            translate([side == 0 ? -0.01 : shell_boss[0] - insert_h + 0.01, shell_boss[1] / 2, shell_boss[2] / 2])
-                rotate([0, 90, 0]) cylinder(d = insert_d, h = insert_h, $fn = 24);
-        }
+        translate([x, y - shell_boss[1] / 2, wall - 0.01]) cube([shell_boss[0], shell_boss[1], shell_boss[2] + 0.01]);
+    }
+}
+
+// cut after the union: the rear right boss sits against the Pi bracket, which would fill it
+module shell_insert_holes() {
+    for (y = shell_screw_y()) for (side = [0, 1]) {
+        x = side == 0 ? wall + fit - 0.01 : W - wall - fit - insert_h + 0.01;
+        translate([x, y, wall - 0.01 + shell_boss[2] / 2]) rotate([0, 90, 0]) cylinder(d = insert_d, h = insert_h, $fn = 24);
     }
 }
 
@@ -124,5 +128,7 @@ module base(ears = true) {
         }
         back_cuts();
         front_tab_holes();
+        shell_insert_holes();
+        conv_insert_holes();       // again here: the floor, added after the bosses, would fill their bottom
     }
 }
