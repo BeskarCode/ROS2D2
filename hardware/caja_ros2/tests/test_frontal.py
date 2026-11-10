@@ -45,3 +45,13 @@ def test_logo_bodies_sit_in_the_front_face():
     # printed face down: the logo pieces sit at z 0..0.6 within the panel's footprint
     lo, hi = stl_bbox(run_scad("logo_azul"))
     assert hi[2] == pytest.approx(0.6, abs=0.01)
+
+
+def test_monocolor_front_has_the_logo_engraved_1mm():
+    assert is_empty("check_mono_logo_cavity")              # nothing inside the logo, 1 mm deep
+    assert not is_empty("check_mono_logo_floor")           # but solid just behind it
+
+
+def test_monocolor_front_prints_face_down():
+    lo, _ = stl_bbox(run_scad("frontal_monocolor"))
+    assert lo[2] == pytest.approx(0, abs=0.01)

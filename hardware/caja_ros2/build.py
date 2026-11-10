@@ -18,7 +18,7 @@ from xml.sax.saxutils import quoteattr
 HERE = pathlib.Path(__file__).resolve().parent
 SCAD = HERE / "caja_ros2.scad"
 OPENSCAD = os.environ.get("OPENSCAD", r"C:\Program Files\OpenSCAD\openscad.com")
-PRINT_PARTS = ["frontal", "logo_negro", "logo_azul", "base", "carcasa"]
+PRINT_PARTS = ["frontal", "logo_negro", "logo_azul", "frontal_monocolor", "base", "carcasa"]
 # name -> camera (translate x,y,z, rotate x,y,z, distance)
 RENDERS = {
     "montaje": "53,66,60,62,0,35,480",

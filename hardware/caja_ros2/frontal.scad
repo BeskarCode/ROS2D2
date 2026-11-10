@@ -18,10 +18,10 @@ module logo_2d(c) {
 }
 
 // "negro", "azul" or "todo" (both, joined in 2D first: two touching solids break CGAL)
-module logo_svg(c) {
+module logo_svg(c, depth = logo_depth) {
     translate([W / 2 - logo_w / 2, 0, logo_zc - LOGO_H / 2])
-        translate([0, logo_depth, 0]) rotate([90, 0, 0])
-            linear_extrude(logo_depth) logo_2d(c);
+        translate([0, depth, 0]) rotate([90, 0, 0])
+            linear_extrude(depth) logo_2d(c);
 }
 
 module frontal_logo(c) { logo_svg(c); }
@@ -52,7 +52,8 @@ module front_tabs() {
         }
 }
 
-module frontal() {
+// depth = logo_depth: AMS front (the logo bodies fill it); logo_depth_mono: one colour, engraved
+module frontal(depth = logo_depth) {
     difference() {
         union() {
             cube([W, wall, H]);
@@ -61,7 +62,7 @@ module frontal() {
             top_tab(top_tab_y()[0]);
         }
         oled_window();
-        logo_svg("todo");
+        logo_svg("todo", depth);
     }
 }
 
