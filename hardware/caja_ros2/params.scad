@@ -70,6 +70,7 @@ module top_tab(y) {
 // --- logo ---------------------------------------------------------------------------------
 logo_w = 80;
 logo_depth = 0.6;
+logo_depth_mono = 1.0;              // single-colour front (no AMS): logo engraved this deep
 logo_zc = H - 22;                    // centre height of the logo on the front
 
 // --- derived positions ---------------------------------------------------------------------

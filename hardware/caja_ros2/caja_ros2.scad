@@ -40,6 +40,9 @@ else if (part == "check_ghost_pair") intersection() { ghost(ga); ghost(gb); }
 else if (part == "echo_layout") echo_layout();
 // --- front ---
 else if (part == "frontal") print_front() frontal();
+else if (part == "frontal_monocolor") print_front() frontal(logo_depth_mono);
+else if (part == "check_mono_logo_cavity") intersection() { frontal(logo_depth_mono); logo_svg("todo", logo_depth_mono - 0.01); }
+else if (part == "check_mono_logo_floor") intersection() { frontal(logo_depth_mono); translate([0, logo_depth_mono, 0]) logo_svg("todo", 0.3); }
 else if (part == "logo_negro") print_front() frontal_logo("negro");
 else if (part == "logo_azul") print_front() frontal_logo("azul");
 else if (part == "logo_negro_montado") frontal_logo("negro");

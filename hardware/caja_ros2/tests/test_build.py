@@ -56,3 +56,7 @@ def test_every_part_fits_p1s_bed_and_sits_on_it(out, name):
     lo, hi = stl_bbox(out / "stl" / f"{name}.stl")
     assert all(h - l <= 250 for l, h in zip(lo, hi))
     assert lo[2] == pytest.approx(0, abs=0.01)
+
+
+def test_build_writes_the_monocolor_front(out):
+    assert (out / "stl" / "frontal_monocolor.stl").stat().st_size > 1000
