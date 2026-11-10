@@ -48,12 +48,15 @@ pi_usbc_clear = 30;      // above the board's top (USB-C) edge: straight USB-C p
 pi_port_out = 3;         // USB/Ethernet stick out past the board edge
 bracket_t = 2.5;         // the Pi's vertical support wall
 
-// --- 24 -> 5 V converter (65 x 57 x 23) on the floor --------------------------------------
-conv = [65, 57, 23];
+// --- 24 -> 5 V converter (RCNUN, 63.7 x 57.6 x 22 with its ears) on the floor ---------------
+// drawing: cajaROS2/transformador.PNG. Ears on the 63.7 side (X here); wires out of a long face (+Y)
+conv = [63.7, 57.6, 22];
 conv_lift = 5;           // bosses under its ears (room for the inserts, floor left under them)
-conv_holes = [[5, 5], [60, 52]];   // its 2 screw holes from its front-left corner: MEASURE them
+conv_holes = [[3.6, 26.3], [60.1, 31.3]];  // its 2 ear holes from its front-left corner (drawing; 3.6 from the ear tip assumed)
+conv_ear_t = 1.6;        // ear thickness (drawing)
+conv_wire_x = 35;        // where its cable gland is, from its left end
 conv_pos = [25, 39];     // its front-left corner (X, Y)
-conv_wires = 15;         // room for its wires on its -X face
+conv_wires = 15;         // room for its wires out of its +Y face
 
 // --- back panel: XT60E-F + KCD1 rocker ---------------------------------------------------
 xt60_flange = [15.8, 34];            // X x Z on the outside of the back
@@ -96,7 +99,9 @@ function side_slots_y() = [for (y = [side_slot_y[0] : slot_pitch : side_slot_y[1
     if (min([for (s = shell_screw_ys) abs(y + slot_w / 2 - s)]) > screw_keepout) y];
 
 // --- logo ---------------------------------------------------------------------------------
-logo_w = 80;
+logo_w = 92;                         // the GitHub logo (media/ros2d2-logo.png), without its tagline
+logo_h = 15.4;
+logo_colours = ["marino", "azul", "gris"];   // inlays; the panel itself is white
 logo_depth = 0.6;
 logo_depth_mono = 1.0;              // single-colour front (no AMS): logo engraved this deep
 logo_zc = H - 22;                    // centre height of the logo on the front

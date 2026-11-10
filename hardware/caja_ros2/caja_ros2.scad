@@ -1,18 +1,20 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Caja ROS2 (mini torre). Pick what to render with part:
 //   openscad -o frontal.stl -D 'part="frontal"' caja_ros2.scad
-// Parts: montaje, frontal, logo_negro, logo_azul, base, carcasa (print orientation);
+// Parts: montaje, frontal, logo_marino, logo_azul, logo_gris, base, carcasa (print orientation);
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
 include <frontal.scad>
 include <base.scad>
 include <carcasa.scad>
+include <fasteners.scad>
 
 part = "montaje";
 ga = "pico";  gb = "pi";        // check_ghost_pair
 dz = 0;                         // check_shell_slide
 press = 0;                      // check_rod_*
+kind = "all";                   // check_screws_vs_parts
 
 module echo_layout() {
     echo("W", W); echo("D", D); echo("H", H); echo("wall", wall);
@@ -68,11 +70,16 @@ else if (part == "frontal") print_front() frontal();
 else if (part == "frontal_monocolor") print_front() frontal(logo_depth_mono);
 else if (part == "check_mono_logo_cavity") intersection() { frontal(logo_depth_mono); logo_svg("todo", logo_depth_mono - 0.01); }
 else if (part == "check_mono_logo_floor") intersection() { frontal(logo_depth_mono); translate([0, logo_depth_mono, 0]) logo_svg("todo", 0.3); }
-else if (part == "logo_negro") print_front() frontal_logo("negro");
+else if (part == "logo_marino") print_front() frontal_logo("marino");
 else if (part == "logo_azul") print_front() frontal_logo("azul");
-else if (part == "logo_negro_montado") frontal_logo("negro");
+else if (part == "logo_gris") print_front() frontal_logo("gris");
+else if (part == "logo_marino_montado") frontal_logo("marino");
 else if (part == "check_frontal_vs_ghosts") intersection() { frontal(); ghost_all(); }
-else if (part == "check_logo_overlap") linear_extrude(1) intersection() { logo_2d("negro"); logo_2d("azul"); }
+else if (part == "check_logo_overlap") linear_extrude(1) union() {
+    intersection() { logo_2d("marino"); logo_2d("azul"); }
+    intersection() { logo_2d("marino"); logo_2d("gris"); }
+    intersection() { logo_2d("azul"); logo_2d("gris"); }
+}
 else if (part == "check_columns_short") intersection() { pico_columns(0.2); pico_pcb(); }
 else if (part == "check_columns_touch") intersection() { pico_columns(-0.2); pico_pcb(); }
 else if (part == "echo_frontal") echo_frontal();
@@ -82,6 +89,17 @@ else if (part == "check_window_vs_columns") intersection() {
     scale([1, 20, 1]) oled_window();     // the real cut-out, stretched back through the columns
 }
 else if (part == "echo_back") echo_back();
+// --- hardware (BOM) ---
+else if (part == "echo_bom") {
+    for (k = ["ins_m3", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "nut_m3", "m25x6", "m4x12"])
+        echo(k, count_kind(k));
+    echo("inserts_without_screw", inserts_without_screw());
+    cube(0.01);
+}
+else if (part == "check_screws_vs_parts") intersection() {
+    hardware(kind);
+    union() { frontal(); base(); carcasa(); }
+}
 // --- push rod ---
 else if (part == "pulsador") print_rod() pulsador();
 else if (part == "echo_pulsador") {
@@ -123,15 +141,17 @@ else if (part == "montaje_sin_orejetas") { frontal(); base(ears = false); carcas
 else if (part == "carcasa_montada") carcasa();
 else if (part == "vista_frontal") {
     color("white") frontal();
-    color("black") frontal_logo("negro");
-    color("royalblue") frontal_logo("azul");
+    color([0.05, 0.13, 0.25]) frontal_logo("marino");
+    color([0.25, 0.45, 0.75]) frontal_logo("azul");
+    color([0.45, 0.47, 0.5]) frontal_logo("gris");
 }
 else if (part == "montaje") {
     color("white") frontal();
     color("lightgray") base();
     color("gray", 0.5) carcasa();
-    color("black") frontal_logo("negro");
-    color("royalblue") frontal_logo("azul");
+    color([0.05, 0.13, 0.25]) frontal_logo("marino");
+    color([0.25, 0.45, 0.75]) frontal_logo("azul");
+    color([0.45, 0.47, 0.5]) frontal_logo("gris");
     color("orange") pulsador();
     %ghost_all();
 }

@@ -27,22 +27,22 @@ def out(tmp_path_factory):
 
 
 def test_build_outputs_exist_and_not_empty(out):
-    for name in ["frontal", "logo_negro", "logo_azul", "base", "carcasa"]:
+    for name in ["frontal", "logo_marino", "logo_azul", "logo_gris", "base", "carcasa"]:
         assert (out / "stl" / f"{name}.stl").stat().st_size > 1000
 
 
 def test_3mf_has_three_named_parts(tmp_path):
     parts = {}
-    for n in ("frontal", "logo_negro", "logo_azul"):
+    for n in ("frontal", "logo_marino", "logo_azul", "logo_gris"):
         parts[n] = tmp_path / f"{n}.stl"
         parts[n].write_bytes(TRIANGLE)
     write_3mf(parts, tmp_path / "f.3mf")
     with zipfile.ZipFile(tmp_path / "f.3mf") as z:
         model = z.read("3D/3dmodel.model").decode()
         assert "[Content_Types].xml" in z.namelist() and "_rels/.rels" in z.namelist()
-    assert model.count("<object ") == 4                  # 3 meshes + 1 container
-    assert model.count("<component ") == 3
-    for n in ("frontal", "logo_negro", "logo_azul"):
+    assert model.count("<object ") == 5                  # 4 meshes + 1 container
+    assert model.count("<component ") == 4
+    for n in ("frontal", "logo_marino", "logo_azul", "logo_gris"):
         assert f'name="{n}"' in model
 
 
@@ -64,3 +64,25 @@ def test_build_writes_the_monocolor_front(out):
 
 def test_build_writes_the_push_rod(out):
     assert (out / "stl" / "pulsador.stl").stat().st_size > 1000
+
+
+def test_bambu_3mf_assigns_a_filament_to_each_part(tmp_path):
+    parts = {}
+    for n in ("frontal", "logo_marino", "logo_azul", "logo_gris"):
+        parts[n] = tmp_path / f"{n}.stl"
+        parts[n].write_bytes(TRIANGLE)
+    write_3mf(parts, tmp_path / "b.3mf", bambu=True)
+    with zipfile.ZipFile(tmp_path / "b.3mf") as z:
+        model = z.read("3D/3dmodel.model").decode()
+        cfg = z.read("Metadata/model_settings.config").decode()
+    assert 'name="Application"' in model and "BambuStudio" in model
+    assert cfg.count("<part ") == 4
+    for i, n in enumerate(("frontal", "logo_marino", "logo_azul", "logo_gris"), 1):
+        assert f'<part id="{i}" subtype="normal_part">' in cfg
+        block = cfg.split(f'<part id="{i}"')[1].split("</part>")[0]
+        assert f'value="{n}"' in block and f'key="extruder" value="{i}"' in block
+
+
+def test_build_writes_the_bambu_3mf(out):
+    with zipfile.ZipFile(out / "stl" / "frontal_multicolor_bambu.3mf") as z:
+        assert "Metadata/model_settings.config" in z.namelist()

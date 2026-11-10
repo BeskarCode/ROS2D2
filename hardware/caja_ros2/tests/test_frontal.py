@@ -23,7 +23,7 @@ def test_oled_window_aligned():
 
 
 def test_logo_inside_front_and_above_window(ef):
-    lo, hi = stl_bbox(run_scad("logo_negro_montado"))
+    lo, hi = stl_bbox(run_scad("logo_marino_montado"))
     assert lo[1] == pytest.approx(0, abs=0.01) and hi[1] == pytest.approx(0.6, abs=0.01)
     assert lo[2] > ef["oled_win_top"] + 3
     assert lo[0] > 0 and hi[0] < ef["W"]
@@ -38,7 +38,7 @@ def test_columns_reach_the_pico_board(ef):
     assert not is_empty("check_columns_touch")         # columns lengthened 0.2 mm do
 
 
-@pytest.mark.parametrize("p", ["frontal", "logo_negro", "logo_azul"])
+@pytest.mark.parametrize("p", ["frontal", "logo_marino", "logo_azul", "logo_gris"])
 def test_frontal_print_orientation_flat_face_down(p):
     lo, _ = stl_bbox(run_scad(p))
     assert lo[2] == pytest.approx(0, abs=0.01)

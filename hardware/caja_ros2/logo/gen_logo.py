@@ -1,11 +1,14 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-"""Split the ROS2D2 horizontal logo into the black and the blue inlay of the front panel.
+"""Split the ROS2D2 logo (media/ros2d2-logo.png, the one on GitHub) into the inlays of the front.
 
     python -I hardware/caja_ros2/logo/gen_logo.py
 
-Reads ROS2D2/docs/logo-horizontal.png, scales it to 80 mm wide at 0.1 mm per pixel, gives every
-pixel the nearest of white / black / blue, drops islands thinner than 0.8 mm (a 0.4 nozzle
-cannot print them) and writes logo_negro.svg and logo_azul.svg in mm. White is the panel itself.
+The PNG is drawn with partial transparency (the grey frame is black at ~65 % alpha), so it is
+first laid over white. Every pixel then becomes white (the panel itself), navy ("ROS"), blue
+("2D2" and the 12 dots) or grey (the frame round the dots: only there, so the anti-aliased edges
+of the letters do not turn grey). The tagline "R2-D2 COME TO LIFE" is ~1 mm tall at this size,
+too small for a 0.4 nozzle: it is left out. Strokes thinner than 0.8 mm are thickened (into
+white) or given to the colour around them, then logo_marino/azul/gris.svg are written in mm.
 """
 import pathlib
 import sys
@@ -14,18 +17,35 @@ import numpy as np
 from PIL import Image
 
 HERE = pathlib.Path(__file__).resolve().parent
-PNG = HERE.parents[2] / "docs" / "logo-horizontal.png"
-WIDTH_MM = 80.0
+PNG = HERE.parents[2] / "media" / "ros2d2-logo.png"
+WIDTH_MM = 92.0
 MIN_MM = 0.8
-PALETTE = np.array([[250, 250, 250], [5, 5, 20], [10, 55, 145]], float)   # 0 white, 1 black, 2 blue
+COLOURS = ["marino", "azul", "gris"]                  # classes 1, 2, 3 (0 = white panel)
+NAVY, BLUE, GREY = 1, 2, 3
+FRAME_X = 0.225          # the dot panel's frame ends at this fraction of the width
+TAGLINE = (0.83, 0.6)    # tagline: below this fraction of the height, right of this of the width
 
 
-def classify(rgba):
-    """0 background / white / transparent, 1 black, 2 blue."""
-    rgb = rgba[..., :3].astype(float)
-    d = ((rgb[..., None, :] - PALETTE) ** 2).sum(-1)
-    k = d.argmin(-1).astype(np.uint8)
-    k[rgba[..., 3] < 128] = 0
+def over_white(rgba):
+    a = rgba[..., 3:4].astype(float) / 255
+    return rgba[..., :3].astype(float) * a + 255 * (1 - a)
+
+
+def classify(rgba, frame_cols=None):
+    """0 white, 1 navy, 2 blue, 3 grey (grey only in columns < frame_cols)."""
+    c = over_white(rgba)
+    r, g, b = c[..., 0], c[..., 1], c[..., 2]
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+    k = np.zeros(rgba.shape[:2], np.uint8)
+    blue = (b > 110) & (b - r > 60)
+    navy = ~blue & (lum < 75)
+    grey = ~blue & ~navy & (np.max(c, -1) - np.min(c, -1) < 40) & (lum < 200)
+    if frame_cols is not None:
+        cols = np.arange(rgba.shape[1])[None, :]
+        grey &= cols < frame_cols
+    k[navy] = NAVY
+    k[blue] = BLUE
+    k[grey] = GREY
     return k
 
 
@@ -33,79 +53,44 @@ def load_png(px_mm=0.1, path=PNG, width_mm=WIDTH_MM):
     im = Image.open(path).convert("RGBA")
     w = round(width_mm / px_mm)
     h = round(im.height * w / im.width)
-    return np.array(im.resize((w, h), Image.LANCZOS))
+    a = np.array(im.resize((w, h), Image.LANCZOS))
+    a[int(h * TAGLINE[0]):, int(w * TAGLINE[1]):, 3] = 0          # drop the tagline
+    return a
 
 
+# --- morphology on boolean masks -------------------------------------------------------------
 def _label(mask):
-    """4-connected islands: (labels, count). Plain union-find over row runs."""
+    """4-connected islands: (labels, count). Union-find over row runs."""
     h, w = mask.shape
     labels = np.zeros((h, w), np.int32)
     parent = [0]
 
-    def find(a):
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]
-            a = parent[a]
-        return a
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
 
     prev = []
     for y in range(h):
-        row = mask[y]
+        row = np.concatenate([[False], mask[y], [False]])
+        edges = np.flatnonzero(row[1:] != row[:-1])
         runs = []
-        x = 0
-        while x < w:
-            if row[x]:
-                x0 = x
-                while x < w and row[x]:
-                    x += 1
-                lab = len(parent)
-                parent.append(lab)
-                for (p0, p1, pl) in prev:
-                    if p0 < x and p1 > x0:
-                        a, b = find(lab), find(pl)
-                        if a != b:
-                            parent[max(a, b)] = min(a, b)
-                runs.append((x0, x, lab))
-            else:
-                x += 1
+        for x0, x1 in zip(edges[::2], edges[1::2]):
+            lab = len(parent)
+            parent.append(lab)
+            for (p0, p1, pl) in prev:
+                if p0 < x1 and p1 > x0:
+                    a, b = find(lab), find(pl)
+                    if a != b:
+                        parent[max(a, b)] = min(a, b)
+            runs.append((x0, x1, lab))
         for (x0, x1, lab) in runs:
             labels[y, x0:x1] = lab
         prev = runs
     roots = np.array([find(i) for i in range(len(parent))], np.int32)
-    uniq, compact = np.unique(roots, return_inverse=True)
-    return compact[labels].astype(np.int32), len(uniq) - 1
-
-
-def _erode(m):
-    e = m.copy()
-    e[1:] &= m[:-1]; e[:-1] &= m[1:]; e[:, 1:] &= m[:, :-1]; e[:, :-1] &= m[:, 1:]
-    e[0] = e[-1] = False; e[:, 0] = e[:, -1] = False
-    return e
-
-
-def island_thickness_mm(mask, px_mm):
-    """Thickest part of each island (mm): twice the number of erosions it survives."""
-    labels, n = _label(mask)
-    survived = np.zeros(n + 1, int)
-    m = mask.copy()
-    k = 0
-    while m.any():
-        k += 1
-        present = np.unique(labels[m])
-        survived[present] = k
-        m = _erode(m)
-    return labels, survived[1:] * 2 * px_mm
-
-
-def min_feature_mm(mask, px_mm=0.1):
-    _, t = island_thickness_mm(mask, px_mm)
-    return float(t.min()) if len(t) else float("inf")
-
-
-def clean(mask, px_mm=0.1, min_mm=MIN_MM):
-    labels, t = island_thickness_mm(mask, px_mm)
-    keep = np.concatenate([[False], t >= min_mm])
-    return keep[labels] & mask
+    _, compact = np.unique(roots, return_inverse=True)
+    return compact[labels].astype(np.int32), int(compact.max())
 
 
 def _disk(min_mm, px_mm):
@@ -136,11 +121,10 @@ def _thin_clusters(m, px_mm, min_mm, keep_px=20):
     thin = m & ~opening(m, min_mm, px_mm)
     if not thin.any():
         return thin, 0
-    labels, n = _label(thin)
+    labels, _ = _label(thin)
     sizes = np.bincount(labels.ravel())
     sizes[0] = 0
-    big = sizes > keep_px
-    return big[labels], int(sizes.max())
+    return (sizes > keep_px)[labels], int(sizes.max())
 
 
 def thin_parts(m, px_mm=0.1, min_mm=MIN_MM):
@@ -148,23 +132,58 @@ def thin_parts(m, px_mm=0.1, min_mm=MIN_MM):
     return _thin_clusters(m, px_mm, min_mm)[1]
 
 
-def thicken(neg, azu, px_mm=0.1, min_mm=MIN_MM):
-    """Thin blue goes black; thin black grows (into white first, then blue) until a 0.8 mm pen fits."""
+def island_thickness_mm(mask, px_mm):
+    labels, n = _label(mask)
+    survived = np.zeros(n + 1, int)
+    m = mask.copy()
+    k = 0
+    four = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]
+    while m.any():
+        k += 1
+        survived[np.unique(labels[m])] = k
+        m = _shift_all(m, four, np.logical_and)
+    return labels, survived[1:] * 2 * px_mm
+
+
+def min_feature_mm(mask, px_mm=0.1):
+    _, t = island_thickness_mm(mask, px_mm)
+    return float(t.min()) if len(t) else float("inf")
+
+
+def clean(mask, px_mm=0.1, min_mm=MIN_MM):
+    """Drop islands too small to print."""
+    labels, t = island_thickness_mm(mask, px_mm)
+    return np.concatenate([[False], t >= min_mm])[labels] & mask
+
+
+def thicken(ms, px_mm=0.1, min_mm=MIN_MM):
+    """Thin strokes grow into white; what still cannot grow goes to the colour around it."""
+    ms = [m.copy() for m in ms]
     grow = _disk(0.5, px_mm)
     for _ in range(8):
-        tb, _ = _thin_clusters(azu, px_mm, min_mm)
-        neg = neg | tb
-        azu = azu & ~tb
-        tk, _ = _thin_clusters(neg, px_mm, min_mm)
-        if not tk.any() and not _thin_clusters(azu, px_mm, min_mm)[0].any():
-            return neg, azu
-        neg = neg | _shift_all(tk, grow, np.logical_or)
-        azu = azu & ~neg
-    return neg, azu
+        thin = [_thin_clusters(m, px_mm, min_mm)[0] for m in ms]
+        if not any(t.any() for t in thin):
+            return ms
+        white = ~np.logical_or.reduce(ms)
+        for i, t in enumerate(thin):
+            ms[i] |= _shift_all(t, grow, np.logical_or) & white
+            white &= ~ms[i]
+    # still thin (e.g. rings inside the dots): give those pixels to the neighbour with most contact
+    near = _disk(0.6, px_mm)
+    for i in range(len(ms)):
+        t = _thin_clusters(ms[i], px_mm, min_mm)[0]
+        if not t.any():
+            continue
+        ms[i] &= ~t
+        counts = [(_shift_all(m, near, np.logical_or) & t) for m in ms]
+        for y, x in zip(*np.nonzero(t)):
+            best = max(range(len(ms)), key=lambda j: counts[j][y, x] and j != i)
+            if counts[best][y, x] and best != i:
+                ms[best][y, x] = True
+    return ms
 
 
 def _pinch_sites(m):
-    """2x2 blocks touching only at a corner: (rows, cols, which) — which 0: a&d, 1: b&c."""
     a, b, c, d = m[:-1, :-1], m[:-1, 1:], m[1:, :-1], m[1:, 1:]
     return (a & d & ~b & ~c), (b & c & ~a & ~d)
 
@@ -176,38 +195,46 @@ def fix_pinches(m):
         p1, p2 = _pinch_sites(m)
         if not (p1.any() or p2.any()):
             return m
-        m[:-1, 1:] |= p1          # a&d -> fill b
-        m[:-1, :-1] |= p2         # b&c -> fill a
+        m[:-1, 1:] |= p1
+        m[:-1, :-1] |= p2
     raise RuntimeError("pinches do not converge")
 
 
 def masks(px_mm=0.1, png=PNG, width_mm=WIDTH_MM):
-    """Black and blue inlays: clean, disjoint, no corner-only contacts in either or in both."""
-    k = classify(load_png(px_mm, png, width_mm))
-    neg, azu = thicken(clean(k == 1, px_mm), clean(k == 2, px_mm) & ~clean(k == 1, px_mm), px_mm)
-    neg = fix_pinches(neg)
-    azu = azu & ~neg
+    """[navy, blue, grey]: disjoint, printable, no corner-only contacts in each or in all of them."""
+    rgba = load_png(px_mm, png, width_mm)
+    fx = int(rgba.shape[1] * FRAME_X)
+    k = classify(rgba, frame_cols=fx)
+    # the 12 dots print as plain blue discs: small non-blue specks inside the dot panel turn blue
+    # (the white between the dots is one big area and stays)
+    inner = np.zeros_like(k, bool)
+    inner[:, :fx] = (k[:, :fx] != BLUE) & (k[:, :fx] != GREY)
+    labels, _ = _label(inner)
+    sizes = np.bincount(labels.ravel())
+    sizes[0] = 0
+    k[(sizes < 400)[labels] & inner] = BLUE
+    ms = thicken([clean(k == c, px_mm) for c in (NAVY, BLUE, GREY)], px_mm)
     for _ in range(50):
-        azu = fix_pinches(azu) & ~neg
-        both = neg | azu
-        p1, p2 = _pinch_sites(both)
-        if not (p1.any() or p2.any()) and not _pinch_sites(azu)[0].any() and not _pinch_sites(azu)[1].any():
-            return neg, azu
-        # close the union's pinch with the colour of the pixel that made it
-        fill_b = np.zeros_like(neg); fill_b[:-1, 1:] = p1
-        fill_a = np.zeros_like(neg); fill_a[:-1, :-1] = p2
-        src_b = np.zeros_like(neg); src_b[:-1, 1:] = p1 & neg[:-1, :-1]
-        src_a = np.zeros_like(neg); src_a[:-1, :-1] = p2 & neg[:-1, 1:]
-        neg = fix_pinches(neg | src_b | src_a)
-        azu = azu | ((fill_b | fill_a) & ~neg)
+        taken = np.zeros_like(ms[0])
+        for i in range(len(ms)):
+            ms[i] = fix_pinches(ms[i]) & ~taken
+            taken |= ms[i]
+        p1, p2 = _pinch_sites(taken)
+        if not (p1.any() or p2.any()) and all(not any(x.any() for x in _pinch_sites(m)) for m in ms):
+            return ms
+        # close the union's pinches with the colour of the pixel that made them
+        for i in range(len(ms)):
+            src = np.zeros_like(taken)
+            src[:-1, 1:] |= p1 & ms[i][:-1, :-1]
+            src[:-1, :-1] |= p2 & ms[i][:-1, 1:]
+            ms[i] |= src
     raise RuntimeError("inlay pinches do not converge")
 
 
 def mask_to_svg(mask, px_mm, path):
     """One <path> of rectangles: runs per row, merged downwards while they repeat."""
     h, w = mask.shape
-    open_rects = {}          # (x0, x1) -> y0
-    rects = []
+    open_rects, rects = {}, []
     for y in range(h + 1):
         runs = set()
         if y < h:
@@ -229,9 +256,11 @@ def mask_to_svg(mask, px_mm, path):
 
 
 def main(png=PNG, out_dir=HERE, width_mm=WIDTH_MM, px_mm=0.1):
-    for name, m in zip(("negro", "azul"), masks(px_mm, png, width_mm)):
+    for name, m in zip(COLOURS, masks(px_mm, png, width_mm)):
         n = mask_to_svg(m, px_mm, pathlib.Path(out_dir) / f"logo_{name}.svg")
-        print(f"logo_{name}.svg: {n} rectangles")
+        print(f"logo_{name}.svg: {n} rectangles, {m.sum()} px")
+    for old in ("negro",):
+        (pathlib.Path(out_dir) / f"logo_{old}.svg").unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
