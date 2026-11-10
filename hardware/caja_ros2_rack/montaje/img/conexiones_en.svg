@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640" font-family="Segoe UI, Arial, sans-serif">
+<rect width="1000" height="640" fill="#ffffff"/>
+<rect x="215" y="30" width="590" height="470" rx="14" fill="#f4f6f8" stroke="#9aa3ad" stroke-width="2" stroke-dasharray="10 7"/>
+<text x="230" y="55" font-size="15" text-anchor="start" fill="#5b6570" font-weight="700">Inside the box</text>
+<rect x="20" y="80" width="150" height="70" rx="8" fill="#3d3d3d" stroke="#222" stroke-width="2"/><text x="95.0" y="121.0" fill="#fff" font-size="17" font-weight="700" text-anchor="middle">24 V battery</text>
+<rect x="240" y="85" width="80" height="60" rx="8" fill="#f2c400" stroke="#222" stroke-width="2"/><text x="280.0" y="121.0" fill="#222" font-size="17" font-weight="700" text-anchor="middle">XT60</text>
+<rect x="360" y="85" width="110" height="60" rx="8" fill="#c0282d" stroke="#222" stroke-width="2"/><text x="415.0" y="107.0" fill="#fff" font-size="17" font-weight="700" text-anchor="middle">Switch</text><text x="415.0" y="131.0" fill="#fff" font-size="14" text-anchor="middle">KCD1</text>
+<rect x="510" y="70" width="160" height="90" rx="8" fill="#b9bec4" stroke="#222" stroke-width="2"/><text x="590.0" y="107.0" fill="#222" font-size="17" font-weight="700" text-anchor="middle">Converter</text><text x="590.0" y="131.0" fill="#222" font-size="14" text-anchor="middle">24 → 5 V</text>
+<polyline points="170,105 240,105" fill="none" stroke="#d62828" stroke-width="4" stroke-linejoin="round" />
+<polyline points="170,128 240,128" fill="none" stroke="#222222" stroke-width="4" stroke-linejoin="round" />
+<polyline points="320,105 360,105" fill="none" stroke="#d62828" stroke-width="4" stroke-linejoin="round" />
+<polyline points="470,105 510,105" fill="none" stroke="#d62828" stroke-width="4" stroke-linejoin="round" />
+<text x="476" y="98" font-size="11" text-anchor="start" fill="#d62828">IN+</text>
+<polyline points="320,128 340,128 340,165 490,165 490,135 510,135" fill="none" stroke="#222222" stroke-width="4" stroke-linejoin="round" />
+<text x="476" y="182" font-size="11" text-anchor="start" fill="#222">IN−</text>
+<text x="245" y="78" font-size="12" text-anchor="start" fill="#5b6570">main face</text>
+<rect x="830" y="60" width="150" height="200" rx="8" fill="#1f7a3c" stroke="#222" stroke-width="2"/><text x="905.0" y="166.0" fill="#fff" font-size="17" font-weight="700" text-anchor="middle">Raspberry Pi 4</text>
+<text x="905" y="300" font-size="13" text-anchor="middle" fill="#1f7a3c" font-weight="700">USB-A ×4</text>
+<polyline points="670,100 760,100 760,90 830,90" fill="none" stroke="#e0b000" stroke-width="4" stroke-linejoin="round" />
+<polyline points="670,128 775,128 775,110 830,110" fill="none" stroke="#222222" stroke-width="4" stroke-linejoin="round" />
+<text x="700" y="84" font-size="13" text-anchor="start" fill="#8a6d00" font-weight="700">USB-C (5 V)</text>
+<polyline points="690,100 690,300 520,300 520,330" fill="none" stroke="#e0b000" stroke-width="4" stroke-linejoin="round" />
+<polyline points="705,128 705,315 545,315 545,330" fill="none" stroke="#222222" stroke-width="4" stroke-linejoin="round" />
+<text x="512" y="296" font-size="12" text-anchor="start" fill="#8a6d00">OUT+ / OUT− → J1</text>
+<rect x="420" y="330" width="330" height="150" rx="8" fill="#1f7a3c" stroke="#222" stroke-width="2"/><text x="585.0" y="397.0" fill="#fff" font-size="17" font-weight="700" text-anchor="middle">Pico board</text><text x="585.0" y="421.0" fill="#fff" font-size="14" text-anchor="middle">Pico 2 · OLED · DISPLAY</text>
+<text x="510" y="350" font-size="12" text-anchor="start" fill="#fff">J1 +5V / GND</text>
+<polyline points="700,330 700,290 815,290 815,520 850,520 850,262" fill="none" stroke="#2a6fdb" stroke-width="4" stroke-linejoin="round" stroke-dasharray="9 6"/>
+<text x="420" y="522" font-size="12" text-anchor="start" fill="#2a6fdb">angled micro-USB: out of the back notch into a Pi USB port</text>
+<polyline points="895,262 895,560" fill="none" stroke="#2a6fdb" stroke-width="4" stroke-linejoin="round" />
+<rect x="800" y="560" width="190" height="40" rx="8" fill="#e9edf2" stroke="#222" stroke-width="2"/><text x="895.0" y="586.0" fill="#222" font-size="15" font-weight="700" text-anchor="middle">Arduino Mega (Shadow)</text>
+<polyline points="950,262 950,420" fill="none" stroke="#2a6fdb" stroke-width="4" stroke-linejoin="round" />
+<rect x="900" y="420" width="95" height="38" rx="8" fill="#e9edf2" stroke="#222" stroke-width="2"/><text x="947.5" y="445.0" fill="#222" font-size="15" font-weight="700" text-anchor="middle">Lidar C1</text>
+<rect x="8" y="360" width="192" height="46" rx="8" fill="#e9edf2" stroke="#222" stroke-width="2"/><text x="104.0" y="389.0" fill="#222" font-size="14" font-weight="700" text-anchor="middle">5× HC-SR04 → US1–US5</text>
+<text x="104" y="425" font-size="12" text-anchor="middle" fill="#222">5V · TR · EC · G</text>
+<rect x="8" y="470" width="192" height="46" rx="8" fill="#e9edf2" stroke="#222" stroke-width="2"/><text x="104.0" y="499.0" fill="#222" font-size="14" font-weight="700" text-anchor="middle">4× VL53L0X → VL1–VL4</text>
+<text x="104" y="535" font-size="11" text-anchor="middle" fill="#222">3V3 · G · SCL · SDA · – · XS  (cable ≤ 1 m)</text>
+<polyline points="200,383 300,383 300,395 420,395" fill="none" stroke="#8a8a8a" stroke-width="6" stroke-linejoin="round" />
+<polyline points="200,493 735,493 735,480" fill="none" stroke="#8a8a8a" stroke-width="6" stroke-linejoin="round" />
+<text x="232" y="375" font-size="12" text-anchor="start" fill="#555" font-weight="700">US1–US5</text>
+<text x="232" y="486" font-size="12" text-anchor="start" fill="#555" font-weight="700">VL1–VL4</text>
+<rect x="206" y="372" width="18" height="135" fill="none" stroke="#5b6570" stroke-width="2"/>
+<text x="206" y="522" font-size="12" text-anchor="start" fill="#5b6570">side slot</text>
+<line x1="20" y1="625" x2="60" y2="625" stroke="#d62828" stroke-width="5"/>
+<text x="68" y="630" font-size="13" text-anchor="start" fill="#222">+24 V</text>
+<line x1="210" y1="625" x2="250" y2="625" stroke="#222222" stroke-width="5"/>
+<text x="258" y="630" font-size="13" text-anchor="start" fill="#222">GND</text>
+<line x1="400" y1="625" x2="440" y2="625" stroke="#e0b000" stroke-width="5"/>
+<text x="448" y="630" font-size="13" text-anchor="start" fill="#222">+5 V</text>
+<line x1="590" y1="625" x2="630" y2="625" stroke="#2a6fdb" stroke-width="5"/>
+<text x="638" y="630" font-size="13" text-anchor="start" fill="#222">USB (data)</text>
+<line x1="780" y1="625" x2="820" y2="625" stroke="#8a8a8a" stroke-width="5"/>
+<text x="828" y="630" font-size="13" text-anchor="start" fill="#222">sensor cables</text>
+</svg>
