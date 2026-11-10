@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 900" width="1000" height="900" font-family="Segoe UI, Arial, sans-serif">
+<rect width="1000" height="900" fill="#fff"/>
+<defs>
+  <marker id="ok" markerUnits="userSpaceOnUse" markerWidth="16" markerHeight="16" refX="10" refY="8" orient="auto"><path d="M0,0 L16,8 L0,16 z" fill="#1f9d55"/></marker>
+  <marker id="no" markerUnits="userSpaceOnUse" markerWidth="16" markerHeight="16" refX="10" refY="8" orient="auto"><path d="M0,0 L16,8 L0,16 z" fill="#d62828"/></marker>
+</defs>
+
+<!-- ============ 1. micro-USB on the Pico ============ -->
+<text x="20" y="34" font-size="20" font-weight="700" fill="#222">1 · micro-USB acodado (Pico → Pi) · las dos cajas</text>
+<text x="20" y="58" font-size="14" fill="#555">Mirando la Pico por su cara de componentes, con su USB arriba (como está en la placa de sensores):</text>
+
+<!-- carrier board + Pico -->
+<rect x="70" y="150" width="380" height="330" rx="6" fill="#1f7a3c" stroke="#123" stroke-width="2"/>
+<text x="260" y="470" font-size="13" fill="#d8f0dd" text-anchor="middle">placa de sensores (cara de componentes)</text>
+<rect x="190" y="150" width="140" height="250" rx="4" fill="#0d4d2a" stroke="#0a2" stroke-width="1.5"/>
+<text x="260" y="300" font-size="16" fill="#cfe" text-anchor="middle" font-weight="700">Pico 2</text>
+<!-- micro-USB receptacle at the top edge, wide side towards the viewer -->
+<rect x="243" y="138" width="34" height="18" rx="3" fill="#b9bec4" stroke="#333" stroke-width="1.5"/>
+<!-- angled plug (inserted from above) + cable to the left -->
+<rect x="236" y="104" width="48" height="36" rx="6" fill="#2b2b2b"/>
+<path d="M236,122 C190,122 150,122 70,122" stroke="#2b2b2b" stroke-width="10" fill="none" stroke-linecap="round"/>
+<text x="292" y="128" font-size="12" fill="#333">← clavija acodada, metida desde arriba</text>
+
+<!-- arrows -->
+<line x1="230" y1="86" x2="90" y2="86" stroke="#1f9d55" stroke-width="5" marker-end="url(#ok)"/>
+<text x="58" y="93" font-size="22" fill="#1f9d55" font-weight="700">✓</text>
+<text x="96" y="76" font-size="13" fill="#1f9d55" font-weight="700">IZQUIERDA (la buena)</text>
+
+<line x1="300" y1="86" x2="420" y2="86" stroke="#e0a000" stroke-width="5" marker-end="url(#ok)"/>
+<text x="430" y="84" font-size="13" fill="#b07a00" font-weight="700">derecha: cabe,</text>
+<text x="430" y="100" font-size="13" fill="#b07a00">pero el cable da la vuelta</text>
+
+<circle cx="560" cy="250" r="26" fill="none" stroke="#d62828" stroke-width="4"/>
+<line x1="542" y1="232" x2="578" y2="268" stroke="#d62828" stroke-width="4"/>
+<line x1="578" y1="232" x2="542" y2="268" stroke="#d62828" stroke-width="4"/>
+<text x="600" y="238" font-size="14" fill="#d62828" font-weight="700">✗ hacia ti (hacia los componentes):</text>
+<text x="600" y="256" font-size="13" fill="#d62828">choca con los Dupont de los sensores</text>
+<text x="600" y="292" font-size="14" fill="#d62828" font-weight="700">✗ hacia atrás (detrás de la placa):</text>
+<text x="600" y="310" font-size="13" fill="#d62828">en la caja C choca con el tabique</text>
+
+<text x="560" y="370" font-size="14" fill="#222" font-weight="700">Al comprar:</text>
+<text x="560" y="392" font-size="13" fill="#222">· micro-USB 2.0 (no 3.0), de 30 cm (vale para las dos cajas).</text>
+<text x="560" y="412" font-size="13" fill="#222">· Codo LATERAL: el cable sale de lado, paralelo al lado</text>
+<text x="560" y="430" font-size="13" fill="#222">  largo del conector (no hacia arriba ni hacia abajo).</text>
+<text x="560" y="450" font-size="13" fill="#222">· El micro-USB solo entra de una forma: compara la foto con</text>
+<text x="560" y="468" font-size="13" fill="#222">  tu Pico y comprueba que el cable quedará a la IZQUIERDA.</text>
+<text x="560" y="488" font-size="13" fill="#666">  ("left"/"right" no significa lo mismo en todas las marcas)</text>
+
+<!-- ============ 2. USB-C on the Pi, rack box ============ -->
+<line x1="20" y1="530" x2="980" y2="530" stroke="#ddd" stroke-width="2"/>
+<text x="20" y="568" font-size="20" font-weight="700" fill="#222">2 · USB-C acodado con hilos (convertidor → Pi) · caja C</text>
+<text x="20" y="592" font-size="14" fill="#555">La Pi vista desde el frontal estrecho: de pie, componentes y ventilador a la derecha, USB-C abajo:</text>
+<!-- divider -->
+<rect x="120" y="620" width="34" height="250" fill="#c9ccd1" stroke="#555"/>
+<text x="137" y="890" font-size="12" fill="#555" text-anchor="middle">tabique</text>
+<!-- standoff + Pi PCB + parts -->
+<rect x="154" y="650" width="22" height="10" fill="#e8e8e8" stroke="#888"/>
+<rect x="176" y="620" width="9" height="180" fill="#1f7a3c" stroke="#123"/>
+<rect x="185" y="640" width="70" height="60" fill="#222"/>
+<text x="220" y="676" font-size="12" fill="#fff" text-anchor="middle">ventilador</text>
+<text x="230" y="612" font-size="13" fill="#1f7a3c" font-weight="700">Raspberry Pi 4</text>
+<!-- USB-C receptacle at the bottom edge, plug from below, cable to the right -->
+<rect x="185" y="790" width="14" height="10" fill="#b9bec4" stroke="#333"/>
+<rect x="181" y="800" width="24" height="30" rx="5" fill="#2b2b2b"/>
+<path d="M205,815 C240,815 300,815 360,815 L360,860" stroke="#2b2b2b" stroke-width="9" fill="none" stroke-linecap="round"/>
+<text x="370" y="868" font-size="13" fill="#333">hilos al convertidor (+5 V amarillo, GND negro)</text>
+<line x1="215" y1="770" x2="320" y2="770" stroke="#1f9d55" stroke-width="5" marker-end="url(#ok)"/>
+<text x="340" y="776" font-size="14" fill="#1f9d55" font-weight="700">✓ hacia el lado del ventilador</text>
+<line x1="175" y1="845" x2="160" y2="845" stroke="#d62828" stroke-width="4" marker-end="url(#no)"/>
+<text x="20" y="815" font-size="13" fill="#d62828" font-weight="700">✗ hacia el tabique</text>
+<text x="560" y="660" font-size="14" fill="#222" font-weight="700">Al comprar:</text>
+<text x="560" y="682" font-size="13" fill="#222">· USB-C macho acodado 90° con hilos sueltos (pigtail),</text>
+<text x="560" y="700" font-size="13" fill="#222">  apto para 3 A (la Pi 4 pide 5 V / 3 A), de 15–20 cm.</text>
+<text x="560" y="720" font-size="13" fill="#222">· Codo "arriba/abajo": el cable sale perpendicular a la</text>
+<text x="560" y="738" font-size="13" fill="#222">  cara ancha del conector. El USB-C es reversible: gíralo</text>
+<text x="560" y="756" font-size="13" fill="#222">  para que el cable vaya hacia el ventilador.</text>
+<text x="560" y="780" font-size="13" fill="#666">· En la caja actual sirve el mismo cable (o uno recto):</text>
+<text x="560" y="798" font-size="13" fill="#666">  allí el USB-C mira al techo y el cable va hacia el centro.</text>
+</svg>
