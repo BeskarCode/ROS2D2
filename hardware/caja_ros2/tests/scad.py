@@ -91,8 +91,19 @@ def is_empty(part, defs=None):
         return True
     if not out.exists() or out.stat().st_size < 200:
         return True
-    lo, hi = stl_bbox(out)                     # faces that only touch leave a flat sliver
-    return min(h - l for l, h in zip(lo, hi)) < 0.01
+    return abs(stl_volume(out)) < 0.01         # faces that only touch leave zero volume
+
+
+def stl_volume(path):
+    """Volume (mm^3) of an ASCII STL, by the divergence theorem."""
+    data = pathlib.Path(path).read_bytes()
+    v = [tuple(map(float, m)) for m in re.findall(rb"vertex\s+(\S+)\s+(\S+)\s+(\S+)", data)]
+    vol = 0.0
+    for i in range(0, len(v) - 2, 3):
+        a, b, c = v[i:i + 3]
+        vol += (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
+                + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6
+    return vol
 
 
 def echo_values(part, defs=None):

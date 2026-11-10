@@ -57,6 +57,16 @@ sw_c = [40, 15];                     // centre (X, Z)
 sensor_slot = [35, 10];              // cable slot for the sensor wires (X x Z)
 sensor_slot_c = [27.5, 100];
 
+// --- top tabs: the front and the back hang on the roof (one M3 each, insert from above) -----
+top_tab = [10, 8, 7];                // X x Y x Z, under the roof, centred in X
+function top_tab_y() = [wall + top_tab[1] / 2, D - wall - top_tab[1] / 2];
+module top_tab(y) {
+    translate([W / 2 - top_tab[0] / 2, y - top_tab[1] / 2, H - wall - top_tab[2]]) difference() {
+        cube(top_tab);
+        translate([top_tab[0] / 2, top_tab[1] / 2, top_tab[2] - insert_h + 0.01]) cylinder(d = insert_d, h = insert_h, $fn = 24);
+    }
+}
+
 // --- logo ---------------------------------------------------------------------------------
 logo_w = 80;
 logo_depth = 0.6;

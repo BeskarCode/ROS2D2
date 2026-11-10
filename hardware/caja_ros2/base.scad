@@ -96,7 +96,7 @@ module front_tab_holes() {
         }
 }
 
-module base() {
+module base(ears = true) {
     difference() {
         union() {
             floor_plate();
@@ -104,7 +104,8 @@ module base() {
             pi_bracket();
             conv_bosses();
             shell_bosses();
-            mount_ears();
+            if (ears) mount_ears();
+            top_tab(top_tab_y()[1]);
         }
         back_cuts();
         front_tab_holes();

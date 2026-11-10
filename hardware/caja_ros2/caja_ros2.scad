@@ -7,9 +7,11 @@ include <params.scad>
 include <ghosts.scad>
 include <frontal.scad>
 include <base.scad>
+include <carcasa.scad>
 
 part = "montaje";
 ga = "pico";  gb = "pi";        // check_ghost_pair
+dz = 0;                         // check_shell_slide
 
 module echo_layout() {
     echo("W", W); echo("D", D); echo("H", H); echo("wall", wall);
@@ -29,6 +31,10 @@ module pico_pcb() { translate([pico_x0(), pico_y(), pico_ztop() - pico_h]) cube(
 
 gap = 0;                        // check_selftest
 if (part == "check_selftest") intersection() { cube(10); translate([10 + gap, 0, 0]) cube(10); }
+else if (part == "check_selftest_two_touches") intersection() {
+    union() { cube(10); translate([0, 0, 20]) cube(10); }
+    union() { translate([10, 0, 0]) cube(10); translate([0, 10, 20]) cube(10); }
+}
 else if (part == "ghosts") ghost_all();
 else if (part == "check_ghost_pair") intersection() { ghost(ga); ghost(gb); }
 else if (part == "echo_layout") echo_layout();
@@ -53,9 +59,21 @@ else if (part == "check_back_cut") intersection() {
 }
 else if (part == "check_base_vs_frontal") intersection() { base(); frontal(); }
 else if (part == "check_pi_standoffs_touch") intersection() { pi_bracket(0.2); ghost_pi_pcb(); }
+// --- shell ---
+else if (part == "carcasa") print_shell() carcasa();
+else if (part == "check_shell_assembled") intersection() { carcasa(); union() { base(); frontal(); } }
+else if (part == "check_shell_slide") intersection() { translate([0, 0, dz]) carcasa(); union() { base(); frontal(); } }
+else if (part == "check_shell_vs_ghosts") intersection() { carcasa(); ghost_all(); }
+else if (part == "check_top_screws_hit_tabs") intersection() {
+    for (y = top_tab_y()) translate([W / 2, y, H - wall - 6]) cylinder(d = 6, h = 6, $fn = 24);
+    union() { base(); frontal(); }
+}
+else if (part == "echo_vents") echo_vents();
+else if (part == "montaje_sin_orejetas") { frontal(); base(ears = false); carcasa(); }
 else if (part == "montaje") {
     color("white") frontal();
     color("lightgray") base();
+    color("gray", 0.5) carcasa();
     color("black") frontal_logo("negro");
     color("royalblue") frontal_logo("azul");
     %ghost_all();
