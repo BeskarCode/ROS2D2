@@ -89,7 +89,10 @@ def is_empty(part, defs=None):
     out, text = _run(part, defs, "stl")
     if "top level object is empty" in text or "No top level geometry" in text:
         return True
-    return not out.exists() or b"vertex" not in out.read_bytes()[:4096] and out.stat().st_size < 200
+    if not out.exists() or out.stat().st_size < 200:
+        return True
+    lo, hi = stl_bbox(out)                     # faces that only touch leave a flat sliver
+    return min(h - l for l, h in zip(lo, hi)) < 0.01
 
 
 def echo_values(part, defs=None):
