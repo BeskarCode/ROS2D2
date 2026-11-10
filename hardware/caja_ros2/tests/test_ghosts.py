@@ -29,3 +29,14 @@ def test_ghosts_do_not_collide_with_each_other(a, b):
 def test_oled_view_center(lay):
     x0, ztop = lay["pico_x0"], lay["pico_ztop"]
     assert lay["oled_view_center"] == pytest.approx([x0 + 58.5, ztop - 71], abs=0.01)
+
+
+def test_pi_ports_flush_with_the_back_outside(lay):
+    # review: the jacks sat 2.5 mm behind the outer face, plugs could not seat
+    assert lay["pi_port_face"] >= lay["D"] - 0.5
+
+
+def test_cable_route_to_the_back_slot_is_kept_free():
+    # the sensor cables (and the Pico's USB going out) run from the side channels to the back slot
+    for g in ["pi", "conv", "xt60", "switch"]:
+        assert is_empty("check_ghost_pair", {"ga": "cables", "gb": g}), g

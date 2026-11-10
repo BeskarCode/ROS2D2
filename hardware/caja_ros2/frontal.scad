@@ -4,11 +4,16 @@
 // logo is inlaid 0.6 mm in black and blue, 2 tabs at the bottom are screwed from under the floor.
 include <params.scad>
 
-col_d = 6.8;                       // the board leaves a 7 mm keep-out round its M3 holes
+col_d = 8;                         // 2 mm of wall round the insert; the ghost keeps 8.4 mm clear
 front_tab = [9, 10, 8];            // X x Y x Z, insert from below
 function front_tabs_x() = [wall + 0.5 + front_tab[0] / 2, W - wall - 0.5 - front_tab[0] / 2];
-function oled_win_center() = oled_view_center();
+function sw1_world() = pico2world(sw1[0], sw1[1]);
+// left edge of the window: just clear of the push rod's guide (no chamfer on that side)
+function oled_win_x() = [sw1_world()[0] + guide_od / 2 + 0.9, oled_view_center()[0] + oled_win[0] / 2];
+function oled_win_center() = [(oled_win_x()[0] + oled_win_x()[1]) / 2, oled_view_center()[1] + oled_win_dz];
 function oled_win_top() = oled_win_center()[1] + oled_win[1] / 2 + wall;   // outer edge of the chamfer
+function oled_win_inner() = [oled_win_x()[0], oled_win_center()[1] - oled_win[1] / 2,
+                             oled_win_x()[1], oled_win_center()[1] + oled_win[1] / 2];
 
 LOGO_H = 24.8;                     // logo SVG height for 80 mm width
 
@@ -36,12 +41,53 @@ module pico_columns(extra = 0) {
 }
 
 module oled_window() {
-    c = oled_win_center();
-    w = oled_win[0]; h = oled_win[1];
-    translate([c[0], 0, c[1]]) hull() {
-        translate([-w / 2, wall - 0.01, -h / 2]) cube([w, 0.02 + 0.5, h]);
-        translate([-w / 2 - wall, -0.01, -h / 2 - wall]) cube([w + 2 * wall, 0.02, h + 2 * wall]);
+    r = oled_win_inner();
+    difference() {
+        hull() {
+            translate([r[0], wall - 0.01, r[1]]) cube([r[2] - r[0], 0.02, r[3] - r[1]]);
+            translate([r[0], -0.01, r[1] - wall]) cube([r[2] - r[0] + wall, 0.02, r[3] - r[1] + 2 * wall]);
+        }
+        // the window's corner gives way round the column behind it
+        for (p = pico_holes) translate(pico2world(p[0], p[1]) - [0, pico_y() + 1, 0])
+            rotate([-90, 0, 0]) cylinder(d = col_d + 1, h = wall + 2, $fn = 40);
     }
+}
+
+// --- push rod for the DISPLAY button ---------------------------------------------------
+function rod_end_y() = pico_y() - sw1_h - rod_gap;               // its inner end, at rest
+
+module rod_guide() {
+    p = sw1_world();
+    translate([p[0], 0, p[2]]) rotate([-90, 0, 0]) difference() {
+        translate([0, 0, wall - 0.01]) cylinder(d = guide_od, h = guide_len + 0.01, $fn = 40);
+        translate([0, 0, -1]) cylinder(d = rod_bore, h = wall + guide_len + 2, $fn = 32);
+    }
+}
+
+module rod_hole() {
+    p = sw1_world();
+    translate([p[0], -1, p[2]]) rotate([-90, 0, 0]) cylinder(d = rod_bore, h = wall + 2, $fn = 32);
+}
+
+// assembled, pushed in by press mm
+module pulsador(press = 0) {
+    p = sw1_world();
+    y0 = -rod_proud + press; y1 = rod_end_y() + press; yf = wall + guide_len + press;
+    translate([p[0], 0, p[2]]) rotate([-90, 0, 0]) {
+        hull() {                                                      // rod, tip chamfered
+            translate([0, 0, y0]) cylinder(d = rod_d - 1, h = 0.01, $fn = 32);
+            translate([0, 0, y0 + 0.5]) cylinder(d = rod_d, h = y1 - y0 - 0.5, $fn = 32);
+        }
+        translate([0, 0, yf]) cylinder(d = rod_flange[0], h = rod_flange[1], $fn = 40);   // stop collar
+        translate([0, 0, yf + rod_flange[1] - 0.01])                   // 45 deg under it: prints inner end down
+            cylinder(d1 = rod_flange[0], d2 = rod_d, h = (rod_flange[0] - rod_d) / 2, $fn = 40);
+    }
+}
+
+// print orientation: standing on its inner end
+module print_rod() {
+    p = sw1_world();
+    translate([0, 0, rod_end_y()]) rotate([-90, 0, 0]) translate([-p[0], 0, -p[2]]) children();
 }
 
 module front_tabs() {
@@ -60,8 +106,10 @@ module frontal(depth = logo_depth) {
             pico_columns();
             front_tabs();
             top_tab(top_tab_y()[0]);
+            rod_guide();
         }
         oled_window();
+        rod_hole();
         logo_svg("todo", depth);
     }
 }

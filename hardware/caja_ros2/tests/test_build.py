@@ -60,3 +60,7 @@ def test_every_part_fits_p1s_bed_and_sits_on_it(out, name):
 
 def test_build_writes_the_monocolor_front(out):
     assert (out / "stl" / "frontal_monocolor.stl").stat().st_size > 1000
+
+
+def test_build_writes_the_push_rod(out):
+    assert (out / "stl" / "pulsador.stl").stat().st_size > 1000

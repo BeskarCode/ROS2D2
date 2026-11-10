@@ -15,7 +15,9 @@ module ghost_pico() {
     difference() {
         box_from([x0, wall + 0.5, zb], [x0 + pico_w, y, zt]);
         for (h = pico_holes) translate(pico2world(h[0], h[1]) + [0, 1, 0])
-            rotate([90, 0, 0]) cylinder(d = 7, h = pico_gap + 2, $fn = 32);
+            rotate([90, 0, 0]) cylinder(d = 8.4, h = pico_gap + 2, $fn = 32);
+        translate(pico2world(sw1[0], sw1[1]) - [0, pico_y() - wall, 0])      // the DISPLAY push rod's path
+            rotate([-90, 0, 0]) cylinder(d = 9, h = pico_gap - sw1_h, $fn = 32);
         translate([x0 + oled_rect[0], wall, zt - oled_rect[3]])
             cube([oled_rect[2] - oled_rect[0], y - wall - oled_thick, oled_rect[3] - oled_rect[1]]);
     }
@@ -25,7 +27,7 @@ module ghost_pico() {
     box_from([wall + 0.5, wall + 0.5, zt - 82], [x0, y, zt - 50]);
     // side channels: the sensor cables (US1-5 left, VL1-4 right) run past the board's edges
     // to the back; nothing printed may sit in them
-    for (xs = [[wall + 0.5, x0], [x0 + pico_w, W - wall - 0.5]])
+    for (xs = [[wall + 0.5, x0 - 0.8], [x0 + pico_w + 0.8, W - wall - 0.5]])
         box_from([xs[0], wall + 0.5, zb + 5], [xs[1], y + pcb_t + 3, zt]);
 }
 
@@ -72,9 +74,19 @@ module ghost_xt60() {
 }
 
 module ghost_switch() {
-    yb = D - wall;
-    box_from([sw_c[0] - sw_cut[0] / 2 + 1, yb - sw_depth - sw_wires, sw_c[1] - sw_cut[1] / 2 + 1],
-             [sw_c[0] + sw_cut[0] / 2 - 1, yb, sw_c[1] + sw_cut[1] / 2 - 1]);
+    yb = D - sw_panel_t;
+    box_from([sw_c[0] - sw_cut[0] / 2 + 0.1, yb - sw_depth - sw_wires, sw_c[1] - sw_cut[1] / 2 + 0.1],
+             [sw_c[0] + sw_cut[0] / 2 - 0.1, yb, sw_c[1] + sw_cut[1] / 2 - 0.1]);
+}
+
+// sensor cables from the side channels to the back slot (the Pico's USB cable goes out there too):
+// left, high, straight back; right, over the Pi; then along the back wall to the slot
+module ghost_cables() {
+    x0 = pico_x0(); y1 = pico_y() + pcb_t + 3; yb = D - wall;
+    zc = sensor_slot_c[1];
+    box_from([wall + 0.5, y1, zc - 6], [x0 - 0.8, yb, zc + 6]);
+    box_from([pi_x_pcb() + pcb_t + 0.5, y1, pi_z0() + pi_w + 2.5], [W - wall - 0.5, yb, pi_z0() + pi_w + 8]);   // over the bracket
+    box_from([wall + 0.5, yb - 8, zc - 6], [sensor_slot_c[0] + sensor_slot[0] / 2, yb, zc + 6]);
 }
 
 module ghost(name) {
@@ -83,7 +95,8 @@ module ghost(name) {
     else if (name == "conv") ghost_conv();
     else if (name == "xt60") ghost_xt60();
     else if (name == "switch") ghost_switch();
+    else if (name == "cables") ghost_cables();
     else assert(false, str("unknown ghost ", name));
 }
 
-module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch"]) ghost(g); }
+module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables"]) ghost(g); }

@@ -36,3 +36,25 @@ def test_mount_ears_outside_footprint():
 def test_base_prints_flat():
     lo, _ = stl_bbox(run_scad("base"))
     assert lo[2] == pytest.approx(0, abs=0.01)
+
+
+def test_back_top_tab_is_supported_for_printing():
+    assert is_empty("check_back_tab_supported")      # nothing hangs in the air under it
+
+
+def test_converter_inserts_leave_floor_under_them():
+    assert is_empty("check_conv_insert_floor")       # >= 1.5 mm of floor below each insert hole
+
+
+def test_right_low_vents_not_blocked_by_the_pi_bracket():
+    assert is_empty("check_right_vents_open")
+
+
+def test_switch_cut_is_the_panel_hole_not_the_bezel():
+    assert echo_values("echo_back")["sw_cut"] == [19.2, 13]
+
+
+def test_xt60_screw_holes_apart_from_body_cut():
+    v = echo_values("echo_back")
+    gap = v["xt60_hole_pitch"] / 2 - v["xt60_body"][1] / 2 - v["m3_clear"] / 2
+    assert gap >= 1.5

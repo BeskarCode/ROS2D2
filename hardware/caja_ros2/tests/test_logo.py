@@ -61,3 +61,11 @@ def test_min_feature_detects_thin_line():
     m = np.zeros((40, 40), bool)
     m[10:30, 20:23] = True               # 0.3 mm wide at 0.1 mm/px
     assert min_feature_mm(m, px_mm=0.1) < 0.8
+
+
+@pytest.mark.skipif(not PNG.exists(), reason="the logo PNG lives in ROS2D2/docs (local only)")
+def test_no_thin_strokes_anywhere():
+    # review: island thickness missed thin strokes attached to thick parts (0.3 mm blue leg stripe)
+    from gen_logo import masks, thin_parts
+    for m in masks(px_mm=0.1):
+        assert thin_parts(m, px_mm=0.1, min_mm=0.8) <= 20     # largest thin cluster, px (0.2 mm^2)
