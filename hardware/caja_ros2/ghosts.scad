@@ -30,6 +30,10 @@ module ghost_pico() {
 }
 
 // --- Raspberry Pi 4: standing on its bracket, ports to the back -------------------------
+module ghost_pi_pcb() {
+    box_from([pi_x_pcb(), pi_y0(), pi_z0()], [pi_x_pcb() + pcb_t, pi_y0() + pi_l, pi_z0() + pi_w]);
+}
+
 module ghost_pi() {
     xp = pi_x_pcb(); y0 = pi_y0(); z0 = pi_z0();
     box_from([xp, y0, z0], [xp + pcb_t, y0 + pi_l, z0 + pi_w]);             // the board

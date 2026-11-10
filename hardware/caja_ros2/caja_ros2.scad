@@ -6,6 +6,7 @@
 include <params.scad>
 include <ghosts.scad>
 include <frontal.scad>
+include <base.scad>
 
 part = "montaje";
 ga = "pico";  gb = "pi";        // check_ghost_pair
@@ -26,7 +27,9 @@ module echo_frontal() {
 
 module pico_pcb() { translate([pico_x0(), pico_y(), pico_ztop() - pico_h]) cube([pico_w, pcb_t, pico_h]); }
 
-if (part == "ghosts") ghost_all();
+gap = 0;                        // check_selftest
+if (part == "check_selftest") intersection() { cube(10); translate([10 + gap, 0, 0]) cube(10); }
+else if (part == "ghosts") ghost_all();
 else if (part == "check_ghost_pair") intersection() { ghost(ga); ghost(gb); }
 else if (part == "echo_layout") echo_layout();
 // --- front ---
@@ -39,8 +42,20 @@ else if (part == "check_logo_overlap") linear_extrude(1) intersection() { logo_2
 else if (part == "check_columns_short") intersection() { pico_columns(0.2); pico_pcb(); }
 else if (part == "check_columns_touch") intersection() { pico_columns(-0.2); pico_pcb(); }
 else if (part == "echo_frontal") echo_frontal();
+// --- base ---
+else if (part == "base" || part == "base_montada") base();
+else if (part == "check_base_vs_ghosts") intersection() { base(); ghost_all(); }
+else if (part == "check_ports_clear") intersection() { base(); pi_ports(10); }
+else if (part == "check_back_cut") intersection() {
+    base();
+    if (ga == "xt60") translate([0, xt60_depth, 0]) ghost_xt60();
+    else translate([0, sw_depth + sw_wires, 0]) ghost_switch();
+}
+else if (part == "check_base_vs_frontal") intersection() { base(); frontal(); }
+else if (part == "check_pi_standoffs_touch") intersection() { pi_bracket(0.2); ghost_pi_pcb(); }
 else if (part == "montaje") {
     color("white") frontal();
+    color("lightgray") base();
     color("black") frontal_logo("negro");
     color("royalblue") frontal_logo("azul");
     %ghost_all();
