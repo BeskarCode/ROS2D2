@@ -7,7 +7,7 @@ import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
-import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
+import { PICO_GPIO, R2, TYPES, beamDefaults, coverage, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const OBJECTS = {
@@ -366,7 +366,8 @@ export function createSensorsTab({ status }) {
             : `<div class="row"><label><i class="fa-solid fa-microchip"></i>on the Pico</label><div class="pins">${PINS[s.type].map((p) => pinSelect(s, p, used)).join('')}</div></div>`}
           <div class="row"><label><i class="fa-solid fa-location-dot"></i>position</label>
             <span class="sub pos">${posText(s)}</span></div>
-          <div class="row"><span></span><button class="remove"><i class="fa-solid fa-trash"></i>Remove</button></div>
+          <div class="row"><span></span><span><button class="defaults" title="field of view and range back to the ${T.label}'s own (${T.fovDeg}°, ${T.rangeMax} m)"><i class="fa-solid fa-rotate-left"></i>Defaults</button>
+            <button class="remove"><i class="fa-solid fa-trash"></i>Remove</button></span></div>
         </div>`;
       el.querySelector('.sub').textContent = s.name;
       if (el.querySelector('.port')) el.querySelector('.port').textContent = s.port;
@@ -416,6 +417,13 @@ export function createSensorsTab({ status }) {
         renderList();
         touched();
       }));
+      el.querySelector('.defaults').addEventListener('click', () => {
+        Object.assign(s, beamDefaults(s.type));
+        s.stop_distance = Math.min(s.stop_distance, r3(s.range_max - 0.01));
+        renderList();
+        touched();
+        status(`${s.name}: field of view and range back to the ${T.label}'s own. Save to keep it.`, 'warn');
+      });
       el.querySelector('.remove').addEventListener('click', () => {
         sensors = sensors.filter((t) => t !== s);
         if (selected === s.name) selected = sensors[0] ? sensors[0].name : null;
@@ -435,9 +443,9 @@ export function createSensorsTab({ status }) {
     return out;
   }
   $('s-add').addEventListener('click', () => {
-    const type = $('s-addtype').value, T = TYPES[type];
-    const s = { type, x: 0, y: R2.bodyR + 0.01, z: 0.3, yaw_deg: 90, pitch_deg: 0, fov_deg: T.fovDeg, range_max: T.rangeMax,
-                range_min: type === 'hcsr04' ? 0.02 : type === 'vl53l0x' ? 0.03 : 0.05, stop_distance: 0, found: null, nameEdited: false };
+    const type = $('s-addtype').value;
+    const s = { type, x: 0, y: R2.bodyR + 0.01, z: 0.3, yaw_deg: 90, pitch_deg: 0, ...beamDefaults(type),
+                stop_distance: 0, found: null, nameEdited: false };
     if (type === 'rplidar_c1') Object.assign(s, { port: '/dev/r2-lidar', x: 0.17, y: 0, z: 0.11, yaw_deg: 0 });
     else {
       const pins = freePins(PINS[type].length);
