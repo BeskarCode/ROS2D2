@@ -101,15 +101,15 @@ int main() {
   check(reservedLeds == N_CONN, "every LED pin is reserved (never offered for a sensor)");
   // Patterns: on = measuring, blinking = not responding, off = not configured;
   // waiting for the Pi = a short flash every 2 s; the connector on the display blinks inverted
-  check(ledOn(false, State::Ok, false, 100) && !ledOn(false, State::Ok, false, 500), "waiting: short flash");
-  check(!ledOn(false, State::Ok, false, 2100 + 300), "waiting: flash every 2 s");
-  check(ledOn(true, State::Ok, false, 500) && ledOn(true, State::Ok, false, 1500), "measuring: steady on");
-  check(!ledOn(true, State::NotConfigured, false, 500) && !ledOn(true, State::NotConfigured, false, 1500),
+  check(ledOn(false, State::Ok, false, 100, LedMode::Auto, true, false) && !ledOn(false, State::Ok, false, 500, LedMode::Auto, true, false), "waiting: short flash");
+  check(!ledOn(false, State::Ok, false, 2100 + 300, LedMode::Auto, true, false), "waiting: flash every 2 s");
+  check(ledOn(true, State::Ok, false, 500, LedMode::Auto, true, false) && ledOn(true, State::Ok, false, 1500, LedMode::Auto, true, false), "measuring: steady on");
+  check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Auto, true, false) && !ledOn(true, State::NotConfigured, false, 1500, LedMode::Auto, true, false),
         "no sensor there: off");
-  check(ledOn(true, State::NotResponding, false, 500) != ledOn(true, State::NotResponding, false, 900),
+  check(ledOn(true, State::NotResponding, false, 500, LedMode::Auto, true, false) != ledOn(true, State::NotResponding, false, 900, LedMode::Auto, true, false),
         "not responding: blinking");
-  check(!ledOn(true, State::Ok, true, 50) && ledOn(true, State::Ok, true, 500), "on the display: a dark blip");
-  check(ledOn(true, State::NotConfigured, true, 50) && !ledOn(true, State::NotConfigured, true, 500),
+  check(!ledOn(true, State::Ok, true, 50, LedMode::Auto, true, false) && ledOn(true, State::Ok, true, 500, LedMode::Auto, true, false), "on the display: a dark blip");
+  check(ledOn(true, State::NotConfigured, true, 50, LedMode::Auto, true, false) && !ledOn(true, State::NotConfigured, true, 500, LedMode::Auto, true, false),
         "on the display, nothing configured: a light blip");
 
   // The all-sensors screen: one bar per sensor, taller the nearer the obstacle
@@ -123,6 +123,35 @@ int main() {
 
   check(!checkConnectionText(500) && checkConnectionText(2500) && !checkConnectionText(4500),
          "not responding / check connection, 2 s each");
+
+
+  // LED modes (UI led=...), with the display on or off, and identify (ID)
+  check(!ledOn(true, State::Ok, false, 500, LedMode::Auto, false, false), "auto: off with the display off");
+  check(ledOn(true, State::Ok, false, 500, LedMode::On, false, false), "on: lit with the display off");
+  check(!ledOn(true, State::Ok, false, 500, LedMode::Off, true, false), "off: dark even with the display on");
+  check(!ledOn(true, State::Ok, false, 500, LedMode::Errors, true, false), "errors: a sensor measuring stays dark");
+  check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Errors, true, false), "errors: an empty connector stays dark");
+  check(ledOn(true, State::NotResponding, false, 500, LedMode::Errors, false, false) !=
+        ledOn(true, State::NotResponding, false, 900, LedMode::Errors, false, false), "errors: one not responding blinks");
+  check(ledOn(true, State::Ok, false, 50, LedMode::Off, false, true) != ledOn(true, State::Ok, false, 150, LedMode::Off, false, true),
+        "identify blinks at 5 Hz whatever the mode");
+
+  // display timeout (UI t=...): 10 s, and 0 = never
+  Ui t10;
+  t10.awake_ms = 10000;
+  uiPress(t10, 1000);
+  uiButton(t10, true, 1100);
+  uiTick(t10, 1000 + 10001);
+  check(t10.screen == Screen::Off, "t=10: off after 10 s");
+  Ui never;
+  never.awake_ms = 0;
+  uiPress(never, 1000);
+  uiButton(never, true, 1100);
+  uiTick(never, 1000 + 3600000);
+  check(never.screen == Screen::Splash, "t=0: never off by itself");
+  uiButton(never, false, 3700000);
+  uiTick(never, 3700000 + HOLD_MS);
+  check(never.screen == Screen::Off, "t=0: a 3 s hold still turns it off");
 
   if (failures) return 1;
   printf("all passed\n");

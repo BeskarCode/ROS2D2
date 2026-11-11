@@ -57,3 +57,11 @@ def test_parse_telemetry():
     assert parse("T c0=1 c1=2 bus=3 disp=0 wait=0 temp=-5 up=7 rps=")[1]["temp_c"] == -0.5
     assert parse("T c0=x c1=2 bus=3 disp=0 wait=0 temp=1 up=7 rps=") is None
     assert parse("T c0=1 c1=2") is None
+
+
+def test_parse_acks_of_the_board_settings():
+    assert parse("UI OK") == ("ack", "UI", True, None)
+    assert parse("UI ERR bad t") == ("ack", "UI", False, "bad t")
+    assert parse("DISP OK") == ("ack", "DISP", True, None)
+    assert parse("ID ERR bad connector") == ("ack", "ID", False, "bad connector")
+    assert parse("XX OK") is None

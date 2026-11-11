@@ -26,11 +26,14 @@ NAMES = ["tof_front_left", "tof_front", "tof_front_right", "tof_floor",
 class Bench:
     """A FakePico behind a symlink (the node's port), the node, and a listener node."""
 
-    def __init__(self, tmp_path, monkeypatch):
+    def __init__(self, tmp_path, monkeypatch, proto=2):
         monkeypatch.setattr(r2_sensors.config, "USER_CONFIG", str(tmp_path / "none.yaml"))
         self.tmp = tmp_path
         self.config = tmp_path / "sensors.yaml"
         self.config.write_text(open(PACKAGE_YAML, encoding="utf-8").read(), encoding="utf-8")
+        self.board = tmp_path / "pico_board.yaml"
+        self.board.write_text("brightness: 2\n", encoding="utf-8")
+        self.proto = proto
         self.port = tmp_path / "r2-pico"
         self.pico = None
         self.plug()
@@ -40,6 +43,7 @@ class Bench:
             rclpy.parameter.Parameter("reconnect_sec", value=0.2),
             rclpy.parameter.Parameter("stale_sec", value=1.0),
             rclpy.parameter.Parameter("telemetry_timeout_sec", value=1.0),
+            rclpy.parameter.Parameter("board_config", value=str(self.board)),
         ])
         self.ear = rclpy.create_node("ear")
         self.state = None
@@ -47,6 +51,7 @@ class Bench:
         self.ranges = {}
         self.ear.create_subscription(String, "/pico/state", self._on_state, 10)
         self.ask_tm = self.ear.create_publisher(Bool, "/pico/telemetry_request", 10)
+        self.cmd = self.ear.create_publisher(String, "/pico/command", 10)
         self.ear.create_subscription(
             Bool, "/pico/connected", lambda m: setattr(self, "connected", m.data),
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
@@ -64,7 +69,7 @@ class Bench:
             self.port.unlink()
         self.port.symlink_to(os.ttyname(slave))
         self.slave = slave
-        self.pico = FakePico(master, hb_period=0.2)
+        self.pico = FakePico(master, hb_period=0.2, proto=self.proto)
 
     def unplug(self):
         self.pico.close()
@@ -250,3 +255,59 @@ def test_telemetry_resent_after_reconnect(bench):
     assert bench.spin_until(lambda: (bench.ask_tm.publish(Bool(data=True)), bench.connected is False)[1], 4)
     bench.plug()
     assert bench.spin_until(lambda: (bench.ask_tm.publish(Bool(data=True)), "TM 1" in bench.pico.lines)[1], 4)
+
+
+def touch_later(path):
+    t = os.path.getmtime(path) + 5
+    os.utime(path, (t, t))
+
+
+def test_ui_sent_after_cfg_and_on_file_change(bench):
+    assert bench.spin_until(lambda: "UI t=30 b=2 led=auto" in bench.pico.lines)
+    lines = bench.pico.lines
+    assert lines.index("UI t=30 b=2 led=auto") > max(i for i, l in enumerate(lines) if l.startswith("CFG"))
+    bench.board.write_text("display_timeout_s: 0\nleds: errors\n", encoding="utf-8")
+    touch_later(bench.board)
+    assert bench.spin_until(lambda: "UI t=0 b=2 led=err" in bench.pico.lines, 4)
+    assert bench.spin_until(lambda: bench.state.get("settings_supported") is True)
+
+
+def test_a_broken_board_file_keeps_the_last_good_settings(bench):
+    assert bench.spin_until(lambda: "UI t=30 b=2 led=auto" in bench.pico.lines)
+    n = len([l for l in bench.pico.lines if l.startswith("UI")])
+    bench.board.write_text("brightness: 9\n", encoding="utf-8")
+    touch_later(bench.board)
+    bench.spin_until(lambda: False, 2.5)
+    assert len([l for l in bench.pico.lines if l.startswith("UI")]) == n
+
+
+def test_ui_resent_after_reconnect(bench):
+    assert bench.spin_until(lambda: "UI t=30 b=2 led=auto" in bench.pico.lines)
+    bench.unplug()
+    assert bench.spin_until(lambda: bench.connected is False, 4)
+    bench.plug()
+    assert bench.spin_until(lambda: "UI t=30 b=2 led=auto" in bench.pico.lines, 4)
+
+
+def test_command_only_disp_and_id(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    for c in ("ID US3", "DISP on VL2", "BOOT", "TM 1", "DISP on\nBOOT"):
+        bench.cmd.publish(String(data=c))
+    assert bench.spin_until(lambda: "DISP on VL2" in bench.pico.lines)
+    bench.spin_until(lambda: False, 0.3)
+    assert "ID US3" in bench.pico.lines
+    assert "BOOT" not in bench.pico.lines and "TM 1" not in bench.pico.lines
+
+
+def test_old_firmware_marks_settings_unsupported(tmp_path, monkeypatch):
+    rclpy.init()
+    old = Bench.__new__(Bench)
+    try:
+        Bench.__init__(old, tmp_path, monkeypatch, proto=1)
+        assert old.spin_until(lambda: old.state and old.state.get("settings_supported") is False)
+        n = len([l for l in old.pico.lines if l.startswith("UI")])
+        old.spin_until(lambda: False, 1.5)
+        assert len([l for l in old.pico.lines if l.startswith("UI")]) == n     # not hammered
+    finally:
+        old.close()
+        rclpy.shutdown()

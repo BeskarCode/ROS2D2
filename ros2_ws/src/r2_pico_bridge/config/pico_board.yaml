@@ -1,0 +1,5 @@
+# ROS2D2: the Pico carrier board's settings (the web console's System tab saves its own copy in
+# ~/.config/ros2d2/pico_board.yaml, which then wins over this one).
+display_timeout_s: 30     # 10, 30, 60, 300, or 0 = never off by itself
+brightness: 2             # 0-3
+leds: auto                # auto (only with the display on) | on | off | errors (only those failing)

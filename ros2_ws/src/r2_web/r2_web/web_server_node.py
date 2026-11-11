@@ -20,6 +20,10 @@ and a small HTTP API for what ROS topics cannot do:
   POST /api/modes     save modes.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid;
                       then publishes /r2/modes/reload so the Mega bridge sends the new bindings
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
+  GET  /api/pico_board   pico_board.yaml in use (the Pico board's display timeout, brightness,
+                      LED mode) and any error in it
+  POST /api/pico_board   save it in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid; the
+                      Pico bridge sees it and sends it to the Pico at once
   GET  /api/system    the Pi's software version (~/r2_ws/VERSION); with ?telemetry=1 also its
                       SD, RAM, CPU, temperature and power/heat flags (System tab, on demand)
 
@@ -51,6 +55,8 @@ from r2_web.modes_api import modes_payload, save_modes
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.sensors_api import save_sensors, sensors_payload
 from r2_web.system_api import system_payload
+from r2_web.pico_board_api import pico_board_payload, save_pico_board
+from r2_pico_bridge.board_settings import USER_CONFIG as BOARD_USER_CONFIG
 
 SERVICE = "r2d2"
 STARTED = time.time()   # tells the setup page a restart has really happened
@@ -87,6 +93,7 @@ class Handler(SimpleHTTPRequestHandler):
     sensors_default = ""
     nav_default = ""
     modes_default = ""
+    board_default = ""
     on_modes_saved = staticmethod(lambda: None)
     prev_stat = None            # the last /proc/stat sample, for the CPU %
     stat_lock = threading.Lock()
@@ -114,6 +121,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, modes_payload(self.modes_default, USER_MODES))
         if self.path.split("?")[0] == "/api/sensors":
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
+        if self.path.split("?")[0] == "/api/pico_board":
+            return self._json(200, pico_board_payload(self.board_default, BOARD_USER_CONFIG))
         if self.path.split("?")[0] == "/api/system":
             with Handler.stat_lock:
                 body, Handler.prev_stat = system_payload("telemetry=1" in self.path, Handler.prev_stat)
@@ -153,6 +162,12 @@ class Handler(SimpleHTTPRequestHandler):
             if code == 200:
                 self.on_modes_saved()
             return self._json(code, body)
+        if route == "/api/pico_board":
+            try:
+                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            return self._json(*save_pico_board(text, BOARD_USER_CONFIG))
         if route == "/api/sensors":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
@@ -189,6 +204,7 @@ class WebServerNode(Node):
         Handler.sensors_default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
         Handler.nav_default = os.path.join(get_package_share_directory("r2_nav"), "config", "nav.yaml")
         Handler.modes_default = os.path.join(get_package_share_directory("r2_nav"), "config", "modes.yaml")
+        Handler.board_default = os.path.join(get_package_share_directory("r2_pico_bridge"), "config", "pico_board.yaml")
         self.pub_reload = self.create_publisher(Empty, "/r2/modes/reload", 10)
         Handler.on_modes_saved = staticmethod(lambda: self.pub_reload.publish(Empty()))
         handler = functools.partial(Handler, directory=root)
