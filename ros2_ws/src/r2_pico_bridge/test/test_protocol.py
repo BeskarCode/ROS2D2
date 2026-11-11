@@ -9,9 +9,9 @@ PACKAGE_YAML = os.path.join(os.path.dirname(__file__), "..", "..", "r2_sensors",
 
 def test_cfg_line_from_the_package_sensors():
     line, names = cfg_line(load_sensors(PACKAGE_YAML))
-    assert line == "CFG V:2 V:3 V:4 V:5 S:10:11 S:12:13 S:14:15\n"
+    assert line == "CFG V:2 V:3 V:4 V:5 S:10:11 S:12:13 S:14:15 S:18:19 S:20:21\n"
     assert names == ["tof_front_left", "tof_front", "tof_front_right", "tof_floor",
-                     "sonar_front_left", "sonar_front_right", "sonar_rear"]
+                     "sonar_front_left", "sonar_front_right", "sonar_rear", "sonar_left", "sonar_right"]
 
 
 def test_cfg_line_without_pico_sensors():

@@ -65,3 +65,19 @@ sonar_rear:
   yaw_deg: 180
   stop_distance: 0.25
   pico: {trig: 14, echo: 15}
+sonar_left:
+  type: hcsr04
+  x: 0.0
+  y: 0.23
+  z: 0.3
+  yaw_deg: 90
+  stop_distance: 0.25
+  pico: {trig: 18, echo: 19}
+sonar_right:
+  type: hcsr04
+  x: 0.0
+  y: -0.23
+  z: 0.3
+  yaw_deg: -90
+  stop_distance: 0.25
+  pico: {trig: 20, echo: 21}

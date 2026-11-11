@@ -98,7 +98,7 @@ def test_no_lidar():
 
 def test_package_default_is_valid():
     path = os.path.join(os.path.dirname(__file__), "..", "config", "sensors.yaml")
-    assert len(load_sensors(path)) == 8
+    assert len(load_sensors(path)) == 10
 
 
 @pytest.mark.parametrize("pin", [0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28])

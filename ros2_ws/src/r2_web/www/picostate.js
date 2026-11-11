@@ -17,6 +17,9 @@ export function picoPill(state, ageMs) {
   return { cls: 'ok', text: `Pico: connected${state.firmware ? ` · ${state.firmware}` : ''}` };
 }
 
+// A badge class that means the sensor is there and measuring (for "Connected only")
+export const isConnected = (cls) => cls === 'ok' || cls === 'sim';
+
 export function sensorBadge(name, state, reading, ageMs, simulated) {
   if (simulated) return { cls: 'sim', text: reading ? `simulated · ${metres(reading.range)}` : 'simulated' };
   if (!fresh(state, ageMs)) return { cls: 'wait', text: 'waiting for the Pico' };

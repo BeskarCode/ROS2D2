@@ -1,7 +1,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { picoPill, sensorBadge } from '../www/picostate.js';
+import { isConnected, picoPill, sensorBadge } from '../www/picostate.js';
 
 const up = (sensors = {}, more = {}) => ({ connected: true, firmware: '0.1.0', config_error: null, sensors, ...more });
 
@@ -35,4 +35,13 @@ test('a sensor card from the Pico', () => {
   assert.deepEqual(sensorBadge('c', st, null, 100, false), { cls: 'wait', text: 'no reading' });
   // saved in the console but not yet sent to the Pico
   assert.deepEqual(sensorBadge('new_one', st, null, 100, false), { cls: 'wait', text: 'starting…' });
+});
+
+test('"Connected only" keeps the sensors that measure, real or simulated', () => {
+  assert.equal(isConnected(sensorBadge('tof_front', up({ tof_front: 'ok' }), { range: 0.4, ageMs: 50 }, 100, false).cls), true);
+  assert.equal(isConnected(sensorBadge('tof_front', null, null, 0, true).cls), true);
+  assert.equal(isConnected(sensorBadge('tof_front', up({ tof_front: 'not_responding' }), null, 100, false).cls), false);
+  assert.equal(isConnected(sensorBadge('tof_front', up({ tof_front: 'ok' }), null, 100, false).cls), false);   // no reading yet
+  assert.equal(isConnected(sensorBadge('tof_front', null, null, 0, false).cls), false);                        // no bridge
+  assert.equal(isConnected('bad'), false);                                                                      // lidar offline
 });

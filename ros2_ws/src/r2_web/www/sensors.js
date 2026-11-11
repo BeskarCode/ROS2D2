@@ -6,7 +6,7 @@ import { MODELS } from './models.js';
 import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
-import { picoPill, sensorBadge } from './picostate.js';
+import { isConnected, picoPill, sensorBadge } from './picostate.js';
 import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -41,6 +41,9 @@ export function createSensorsTab({ status }) {
     for (const k of ['', '#points']) if (hidden.delete(from + k)) { hidden.add(to + k); moved = true; }
     if (moved) saveHidden();
   };
+  // "Connected only": hide the cards and beams of the sensors that are not measuring, per browser
+  let onlyConnected = false;
+  try { onlyConnected = localStorage.getItem('r2web.onlyConnected') === '1'; } catch { /* private window */ }
   const saveHidden = () => { try { localStorage.setItem('r2web.hiddenBeams', JSON.stringify([...hidden])); } catch { /* private window */ } };
   let scan = null;          // live lidar points in base_link: [[x, y]]
   let scanHz = 0;
@@ -70,8 +73,33 @@ export function createSensorsTab({ status }) {
       return s.name;
     },
     onObject: (x, y) => { Object.assign(object, { x, y }); redraw(); },
+    onHover: (name, cx, cy) => hover(name, cx, cy),
   });
-  const view3d = createSensorView3d($('view3d'));
+  const view3d = createSensorView3d($('view3d'), { onHover: (name, cx, cy) => hover(name, cx, cy) });
+
+  // The sensor under the mouse (on the map, in 3D or its card): highlighted everywhere, and a
+  // tooltip that says which one it is, when the mouse is over a viewer
+  let hovered = null;
+  const tip = document.createElement('div');
+  tip.className = 'stip';
+  tip.hidden = true;
+  document.body.append(tip);
+  function hover(name, cx, cy) {
+    const s = name && sensors.find((t) => t.name === name);
+    if (s && cx != null) {
+      const [, text] = badge(s);
+      tip.innerHTML = `<b>${TYPES[s.type].label}</b> <span class="sub"></span><br>${text}`;
+      tip.querySelector('.sub').textContent = s.name;
+      tip.style.left = `${cx + 14}px`;
+      tip.style.top = `${cy + 14}px`;
+      tip.hidden = false;
+    } else tip.hidden = true;
+    const n = s ? s.name : null;
+    if (n === hovered) return;
+    hovered = n;
+    for (const el of document.querySelectorAll('#slist .sensor')) el.classList.toggle('hover', el.dataset.name === hovered);
+    redraw();
+  }
 
   // ---------- load ----------
   async function load() {
@@ -176,7 +204,8 @@ export function createSensorsTab({ status }) {
         const b = isLidar(s) ? null : badge(s)[0], r = reading(s.name, now);
         return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
       }));
-      const state = { sensors, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint(scan), readings: live, hidden };
+      const shown = onlyConnected ? sensors.filter((s) => isConnected(badge(s)[0])) : sensors;
+      const state = { sensors: shown, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint(scan), readings: live, hidden, hovered };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
@@ -186,15 +215,37 @@ export function createSensorsTab({ status }) {
   }
 
   // Refresh only the badges (the cards hold inputs: rebuilding them would lose the focus)
+  // and, with "Connected only", hide the cards of the sensors that are not measuring
   function badges() {
+    let off = 0;
     for (const s of sensors) {
-      const el = document.querySelector(`#slist .sensor[data-name="${s.name}"] .badge`);
+      const card = document.querySelector(`#slist .sensor[data-name="${s.name}"]`);
+      const el = card && card.querySelector('.badge');
       if (!el) continue;
       const [cls, text] = badge(s);
+      const hide = onlyConnected && !isConnected(cls);
+      if (card.hidden !== hide) card.hidden = hide;
+      off += hide;
       if (el.className !== `badge ${cls}`) el.className = `badge ${cls}`;
       if (el.innerHTML !== text) el.innerHTML = text;
     }
+    // the connected ones first (only on screen: the file keeps its order)
+    const box = $('slist');
+    const want = [...sensors].sort((a, b) => isConnected(badge(b)[0]) - isConnected(badge(a)[0]))
+      .map((s) => box.querySelector(`.sensor[data-name="${s.name}"]`)).filter(Boolean);
+    if (want.some((el, i) => box.children[i] !== el)) box.append(...want);
+    const n = $('s-hiddenn');
+    const msg = off ? `${off} not connected, hidden` : '';
+    if (n.textContent !== msg) n.textContent = msg;
   }
+  const showOnlyConnected = (on) => {
+    onlyConnected = on;
+    $('s-connected').classList.toggle('on', on);
+    try { localStorage.setItem('r2web.onlyConnected', on ? '1' : '0'); } catch { /* private window */ }
+    redraw();
+  };
+  $('s-connected').addEventListener('click', () => showOnlyConnected(!onlyConnected));
+  showOnlyConnected(onlyConnected);
 
   // Live: the Pico's state and each Pico sensor's /range, drawn at most 4 times a second
   let liveTimer = null;
@@ -283,7 +334,9 @@ export function createSensorsTab({ status }) {
       const T = TYPES[s.type];
       const [cls, text] = badge(s);
       const el = document.createElement('div');
-      el.className = 'sensor' + (s.name === selected ? ' sel' : '');
+      el.className = 'sensor' + (s.name === selected ? ' sel' : '') + (s.name === hovered ? ' hover' : '');
+      el.addEventListener('mouseenter', () => hover(s.name));
+      el.addEventListener('mouseleave', () => hover(null));
       el.dataset.name = s.name;
       el.style.setProperty('--c', T.colour);
       el.innerHTML = `

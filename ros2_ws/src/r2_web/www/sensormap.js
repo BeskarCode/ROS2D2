@@ -7,7 +7,7 @@ import { R2, TYPES, freeText, isLidar, reach, toMap, fromMap } from './sensormat
 const rad = (d) => d * Math.PI / 180;
 const ZOOM0 = 1.6;
 
-export function createSensorMap(svg, { onMove, onSelect, onObject }) {
+export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () => {} }) {
   let v = ZOOM0;          // half the view, metres
   let last = null;
   let drag = null;        // sensor name, or 'object'
@@ -39,10 +39,10 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
     }
     const shown = (s) => !(state.hidden && state.hidden.has(s.name));
     for (const s of state.sensors.filter(shown)) {
-      const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected;
+      const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected, hov = s.name === state.hovered;
       const R = state.fullRange ? reach(s) : Math.min(reach(s), 1.5);
-      o += `<path d="M${fan(s, R)} Z" fill="${T.colour}" fill-opacity="${missing ? 0.04 : on ? 0.28 : 0.13}" ` +
-           `stroke="${T.colour}" stroke-width="${sw * (on ? 2 : 1)}"${missing ? ` stroke-dasharray="${sw * 6} ${sw * 6}"` : ''}/>`;
+      o += `<path data-beam="${s.name}" d="M${fan(s, R)} Z" fill="${T.colour}" fill-opacity="${hov ? 0.38 : missing ? 0.04 : on ? 0.28 : 0.13}" ` +
+           `stroke="${hov ? '#e6edf3' : T.colour}" stroke-width="${sw * (hov ? 2.5 : on ? 2 : 1)}"${missing && !hov ? ` stroke-dasharray="${sw * 6} ${sw * 6}"` : ''}/>`;
     }
     // what each sensor measures now: its fan filled up to the reading
     for (const s of state.sensors.filter(shown)) {
@@ -95,9 +95,11 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
     }
     // sensors on top, so they can always be grabbed
     for (const s of state.sensors) {
-      const T = TYPES[s.type], on = s.name === state.selected;
+      const T = TYPES[s.type], on = s.name === state.selected, hov = s.name === state.hovered;
       const [x, y] = at(s.x, s.y);
       const [dx, dy] = toMap(Math.cos(rad(s.yaw_deg)), Math.sin(rad(s.yaw_deg)));
+      // the one under the mouse: a white halo around its dot
+      if (hov) o += `<circle cx="${x}" cy="${y}" r="${sw * 14}" fill="${T.colour}" fill-opacity="0.25" stroke="#e6edf3" stroke-width="${sw * 2}" pointer-events="none"/>`;
       o += `<g data-name="${s.name}" style="cursor:grab"><circle cx="${x}" cy="${y}" r="${sw * (on ? 9 : 7)}" fill="#0d1117" ` +
            `stroke="${T.colour}" stroke-width="${sw * 2.5}"/><line x1="${x}" y1="${y}" x2="${x + dx * sw * 16}" y2="${y + dy * sw * 16}" ` +
            `stroke="${T.colour}" stroke-width="${sw * (isLidar(s) ? 3.5 : 2.5)}"/></g>`;
@@ -125,6 +127,14 @@ export function createSensorMap(svg, { onMove, onSelect, onObject }) {
     if (drag !== 'object') onSelect(drag);
     svg.setPointerCapture(ev.pointerId);
   });
+  // the sensor under the mouse (its dot, or its beam: the one drawn last wins), for the tooltip
+  svg.addEventListener('pointermove', (ev) => {
+    if (drag) return;
+    const g = ev.target.closest('g[data-name]');
+    const name = g ? (g.dataset.object ? null : g.dataset.name) : ev.target.dataset?.beam || null;
+    onHover(name, ev.clientX, ev.clientY);
+  });
+  svg.addEventListener('pointerleave', () => onHover(null));
   svg.addEventListener('pointermove', (ev) => {
     if (!drag) return;
     const p = toRos(ev);

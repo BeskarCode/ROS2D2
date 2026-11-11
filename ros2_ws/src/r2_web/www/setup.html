@@ -113,6 +113,14 @@
   .stat .l { color: var(--muted); font-size: 11px; }
   #s-blind { color: var(--muted); font-size: 12px; margin-top: 8px; } #s-blind b { color: var(--red); }
   #slist { display: grid; gap: 8px; }
+  #slist .sensor[hidden] { display: none; }
+  .sfilter { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .sfilter button.on { background: var(--blue); border-color: var(--blue); }
+  #s-hiddenn { color: var(--muted); font-size: 12px; }
+  .sensor.hover { box-shadow: 0 0 0 2px #e6edf3; }
+  .stip { position: fixed; z-index: 50; pointer-events: none; background: #0d1117; border: 1px solid var(--line);
+          border-radius: 6px; padding: 5px 8px; font-size: 12px; line-height: 1.5; box-shadow: 0 4px 12px #0008; }
+  .stip .sub { color: var(--muted); }
   .sensor { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
   .sensor.sel { border-color: var(--c); box-shadow: 0 0 0 1px var(--c); cursor: default; }
   .sensor .top { display: flex; align-items: center; gap: 8px; }
@@ -251,6 +259,8 @@
         <div id="s-blind"></div>
       </div>
       <div>
+        <div class="sfilter"><button id="s-connected" title="show only the sensors that are measuring now">
+          <i class="fa-solid fa-plug-circle-check"></i>Connected only</button><span id="s-hiddenn"></span></div>
         <div id="slist"></div>
         <div class="sadd"><select id="s-addtype"><option value="vl53l0x">VL53L0X</option><option value="hcsr04">HC-SR04</option>
           <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
