@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius, nearestPoint, beamDefaults,
+  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius, nearestPoint, beamDefaults, connectorOf, connectorPins, freeConnector,
 } from '../www/sensormath.js';
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -128,4 +128,18 @@ test('"Defaults" gives each type its own beam (the same as r2_sensors/config.py 
   assert.deepEqual(beamDefaults('vl53l0x'), { fov_deg: 25, range_min: 0.03, range_max: 1.2 });
   assert.deepEqual(beamDefaults('hcsr04'), { fov_deg: 30, range_min: 0.02, range_max: 3 });
   assert.deepEqual(beamDefaults('rplidar_c1'), { fov_deg: 200, range_min: 0.05, range_max: 12 });
+});
+
+test('the carrier board connectors: which one a sensor is on, and the first free one', () => {
+  assert.equal(connectorOf({ type: 'vl53l0x', pico: { xshut: 4 } }), 'VL3');
+  assert.equal(connectorOf({ type: 'hcsr04', pico: { trig: 18, echo: 19 } }), 'US4');
+  assert.equal(connectorOf({ type: 'hcsr04', pico: { trig: 19, echo: 18 } }), null);     // swapped: not the board's
+  assert.equal(connectorOf({ type: 'vl53l0x', pico: { xshut: 11 } }), null);             // wired straight to the Pico
+  assert.equal(connectorOf({ type: 'rplidar_c1', port: '/dev/r2-lidar' }), null);
+  assert.deepEqual(connectorPins('hcsr04', 'US5'), { trig: 20, echo: 21 });
+  const vl = (g) => ({ type: 'vl53l0x', pico: { xshut: g } });
+  assert.equal(freeConnector('vl53l0x', [vl(2), vl(4)]), 'VL2');
+  assert.equal(freeConnector('vl53l0x', [vl(2), vl(3), vl(4), vl(5)]), null);
+  // a pin used by something else (here a sonar wired by hand on GP10) blocks that connector
+  assert.equal(freeConnector('hcsr04', [{ type: 'hcsr04', pico: { trig: 3, echo: 10 } }]), 'US2');
 });

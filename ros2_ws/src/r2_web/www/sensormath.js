@@ -31,6 +31,28 @@ export const beamDefaults = (type) => ({
 const PICO_RESERVED = [0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28];
 export const PICO_GPIO = Array.from({ length: 29 }, (_, g) => g).filter((g) => !PICO_RESERVED.includes(g));
 
+// The carrier board's connectors (hardware/r2_pico_carrier, firmware Board.h): each one's pins
+// are fixed. A sensor on other pins is wired straight to the Pico (no board).
+export const CONNECTORS = {
+  vl53l0x: [['VL1', { xshut: 2 }], ['VL2', { xshut: 3 }], ['VL3', { xshut: 4 }], ['VL4', { xshut: 5 }]],
+  hcsr04: [['US1', { trig: 10, echo: 11 }], ['US2', { trig: 12, echo: 13 }], ['US3', { trig: 14, echo: 15 }],
+           ['US4', { trig: 18, echo: 19 }], ['US5', { trig: 20, echo: 21 }]],
+};
+const samePins = (a, b) => !!a && Object.keys(b).length === Object.keys(a).length && Object.entries(b).every(([k, g]) => a[k] === g);
+/** The connector a sensor sits on ('VL1'...'US5'), or null if its pins are not one of the board's. */
+export function connectorOf(s) {
+  const c = (CONNECTORS[s.type] || []).find(([, pins]) => samePins(s.pico, pins));
+  return c ? c[0] : null;
+}
+/** The first connector of that type no other sensor uses any pin of, or null if all are taken. */
+export function freeConnector(type, sensors) {
+  const used = new Set(sensors.flatMap((s) => Object.values(s.pico || {})));
+  const c = (CONNECTORS[type] || []).find(([, pins]) => Object.values(pins).every((g) => !used.has(g)));
+  return c ? c[0] : null;
+}
+/** A connector's pins, as sensors.yaml writes them ({xshut} or {trig, echo}). */
+export const connectorPins = (type, name) => ({ ...CONNECTORS[type].find(([n]) => n === name)[1] });
+
 export const isLidar = (s) => s.type === 'rplidar_c1';
 
 const rad = (d) => d * Math.PI / 180;

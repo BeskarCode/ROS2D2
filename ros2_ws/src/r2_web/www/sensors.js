@@ -7,7 +7,7 @@ import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
-import { PICO_GPIO, R2, TYPES, beamDefaults, coverage, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
+import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const OBJECTS = {
@@ -345,6 +345,18 @@ export function createSensorsTab({ status }) {
     const clash = used.get(s.pico[pin]) > 1 ? ' clash' : '';
     return `<label class="pin${clash}">${pin} <select data-pin="${pin}">${opts}</select></label>`;
   }
+  // The board connector it is plugged into; "other pins (no board)" shows the GPIO pickers
+  function connectorRow(s, used) {
+    const conn = s.noBoard ? null : connectorOf(s);
+    const clash = Object.values(s.pico).some((g) => used.get(g) > 1) ? ' clash' : '';
+    const opts = CONNECTORS[s.type].map(([n, pins]) =>
+      `<option value="${n}"${n === conn ? ' selected' : ''}>${n} · GP${Object.values(pins).join('/')}</option>`).join('') +
+      `<option value=""${conn ? '' : ' selected'}>other pins (no board)</option>`;
+    const row = `<div class="row"><label><i class="fa-solid fa-plug"></i>connector</label><div class="pins">` +
+      `<label class="pin${clash}"><select class="conn">${opts}</select></label></div></div>`;
+    return conn ? row : row + `<div class="row"><label><i class="fa-solid fa-microchip"></i>on the Pico</label>` +
+      `<div class="pins">${PINS[s.type].map((p) => pinSelect(s, p, used)).join('')}</div></div>`;
+  }
 
   const posText = (s) => `${Math.round(Math.abs(s.x) * 1000)} mm ${s.x >= 0 ? 'ahead' : 'behind'}, ` +
     `${Math.round(Math.abs(s.y) * 1000)} mm ${s.y >= 0 ? 'left' : 'right'} — drag it on the map`;
@@ -385,7 +397,7 @@ export function createSensorsTab({ status }) {
           ${slider(s, 'z', '<i class="fa-solid fa-arrows-up-down"></i>height', 0.03, 1.0, 0.005, FMT.z)}
           ${isLidar(s) ? '' : slider(s, 'stop_distance', '<i class="fa-solid fa-hand"></i>stop when closer', 0, Math.min(0.8, s.range_max - 0.01), 0.01, FMT.stop_distance)}
           ${isLidar(s) ? `<div class="row"><label><i class="fa-brands fa-usb"></i>port</label><span class="sub port"></span></div>`
-            : `<div class="row"><label><i class="fa-solid fa-microchip"></i>on the Pico</label><div class="pins">${PINS[s.type].map((p) => pinSelect(s, p, used)).join('')}</div></div>`}
+            : connectorRow(s, used)}
           <div class="row"><label><i class="fa-solid fa-location-dot"></i>position</label>
             <span class="sub pos">${posText(s)}</span></div>
           <div class="row"><span></span><span><button class="defaults" title="field of view and range back to the ${T.label}'s own (${T.fovDeg}°, ${T.rangeMax} m)"><i class="fa-solid fa-rotate-left"></i>Defaults</button>
@@ -445,6 +457,13 @@ export function createSensorsTab({ status }) {
         yaw.value = b.dataset.yaw;
         yaw.dispatchEvent(new Event('input'));
       }));
+      el.querySelector('select.conn')?.addEventListener('change', (e) => {
+        const n = e.target.value;
+        s.noBoard = !n;                 // on screen only (never written to sensors.yaml)
+        if (n) s.pico = connectorPins(s.type, n);
+        renderList();
+        if (n) touched();
+      });
       el.querySelectorAll('select[data-pin]').forEach((sel) => sel.addEventListener('change', () => {
         s.pico[sel.dataset.pin] = Number(sel.value);
         renderList();
@@ -482,15 +501,22 @@ export function createSensorsTab({ status }) {
                 stop_distance: 0, found: null, nameEdited: false };
     if (type === 'rplidar_c1') Object.assign(s, { port: '/dev/r2-lidar', x: 0.17, y: 0, z: 0.11, yaw_deg: 0 });
     else {
-      const pins = freePins(PINS[type].length);
-      if (pins.length < PINS[type].length) return status('No free Pico pins left.', 'bad');
-      s.pico = Object.fromEntries(PINS[type].map((p, i) => [p, pins[i]]));
+      const conn = freeConnector(type, sensors);
+      if (conn) s.pico = connectorPins(type, conn);
+      else {
+        // every connector of that type is taken: free pins, wired straight to the Pico
+        const pins = freePins(PINS[type].length);
+        if (pins.length < PINS[type].length) return status('No free Pico pins left.', 'bad');
+        s.pico = Object.fromEntries(PINS[type].map((p, i) => [p, pins[i]]));
+        s.noBoard = true;
+      }
     }
     s.name = defaultName(s, taken(null));
     sensors.push(s);
     selected = s.name;
     renderList();
     touched();
+    if (s.noBoard) status(`All the board's ${type === 'vl53l0x' ? 'VL' : 'US'} connectors are taken: ${s.name} goes on free Pico pins (no board). Save to keep it.`, 'warn');
   });
 
   // ---------- file ----------
@@ -500,7 +526,7 @@ export function createSensorsTab({ status }) {
               '# (base_link, REP 103). yaw_deg + = left, pitch_deg + = down.\n';
     for (const s of sensors) {
       out += `${s.name}:\n`;
-      const keys = [...FIELDS, ...Object.keys(s).filter((k) => !FIELDS.includes(k) && !['name', 'nameEdited', 'found'].includes(k))];
+      const keys = [...FIELDS, ...Object.keys(s).filter((k) => !FIELDS.includes(k) && !['name', 'nameEdited', 'found', 'noBoard'].includes(k))];
       for (const k of keys) {
         if (s[k] === undefined) continue;
         if (isLidar(s) && ['pitch_deg', 'stop_distance', 'pico'].includes(k)) continue;
