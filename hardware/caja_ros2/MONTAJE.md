@@ -10,6 +10,12 @@ Caja mini torre para la Raspberry Pi 4, la placa de la Pico, el convertidor 24 �
 |---|---|
 | ![](montaje/img/montada.png) | ![](montaje/img/montada_atras.png) |
 
+**Información actualizada, STL y fuentes:** <https://github.com/BeskarCode/ROS2D2/tree/main/hardware/caja_ros2>
+
+## Tamaño frente al R2
+
+<img src="montaje/img/escala_es.svg" alt="Tamaño frente al R2" width="420">
+
 ## Por dentro (sin carcasa)
 
 ![](montaje/img/interior.png)

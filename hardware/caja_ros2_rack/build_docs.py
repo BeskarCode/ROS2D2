@@ -124,10 +124,11 @@ g.TXT["en"].update(title="ROS2 rack box · Assembly instructions", intro=
     "(1.07 L). The Pi sits low and the converter high, so its heat does not rise into the Pi. It takes a Pi 4 or a "
     "Pi 5: only the back frame changes. OLED, logo, switch and XT60 are on the main face; the Pi's USB and an HDMI "
     "panel jack at the back. Every screw goes into an insert. Before printing, measure what the README lists.")
+g.BOX_DIMS = (78, 95, 145)
 g.WIRING = copy.deepcopy(g.WIRING)
-g.WIRING["es"].update(slot="ranura lateral", back="pared principal",
+g.WIRING["es"].update(slot="ranura lateral", back="pared principal", pi="Raspberry Pi 4 / Pi 5",
                       micro="micro-USB acodado: sale por la muesca trasera y entra en un USB de la Pi")
-g.WIRING["en"].update(slot="side slot", back="main face",
+g.WIRING["en"].update(slot="side slot", back="main face", pi="Raspberry Pi 4 / Pi 5",
                       micro="angled micro-USB: out of the back notch into a Pi USB port")
 
 STEPS, bom, fastener_table, write_guide, wiring_svg = g.STEPS, g.bom, g.fastener_table, g.write_guide, g.wiring_svg

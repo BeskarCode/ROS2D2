@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -40 1300 1220" width="1000" height="938" font-family="Segoe UI, Arial, sans-serif" font-size="40">
+<line x1="20" y1="1160" x2="1280" y2="1160" stroke="#888" stroke-width="4"/>
+<rect x="151.5" y="260" width="90" height="780" rx="12" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<path d="M116.5,1160 L276.5,1160 L248.5,1020 L144.5,1020 Z" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<rect x="658.5" y="260" width="90" height="780" rx="12" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<path d="M623.5,1160 L783.5,1160 L755.5,1020 L651.5,1020 Z" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<rect x="395" y="830" width="110" height="260" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<path d="M355,1160 L545,1160 L515,1080 L385,1080 Z" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<rect x="221.5" y="300" width="457.0" height="530" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<path d="M221.5,300 A228.5,217.075 0 0 1 678.5,300 Z" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<circle cx="196.5" cy="360" r="48" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<circle cx="703.5" cy="360" r="48" fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+<line x1="71.5" y1="1160" x2="71.5" y2="70" stroke="#1d1d1f" stroke-width="3"/>
+<line x1="51.5" y1="1160" x2="91.5" y2="1160" stroke="#1d1d1f" stroke-width="3"/>
+<line x1="51.5" y1="70" x2="91.5" y2="70" stroke="#1d1d1f" stroke-width="3"/>
+<text x="56.5" y="615" transform="rotate(-90 56.5 615)" text-anchor="middle">R2 ≈ 1,09 m</text>
+<rect x="900" y="1015" width="78" height="145" fill="#2a6fdb" stroke="#1d1d1f" stroke-width="4"/>
+<text x="900" y="945" font-weight="700">Caja</text>
+<text x="900" y="993">78 × 95 × 145 mm</text>
+</svg>
