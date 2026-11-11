@@ -111,6 +111,15 @@
   .stat { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
   .stat .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .stat .l { color: var(--muted); font-size: 11px; }
+  .stat .v small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .stat.warn .v { color: var(--amber); } .stat.bad .v { color: var(--red); }
+  .sys4 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .sbar { height: 4px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .sbar i { display: block; height: 100%; background: var(--blue); }
+  .stat.warn .sbar i { background: var(--amber); } .stat.bad .sbar i { background: var(--red); }
+  .sysh { font-size: 15px; margin: 18px 0 4px; display: flex; align-items: baseline; gap: 10px; }
+  .sysh .sub { color: var(--muted); font-size: 12px; font-weight: 400; }
+  .systog { display: inline-flex; margin: 4px 0; }
   #s-blind { color: var(--muted); font-size: 12px; margin-top: 8px; } #s-blind b { color: var(--red); }
   #slist { display: grid; gap: 8px; }
   #slist .sensor[hidden] { display: none; }
@@ -203,6 +212,7 @@
     <button id="tab-form" class="on"><i class="fa-solid fa-video"></i>Cameras</button>
     <button id="tab-sensors"><i class="fa-solid fa-satellite-dish"></i>Sensors</button>
     <button id="tab-modes"><i class="fa-solid fa-gamepad"></i>Modes</button>
+    <button id="tab-system"><i class="fa-solid fa-gauge-high"></i>System</button>
     <button id="tab-file"><i class="fa-solid fa-file-code"></i>File</button>
     <button id="identify"><i class="fa-solid fa-hashtag"></i>Identify</button>
   </div>
@@ -297,6 +307,14 @@
         <div id="m-sliders" style="display:grid;gap:8px"></div>
       </div>
     </div>
+  </section>
+
+  <section id="system" hidden>
+    <p class="help">The Pi and the Pico board. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p>
+    <label class="chk systog"><input type="checkbox" id="sys-telemetry"> Telemetry</label>
+    <h3 class="sysh"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi <span class="sub">software <b id="sys-pi-version">…</b></span></h3>
+    <div class="stats sys4" id="sys-pi" hidden></div>
+    <p class="status bad" id="sys-pi-warn" hidden></p>
   </section>
 
   <section id="file" hidden>
