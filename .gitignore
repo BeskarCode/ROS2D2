@@ -12,4 +12,6 @@ docs/
 .superpowers/
 # Firmware secrets (WiFi passwords): each sketch has a config.example.h to copy
 firmware/**/config.h
+# Windows matches the rule above case-insensitively: the Pico sensors parser is not a secret
+!firmware/r2_pico_sensors/Config.h
 firmware/*/build/
