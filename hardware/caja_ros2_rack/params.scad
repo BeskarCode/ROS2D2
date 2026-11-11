@@ -54,7 +54,7 @@ marco_t = 2;  marco_lip = 3.5;  marco_fit = 0.25;  marco_rim = 1.5;     // flang
 // --- converter (RCNUN 63.7 x 57.6 x 22) on edge under the Pi -----------------------------------
 conv = [22, 57.6, 63.7];             // X (thickness) x Y x Z (ears top and bottom)
 conv_y = 20;                         // its front face (cable gland): the wires bend into the pass in front of it
-conv_holes = [[26.3, 3.6], [31.3, 60.1]];   // ear holes: (Y from its front face, Z from its bottom) - CHECK
+conv_holes = [[26.3, 4.85], [26.3, 58.85]];  // ear holes on one line: (Y from its front face = cable side, Z from its bottom) - RCNUN drawing, checked by the user
 conv_ear_t = 1.6;
 conv_wires = 15;
 
