@@ -14,6 +14,7 @@
 #include "Board.h"
 #include "Logo.h"
 #include "Readings.h"
+#include "Settings.h"
 #include "Tof.h"
 
 extern bool configured;
@@ -31,6 +32,24 @@ GFXcanvas1 canvas(128, 64);
 Ui ui;
 bool present = false, lit = false;
 uint32_t lastProbe = 0, lastFrame = 0, lastLeds = 0, lastRefresh = 0;
+
+// What the Pi asked for (UI, DISP, ID). Written by core 0 (the serial line), applied by core 1.
+constexpr int8_t REQ_NONE = -3, REQ_OFF = -2, REQ_ALL = -1;
+UiCfg uiCfg;
+volatile bool uiCfgChanged = false;
+volatile int8_t dispReq = REQ_NONE;        // REQ_OFF, REQ_ALL or a connector 0..8
+volatile int8_t identifyConn = -1;
+volatile uint32_t identifyUntil = 0;
+
+void applyUi(const UiCfg& c) {
+  uiCfg = c;
+  uiCfgChanged = true;
+}
+void requestDisplay(bool on, int screen) { dispReq = on ? (int8_t)screen : REQ_OFF; }
+void identify(int c) {
+  identifyUntil = millis() + IDENTIFY_MS;
+  identifyConn = c;
+}
 
 // The sensor on connector c: its state and its reading
 State stateOf(int c, int16_t* mm) {
@@ -54,8 +73,8 @@ bool command(const uint8_t* c, size_t n) {
 
 // Everything the display keeps (start line, offset, addressing, orientation...), but not on/off
 bool settings() {
-  static const uint8_t s[] = {0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40, 0x8D, 0x14, 0x20, 0x00,
-                              0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1, 0xDB, 0x40, 0xA4, 0xA6};
+  const uint8_t s[] = {0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40, 0x8D, 0x14, 0x20, 0x00,
+                       0xA1, 0xC8, 0xDA, 0x12, 0x81, CONTRAST[uiCfg.brightness & 3], 0xD9, 0xF1, 0xDB, 0x40, 0xA4, 0xA6};
   return command(s, sizeof s);
 }
 
@@ -191,7 +210,9 @@ void drawLeds(uint32_t now) {
   for (int c = 0; c < N_CONN; c++) {
     int16_t mm;
     State s = configured ? stateOf(c, &mm) : State::NotConfigured;
-    digitalWrite(CONN_LED[c], ledOn(configured, s, ui.screen == Screen::Sensor && c == ui.shown, now));
+    bool identifying = c == identifyConn && (int32_t)(identifyUntil - now) > 0;
+    digitalWrite(CONN_LED[c], ledOn(configured, s, ui.screen == Screen::Sensor && c == ui.shown, now, uiCfg.leds,
+                                    ui.screen != Screen::Off, identifying));
   }
 }
 
@@ -206,8 +227,32 @@ void setup() {
   ledsOff();
 }
 
+// The Pi's requests: new settings (timeout, brightness at once), the display on or off
+void applyRequests(uint32_t now) {
+  if (uiCfgChanged) {
+    uiCfgChanged = false;
+    ui.awake_ms = uiCfg.awake_ms;
+    if (present && lit) {
+      uint8_t c[] = {0x81, CONTRAST[uiCfg.brightness & 3]};
+      command(c, sizeof c);
+    }
+  }
+  int8_t req = dispReq;
+  if (req == REQ_NONE) return;
+  dispReq = REQ_NONE;
+  if (req == REQ_OFF) {
+    ui.screen = Screen::Off;
+    return;
+  }
+  ui.screen = req == REQ_ALL ? Screen::All : Screen::Sensor;
+  if (req >= 0) ui.shown = req;
+  ui.lastPress = now;            // the timeout counts from here, as after a press
+  ui.pressedOnce = true;
+}
+
 void loop() {
   uint32_t now = millis();
+  applyRequests(now);
   uiButton(ui, digitalRead(BUTTON_PIN), now);
   uiTick(ui, now);
   bool on = ui.screen != Screen::Off;
@@ -220,7 +265,11 @@ void loop() {
   if (on != lit) {
     lit = on;
     if (present) power(on);
-    if (!on) ledsOff();
+  }
+  // the LEDs, with the display on or off (their mode decides; ID blinks one whatever it is)
+  if (now - lastLeds >= LED_MS) {
+    lastLeds = now;
+    drawLeds(now);
   }
   if (!on) return;
   if (present && now - lastFrame >= FRAME_MS) {
@@ -239,10 +288,6 @@ void loop() {
       uiButton(ui, digitalRead(BUTTON_PIN), millis());     // a short tap is not missed
     }
     sentValid = present;
-  }
-  if (now - lastLeds >= LED_MS) {
-    lastLeds = now;
-    drawLeds(now);
   }
 }
 

@@ -85,6 +85,33 @@ void onLine(const char* l) {
     tele::start(micros());
     tele::on = l[3] == '1';
     Serial.println("TM OK");
+  } else if (strncmp(l, "UI ", 3) == 0) {
+    UiCfg next = display::uiCfg;
+    const char* err = parseUi(l + 2, next);
+    if (err) {
+      Serial.printf("UI ERR %s\n", err);
+    } else {
+      display::applyUi(next);
+      Serial.println("UI OK");
+    }
+  } else if (strncmp(l, "DISP ", 5) == 0) {
+    bool on;
+    int screen = -1;
+    const char* err = parseDisp(l + 4, on, screen);
+    if (err) {
+      Serial.printf("DISP ERR %s\n", err);
+    } else {
+      display::requestDisplay(on, screen);
+      Serial.println("DISP OK");
+    }
+  } else if (strncmp(l, "ID ", 3) == 0) {
+    int c = parseConnector(l + 3);
+    if (c < 0) {
+      Serial.println("ID ERR bad connector");
+    } else {
+      display::identify(c);
+      Serial.println("ID OK");
+    }
   } else if (strcmp(l, "DBG") == 0) {
 #ifndef WOKWI
     tof::debug();

@@ -16,7 +16,7 @@ import time
 
 
 class FakePico:
-    def __init__(self, fd, hb_period=1.0, r_period=0.05):
+    def __init__(self, fd, hb_period=1.0, r_period=0.05, proto=2):
         self.fd = fd
         self.hb_period = hb_period
         self.r_period = r_period
@@ -25,7 +25,7 @@ class FakePico:
         self.states = ""
         self.readings = {}
         self.cfg_error = None       # set it to answer CFG ERR <this>
-        self.proto = 2              # 1 = an old firmware: no commit, no TM/UI/DISP/ID
+        self.proto = proto          # 1 = an old firmware: no commit, no TM/UI/DISP/ID
         self.lines = []             # every line received
         self.tm = False
         self._stop = threading.Event()
@@ -55,6 +55,8 @@ class FakePico:
         elif self.proto >= 2 and line in ("TM 1", "TM 0"):
             self.tm = line == "TM 1"
             self._send("TM OK")
+        elif self.proto >= 2 and line.split(" ")[0] in ("UI", "DISP", "ID"):
+            self._send(f"{line.split(' ')[0]} OK")
         elif line == "CFG" or line.startswith("CFG "):
             self.cfg_lines.append(line)
             if self.cfg_error:

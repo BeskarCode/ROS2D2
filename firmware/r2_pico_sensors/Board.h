@@ -30,10 +30,20 @@ inline int connectorOf(const SensorCfg& s) {
 
 enum class State { NotConfigured, NotResponding, Ok };
 
+// How the status LEDs behave (the Pi's UI led=...): Auto = only while the display is on (as it
+// always was), On = also with the display off, Off = never, Errors = only the sensors not
+// responding, blinking.
+enum class LedMode { Auto, On, Off, Errors };
+
 // A status LED at time now: waiting for the Pi (not configured yet) = a short flash every 2 s;
 // then on = measuring, blinking = not responding, off = no sensor on that connector. The
-// connector on the display shows a short blip of the opposite every second.
-inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now) {
+// connector on the display shows a short blip of the opposite every second. Identifying (ID)
+// blinks it at 5 Hz whatever the mode.
+inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now, LedMode mode, bool displayOn,
+                  bool identifying) {
+  if (identifying) return (now / 100) % 2;
+  if (mode == LedMode::Off || (mode == LedMode::Auto && !displayOn)) return false;
+  if (mode == LedMode::Errors) return configured && s == State::NotResponding && (now / 400) % 2;
   bool on;
   if (!configured) on = now % 2000 < 300;
   else if (s == State::Ok) on = true;
@@ -45,7 +55,7 @@ inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now) {
 
 // Display: off; a press shows the logo; the next one every sensor at once; then each press one
 // connector, VL1 to US5, and after US5 every sensor again. Held for 3 s, or 30 s without a
-// press: off again (display and LEDs).
+// press (Ui::awake_ms, the Pi's UI t=...; 0 = never): off again (display and LEDs).
 enum class Screen { Off, Splash, All, Sensor };
 constexpr uint32_t AWAKE_MS = 30000, HOLD_MS = 3000, DEBOUNCE_MS = 50;
 
@@ -56,6 +66,7 @@ struct Ui {
   bool pressedOnce = false;
   bool level = true;          // the button line: high = released (pull-up)
   uint32_t lastEdge = 0;
+  uint32_t awake_ms = AWAKE_MS;     // off this long after the last press; 0 = never
 };
 
 inline void uiPress(Ui& ui, uint32_t now) {
@@ -90,7 +101,7 @@ inline void uiButton(Ui& ui, bool high, uint32_t now) {
 inline void uiTick(Ui& ui, uint32_t now) {
   if (ui.screen == Screen::Off) return;
   bool held = !ui.level && now - ui.lastPress >= HOLD_MS;
-  if (held || now - ui.lastPress > AWAKE_MS) ui.screen = Screen::Off;
+  if (held || (ui.awake_ms && now - ui.lastPress > ui.awake_ms)) ui.screen = Screen::Off;
 }
 
 // The all-sensors screen: how many of a bar's n segments light for a reading of mm on a scale of

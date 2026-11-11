@@ -19,6 +19,7 @@ connected). The protocol is in protocol.py.
 
 import json
 import math
+import os
 import threading
 import time
 
@@ -30,14 +31,20 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from sensor_msgs.msg import Range
 from std_msgs.msg import Bool, String
 
+from r2_pico_bridge import board_settings
 from r2_pico_bridge.protocol import cfg_line, parse
 from r2_sensors.config import Reloader, config_path
 
 STATES = {"O": "ok", "N": "not_responding"}
+NL = "\n"
 
 
 def default_config():
     return f"{get_package_share_directory('r2_sensors')}/config/sensors.yaml"
+
+
+def default_board_config():
+    return f"{get_package_share_directory('r2_pico_bridge')}/config/pico_board.yaml"
 
 
 class PicoBridge(Node):
@@ -48,6 +55,7 @@ class PicoBridge(Node):
         self.declare_parameter("reconnect_sec", 2.0)
         self.declare_parameter("stale_sec", 3.0)
         self.declare_parameter("telemetry_timeout_sec", 5.0)
+        self.declare_parameter("board_config", "")      # pico_board.yaml; "" = the user's, else the package's
         config = self.param("config") or default_config()
         self.reloader = Reloader(lambda: config_path(config))
         self.lock = threading.Lock()
@@ -60,6 +68,11 @@ class PicoBridge(Node):
         self.tm_sent = False        # TM 1 sent on this connection
         self.telemetry = None
         self.telemetry_at = 0.0
+        # the carrier board's settings (pico_board.yaml), sent as UI after every CFG
+        self.board = dict(board_settings.DEFAULTS)
+        self.board_seen = None      # (path, mtime) of the file last read
+        self.ui_pending = False     # a UI line sent, its answer not seen yet
+        self.settings_supported = None   # None = not known yet; False = old firmware (ERR unknown)
         self.config_error = None
         self.last_hb = 0.0
         self.sensors = {}           # name -> settings, as last sent to the Pico
@@ -73,6 +86,8 @@ class PicoBridge(Node):
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_connected = self.create_publisher(Bool, "/pico/connected", latched)
         self.create_subscription(Bool, "/pico/telemetry_request", self.on_telemetry_request, 10)
+        self.create_subscription(String, "/pico/command", self.on_command, 10)
+        self.reload_board()
         self.reload(force=True)
         self.create_timer(1.0, self.tick)
         self.create_timer(0.2, self.check_connected)
@@ -124,6 +139,7 @@ class PicoBridge(Node):
         self._write("HELLO\n")
         self.send_cfg()
         self.tm_sent = False
+        self.settings_supported = None
         self.check_telemetry()
         return True
 
@@ -186,9 +202,20 @@ class PicoBridge(Node):
             self.telemetry, self.telemetry_at = msg[1], time.monotonic()
         elif kind == "cfg_ok":
             self.config_error = None
+            self.send_ui()
+        elif kind == "ack":
+            if msg[1] == "UI":
+                self.ui_pending = False
+                self.settings_supported = True
+            if not msg[2]:
+                self.get_logger().warning(f"pico: {msg[1]} ERR {msg[3]}")
         elif kind == "cfg_err":
             self.config_error = msg[1]
             self.get_logger().error(f"the Pico refused the sensors: {msg[1]}", throttle_duration_sec=60.0)
+        elif kind == "err" and self.ui_pending and msg[1] == "unknown":
+            self.ui_pending = False             # a firmware before 0.2.0: no UI, DISP or ID
+            self.settings_supported = False
+            self.get_logger().warning("the Pico firmware is too old for the board settings: update it")
         elif kind == "err":
             self.get_logger().warning(f"pico: ERR {msg[1]}")
         elif kind == "hb":
@@ -230,6 +257,42 @@ class PicoBridge(Node):
             m.range = math.inf if mm == -1 else max(mm / 1000.0, m.min_range)
             self.pub_range[name].publish(m)
 
+    # --- the carrier board's settings (pico_board.yaml) and actions -------------------
+
+    def board_path(self):
+        return self.param("board_config") or board_settings.config_path(default_board_config())
+
+    def reload_board(self):
+        path = self.board_path()
+        try:
+            seen = (path, os.path.getmtime(path))
+        except OSError:
+            seen = (path, None)
+        if seen == self.board_seen:
+            return
+        self.board_seen = seen
+        if seen[1] is None:
+            self.get_logger().warning(f"no {path}: the board keeps its own settings", throttle_duration_sec=60.0)
+            return
+        try:
+            self.board = board_settings.load(path)
+        except (OSError, board_settings.BoardSettingsError) as e:
+            self.get_logger().error(f"pico_board.yaml: {e} (keeping the last good one)")
+            return
+        self.send_ui()
+
+    def send_ui(self):
+        if self.ser is None or self.settings_supported is False:
+            return
+        self.ui_pending = self._write(board_settings.ui_line(self.board) + NL)
+
+    def on_command(self, msg):
+        if not board_settings.command_ok(msg.data):
+            self.get_logger().warning(f"/pico/command: not sent: {msg.data!r}")
+            return
+        if self.settings_supported is not False:
+            self._write(msg.data + NL)
+
     # --- telemetry ------------------------------------------------------------------
 
     def on_telemetry_request(self, msg):
@@ -243,7 +306,9 @@ class PicoBridge(Node):
             self.tm_sent = self._write("TM 1\n")
         elif not want and self.tm_sent:
             self.tm_sent = False
+            self.telemetry = None           # nobody looks: no stale numbers in /pico/state
             self._write("TM 0\n")
+            self.publish_state()
 
     # --- state ----------------------------------------------------------------------
 
@@ -262,7 +327,8 @@ class PicoBridge(Node):
             fresh_tm = self.telemetry if time.monotonic() - self.telemetry_at < 3.0 else None
             state = {"connected": self.is_connected(), "firmware": self.firmware, "proto": self.proto,
                      "commit": self.commit, "config_error": self.config_error,
-                     "sensors": dict(self.status), "telemetry": fresh_tm}
+                     "sensors": dict(self.status), "telemetry": fresh_tm,
+                     "settings_supported": self.settings_supported}
         text = json.dumps(state)
         if always or text != self.last_json:
             self.last_json = text
@@ -270,6 +336,7 @@ class PicoBridge(Node):
 
     def tick(self):
         self.reload()
+        self.reload_board()
         self.check_telemetry()
         self.publish_state(always=True)
 

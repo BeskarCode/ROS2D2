@@ -11,6 +11,13 @@ Pi -> Pico:
                               answers CFG OK <n> or CFG ERR <why>
   BOOT                        restart into the USB loader (to flash it)
   TM 1 / TM 0                 telemetry on / off (answers TM OK; off after a restart)
+  UI t=<s> b=<0-3> led=<auto|on|off|err>
+                              the carrier board's display timeout, brightness and LED mode
+                              (sent after every CFG and when pico_board.yaml changes)
+  DISP on [all|VL1..US5] / DISP off    the display on or off now
+  ID <VL1..US5>               that connector's LED blinks fast for 5 s
+                              UI, DISP and ID answer <word> OK or <word> ERR <why>; a firmware
+                              before 0.2.0 answers ERR unknown
 
 Pico -> Pi:
   HB <ms> <states>            every second; states '-' = no CFG yet, else one letter per
@@ -31,6 +38,7 @@ PROTO = 2
 _HB = re.compile(r"^HB (\d+)(?: (-|[ON]*))?$")    # no states: CFG with no sensors
 _R_ITEM = re.compile(r"^(\d+):(-?\d+)$")
 _HELLO = re.compile(r"^PICO r2_pico_sensors (\S+) proto (\d+)(?: commit (\S+))?$")
+_ACK = re.compile(r"^(UI|DISP|ID) (OK|ERR)(?: (.+))?$")
 _TM = re.compile(r"^T c0=(\d+) c1=(\d+) bus=(\d+) disp=(\d+) wait=(\d+) temp=(-?\d+) up=(\d+) rps=((?:\d+(?:,\d+)*)?)$")
 
 
@@ -64,6 +72,9 @@ def parse(line):
         return ("hello", m.group(1), int(m.group(2)), m.group(3))
     if line == "TM OK":
         return ("tm_ok",)
+    m = _ACK.match(line)
+    if m:
+        return ("ack", m.group(1), m.group(2) == "OK", m.group(3))
     m = _TM.match(line)
     if m:
         g = m.groups()
