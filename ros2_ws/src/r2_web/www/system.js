@@ -3,6 +3,7 @@
 // is open, how busy they are. The Pi's from GET api/system?telemetry=1 every 2 s; the Pico's
 // from /pico/state, asked for with /pico/telemetry_request every 2 s (the bridge sends TM 0
 // once the requests stop). Temperature and load show the ranges they move in.
+import { CONNECTORS, OPTIONS, toYaml } from './boardform.js';
 import { publish, subscribe } from './rosbridge.js';
 import {
   CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, level, minMax, pct, throttleText, uptime, versionText, zone,
@@ -102,7 +103,50 @@ export function createSystemTab() {
   subscribe('/pico/state', 'std_msgs/msg/String', (m) => {
     try { pico = JSON.parse(m.data); picoAt = Date.now(); } catch { return; }
     showPico();
+    boardEnabled();
   });
+
+  // ---------- the Pico board's settings (pico_board.yaml) and actions ----------
+  let board = null;
+  const sel = (id, key) => {
+    $(id).innerHTML = OPTIONS[key].map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  };
+  sel('brd-timeout', 'display_timeout_s');
+  sel('brd-bright', 'brightness');
+  sel('brd-leds', 'leds');
+  $('brd-screen').innerHTML = '<option value="all">every sensor</option>' +
+    CONNECTORS.map((c) => `<option value="${c}">${c}</option>`).join('');
+  $('brd-identify').innerHTML = CONNECTORS.map((c) => `<button data-c="${c}">${c}</button>`).join('');
+
+  function boardEnabled() {
+    const live = pico && Date.now() - picoAt < 3000 && pico.connected;
+    const old = live && pico.settings_supported === false;
+    const why = !live ? 'The Pico is not connected.' : old ? 'Update the Pico firmware to use this.' : '';
+    $('brd-why').textContent = why;
+    $('brd-why').hidden = !why;
+    document.querySelectorAll('#sys-board button, #sys-board select').forEach((c) => {
+      c.disabled = !!why && !(c.tagName === 'SELECT' && !old);    // settings can be saved while it is unplugged
+    });
+  }
+  async function loadBoard() {
+    try { board = await (await fetch('api/pico_board', { cache: 'no-store' })).json(); } catch { return; }
+    const s = board.settings || { display_timeout_s: 30, brightness: 2, leds: 'auto' };
+    $('brd-timeout').value = s.display_timeout_s;
+    $('brd-bright').value = s.brightness;
+    $('brd-leds').value = s.leds;
+    $('brd-file').textContent = board.error ? `${board.file}: ${board.error}` : board.file;
+  }
+  async function saveBoard() {
+    const s = { display_timeout_s: Number($('brd-timeout').value), brightness: Number($('brd-bright').value), leds: $('brd-leds').value };
+    let res;
+    try { res = await (await fetch('api/pico_board', { method: 'POST', body: JSON.stringify({ yaml: toYaml(s) }) })).json(); } catch { res = { error: 'the Pi does not answer' }; }
+    $('brd-file').textContent = res.error ? `Not saved: ${res.error}` : `Saved in ${res.file}: the Pico has it now.`;
+  }
+  ['brd-timeout', 'brd-bright', 'brd-leds'].forEach((id) => $(id).addEventListener('change', saveBoard));
+  const command = (line) => publish('/pico/command', 'std_msgs/msg/String', { data: line });
+  $('brd-on').addEventListener('click', () => command($('brd-screen').value === 'all' ? 'DISP on' : `DISP on ${$('brd-screen').value}`));
+  $('brd-off').addEventListener('click', () => command('DISP off'));
+  $('brd-identify').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) command(`ID ${b.dataset.c}`); });
 
   // ---------- polling ----------
   async function poll() {
@@ -130,7 +174,7 @@ export function createSystemTab() {
   $('sys-telemetry').checked = telemetry;
 
   return {
-    show() { visible = true; restart(); },
+    show() { visible = true; restart(); loadBoard(); boardEnabled(); },
     hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; },
   };
 }

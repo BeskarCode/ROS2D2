@@ -3,7 +3,7 @@
 // cover and what they miss, and save sensors.yaml (the TF follows at once on the Pi).
 // Sensors are kept as in sensors.yaml (metres, degrees, ROS axes: + yaw = left).
 import { MODELS } from './models.js';
-import { call, subscribe } from './rosbridge.js';
+import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
@@ -384,6 +384,8 @@ export function createSensorsTab({ status }) {
           <span class="badge ${cls}">${text}</span>
           <button class="eye${hidden.has(s.name) ? ' off' : ''}" title="${hidden.has(s.name) ? 'Show' : 'Hide'} its beam on the map">
             <i class="fa-solid ${hidden.has(s.name) ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+          ${!isLidar(s) && connectorOf(s) ? `<button class="eye idb" title="Identify: ${connectorOf(s)}'s LED on the board blinks for 5 s">
+            <i class="fa-solid fa-lightbulb"></i></button>` : ''}
           ${isLidar(s) ? `<button class="eye pts${hidden.has(s.name + '#points') ? ' off' : ''}" title="${hidden.has(s.name + '#points') ? 'Show' : 'Hide'} what it measures (its points) on the map">
             <i class="fa-solid ${hidden.has(s.name + '#points') ? 'fa-circle' : 'fa-braille'}"></i></button>` : ''}</div>
         <div class="edit">
@@ -408,6 +410,8 @@ export function createSensorsTab({ status }) {
       const toggle = (key) => { if (hidden.has(key)) hidden.delete(key); else hidden.add(key); saveHidden(); renderList(); redraw(); };
       el.querySelector('.eye').addEventListener('click', () => toggle(s.name));
       el.querySelector('.eye.pts')?.addEventListener('click', () => toggle(s.name + '#points'));
+      el.querySelector('.eye.idb')?.addEventListener('click', () =>
+        publish('/pico/command', 'std_msgs/msg/String', { data: `ID ${connectorOf(s)}` }));
       const name = el.querySelector('.name');
       name.value = s.name;
       name.addEventListener('change', () => {
