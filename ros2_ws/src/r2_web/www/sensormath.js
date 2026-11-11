@@ -20,6 +20,12 @@ export const TYPES = {
   vl53l0x: { prefix: 'tof', label: 'VL53L0X', colour: '#a371f7', fov: [15, 35], range: [0.3, 2], fovDeg: 25, rangeMax: 1.2 },
   hcsr04: { prefix: 'sonar', label: 'HC-SR04', colour: '#f0b429', fov: [15, 40], range: [0.5, 4], fovDeg: 30, rangeMax: 3 },
 };
+// A type's own beam (as r2_sensors/config.py TYPES): what a new sensor gets, and "Defaults"
+export const beamDefaults = (type) => ({
+  fov_deg: TYPES[type].fovDeg,
+  range_min: type === 'hcsr04' ? 0.02 : type === 'vl53l0x' ? 0.03 : 0.05,
+  range_max: TYPES[type].rangeMax,
+});
 // Pico GPIO a sensor may use: not the VL53L0X's I2C (GP16, GP17), the Pico's own (GP23-25),
 // nor the carrier board's status LEDs (GP0, GP1, GP6-9, GP22, GP27, GP28) and button (GP26)
 const PICO_RESERVED = [0, 1, 6, 7, 8, 9, 16, 17, 22, 23, 24, 25, 26, 27, 28];

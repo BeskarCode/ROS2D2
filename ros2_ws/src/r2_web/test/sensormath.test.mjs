@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius, nearestPoint,
+  toMap, fromMap, toThree, sideText, inRobot, sees, coverage, defaultName, uniqueName, freeRadius, nearestPoint, beamDefaults,
 } from '../www/sensormath.js';
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -122,4 +122,10 @@ test('free circle: no points, no circle', () => {
 test('nearest point: where the free circle touches, for the line to it', () => {
   assert.deepEqual(nearestPoint([[1.5, 0], [0, -0.8], [0.05, 0.05]]), { x: 0, y: -0.8, r: 0.8 });
   assert.equal(nearestPoint([]), null);
+});
+
+test('"Defaults" gives each type its own beam (the same as r2_sensors/config.py TYPES)', () => {
+  assert.deepEqual(beamDefaults('vl53l0x'), { fov_deg: 25, range_min: 0.03, range_max: 1.2 });
+  assert.deepEqual(beamDefaults('hcsr04'), { fov_deg: 30, range_min: 0.02, range_max: 3 });
+  assert.deepEqual(beamDefaults('rplidar_c1'), { fov_deg: 200, range_min: 0.05, range_max: 12 });
 });
