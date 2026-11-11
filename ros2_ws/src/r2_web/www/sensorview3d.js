@@ -12,7 +12,7 @@ import { textSprite } from './label3d.js';
 const rad = (d) => d * Math.PI / 180;
 const V = (x, y, z) => new THREE.Vector3(...toThree(x, y, z));
 
-export function createSensorView3d(container) {
+export function createSensorView3d(container, { onHover = () => {} } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(devicePixelRatio);
   renderer.localClippingEnabled = true;
@@ -71,15 +71,20 @@ export function createSensorView3d(container) {
     dyn.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     dyn.clear();
     for (const s of state.sensors) {
-      const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected;
-      const dot = new THREE.Mesh(new THREE.SphereGeometry(on ? 0.028 : 0.02, 16, 8), new THREE.MeshBasicMaterial({ color: T.colour }));
+      const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected, hov = s.name === state.hovered;
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(hov ? 0.04 : on ? 0.028 : 0.02, 16, 8),
+        new THREE.MeshBasicMaterial({ color: hov ? '#e6edf3' : T.colour }));
       dot.position.copy(V(s.x, s.y, s.z));
+      dot.userData.sensor = s.name;
+      dot.userData.dot = true;
       dyn.add(dot);
       if (state.hidden && state.hidden.has(s.name)) continue;
-      const mat = new THREE.MeshBasicMaterial({ color: T.colour, transparent: true, opacity: missing ? 0.04 : on ? 0.3 : 0.14,
+      const mat = new THREE.MeshBasicMaterial({ color: T.colour, transparent: true, opacity: hov ? 0.42 : missing ? 0.04 : on ? 0.3 : 0.14,
         side: THREE.DoubleSide, depthWrite: false, clippingPlanes: [floor] });
-      if (isLidar(s)) dyn.add(...slice(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, 1.5)));
-      else dyn.add(cone(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, Math.max(1.5, reach(s)))));
+      const beam = isLidar(s) ? slice(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, 1.5))
+        : [cone(s, mat, state.fullRange ? s.range_max : Math.min(s.range_max, Math.max(1.5, reach(s))))];
+      for (const m of beam) m.userData.sensor = s.name;
+      dyn.add(...beam);
     }
     const ob = state.object;     // null: no test object
     if (ob) {
@@ -116,6 +121,19 @@ export function createSensorView3d(container) {
     }
     render();
   }
+
+  // the sensor under the mouse: its dot first (small, so it wins), else the nearest beam.
+  // Not while orbiting (a button held down).
+  const ray = new THREE.Raycaster();
+  renderer.domElement.addEventListener('pointermove', (ev) => {
+    if (ev.buttons) return;
+    const r = renderer.domElement.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1), cam);
+    const hits = ray.intersectObjects(dyn.children.filter((o) => o.userData.sensor && o.isMesh), false);
+    const hit = hits.find((h) => h.object.userData.dot) || hits[0];
+    onHover(hit ? hit.object.userData.sensor : null, ev.clientX, ev.clientY);
+  });
+  renderer.domElement.addEventListener('pointerleave', () => onHover(null));
 
   async function setModel(key) {
     const next = await loadModelMetres(key);

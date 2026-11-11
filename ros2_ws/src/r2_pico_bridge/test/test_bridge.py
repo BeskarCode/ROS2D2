@@ -20,7 +20,7 @@ from r2_pico_bridge.pico_bridge_node import PicoBridge
 
 PACKAGE_YAML = os.path.join(os.path.dirname(__file__), "..", "..", "r2_sensors", "config", "sensors.yaml")
 NAMES = ["tof_front_left", "tof_front", "tof_front_right", "tof_floor",
-         "sonar_front_left", "sonar_front_right", "sonar_rear"]
+         "sonar_front_left", "sonar_front_right", "sonar_rear", "sonar_left", "sonar_right"]
 
 
 class Bench:
@@ -98,7 +98,7 @@ def sensors(b):
 
 def test_on_connect_it_says_hello_and_sends_the_sensors(bench):
     assert bench.spin_until(lambda: bench.pico.cfg_lines)
-    assert bench.pico.cfg_lines[0] == "CFG V:2 V:3 V:4 V:5 S:10:11 S:12:13 S:14:15"
+    assert bench.pico.cfg_lines[0] == "CFG V:2 V:3 V:4 V:5 S:10:11 S:12:13 S:14:15 S:18:19 S:20:21"
     assert bench.spin_until(lambda: bench.connected is True)
     assert bench.spin_until(lambda: sensors(bench) == {n: "not_responding" for n in NAMES})
     assert bench.state["connected"] is True and bench.state["firmware"] == "0.1.0"
