@@ -10,6 +10,12 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 |---|---|
 | ![](montaje/img/montada.png) | ![](montaje/img/montada_atras.png) |
 
+**Información actualizada, STL y fuentes:** <https://github.com/BeskarCode/ROS2D2/tree/main/hardware/caja_ros2_rack>
+
+## Tamaño frente al R2
+
+<img src="montaje/img/escala_es.svg" alt="Tamaño frente al R2" width="420">
+
 ## Por dentro (sin carcasa)
 
 ![](montaje/img/interior.png)

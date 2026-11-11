@@ -57,6 +57,14 @@ def test_guide_shows_the_wiring(tmp_path, table, lang, name):
     assert f"montaje/img/conectores_{lang}.svg" in md          # which way the angled plugs go
 
 
+@pytest.mark.parametrize("lang,name", [("es", "MONTAJE.md"), ("en", "ASSEMBLY.md")])
+def test_guide_links_the_repo_and_shows_the_size(tmp_path, table, lang, name):
+    write_guide(lang, table, tmp_path / name)
+    md = (tmp_path / name).read_text(encoding="utf8")
+    assert "https://github.com/BeskarCode/ROS2D2/tree/main/hardware/caja_ros2" in md   # the PDF may be old
+    assert f"montaje/img/escala_{lang}.svg" in md                                      # R2 and the box, same scale
+
+
 @pytest.mark.parametrize("lang", ["es", "en"])
 def test_pdf_and_guide_carry_the_logos(tmp_path, table, lang):
     from build_docs import write_html

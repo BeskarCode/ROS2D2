@@ -26,6 +26,13 @@ IMG = HERE / "montaje" / "img"
 REPO = HERE.parents[1]
 LOGO_ROS2D2 = REPO / "media" / "ros2d2-logo.png"
 LOGO_ASTROMECH = REPO / "hardware" / "r2_pico_carrier" / "gen" / "astromech-spain-logo-circular.png"   # dark on white
+REPO_URL = "https://github.com/BeskarCode/ROS2D2"
+BOX_DIMS = (107, 133, 125)          # W x D x H, mm (the rack box sets its own)
+
+
+def repo_link():
+    """Where the up-to-date guide, STL and sources of this box live (the PDF may be old)."""
+    return f"{REPO_URL}/tree/main/hardware/{HERE.name}"
 
 # scene -> (extra -D, camera rotation x, z)
 VIEWS = {
@@ -146,7 +153,9 @@ TXT = {
            "intro": "Caja mini torre para la Raspberry Pi 4, la placa de la Pico, el convertidor 24 → 5 V, el "
                     "XT60 y el interruptor. Antes de imprimir mide lo que indica el README (XT60, interruptor, "
                     "agujeros del convertidor, altura del pulsador y del ventilador).",
-           "other_lang": "[English version](ASSEMBLY.md)"},
+           "other_lang": "[English version](ASSEMBLY.md)",
+           "latest": "Información actualizada, STL y fuentes", "size": "Tamaño frente al R2",
+           "r2": "R2 ≈ 1,09 m", "boxlbl": "Caja", "scale": "R2 esquemático y caja a la misma escala"},
     "en": {"title": "ROS2 box · Assembly instructions", "built": "Assembled", "back": "From the back",
            "inside": "Inside (no shell)", "exploded": "Exploded view", "bom": "Hardware and parts",
            "printed": "Printed parts", "other": "Other parts", "qty": "Qty", "item": "Part", "where": "Step",
@@ -154,7 +163,9 @@ TXT = {
            "intro": "Mini-tower box for the Raspberry Pi 4, the Pico board, the 24 → 5 V converter, the XT60 and "
                     "the switch. Before printing, measure what the README lists (XT60, switch, converter holes, "
                     "button and fan heights).",
-           "other_lang": "[Versión en castellano](MONTAJE.md)"},
+           "other_lang": "[Versión en castellano](MONTAJE.md)",
+           "latest": "Up-to-date guide, STL and sources", "size": "Size next to the R2",
+           "r2": "R2 ≈ 1.09 m", "boxlbl": "Box", "scale": "Schematic R2 and the box at the same scale"},
 }
 
 
@@ -176,6 +187,43 @@ WIRING = {
            "slot": "back slot", "back": "back",
            "legend": [("#d62828", "+24 V"), ("#222222", "GND"), ("#e0b000", "+5 V"), ("#2a6fdb", "USB (data)"), ("#8a8a8a", "sensor cables")]},
 }
+
+
+def scale_svg(lang):
+    """A schematic astromech (front view, outline only) and the box, both in mm, same scale."""
+    t = TXT[lang]
+    W, D, H = BOX_DIMS
+    G = 1160                                   # ground line, SVG y
+    y = lambda z: G - z
+    cx, R = 450, 228.5                         # body centre, body/dome radius (18 in)
+    body = (330, 860)
+    st = 'fill="#eef1f6" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"'
+    s = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -40 1300 1220" width="1000" height="938" '
+         f'font-family="Segoe UI, Arial, sans-serif" font-size="40">']
+    s.append(f'<line x1="20" y1="{G}" x2="1280" y2="{G}" stroke="#888" stroke-width="4"/>')
+    for sx in (-1, 1):                         # outer legs + feet, behind the body
+        lx = cx + sx * (R + 25)
+        s.append(f'<rect x="{lx - 45}" y="{y(900)}" width="90" height="{900 - 120}" rx="12" {st}/>')
+        s.append(f'<path d="M{lx - 80},{y(0)} L{lx + 80},{y(0)} L{lx + 52},{y(140)} L{lx - 52},{y(140)} Z" {st}/>')
+    s.append(f'<rect x="{cx - 55}" y="{y(body[0])}" width="110" height="{body[0] - 70}" {st}/>')          # centre leg
+    s.append(f'<path d="M{cx - 95},{y(0)} L{cx + 95},{y(0)} L{cx + 65},{y(80)} L{cx - 65},{y(80)} Z" {st}/>')
+    s.append(f'<rect x="{cx - R}" y="{y(body[1])}" width="{2 * R}" height="{body[1] - body[0]}" {st}/>')   # body
+    s.append(f'<path d="M{cx - R},{y(body[1])} A{R},{R * 0.95} 0 0 1 {cx + R},{y(body[1])} Z" {st}/>')   # dome
+    for sx in (-1, 1):                         # shoulder hubs
+        s.append(f'<circle cx="{cx + sx * (R + 25)}" cy="{y(800)}" r="48" {st}/>')
+    # height of the R2
+    s.append(f'<line x1="{cx - R - 150}" y1="{y(0)}" x2="{cx - R - 150}" y2="{y(1090)}" stroke="#1d1d1f" stroke-width="3"/>')
+    for z in (0, 1090):
+        s.append(f'<line x1="{cx - R - 170}" y1="{y(z)}" x2="{cx - R - 130}" y2="{y(z)}" stroke="#1d1d1f" stroke-width="3"/>')
+    s.append(f'<text x="{cx - R - 165}" y="{y(545)}" transform="rotate(-90 {cx - R - 165} {y(545)})" '
+             f'text-anchor="middle">{html.escape(t["r2"])}</text>')
+    # the box, front view (W x H), on the ground
+    bx = 900
+    s.append(f'<rect x="{bx}" y="{y(H)}" width="{W}" height="{H}" fill="#2a6fdb" stroke="#1d1d1f" stroke-width="4"/>')
+    s.append(f'<text x="{bx}" y="{y(H) - 70}" font-weight="700">{html.escape(t["boxlbl"])}</text>')
+    s.append(f'<text x="{bx}" y="{y(H) - 22}">{W} × {D} × {H} mm</text>')
+    s.append("</svg>")
+    return "\n".join(s)
 
 
 def wiring_svg(lang):
@@ -281,6 +329,8 @@ def write_guide(lang, table, path):
          f"# {t['title']}", "", t["other_lang"], "", t["intro"], "",
          f"| {t['built']} | {t['back']} |", "|---|---|",
          "| ![](montaje/img/montada.png) | ![](montaje/img/montada_atras.png) |", "",
+         f"**{t['latest']}:** <{repo_link()}>", "",
+         f"## {t['size']}", "", f'<img src="montaje/img/escala_{lang}.svg" alt="{t["size"]}" width="420">', "",
          f"## {t['inside']}", "", "![](montaje/img/interior.png)", "",
          f"## {t['exploded']}", "", "![](montaje/img/despiece.png)", "",
          f"## {t['bom']}", "", f"### {t['printed']}", "", f"| {t['item']} | |", "|---|---|"]
@@ -317,7 +367,9 @@ def write_html(lang, table, path):
                   f"<img src='{img('paso%d' % s['n'])}'><div class=hw>{chips}</div><p>{txt}</p></section>")
     doc = f"""<!doctype html><html lang={lang}><meta charset=utf-8><title>{e(t['title'])}</title>
 <style>
-@page {{ size: A4; margin: 12mm; }}
+@page {{ size: A4; margin: 12mm 12mm 16mm;
+  @bottom-left {{ content: "ROS2D2 · {e(t['latest'])}: {repo_link()}"; font: 8pt Segoe UI, Arial, sans-serif; color: #555; }}
+  @bottom-right {{ content: counter(page) " / " counter(pages); font: 8pt Segoe UI, Arial, sans-serif; color: #555; }} }}
 body {{ font-family: Segoe UI, Arial, sans-serif; color: #1d1d1f; font-size: 10.5pt; }}
 h1 {{ font-size: 20pt; margin: 0 0 4mm; }} h2 {{ font-size: 13pt; margin: 0 0 2mm; }}
 .cover img {{ width: 49%; }} .wide {{ width: 100%; }}
@@ -332,12 +384,18 @@ td, th {{ border-bottom: 1px solid #ddd; padding: 1.2mm 2mm; text-align: left; v
 .none {{ color: #888; }} code {{ font-size: 9pt; }} .pb {{ page-break-before: always; }}
 .logos {{ display: flex; align-items: center; justify-content: space-between; margin: 0 0 5mm; }}
 .logos .r {{ height: 16mm; }} .logos .a {{ height: 26mm; }}
+.latest {{ border: 1.5px solid #2a6fdb; border-radius: 2mm; padding: 2mm 3mm; margin: 3mm 0 4mm; }}
+.latest a {{ color: #2a6fdb; }}
+.size {{ display: flex; align-items: center; gap: 6mm; page-break-inside: avoid; }} .size svg {{ width: 70mm; height: auto; }}
 </style>
+
 <div class=logos><img class=r src='{LOGO_ROS2D2.as_uri()}' alt="ROS2D2"><img class=a src='{LOGO_ASTROMECH.as_uri()}' alt="Astromech Spain"></div>
 <h1>{e(t['title'])}</h1><p>{e(t['intro'])}</p>
+<div class=latest><b>{e(t['latest'])}:</b> <a href='{repo_link()}'>{e(repo_link())}</a></div>
 <div class=cover><img src='{img("montada")}'><img src='{img("montada_atras")}'></div>
-<h2>{e(t['exploded'])}</h2><img class=wide src='{img("despiece")}'>
-<h2 class=pb>{e(t['bom'])}</h2><h3>{e(t['printed'])}</h3><table>{printed}</table>
+<div class=size><div>{scale_svg(lang)}</div><div><h2>{e(t['size'])}</h2><p>{e(t['scale'])}.</p></div></div>
+<h2 class=pb>{e(t['exploded'])}</h2><img class=wide src='{img("despiece")}'>
+<h2>{e(t['bom'])}</h2><h3>{e(t['printed'])}</h3><table>{printed}</table>
 <table><tr><th>{t['qty']}</th><th>{t['item']}</th><th>{t['where']}</th></tr>{rows}</table>
 <h3>{e(t['other'])}</h3><table>{other}</table>
 <h2>{e(t['inside'])}</h2><img class=wide src='{img("interior")}'>
@@ -382,6 +440,7 @@ def main(images=True):
     IMG.mkdir(parents=True, exist_ok=True)
     for lang in ("es", "en"):
         (IMG / f"conexiones_{lang}.svg").write_text(wiring_svg(lang), encoding="utf8")
+        (IMG / f"escala_{lang}.svg").write_text(scale_svg(lang), encoding="utf8")
     write_guide("es", table, HERE / "MONTAJE.md")
     write_guide("en", table, HERE / "ASSEMBLY.md")
     for lang, name in (("es", "MONTAJE"), ("en", "ASSEMBLY")):

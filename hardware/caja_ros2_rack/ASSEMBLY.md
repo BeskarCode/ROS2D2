@@ -10,6 +10,12 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 |---|---|
 | ![](montaje/img/montada.png) | ![](montaje/img/montada_atras.png) |
 
+**Up-to-date guide, STL and sources:** <https://github.com/BeskarCode/ROS2D2/tree/main/hardware/caja_ros2_rack>
+
+## Size next to the R2
+
+<img src="montaje/img/escala_en.svg" alt="Size next to the R2" width="420">
+
 ## Inside (no shell)
 
 ![](montaje/img/interior.png)
