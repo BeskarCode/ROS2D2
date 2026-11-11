@@ -22,3 +22,29 @@ export function versionText(v) {
   if (!v || !v.commit) return 'unknown';
   return `${v.commit}${v.date ? ` · ${v.date.slice(0, 10)}` : ''}${v.dirty ? ' + local changes' : ''}`;
 }
+
+// Ranges a value moves in: [upper limit, class, label], the last one open-ended.
+// Pi 4/5: fine working up to ~65 °C in a box; it slows itself down (throttles) from 80 °C.
+export const PI_TEMP_ZONES = [[65, 'ok', 'normal'], [80, 'warn', 'warm'], [Infinity, 'bad', 'throttling']];
+// RP2350: rated to 85 °C
+export const PICO_TEMP_ZONES = [[60, 'ok', 'normal'], [85, 'warn', 'warm'], [Infinity, 'bad', 'too hot']];
+export const CPU_ZONES = [[70, 'ok', 'normal'], [90, 'warn', 'busy'], [Infinity, 'bad', 'saturated']];
+
+export function zone(value, zones) {
+  if (value == null || !Number.isFinite(value)) return null;
+  const [, cls, label] = zones.find(([top]) => value < top);
+  return { cls, label };
+}
+
+// the lowest and highest seen so far (null values leave it as it was)
+export function minMax(prev, v) {
+  if (v == null || !Number.isFinite(v)) return prev;
+  return prev ? { min: Math.min(prev.min, v), max: Math.max(prev.max, v) } : { min: v, max: v };
+}
+
+export function uptime(s) {
+  if (s == null || !Number.isFinite(s)) return '–';
+  if (s < 60) return `${Math.round(s)} s`;
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`;
+}

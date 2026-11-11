@@ -2,7 +2,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bytes, level, pct, throttleText, versionText } from '../www/systemfmt.js';
+import { CPU_ZONES, PI_TEMP_ZONES, PICO_TEMP_ZONES, bytes, level, minMax, pct, throttleText, uptime, versionText, zone } from '../www/systemfmt.js';
 
 test('bytes', () => {
   assert.equal(bytes(12.3e9), '12.3 GB');
@@ -38,4 +38,33 @@ test('versionText', () => {
   assert.equal(versionText({ commit: '265a841', date: '2026-11-11T23:50:00+01:00', dirty: true }), '265a841 · 2026-11-11 + local changes');
   assert.equal(versionText({ commit: null }), 'unknown');
   assert.equal(versionText(null), 'unknown');
+});
+
+test('zone: where a value sits in its ranges (Pi temperature, CPU load)', () => {
+  // Pi 4/5: normal up to 65 °C working (in a box), warm to 80, it slows itself down from 80
+  assert.deepEqual(zone(61.3, PI_TEMP_ZONES), { cls: 'ok', label: 'normal' });
+  assert.deepEqual(zone(70, PI_TEMP_ZONES), { cls: 'warn', label: 'warm' });
+  assert.deepEqual(zone(45, PI_TEMP_ZONES), { cls: 'ok', label: 'normal' });
+  assert.deepEqual(zone(82, PI_TEMP_ZONES), { cls: 'bad', label: 'throttling' });
+  assert.deepEqual(zone(50, CPU_ZONES), { cls: 'ok', label: 'normal' });
+  assert.deepEqual(zone(85, CPU_ZONES), { cls: 'warn', label: 'busy' });
+  assert.deepEqual(zone(97, CPU_ZONES), { cls: 'bad', label: 'saturated' });
+  assert.deepEqual(zone(70, PICO_TEMP_ZONES), { cls: 'warn', label: 'warm' });
+  assert.equal(zone(null, CPU_ZONES), null);
+});
+
+test('minMax: the lowest and highest seen', () => {
+  let r = minMax(null, 55);
+  assert.deepEqual(r, { min: 55, max: 55 });
+  r = minMax(r, 61);
+  r = minMax(r, 48);
+  assert.deepEqual(r, { min: 48, max: 61 });
+  assert.deepEqual(minMax(r, null), { min: 48, max: 61 });
+});
+
+test('uptime', () => {
+  assert.equal(uptime(45), '45 s');
+  assert.equal(uptime(3720), '1 h 02 min');
+  assert.equal(uptime(600), '10 min');
+  assert.equal(uptime(null), '–');
 });

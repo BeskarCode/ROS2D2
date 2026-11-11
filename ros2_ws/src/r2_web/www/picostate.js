@@ -14,7 +14,7 @@ export function picoPill(state, ageMs) {
   if (!fresh(state, ageMs)) return { cls: 'wait', text: 'Pico: no bridge' };
   if (!state.connected) return { cls: 'bad', text: 'Pico: disconnected' };
   if (state.config_error) return { cls: 'bad', text: 'Pico: config error' };
-  return { cls: 'ok', text: `Pico: connected${state.firmware ? ` · ${state.firmware}` : ''}` };
+  return { cls: 'ok', text: `Pico: connected${state.firmware ? ` · ${state.firmware}` : ''}${state.commit ? ` · ${state.commit}` : ''}` };
 }
 
 // A badge class that means the sensor is there and measuring (for "Connected only")

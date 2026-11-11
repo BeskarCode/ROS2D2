@@ -9,7 +9,8 @@ test('the Pico pill', () => {
   assert.deepEqual(picoPill(null, 0), { cls: 'wait', text: 'Pico: no bridge' });
   assert.deepEqual(picoPill(up(), 3500), { cls: 'wait', text: 'Pico: no bridge' });
   assert.deepEqual(picoPill(up({}, { connected: false }), 100), { cls: 'bad', text: 'Pico: disconnected' });
-  assert.deepEqual(picoPill(up(), 100), { cls: 'ok', text: 'Pico: connected · 0.1.0' });
+  assert.deepEqual(picoPill(up(), 100), { cls: 'ok', text: 'Pico: connected · 0.1.0' });                // old firmware: no commit
+  assert.deepEqual(picoPill(up({}, { firmware: '0.2.0', commit: '265a841' }), 100), { cls: 'ok', text: 'Pico: connected · 0.2.0 · 265a841' });
   assert.deepEqual(picoPill(up({}, { config_error: 'pin 16 reserved' }), 100), { cls: 'bad', text: 'Pico: config error' });
 });
 
