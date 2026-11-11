@@ -3,6 +3,7 @@
 // Saves cameras.yaml on the Pi through the web console's /api/cameras.
 import { call, connect, setParam } from './rosbridge.js';
 import { createSensorsTab } from './sensors.js';
+import { createSystemTab } from './system.js';
 import { createModesTab } from './modes.js';
 import { showStream, stopStream } from './mjpeg.js';
 
@@ -241,6 +242,7 @@ function toYaml() {
 // Which settings the File tab and the Save buttons work on
 let section = 'cameras';
 const sensorsTab = createSensorsTab({ status });
+const systemTab = createSystemTab();
 const modesTab = createModesTab({ status });
 
 async function save(restart) {
@@ -307,20 +309,25 @@ function restartFailed() {
   status('ROS2D2 did not come back in 2 minutes: look at it on the Pi (journalctl -u r2d2).', 'bad');
 }
 
-// Tabs: Cameras, Sensors, Modes, and File (the text of whichever of the others was open last)
+// Tabs: Cameras, Sensors, Modes, System, and File (the text of whichever of Cameras, Sensors
+// and Modes was open last; System has no file)
 function showTab(name) {
-  if (name !== 'file') section = name;
+  if (name !== 'file' && name !== 'system') section = name;
   $('form').hidden = name !== 'cameras';
   $('sensors').hidden = name !== 'sensors';
   $('modes').hidden = name !== 'modes';
   $('file').hidden = name !== 'file';
+  $('system').hidden = name !== 'system';
+  $('save').hidden = $('restart').hidden = name === 'system';
   $('tab-form').classList.toggle('on', name === 'cameras');
   $('tab-sensors').classList.toggle('on', name === 'sensors');
   $('tab-modes').classList.toggle('on', name === 'modes');
   $('tab-file').classList.toggle('on', name === 'file');
+  $('tab-system').classList.toggle('on', name === 'system');
   $('identify').hidden = name !== 'cameras';
   if (name === 'sensors') sensorsTab.show(); else sensorsTab.hide();
   if (name === 'modes') modesTab.show(); else modesTab.hide();
+  if (name === 'system') systemTab.show(); else systemTab.hide();
   if (name !== 'file') return;
   if (section === 'sensors') {
     $('yaml').value = sensorsTab.fileText();
@@ -340,6 +347,7 @@ $('tab-form').addEventListener('click', () => showTab('cameras'));
 $('tab-sensors').addEventListener('click', () => showTab('sensors'));
 $('tab-modes').addEventListener('click', () => showTab('modes'));
 $('tab-file').addEventListener('click', () => showTab('file'));
+$('tab-system').addEventListener('click', () => showTab('system'));
 $('yaml').addEventListener('input', () => (section === 'cameras' ? dirty(true) : status('Changed: Save to keep it.', 'warn')));
 sensorsTab.onError(() => { section = 'sensors'; showTab('file'); });
 modesTab.onError(() => { if (section === 'modes') showTab('file'); });
