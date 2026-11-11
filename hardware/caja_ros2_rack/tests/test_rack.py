@@ -24,7 +24,8 @@ def test_ghosts_fit_inside(lay):
 
 @pytest.mark.parametrize("a,b", [("pico", "pi"), ("pico", "conv"), ("pi", "conv"), ("pico", "xt60"),
                                  ("pico", "switch"), ("xt60", "switch"), ("conv", "xt60"), ("pi", "xt60"),
-                                 ("cables", "pi"), ("cables", "conv"), ("cables", "xt60"), ("cables", "switch")])
+                                 ("cables", "pi"), ("cables", "conv"), ("cables", "xt60"), ("cables", "switch"),
+                                 ("hdmi", "pico"), ("hdmi", "switch"), ("hdmi", "xt60"), ("hdmi", "cables")])
 def test_ghost_pairs_do_not_collide(a, b):
     assert is_empty("check_ghost_pair", {"ga": a, "gb": b}), (a, b)
 
@@ -76,7 +77,7 @@ def test_logo_reads_from_outside():
 
 
 @pytest.mark.parametrize("p", ["pared", "logo_marino", "logo_azul", "logo_gris", "pared_monocolor", "pulsador",
-                               "base", "tapa"])
+                               "base", "tapa", "marco_pi4", "marco_pi5"])
 def test_prints_flat(p):
     lo, hi = stl_bbox(run_scad(p))
     assert lo[2] == pytest.approx(0, abs=0.01)
@@ -105,6 +106,37 @@ def test_base_clear_of_ghosts():
 
 def test_pi_ports_pass_through_the_back():
     assert is_empty("check_ports_clear")
+
+
+def test_pi_low_converter_high_with_a_gap():
+    v = echo_values("echo_layout")
+    assert v["conv_z0"] - v["pi_top"] >= 4.5                  # the converter's heat goes up, away from the Pi
+    assert v["pi_z0"] - v["wall"] >= 14.5                     # room for the angled USB-C / micro-HDMI plugs
+
+
+def test_hdmi_jack_passes_through_the_back():
+    assert is_empty("check_hdmi_cut")
+
+
+def test_xt60_bosses_clear_of_its_body():
+    assert is_empty("check_xt60_bosses")
+
+
+# --- back frame (Pi 4 / Pi 5) --------------------------------------------------------------------------
+@pytest.mark.parametrize("model", ["pi4", "pi5"])
+def test_frame_lets_the_jacks_through(model):
+    assert is_empty("check_marco_ports", {"model": model})
+
+
+@pytest.mark.parametrize("model", ["pi4", "pi5"])
+def test_frame_clear_of_the_base_and_the_ghosts(model):
+    assert is_empty("check_marco_vs_base", {"model": model})
+    assert is_empty("check_marco_vs_ghosts", {"model": model})
+
+
+@pytest.mark.parametrize("model", ["pi4", "pi5"])
+def test_frame_fills_the_window(model):
+    assert is_empty("check_marco_fills_window", {"model": model})
 
 
 def test_xt60_passes_through_the_main_face():
@@ -150,12 +182,12 @@ def test_vents():
 def test_overall_size_and_volume():
     lo, hi = stl_bbox(run_scad("montaje_sin_orejetas"))
     size = [h - l for l, h in zip(lo, hi)]
-    assert size == pytest.approx([78, 95, 127], abs=3)
-    assert size[0] * size[1] * size[2] / 1e6 < 1.0          # litres: under the first box's 1.78
+    assert size == pytest.approx([78, 95, 145], abs=3)
+    assert size[0] * size[1] * size[2] / 1e6 < 1.1          # litres: well under the first box's 1.78
 
 
 # --- hardware ---------------------------------------------------------------------------------------
-EXPECTED = {"ins_m3": 13, "m3x8_flat": 7, "m3x6_pan": 4, "m3x6_cyl": 2, "m3x10_flat": 2, "nut_m3": 2,
+EXPECTED = {"ins_m3": 19, "ins_m25": 4, "m3x8_flat": 9, "m3x6_pan": 8, "m3x6_cyl": 2, "m3x10_flat": 0, "nut_m3": 0,
             "m25x6": 4, "m4x12": 4}
 
 
@@ -164,6 +196,7 @@ def test_bom_counts():
     assert {k: v[k] for k in EXPECTED} == EXPECTED and v["inserts_without_screw"] == 0
 
 
-@pytest.mark.parametrize("kind", ["ins_m3", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "m25x6"])
-def test_hardware_only_goes_through_holes(kind):
-    assert is_empty("check_screws_vs_parts", {"kind": kind})
+@pytest.mark.parametrize("model", ["pi4", "pi5"])
+@pytest.mark.parametrize("kind", ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m25x6"])
+def test_hardware_only_goes_through_holes(kind, model):
+    assert is_empty("check_screws_vs_parts", {"kind": kind, "model": model})

@@ -1,10 +1,12 @@
 # Caja ROS2 · opción C "rack blade"
 
-Segunda caja para el mismo sistema ROS 2 del R2 (Raspberry Pi 4, placa de la Pico, convertidor
+Segunda caja para el mismo sistema ROS 2 del R2 (Raspberry Pi 4 o Pi 5, placa de la Pico, convertidor
 24 → 5 V, XT60E-F e interruptor), más pequeña que la mini torre de [`../caja_ros2`](../caja_ros2):
 las placas van **de pie, en paralelo, como cuchillas de un rack**.
 
-**78 × 95 × 127 mm · 0,94 L** (la mini torre: 107 × 133 × 125, 1,78 L), más 4 orejetas.
+**78 × 95 × 145 mm · 1,07 L** (la mini torre: 107 × 133 × 125, 1,78 L), más 4 orejetas.
+
+Todos los tornillos van a **insertos térmicos**, también los de las placas (M2,5 en la Pi, M3 en el resto).
 
 ![Montada](montaje/img/montada.png)
 
@@ -18,11 +20,18 @@ las placas van **de pie, en paralelo, como cuchillas de un rack**.
   (girado) y el interruptor.
 - **Placa de la Pico**: de pie, colgada de 4 columnas de la pared principal, con los componentes
   hacia ella (30 mm para los Dupont).
-- **Tabique central**: sujeta la Pi (columnas M2.5) y el convertidor (insertos M3). Abajo tiene un
-  paso para los cables de 24 V y de 5 V.
-- **Raspberry Pi**: de pie, arriba, con los USB y el Ethernet a ras de la trasera y el USB-C hacia
-  abajo.
-- **Convertidor**: de pie, debajo de la Pi, con los cables hacia delante.
+- **Tabique central**: sujeta la Pi (columnas con insertos M2,5) y el convertidor (insertos M3).
+  Tiene dos pasos de cables: arriba y delante, donde salen los cables del convertidor hacia el lado
+  de la Pico; y abajo, bajo la Pi, para el HDMI (y el USB-C si se quiere llevar por ahí).
+- **Raspberry Pi 4 o Pi 5**: de pie, **abajo**, con los USB y el Ethernet en la ventana de la
+  trasera y el USB-C hacia abajo (15 mm libres para las clavijas acodadas USB-C y micro-HDMI).
+- **Convertidor**: de pie, **arriba**, con 5 mm de aire sobre la Pi y los cables hacia delante.
+  Su calor sube y sale por el techo y la rejilla alta del lateral sin pasar por la Pi; la Pi
+  toma aire fresco por las rejillas bajas del frontal y del lateral.
+- **Trasera**: una sola ventana para los conectores de las dos Pi, cerrada con un **marco
+  intercambiable** (`marco_pi4` o `marco_pi5`: la Pi 5 tiene el Ethernet y los USB al revés). Los
+  huecos de los USB tienen 0,5 mm más por cada lado para las pestañas de la carcasa del conector.
+  Al lado, un **HDMI hembra de panel** conectado al HDMI 0 de la Pi, para enchufar un monitor.
 - **Tapa**: techo, lateral derecho y frontal estrecho en una pieza que baja desde arriba.
 
 ## Piezas
@@ -35,6 +44,8 @@ las placas van **de pie, en paralelo, como cuchillas de un rack**.
 | `stl/base.stl` | suelo, trasera, tabique y orejetas | suelo sobre la cama |
 | `stl/tapa.stl` | techo, lateral y frontal estrecho | techo sobre la cama |
 | `stl/pulsador.stl` | varilla del pulsador DISPLAY | de pie |
+| `stl/marco_pi4.stl` | marco trasero para la Pi 4 | cara exterior sobre la cama |
+| `stl/marco_pi5.stl` | marco trasero para la Pi 5 | cara exterior sobre la cama |
 
 PETG, 0,2 mm, boquilla 0,4, sin soportes.
 
@@ -48,9 +59,12 @@ En `params.scad` (cambia el valor y vuelve a generar):
 - `sw_cut`: agujero de panel del interruptor (19,2 × 13 para un KCD1).
 - `sw1_h`: altura del pulsador DISPLAY.
 - `pi_fan_clear`: altura del ventilador de la Pi.
+- `hdmi_body`, `hdmi_flange`, `hdmi_pitch`: el HDMI hembra de panel que compres (cuerpo, brida y
+  distancia entre sus 2 tornillos M3).
 
-Cables: el **micro-USB acodado lateral de 30 cm** y el **USB-C acodado con hilos** (3 A) son los
-mismos que en la mini torre; mira «Conectores acodados» en el manual.
+Cables: el **micro-USB acodado lateral de 30 cm** y el **USB-C acodado con hilos** son los mismos
+que en la mini torre (3 A para la Pi 4; **5 A para la Pi 5**); mira «Conectores acodados» en el
+manual. Para el monitor, un cable **micro-HDMI macho acodado → HDMI hembra de panel**, de unos 30 cm.
 
 ## Generar los ficheros
 

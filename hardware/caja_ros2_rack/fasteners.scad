@@ -7,6 +7,7 @@ include <params.scad>
 // kind -> [length, shaft d (for drawing/checks), head type, head d, head h]
 function fkind(k) =
     k == "ins_m3"     ? [5.7, 3.9, "none", 0, 0] :
+    k == "ins_m25"    ? [5, 3.5, "none", 0, 0] :
     k == "m3x8_flat"  ? [8, 2.9, "flat", 6.0, 1.4] :
     k == "m3x6_pan"   ? [6, 2.9, "pan", 5.5, 2.4] :
     k == "m3x6_cyl"   ? [6, 2.9, "cyl", 5.5, 3] :
@@ -18,6 +19,8 @@ function fkind(k) =
 
 function _ears() = [for (x = [20, 60]) for (y = [-6, D + 6]) [x, y]];
 function _div_cx() = (div_x[0] + div_x[1]) / 2;
+function _back_screws() = let(w = marco_win(), xc = (w[0] + w[2]) / 2) [[xc, w[1] - 6], [xc, w[3] + 5]];
+function _hdmi_screws() = [for (s = [-1, 1]) [hdmi_c[0] + s * hdmi_pitch / 2, hdmi_c[1]]];
 
 function fasteners() = concat(
     // step 1: inserts
@@ -26,14 +29,18 @@ function fasteners() = concat(
     [["ins_m3", 1, [wall + 5, 75, H - wall], [0, 0, -1]]],
     [for (y = [20, 75]) ["ins_m3", 1, [_div_cx(), y, H - wall], [0, 0, -1]]],
     [for (y = [15, 86]) ["ins_m3", 1, [W - wall - fit, y, wall + 9.5 / 2], [-1, 0, 0]]],
-    [for (h = conv_holes) ["ins_m3", 1, [div_x[1], conv_y + h[0], wall + h[1]], [-1, 0, 0]]],
+    [for (h = conv_holes) ["ins_m3", 1, [div_x[1], conv_y + h[0], conv_p0()[2] + h[1]], [-1, 0, 0]]],
+    [for (h = pi_holes) ["ins_m25", 1, [pi_x_pcb(), pi_y0() + h[0], pi_z0() + h[1]], [-1, 0, 0]]],
+    [for (p = concat(_back_screws(), _hdmi_screws())) ["ins_m3", 1, [p[0], D, p[1]], [0, -1, 0]]],
+    [for (s = [-1, 1]) ["ins_m3", 1, [0, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
     // step 2: converter onto the divider
-    [for (h = conv_holes) ["m3x6_cyl", 2, [div_x[1] + conv_ear_t, conv_y + h[0], wall + h[1]], [-1, 0, 0]]],
-    // step 3: Pi onto the divider's standoffs
+    [for (h = conv_holes) ["m3x6_cyl", 2, [div_x[1] + conv_ear_t, conv_y + h[0], conv_p0()[2] + h[1]], [-1, 0, 0]]],
+    // step 3: Pi onto the divider's standoffs, then the back frame for that Pi and the HDMI panel jack
     [for (h = pi_holes) ["m25x6", 3, [pi_x_pcb() + pcb_t, pi_y0() + h[0], pi_z0() + h[1]], [-1, 0, 0]]],
-    // step 4: XT60E-F from outside the main face, nuts inside
-    [for (s = [-1, 1]) ["m3x10_flat", 4, [-xt60_flange_t, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
-    [for (s = [-1, 1]) ["nut_m3", 4, [wall, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
+    [for (p = _back_screws()) ["m3x6_pan", 3, [p[0], D + marco_t, p[1]], [0, -1, 0]]],
+    [for (p = _hdmi_screws()) ["m3x6_pan", 3, [p[0], D + hdmi_flange_t, p[1]], [0, -1, 0]]],
+    // step 4: XT60E-F from outside the main face, into the inserts
+    [for (s = [-1, 1]) ["m3x8_flat", 4, [-xt60_flange_t, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
     // step 5: Pico board onto the main face's columns
     [for (h = pico_holes) ["m3x6_pan", 5, pico2world(h[0], h[1]) + [pcb_t, 0, 0], [-1, 0, 0]]],
     // step 6: main face onto the base, from under the floor
@@ -50,10 +57,11 @@ function count_kind(k) = len([for (f = fasteners()) if (f[0] == k) 1]);
 
 // is some screw's tip inside this insert?
 function _tip(f) = f[2] + f[3] * fkind(f[0])[0];
+function _is_insert(k) = k == "ins_m3" || k == "ins_m25";
 function _in_insert(p, ins) = let(a = ins[2], d = ins[3], v = p - a, t = v * d, r = norm(v - d * t))
-    t >= 0 && t <= fkind("ins_m3")[0] + 0.5 && r < 0.5;
-function inserts_without_screw() = len([for (i = fasteners()) if (i[0] == "ins_m3")
-    if (len([for (s = fasteners()) if (s[0] != "ins_m3" && _in_insert(_tip(s), i)) 1]) == 0) 1]);
+    t >= 0 && t <= fkind(ins[0])[0] + 0.5 && r < 0.5;
+function inserts_without_screw() = len([for (i = fasteners()) if (_is_insert(i[0]))
+    if (len([for (s = fasteners()) if (!_is_insert(s[0]) && _in_insert(_tip(s), i)) 1]) == 0) 1]);
 
 // orient +Z along d (axis-aligned directions only)
 module along(d) {
@@ -90,5 +98,5 @@ module hw(f, explode = 0, arrow = true) {
 module hardware(kind = "all", step = 0, explode = 0) {
     for (f = fasteners())
         if ((kind == "all" || f[0] == kind) && (step == 0 || f[1] == step))
-            color(f[0] == "ins_m3" ? "goldenrod" : "silver") hw(f, explode);
+            color(_is_insert(f[0]) ? "goldenrod" : "silver") hw(f, explode);
 }

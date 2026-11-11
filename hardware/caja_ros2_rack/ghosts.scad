@@ -43,11 +43,12 @@ module ghost_pico_pcb() { on_board(0, 0, pico_w, pico_h, -pcb_t); }
 
 module ghost_pi_pcb() { box_from([pi_x_pcb(), pi_y0(), pi_z0()], [pi_x_pcb() + pcb_t, pi_y0() + pi_l, pi_z0() + pi_w]); }
 
-module pi_ports(ext = 0) {
-    xp = pi_x_pcb() + pcb_t; z0 = pi_z0(); ye = pi_y0() + pi_l + pi_port_out + ext;
-    // the USB-C edge is down: ports measured from it (9, 27, 45.75)
-    for (zc = [9, 27]) box_from([xp, ye - 21 - ext, z0 + zc - 6.75], [xp + 16, ye, z0 + zc + 6.75]);
-    box_from([xp, ye - 21 - ext, z0 + 45.75 - 8], [xp + 13.5, ye, z0 + 45.75 + 8]);
+// the jacks on the back edge; model = "pi4", "pi5" or "both" (the ghost: whichever goes in, it must fit)
+module pi_ports(ext = 0, model = "both", m = 0) {
+    xp = pi_xp(); z0 = pi_z0(); ye = pi_y0() + pi_l + pi_port_out + ext;
+    ps = model == "pi4" ? pi4_ports : model == "pi5" ? pi5_ports : concat(pi4_ports, pi5_ports);
+    for (p = ps) box_from([xp - m, ye - 21 - ext, z0 + p[1] - port_half(p[0]) - m],
+                          [xp + port_tall(p[0]) + m, ye + m, z0 + p[1] + port_half(p[0]) + m]);
 }
 
 module ghost_pi() {
@@ -55,12 +56,18 @@ module ghost_pi() {
     ghost_pi_pcb();
     difference() {                                                      // solder side
         box_from([xp - 2, y0, z0], [xp, y0 + pi_l, z0 + pi_w]);
-        for (h = pi_holes) translate([xp - 3, y0 + h[0], z0 + h[1]]) rotate([0, 90, 0]) cylinder(d = 6, h = 4, $fn = 24);
+        for (h = pi_holes) translate([xp - 3, y0 + h[0], z0 + h[1]]) rotate([0, 90, 0]) cylinder(d = 7, h = 4, $fn = 24);   // keep-out round the holes (M2.5 insert standoffs, d 6.5)
     }
     box_from([xp + pcb_t, y0, z0], [xp + pcb_t + pi_fan_clear, y0 + pi_l, z0 + pi_w]);   // parts + fan
     pi_ports();
-    // USB-C plug, hanging down, 11.2 from the front edge
-    box_from([xp, y0 + 11.2 - 7, z0 - pi_usbc_clear], [xp + pcb_t + 10, y0 + 11.2 + 7, z0]);
+    // angled USB-C and micro-HDMI plugs under the bottom edge, their cables towards the divider's bottom pass
+    box_from([xp, y0 + 11.2 - 7, z0 - pi_under + 0.5], [xp + pcb_t + 12, y0 + 11.2 + 7, z0]);
+    box_from([xp, y0 + pi_hdmi0 - 7, z0 - pi_under + 0.5], [xp + pcb_t + 12, y0 + pi_hdmi0 + 7, z0]);
+}
+
+module ghost_hdmi() {        // the panel jack's body inside the back, Pico side
+    box_from([hdmi_c[0] - hdmi_body[0] / 2, D - wall - hdmi_depth, hdmi_c[1] - hdmi_body[1] / 2],
+             [hdmi_c[0] + hdmi_body[0] / 2, D - wall, hdmi_c[1] + hdmi_body[1] / 2]);
 }
 
 module ghost_conv() {
@@ -95,7 +102,8 @@ module ghost(name) {
     else if (name == "xt60") ghost_xt60();
     else if (name == "switch") ghost_switch();
     else if (name == "cables") ghost_cables();
+    else if (name == "hdmi") ghost_hdmi();
     else assert(false, str("unknown ghost ", name));
 }
 
-module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables"]) ghost(g); }
+module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables", "hdmi"]) ghost(g); }

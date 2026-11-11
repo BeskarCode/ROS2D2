@@ -1,14 +1,15 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The shell: roof + right side + narrow front, one piece that slides down onto the base between
 // the main face and the back. 3 M3 through the roof (main face's top tab, divider x2), 2 through the
-// right side (floor bosses). Vents: roof, right side (converter low, Pi high), front by the Pi.
+// right side (floor bosses). Vents: air in low (front and right side, by the Pi), out high (right side by the
+// converter, roof).
 include <params.scad>
 
 slot_w = 2;  slot_pitch = 4.5;
 roof_vent = [[10, W - 6], [28, 68]];              // x range, y range
 right_vent_y = [24, 78];
-right_bands = [[8, 40], [74, H - 8]];
-front_vent = [[48, W - 6], [74, H - 8]];          // x range, z range
+right_bands = [[8, pi_z0() + pi_w - 2], [conv_p0()[2] + 2, H - 8]];      // by the Pi, by the converter
+front_vent = [[48, W - 6], [pi_z0(), pi_z0() + pi_w - 2]];               // x range, z range: in front of the Pi
 roof_screws = [[wall + 5, 75], [(div_x[0] + div_x[1]) / 2, 20], [(div_x[0] + div_x[1]) / 2, 75]];
 side_screw_y = [15, 86];
 function side_screw_z() = wall + 9.5 / 2;

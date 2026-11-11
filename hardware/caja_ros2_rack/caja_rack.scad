@@ -1,21 +1,23 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Caja ROS2 · option C, "rack blade". Pick what to render with part:
 //   openscad -o pared.stl -D 'part="pared"' caja_rack.scad
-// Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa.
+// Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
+// marco_pi4, marco_pi5.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
 include <pared.scad>
 include <base.scad>
 include <tapa.scad>
+include <marco.scad>
 include <fasteners.scad>
 
 part = "pared";
 ga = "pico";  gb = "pi";
-dz = 0;  press = 0;  kind = "all";  gap = 0;
+dz = 0;  press = 0;  kind = "all";  gap = 0;  model = "pi4";
 
 module dot() { cube(0.01); }
-module printed() { pared(); base(); tapa(); }
+module printed() { pared(); base(); tapa(); marco(model); }
 
 if (part == "check_selftest") intersection() { cube(10); translate([10 + gap, 0, 0]) cube(10); }
 else if (part == "check_selftest_two_touches") intersection() {
@@ -28,6 +30,7 @@ else if (part == "check_ghost_pair") intersection() { ghost(ga); ghost(gb); }
 else if (part == "echo_layout") {
     echo("W", W); echo("D", D); echo("H", H); echo("wall", wall);
     echo("pi_port_face", pi_y0() + pi_l + pi_port_out);
+    echo("pi_z0", pi_z0()); echo("pi_top", pi_z0() + pi_w); echo("conv_z0", conv_p0()[2]);
     dot();
 }
 // --- main face ---
@@ -68,6 +71,20 @@ else if (part == "check_rod_on_button") intersection() {
 else if (part == "base") base();
 else if (part == "check_base_vs_ghosts") intersection() { base(); ghost_all(); }
 else if (part == "check_ports_clear") intersection() { base(); pi_ports(10); }
+// --- back frame ---
+else if (part == "marco_pi4") print_marco() marco("pi4");
+else if (part == "marco_pi5") print_marco() marco("pi5");
+else if (part == "check_marco_ports") intersection() { marco(model); pi_ports(10, model); }
+else if (part == "check_marco_vs_ghosts") intersection() { marco(model); difference() { ghost_all(); pi_ports(10, "both"); } }
+else if (part == "check_marco_vs_base") intersection() { marco(model); base(); }
+else if (part == "check_marco_fills_window") let(w = marco_win()) difference() {   // window seen from behind, minus frame and jacks
+    translate([w[0], D - wall, w[1]]) cube([w[2] - w[0], wall, w[3] - w[1]]);
+    marco(model); pi_ports(10, model, port_m + 0.01);
+    for (x = [w[0], w[2] - marco_fit]) translate([x, D - wall - 1, w[1]]) cube([marco_fit, wall + 2, w[3] - w[1]]);
+    for (z = [w[1], w[3] - marco_fit]) translate([w[0], D - wall - 1, z]) cube([w[2] - w[0], wall + 2, marco_fit]);
+}
+else if (part == "check_hdmi_cut") intersection() { base(); ghost_hdmi(); }
+else if (part == "check_xt60_bosses") intersection() { pared(); ghost_xt60(); }
 else if (part == "check_xt60_cut") intersection() { pared(); translate([-xt60_depth, 0, 0]) ghost_xt60(); }
 else if (part == "check_switch_cut") intersection() { pared(); translate([-sw_depth - sw_wires, 0, 0]) ghost_switch(); }
 else if (part == "check_pi_standoffs_touch") intersection() { pi_standoffs(0.2); ghost_pi_pcb(); }
@@ -81,7 +98,7 @@ else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
 // --- hardware ---
 else if (part == "echo_bom") {
-    for (k = ["ins_m3", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "nut_m3", "m25x6", "m4x12"]) echo(k, count_kind(k));
+    for (k = ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "nut_m3", "m25x6", "m4x12"]) echo(k, count_kind(k));
     echo("inserts_without_screw", inserts_without_screw());
     dot();
 }
