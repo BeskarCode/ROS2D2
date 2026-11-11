@@ -16,7 +16,7 @@ _spec.loader.exec_module(base)
 base.SCAD = HERE / "caja_rack.scad"
 
 LOGO_PARTS = ["logo_marino", "logo_azul", "logo_gris"]
-PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa"]
+PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa", "marco_pi4", "marco_pi5"]
 write_3mf = base.write_3mf
 
 

@@ -4,7 +4,7 @@
 
 [Versión en castellano](MONTAJE.md)
 
-Second box, rack style: the Pico board, the Pi and the converter stand on edge, side by side. 78 × 95 × 127 mm (0.94 L, about half the mini tower). OLED, logo, switch and XT60 are on the main face; the Pi's USB at the back. Before printing, measure what the README lists.
+Second box, rack style: the Pico board, the Pi and the converter stand on edge, side by side. 78 × 95 × 145 mm (1.07 L). The Pi sits low and the converter high, so its heat does not rise into the Pi. It takes a Pi 4 or a Pi 5: only the back frame changes. OLED, logo, switch and XT60 are on the main face; the Pi's USB and an HDMI panel jack at the back. Every screw goes into an insert. Before printing, measure what the README lists.
 
 | Assembled | From the back |
 |---|---|
@@ -28,18 +28,19 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 | `stl/pared_monocolor.stl` | or: single-colour main face, engraved logo |
 | `stl/base.stl` | Base: floor, back, central divider |
 | `stl/tapa.stl` | Shell (roof + side + narrow front) |
+| `stl/marco_pi4.stl` | Back frame for the Pi 4 (Ethernet at the top) |
+| `stl/marco_pi5.stl` | or: back frame for the Pi 5 (Ethernet at the bottom) |
 | `stl/pulsador.stl` | DISPLAY push rod |
 
 | Qty | Part | Step |
 |---|---|---|
-| 13× | M3 heat-set insert (5.7 mm long, 4.0 mm hole) | 1 |
-| 7× | M3 × 8 countersunk screw (ISO 10642) | 6, 7 |
-| 4× | M3 × 6 button head screw (ISO 7380) | 5 |
+| 19× | M3 heat-set insert (5.7 mm long, 4.0 mm hole) | 1 |
+| 9× | M3 × 8 countersunk screw (ISO 10642) | 4, 6, 7 |
+| 8× | M3 × 6 button head screw (ISO 7380) | 3, 5 |
 | 2× | M3 × 6 socket head cap screw (DIN 912) | 2 |
-| 2× | M3 × 10 countersunk screw (ISO 10642) | 4 |
-| 2× | M3 nut (DIN 934) | 4 |
-| 4× | M2.5 × 6 screw (longer if the Pi's fan sits on spacers) | 3 |
+| 4× | M2.5 × 6 screw | 3 |
 | 4× | M4 × 12 screw (or what the R2's mount needs) | 8 |
+| 4× | M2.5 heat-set insert (5 mm long, 3.6 mm hole) | 1 |
 
 ### Other parts
 
@@ -48,9 +49,10 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 | 1 | KCD1 rocker switch (panel hole 19.2 × 13 mm) |
 | 1 | XT60E-F panel connector (AMASS) |
 | 1 | micro-USB 2.0 to USB-A cable, 90° side angle, 30 cm (see «Angled plugs») |
-| 1 | USB-C male pigtail (5 V to the Pi), 3 A, 15–20 cm; straight or 90° angled |
 | — | 0.5 mm² wire for the 5 V to terminal J1, 1 mm² for the 24 V |
 | 1 | Edge grommet strip for the 35 × 10 mm slot |
+| 1 | USB-C male pigtail (5 V to the Pi), 90° up/down angle, 15–20 cm; 3 A for a Pi 4, 5 A for a Pi 5 |
+| 1 | Angled 90° micro-HDMI male to HDMI female panel-mount cable with 2 M3 screws, 30 cm (measure its flange: `hdmi_*`) |
 
 ## Wiring
 
@@ -64,33 +66,33 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 
 ![](montaje/img/paso1.png)
 
-**You need:** 13× M3 insert
+**You need:** 19× M3 insert, 4× M2.5 insert
 
-With the iron at about 220 °C press the 13 inserts in straight and flush: on the main face, 4 in the columns, 2 in the bottom tabs and 1 in the top tab; on the base, 2 on top of the divider, 2 in the divider for the converter and 2 in the floor blocks.
+With the iron at about 220 °C press the inserts in straight and flush. On the main face, 7 M3: 4 in the columns, 2 in the bottom tabs and 1 in the top tab; plus 2 M3 from outside in the XT60's holes. On the base, 10 M3: 2 on top of the divider, 2 in the divider for the converter, 2 in the floor blocks and 4 from outside the back (2 for the frame, 2 for the HDMI); and the 4 M2.5 in the Pi's standoffs.
 
-## 2 · Converter onto the divider
+## 2 · Converter onto the divider, high
 
 ![](montaje/img/paso2.png)
 
 **You need:** 2× M3 × 6 socket head
 
-On edge, its base plate against the divider, fins outwards, wires to the front. Check its holes (`conv_holes`) with a caliper first.
+On edge, at the very top, its base plate against the divider, fins outwards, wires to the front: they go through the top pass in the divider to the Pico side. Its heat rises out of the roof without passing the Pi. Check its holes (`conv_holes`) with a caliper first.
 
-## 3 · Raspberry Pi onto the divider
+## 3 · Raspberry Pi, frame and HDMI
 
 ![](montaje/img/paso3.png)
 
-**You need:** 4× M2.5 × 6
+**You need:** 4× M2.5 × 6, 4× M3 × 6
 
-On its 4 standoffs, USB and Ethernet flush with the back, USB-C at the bottom. Plug in the angled USB-C and join it to the converter's 5 V output.
+Pi 4 or Pi 5 on its 4 standoffs, low down, USB and Ethernet in the back window, USB-C at the bottom. Plug in the angled USB-C (5 V from the converter, down in front of the Pi) and the angled micro-HDMI into HDMI 0; that cable runs under the Pi through the divider's bottom pass. Screw on, from outside, the frame for your Pi (`marco_pi4` or `marco_pi5`) and the HDMI panel jack.
 
 ## 4 · XT60 and switch on the main face
 
 ![](montaje/img/paso4.png)
 
-**You need:** 2× M3 × 10 countersunk, 2× M3 nut
+**You need:** 2× M3 × 8 countersunk
 
-From outside, low down: the XT60E-F turned on its side with 2 screws and their nuts inside, and the switch snapped in.
+From outside, low down: the XT60E-F turned on its side with 2 screws into the inserts, and the switch snapped in.
 
 ## 5 · Push rod and Pico board
 
@@ -106,7 +108,7 @@ Slide the rod into its guide from inside and screw the board onto the 4 columns,
 
 **You need:** 2× M3 × 8 countersunk
 
-Run the 24 V wires (XT60 → switch → converter) and the 5 V to terminal J1 through the gap at the bottom of the divider. Screw the face on from under the floor.
+The 24 V (XT60 → switch → converter) run up in front of the Pico board and cross through the divider's top pass; the 5 V to terminal J1 come back through the same pass and over the board. Screw the face on from under the floor.
 
 ## 7 · Shell
 
@@ -114,7 +116,7 @@ Run the 24 V wires (XT60 → switch → converter) and the 5 V to terminal J1 th
 
 **You need:** 5× M3 × 8 countersunk
 
-Lower it from above and fit the 3 roof screws and the 2 side screws.
+Lower it from above and fit the 3 roof screws and the 2 side screws. Air comes in through the low vents (front and side, by the Pi) and leaves through the high ones and the roof.
 
 ## 8 · USB and onto the R2
 

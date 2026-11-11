@@ -39,31 +39,44 @@ g.PRINTED = [
     ("pared_monocolor.stl", "o bien: pared principal de un color, logo grabado", "or: single-colour main face, engraved logo"),
     ("base.stl", "Base: suelo, trasera, tabique central", "Base: floor, back, central divider"),
     ("tapa.stl", "Tapa (techo + lateral + frontal estrecho)", "Shell (roof + side + narrow front)"),
+    ("marco_pi4.stl", "Marco trasero para la Pi 4 (Ethernet arriba)", "Back frame for the Pi 4 (Ethernet at the top)"),
+    ("marco_pi5.stl", "o bien: marco trasero para la Pi 5 (Ethernet abajo)", "or: back frame for the Pi 5 (Ethernet at the bottom)"),
     ("pulsador.stl", "Varilla del pulsador DISPLAY", "DISPLAY push rod"),
 ]
 g.STEPS = [
     {"n": 1,
-     "es": {"title": "Insertos térmicos", "text": "Con el soldador a unos 220 °C mete los 13 insertos rectos y a ras: en la "
-            "pared principal, 4 en las columnas, 2 en las pestañas de abajo y 1 en la de arriba; en la base, 2 en lo "
-            "alto del tabique, 2 en el tabique para el convertidor y 2 en los bloques del suelo."},
-     "en": {"title": "Heat-set inserts", "text": "With the iron at about 220 °C press the 13 inserts in straight and flush: "
-            "on the main face, 4 in the columns, 2 in the bottom tabs and 1 in the top tab; on the base, 2 on top of the "
-            "divider, 2 in the divider for the converter and 2 in the floor blocks."}},
+     "es": {"title": "Insertos térmicos", "text": "Con el soldador a unos 220 °C mete los insertos rectos y a ras. En la "
+            "pared principal, 7 M3: 4 en las columnas, 2 en las pestañas de abajo y 1 en la de arriba; y 2 M3 más por "
+            "fuera, en los agujeros del XT60. En la base, 10 M3: 2 en lo alto del tabique, 2 en el tabique para el "
+            "convertidor, 2 en los bloques del suelo y 4 por fuera de la trasera (2 del marco, 2 del HDMI); y los 4 M2,5 "
+            "en las columnas de la Pi."},
+     "en": {"title": "Heat-set inserts", "text": "With the iron at about 220 °C press the inserts in straight and flush. On "
+            "the main face, 7 M3: 4 in the columns, 2 in the bottom tabs and 1 in the top tab; plus 2 M3 from outside in "
+            "the XT60's holes. On the base, 10 M3: 2 on top of the divider, 2 in the divider for the converter, 2 in the "
+            "floor blocks and 4 from outside the back (2 for the frame, 2 for the HDMI); and the 4 M2.5 in the Pi's "
+            "standoffs."}},
     {"n": 2,
-     "es": {"title": "Convertidor al tabique", "text": "De pie, con la base contra el tabique, las aletas hacia fuera y los "
-            "cables hacia delante. Comprueba antes con el calibre sus agujeros (`conv_holes`)."},
-     "en": {"title": "Converter onto the divider", "text": "On edge, its base plate against the divider, fins outwards, "
-            "wires to the front. Check its holes (`conv_holes`) with a caliper first."}},
+     "es": {"title": "Convertidor al tabique, arriba", "text": "De pie, arriba del todo, con la base contra el tabique, las "
+            "aletas hacia fuera y los cables hacia delante: van por el hueco de arriba del tabique al lado de la Pico. "
+            "Así su calor sube y sale por el techo sin pasar por la Pi. Comprueba antes con el calibre sus agujeros "
+            "(`conv_holes`)."},
+     "en": {"title": "Converter onto the divider, high", "text": "On edge, at the very top, its base plate against the "
+            "divider, fins outwards, wires to the front: they go through the top pass in the divider to the Pico side. "
+            "Its heat rises out of the roof without passing the Pi. Check its holes (`conv_holes`) with a caliper first."}},
     {"n": 3,
-     "es": {"title": "Raspberry Pi al tabique", "text": "Sobre sus 4 columnas, con los USB y el Ethernet a ras de la trasera "
-            "y el USB-C abajo. Conecta el USB-C acodado y empálmalo con la salida de 5 V del convertidor."},
-     "en": {"title": "Raspberry Pi onto the divider", "text": "On its 4 standoffs, USB and Ethernet flush with the back, "
-            "USB-C at the bottom. Plug in the angled USB-C and join it to the converter's 5 V output."}},
+     "es": {"title": "Raspberry Pi, marco y HDMI", "text": "Pi 4 o Pi 5 sobre sus 4 columnas, abajo, con los USB y el "
+            "Ethernet en la ventana de la trasera y el USB-C abajo. Pincha el USB-C acodado (5 V del convertidor, bajando "
+            "por delante de la Pi) y el micro-HDMI acodado en el HDMI 0; ese cable pasa bajo la Pi por el hueco de abajo "
+            "del tabique. Atornilla desde fuera el marco de tu Pi (`marco_pi4` o `marco_pi5`) y el conector HDMI de panel."},
+     "en": {"title": "Raspberry Pi, frame and HDMI", "text": "Pi 4 or Pi 5 on its 4 standoffs, low down, USB and Ethernet "
+            "in the back window, USB-C at the bottom. Plug in the angled USB-C (5 V from the converter, down in front of the "
+            "Pi) and the angled micro-HDMI into HDMI 0; that cable runs under the Pi through the divider's bottom pass. "
+            "Screw on, from outside, the frame for your Pi (`marco_pi4` or `marco_pi5`) and the HDMI panel jack."}},
     {"n": 4,
      "es": {"title": "XT60 e interruptor en la pared principal", "text": "Desde fuera, abajo: el XT60E-F girado, con 2 "
-            "tornillos y sus tuercas por dentro, y el interruptor a presión."},
+            "tornillos a los insertos, y el interruptor a presión."},
      "en": {"title": "XT60 and switch on the main face", "text": "From outside, low down: the XT60E-F turned on its side "
-            "with 2 screws and their nuts inside, and the switch snapped in."}},
+            "with 2 screws into the inserts, and the switch snapped in."}},
     {"n": 5,
      "es": {"title": "Varilla y placa de la Pico", "text": "Mete la varilla desde dentro por su guía y atornilla la placa a "
             "las 4 columnas, componentes hacia la pared. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en "
@@ -72,28 +85,45 @@ g.STEPS = [
             "the 4 columns, parts towards the wall. Tighten the 5 V in terminal J1, plug the angled micro-USB into the "
             "Pico and connect the sensors: their cables leave through the slot at the top."}},
     {"n": 6,
-     "es": {"title": "Pared principal a la base", "text": "Pasa los cables de 24 V (XT60 → interruptor → convertidor) y los "
-            "5 V del borne J1 por el hueco de abajo del tabique. Atornilla la pared desde debajo del suelo."},
-     "en": {"title": "Main face onto the base", "text": "Run the 24 V wires (XT60 → switch → converter) and the 5 V to "
-            "terminal J1 through the gap at the bottom of the divider. Screw the face on from under the floor."}},
+     "es": {"title": "Pared principal a la base", "text": "Los 24 V (XT60 → interruptor → convertidor) suben por delante "
+            "de la placa de la Pico y cruzan por el hueco de arriba del tabique; los 5 V del borne J1 vuelven por el mismo "
+            "hueco y por encima de la placa. Atornilla la pared desde debajo del suelo."},
+     "en": {"title": "Main face onto the base", "text": "The 24 V (XT60 → switch → converter) run up in front of the Pico "
+            "board and cross through the divider's top pass; the 5 V to terminal J1 come back through the same pass and "
+            "over the board. Screw the face on from under the floor."}},
     {"n": 7,
-     "es": {"title": "Tapa", "text": "Bájala desde arriba y pon los 3 tornillos del techo y los 2 del lateral."},
-     "en": {"title": "Shell", "text": "Lower it from above and fit the 3 roof screws and the 2 side screws."}},
+     "es": {"title": "Tapa", "text": "Bájala desde arriba y pon los 3 tornillos del techo y los 2 del lateral. El aire "
+            "entra por las rejillas de abajo (frontal y lateral, junto a la Pi) y sale por las de arriba y el techo."},
+     "en": {"title": "Shell", "text": "Lower it from above and fit the 3 roof screws and the 2 side screws. Air comes in "
+            "through the low vents (front and side, by the Pi) and leaves through the high ones and the roof."}},
     {"n": 8,
      "es": {"title": "USB y fijación al R2", "text": "Saca el micro-USB por la muesca de la trasera y enchúfalo en un USB de "
             "la Pi. Atornilla la caja al R2 por sus 4 orejetas."},
      "en": {"title": "USB and onto the R2", "text": "Bring the micro-USB out of the notch in the back into a Pi USB port. "
             "Screw the box to the R2 through its 4 ears."}},
 ]
+g.NAMES = dict(g.NAMES, ins_m25=("Inserto térmico M2,5 (5 mm de largo, agujero de 3,6 mm)", "M2.5 heat-set insert (5 mm long, 3.6 mm hole)"),
+               m25x6=("Tornillo M2.5 × 6", "M2.5 × 6 screw"))
+g.SHORT = dict(g.SHORT, ins_m25="inserto M2,5")
+g.SHORT_EN = dict(g.SHORT_EN, ins_m25="M2.5 insert")
+g.OTHER = [o for o in g.OTHER if "USB-C" not in o[1]] + [
+    ("1", "Cable USB-C macho con hilos (5 V a la Pi), acodado 90° arriba/abajo, 15–20 cm; 3 A para la Pi 4, 5 A para la Pi 5",
+     "USB-C male pigtail (5 V to the Pi), 90° up/down angle, 15–20 cm; 3 A for a Pi 4, 5 A for a Pi 5"),
+    ("1", "Cable micro-HDMI macho acodado 90° a HDMI hembra de panel con 2 tornillos M3, 30 cm (mide su brida: `hdmi_*`)",
+     "Angled 90° micro-HDMI male to HDMI female panel-mount cable with 2 M3 screws, 30 cm (measure its flange: `hdmi_*`)"),
+]
 g.TXT = copy.deepcopy(g.TXT)
 g.TXT["es"].update(title="Caja ROS2 rack · Instrucciones de montaje", intro=
-    "Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie, en paralelo. 78 × 95 × 127 mm "
-    "(0,94 L, casi la mitad que la mini torre). La OLED, el logo, el interruptor y el XT60 están en la pared principal; "
-    "los USB de la Pi, detrás. Antes de imprimir mide lo que indica el README.")
+    "Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie, en paralelo. 78 × 95 × 145 mm "
+    "(1,07 L). La Pi va abajo y el convertidor arriba, para que su calor no suba hacia la Pi. Vale para la Pi 4 y la "
+    "Pi 5: solo cambia el marco de la trasera. La OLED, el logo, el interruptor y el XT60 están en la pared principal; "
+    "los USB de la Pi y un HDMI de panel, detrás. Todo va atornillado a insertos. Antes de imprimir mide lo que indica "
+    "el README.")
 g.TXT["en"].update(title="ROS2 rack box · Assembly instructions", intro=
-    "Second box, rack style: the Pico board, the Pi and the converter stand on edge, side by side. 78 × 95 × 127 mm "
-    "(0.94 L, about half the mini tower). OLED, logo, switch and XT60 are on the main face; the Pi's USB at the back. "
-    "Before printing, measure what the README lists.")
+    "Second box, rack style: the Pico board, the Pi and the converter stand on edge, side by side. 78 × 95 × 145 mm "
+    "(1.07 L). The Pi sits low and the converter high, so its heat does not rise into the Pi. It takes a Pi 4 or a "
+    "Pi 5: only the back frame changes. OLED, logo, switch and XT60 are on the main face; the Pi's USB and an HDMI "
+    "panel jack at the back. Every screw goes into an insert. Before printing, measure what the README lists.")
 g.WIRING = copy.deepcopy(g.WIRING)
 g.WIRING["es"].update(slot="ranura lateral", back="pared principal",
                       micro="micro-USB acodado: sale por la muesca trasera y entra en un USB de la Pi")
