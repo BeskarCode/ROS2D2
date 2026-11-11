@@ -77,6 +77,11 @@ void onLine(const char* l) {
     Serial.println("PICO r2_pico_sensors " FW_VERSION " proto 1");
   } else if (strcmp(l, "CFG") == 0 || strncmp(l, "CFG ", 4) == 0) {
     onCfg(l + 3);
+  } else if (strcmp(l, "DBG") == 0) {
+#ifndef WOKWI
+    tof::debug();
+#endif
+    Serial.println("DBG end");
   } else if (strcmp(l, "BOOT") == 0) {
     Serial.flush();
     delay(50);

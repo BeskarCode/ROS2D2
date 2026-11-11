@@ -47,9 +47,14 @@ int fails[MAX_SENSORS];
 uint32_t lastReading[MAX_SENSORS];
 uint32_t lastRetry = 0;
 
-// Something at 0x29 although every sensor we wake is moved away from it: an XSHUT not wired
+// Something at 0x29 although every sensor we wake is moved away from it: an XSHUT not wired.
+// Never an empty write (beginTransmission + endTransmission): the RP2350 cannot send one, so the
+// core bit-bangs it on SDA/SCL, and a VL53L0X already ranging at its own address took that
+// address byte (0x52) as data into its SYSTEM_SEQUENCE_CONFIG and never measured again. One
+// register index (the model ID) goes through the I2C block like any other transfer.
 bool strayAtDefault() {
   Wire.beginTransmission(DEFAULT_ADDRESS);
+  Wire.write(0xC0);     // IDENTIFICATION_MODEL_ID
   return Wire.endTransmission() == 0;
 }
 
@@ -143,6 +148,28 @@ void readOne(int i) {
     fails[i] = 0;
     lastReading[i] = millis();
     report(i, mm);
+  }
+}
+
+// DBG: one line per VL53L0X that answers, its raw result and a few settings
+void debug() {
+  for (int i = 0; i < nSensors; i++) {
+    if (cfg[i].type != 'V' || !reading[i].answers) continue;
+    i2cTake();
+    uint8_t irq = dev[i].readReg(RESULT_INTERRUPT_STATUS);
+    uint8_t rs = dev[i].readReg(0x14);                 // RESULT_RANGE_STATUS
+    uint16_t raw = dev[i].readReg16Bit(0x14 + 10);
+    uint8_t seq = dev[i].readReg(0x01);                // SYSTEM_SEQUENCE_CONFIG
+    uint8_t mode = dev[i].readReg(0x00);               // SYSRANGE_START
+    uint16_t lim = dev[i].readReg16Bit(0x44);          // FINAL_RANGE ... MIN_COUNT_RATE_RTN_LIMIT
+    uint8_t vcsel = dev[i].readReg(0x50);              // PRE_RANGE_CONFIG_VCSEL_PERIOD
+    uint8_t addr = dev[i].readReg(0x8A);               // I2C_SLAVE_DEVICE_ADDRESS
+    uint8_t st = dev[i].last_status;
+    uint32_t budget = dev[i].getMeasurementTimingBudget();
+    i2cGive();
+    Serial.printf("DBG %d addr=%02x irq=%02x rs=%02x(st%d) raw=%u seq=%02x mode=%02x lim=%u vcsel=%02x budget=%lu i2c=%d fails=%d\n",
+                  i, addr, irq, rs, (rs >> 3) & 0x0F, raw, seq, mode, lim, vcsel, (unsigned long)budget, st,
+                  fails[i]);
   }
 }
 
