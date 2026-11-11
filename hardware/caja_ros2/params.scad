@@ -52,7 +52,7 @@ bracket_t = 2.5;         // the Pi's vertical support wall
 // drawing: cajaROS2/transformador.PNG. Ears on the 63.7 side (X here); wires out of a long face (+Y)
 conv = [63.7, 57.6, 22];
 conv_lift = 5;           // bosses under its ears (room for the inserts, floor left under them)
-conv_holes = [[3.6, 26.3], [60.1, 31.3]];  // its 2 ear holes from its front-left corner (drawing; 3.6 from the ear tip assumed)
+conv_holes = [[4.85, 31.3], [58.85, 31.3]];  // its 2 ear holes from its front-left corner, on one line 26.3 from the cable (+Y) side - RCNUN drawing, checked by the user
 conv_ear_t = 1.6;        // ear thickness (drawing)
 conv_wire_x = 35;        // where its cable gland is, from its left end
 conv_pos = [25, 39];     // its front-left corner (X, Y)
