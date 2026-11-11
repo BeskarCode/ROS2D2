@@ -14,13 +14,16 @@
 
 #include "Measure.h"
 #include "Readings.h"
+#include "Telemetry.h"
 
 extern mutex_t i2cLock;     // the display (core 1) shares the bus
 
 // The bus, held for one transfer. In Wokwi (wokwi/README.md) an interrupt (an HC-SR04 ECHO
 // edge) landing mid-transfer hangs its emulated I2C for good, so there interrupts wait too.
 inline void i2cTake() {
+  uint32_t asked = micros();
   mutex_enter_blocking(&i2cLock);
+  tele::tookBus(asked, micros());
 #ifdef WOKWI
   noInterrupts();
 #endif
@@ -30,6 +33,7 @@ inline void i2cGive() {
 #ifdef WOKWI
   interrupts();
 #endif
+  tele::gaveBus(micros());
   mutex_exit(&i2cLock);
 }
 
