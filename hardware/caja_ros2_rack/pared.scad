@@ -13,7 +13,7 @@ xt60_boss = [7.5, 4.5];                           // d, length behind the wall (
 
 function sw1_world() = pico2world(sw1[0], sw1[1]);
 // window (Y, Z) inner opening; its +Y edge stops short of the push rod's guide
-function oled_win_inner() = let(c = oled_view_center(), r = sw1_world()[1] - guide_od / 2 - 0.9)
+function oled_win_inner() = let(c = oled_view_center(), r = sw1_world()[1] - guide_od / 2 - 1.6)
     [c[0] - oled_win[0] / 2, c[1] + oled_win_dz - oled_win[1] / 2, min(r, c[0] + oled_win[0] / 2), c[1] + oled_win_dz + oled_win[1] / 2];
 
 // --- logo: SVG x runs towards -Y (to the right seen from outside), SVG y up ------------------------
@@ -45,6 +45,20 @@ module oled_window() {
         }
         for (h = pico_holes) translate([-1, pico2world(h[0], h[1])[1], pico2world(h[0], h[1])[2]])
             rotate([0, 90, 0]) cylinder(d = col_d + 1, h = wall + 2, $fn = 40);
+    }
+}
+
+// a tunnel from the window to the OLED: from outside only the screen shows, not the rest of the board.
+// Its inside runs from the window's edges to the active area's (+ margin), so it never cuts the view.
+tunnel_t = 1.2;  tunnel_m = 1;  tunnel_gap = 0.4;
+function tunnel_far() = let(c = oled_view_center())
+    [c[0] - oled_active[0] / 2 - tunnel_m, c[1] - oled_active[1] / 2 - tunnel_m, c[0] + oled_active[0] / 2 + tunnel_m, c[1] + oled_active[1] / 2 + tunnel_m];
+module oled_tunnel() {
+    r = oled_win_inner(); f = tunnel_far(); xe = pico_x() - oled_thick - tunnel_gap;
+    module slab(q, x0, x1, g = 0) translate([x0, q[0] - g, q[1] - g]) cube([x1 - x0, q[2] - q[0] + 2 * g, q[3] - q[1] + 2 * g]);
+    difference() {
+        hull() { slab(r, wall - 0.01, wall, tunnel_t); slab(f, xe - 0.01, xe, tunnel_t); }
+        hull() { slab(r, wall - 1, wall); slab(f, xe, xe + 1); }
     }
 }
 
@@ -119,6 +133,7 @@ module pared(depth = logo_depth) {
             wall_tabs();
             xt60_bosses();
             rod_guide();
+            oled_tunnel();
         }
         oled_window();
         rod_hole();
