@@ -20,6 +20,8 @@ and a small HTTP API for what ROS topics cannot do:
   POST /api/modes     save modes.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid;
                       then publishes /r2/modes/reload so the Mega bridge sends the new bindings
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
+  GET  /api/system    the Pi's software version (~/r2_ws/VERSION); with ?telemetry=1 also its
+                      SD, RAM, CPU, temperature and power/heat flags (System tab, on demand)
 
 http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera, sensor and mode setup
 """
@@ -48,6 +50,7 @@ from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
 from r2_web.modes_api import modes_payload, save_modes
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.sensors_api import save_sensors, sensors_payload
+from r2_web.system_api import system_payload
 
 SERVICE = "r2d2"
 STARTED = time.time()   # tells the setup page a restart has really happened
@@ -85,6 +88,8 @@ class Handler(SimpleHTTPRequestHandler):
     nav_default = ""
     modes_default = ""
     on_modes_saved = staticmethod(lambda: None)
+    prev_stat = None            # the last /proc/stat sample, for the CPU %
+    stat_lock = threading.Lock()
 
     def log_message(self, fmt, *args):
         pass
@@ -109,6 +114,10 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, modes_payload(self.modes_default, USER_MODES))
         if self.path.split("?")[0] == "/api/sensors":
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
+        if self.path.split("?")[0] == "/api/system":
+            with Handler.stat_lock:
+                body, Handler.prev_stat = system_payload("telemetry=1" in self.path, Handler.prev_stat)
+            return self._json(200, body)
         if self.path.split("?")[0] != "/api/cameras":
             return super().do_GET()
         path = config_path(self.default_config)
