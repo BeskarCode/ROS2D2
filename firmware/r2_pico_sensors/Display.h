@@ -22,12 +22,15 @@ extern mutex_t i2cLock;
 namespace display {
 
 constexpr uint8_t ADDRESS = 0x3C;
-constexpr uint32_t FRAME_MS = 200, PROBE_MS = 3000, LED_MS = 20;
+// REFRESH_MS: a byte garbled on the bus (a loose contact) can reach the display as a command and
+// roll the picture up (the bottom rows on top); every REFRESH_MS its settings and the whole
+// picture are sent again, so such a glitch lasts a few seconds at most.
+constexpr uint32_t FRAME_MS = 200, PROBE_MS = 3000, LED_MS = 20, REFRESH_MS = 5000;
 
 GFXcanvas1 canvas(128, 64);
 Ui ui;
 bool present = false, lit = false;
-uint32_t lastProbe = 0, lastFrame = 0, lastLeds = 0;
+uint32_t lastProbe = 0, lastFrame = 0, lastLeds = 0, lastRefresh = 0;
 
 // The sensor on connector c: its state and its reading
 State stateOf(int c, int16_t* mm) {
@@ -49,10 +52,16 @@ bool command(const uint8_t* c, size_t n) {
   return ok;
 }
 
+// Everything the display keeps (start line, offset, addressing, orientation...), but not on/off
+bool settings() {
+  static const uint8_t s[] = {0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40, 0x8D, 0x14, 0x20, 0x00,
+                              0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1, 0xDB, 0x40, 0xA4, 0xA6};
+  return command(s, sizeof s);
+}
+
 bool probe() {
-  static const uint8_t init[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40, 0x8D, 0x14, 0x20, 0x00,
-                                 0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1, 0xDB, 0x40, 0xA4, 0xA6};
-  return command(init, sizeof init);
+  uint8_t off = 0xAE;
+  return command(&off, 1) && settings();
 }
 
 void power(bool on) {
@@ -216,6 +225,12 @@ void loop() {
   if (!on) return;
   if (present && now - lastFrame >= FRAME_MS) {
     lastFrame = now;
+    if (now - lastRefresh >= REFRESH_MS) {
+      lastRefresh = now;
+      uint8_t on = 0xAF;
+      present = settings() && command(&on, 1);
+      sentValid = false;     // every page again, not only the ones that changed
+    }
     if (ui.screen == Screen::Splash) drawSplash();
     else if (ui.screen == Screen::All) drawAll(now);
     else drawSensor(now);

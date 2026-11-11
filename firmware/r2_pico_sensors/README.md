@@ -99,6 +99,7 @@ Pi → Pico:
 | `HELLO` | `PICO r2_pico_sensors <fw> proto 1` |
 | `CFG` + up to 12 items: `V:<xshut>` (VL53L0X) or `S:<trig>:<echo>` (HC-SR04); a sensor's index is its place in the line; `CFG` alone = none | `CFG OK <n>` or `CFG ERR <why>` (`bad item <k>`, `pin <p> reserved`, `pin <p> twice`, `too many`). After an error the Pico has no sensors until the next good `CFG`. |
 | `BOOT` | none: the Pico restarts into its USB loader (for flashing) |
+| `DBG` | for each VL53L0X that answers: `DBG <index> addr=.. irq=.. rs=..(st..) raw=.. seq=.. mode=.. lim=.. vcsel=.. budget=.. i2c=.. fails=..` (its raw result and settings; `seq=e8` and `budget=33823` when healthy), then `DBG end` |
 | anything else | `ERR unknown` (a line over 200 characters: `ERR too long`) |
 
 Pico → Pi:
