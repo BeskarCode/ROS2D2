@@ -9,7 +9,7 @@ front_tab = [9, 10, 8];            // X x Y x Z, insert from below
 function front_tabs_x() = [wall + 0.5 + front_tab[0] / 2, W - wall - 0.5 - front_tab[0] / 2];
 function sw1_world() = pico2world(sw1[0], sw1[1]);
 // left edge of the window: just clear of the push rod's guide (no chamfer on that side)
-function oled_win_x() = [sw1_world()[0] + guide_od / 2 + 0.9, oled_view_center()[0] + oled_win[0] / 2];
+function oled_win_x() = [sw1_world()[0] + guide_od / 2 + 1.6, oled_view_center()[0] + oled_win[0] / 2];
 function oled_win_center() = [(oled_win_x()[0] + oled_win_x()[1]) / 2, oled_view_center()[1] + oled_win_dz];
 function oled_win_top() = oled_win_center()[1] + oled_win[1] / 2 + wall;   // outer edge of the chamfer
 function oled_win_inner() = [oled_win_x()[0], oled_win_center()[1] - oled_win[1] / 2,
@@ -58,6 +58,20 @@ module oled_window() {
 
 // --- push rod for the DISPLAY button ---------------------------------------------------
 function rod_end_y() = pico_y() - sw1_h - rod_gap;               // its inner end, at rest
+
+// a tunnel from the window to the OLED: from outside only the screen shows, not the rest of the board.
+// Its inside runs from the window's edges to the active area's (+ margin), so it never cuts the view.
+tunnel_t = 1.2;  tunnel_m = 1;  tunnel_gap = 0.4;
+function tunnel_far() = let(c = oled_view_center())
+    [c[0] - oled_active[0] / 2 - tunnel_m, c[1] - oled_active[1] / 2 - tunnel_m, c[0] + oled_active[0] / 2 + tunnel_m, c[1] + oled_active[1] / 2 + tunnel_m];
+module oled_tunnel() {
+    r = oled_win_inner(); f = tunnel_far(); ye = pico_y() - oled_thick - tunnel_gap;
+    module slab(q, y0, y1, g = 0) translate([q[0] - g, y0, q[1] - g]) cube([q[2] - q[0] + 2 * g, y1 - y0, q[3] - q[1] + 2 * g]);
+    difference() {
+        hull() { slab(r, wall - 0.01, wall, tunnel_t); slab(f, ye - 0.01, ye, tunnel_t); }
+        hull() { slab(r, wall - 1, wall); slab(f, ye, ye + 1); }
+    }
+}
 
 module rod_guide() {
     p = sw1_world();
@@ -110,6 +124,7 @@ module frontal(depth = logo_depth) {
             front_tabs();
             top_tab(top_tab_y()[0]);
             rod_guide();
+            oled_tunnel();
         }
         oled_window();
         rod_hole();

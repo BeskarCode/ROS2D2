@@ -18,8 +18,9 @@ module ghost_pico() {
             rotate([90, 0, 0]) cylinder(d = 8.4, h = pico_gap + 2, $fn = 32);
         translate(pico2world(sw1[0], sw1[1]) - [0, pico_y() - wall, 0])      // the DISPLAY push rod's path
             rotate([-90, 0, 0]) cylinder(d = 9, h = pico_gap - sw1_h, $fn = 32);
-        translate([x0 + oled_rect[0], wall, zt - oled_rect[3]])
-            cube([oled_rect[2] - oled_rect[0], y - wall - oled_thick, oled_rect[3] - oled_rect[1]]);
+        // in front of the OLED nothing is plugged: right of the EXP header's Dupont housings (they end at
+        // bx 41.5) and below the last VL row's (by 52.3)
+        translate([x0 + 42, wall, zt - pico_h]) cube([pico_w - 42, y - wall - oled_thick, pico_h - 54]);
     }
     // the Pico's micro-USB on the top edge, angled plug + cable
     box_from([x0 + 40 - 8, y - 16, zt], [x0 + 40 + 8, y, zt + pico_usb_clear - 0.5]);
