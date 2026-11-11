@@ -227,7 +227,8 @@ export function createSensorsTab({ status }) {
       const el = card && card.querySelector('.badge');
       if (!el) continue;
       const [cls, text] = badge(s);
-      const hide = onlyConnected && !isConnected(cls);
+      // while the mouse is in the list (or dragging a slider out of it) the cards stay where they are
+      const hide = holdList ? card.hidden : onlyConnected && !isConnected(cls);
       const c = colourOf(s);
       if (card.style.getPropertyValue('--c') !== c) card.style.setProperty('--c', c);
       if (card.hidden !== hide) card.hidden = hide;
@@ -239,11 +240,25 @@ export function createSensorsTab({ status }) {
     const box = $('slist');
     const want = [...sensors].sort((a, b) => isConnected(badge(b)[0]) - isConnected(badge(a)[0]))
       .map((s) => box.querySelector(`.sensor[data-name="${s.name}"]`)).filter(Boolean);
-    if (want.some((el, i) => box.children[i] !== el)) box.append(...want);
+    if (!holdList && want.some((el, i) => box.children[i] !== el)) box.append(...want);
     const n = $('s-hiddenn');
     const msg = off ? `${off} not connected, hidden` : '';
     if (n.textContent !== msg) n.textContent = msg;
   }
+  // Hold the list still while the mouse is in it or a button is held (a slider being dragged);
+  // it catches up when the mouse leaves
+  let mouseInList = false, pressing = false, holdList = false;
+  const updateHold = () => {
+    const hold = mouseInList || pressing;
+    if (hold === holdList) return;
+    holdList = hold;
+    if (!hold) redraw();
+  };
+  $('slist').addEventListener('pointerenter', () => { mouseInList = true; updateHold(); });
+  $('slist').addEventListener('pointerleave', () => { mouseInList = false; updateHold(); });
+  $('slist').addEventListener('pointerdown', () => { pressing = true; updateHold(); });
+  addEventListener('pointerup', () => { pressing = false; updateHold(); });
+  addEventListener('pointercancel', () => { pressing = false; updateHold(); });
   const showOnlyConnected = (on) => {
     onlyConnected = on;
     $('s-connected').classList.toggle('on', on);
@@ -308,9 +323,12 @@ export function createSensorsTab({ status }) {
   }
 
   // ---------- cards ----------
+  // the angles also get a box to type the degrees in
+  const TYPED = ['yaw_deg', 'pitch_deg', 'fov_deg'];
   function slider(s, key, label, min, max, step, fmt, scale = 1) {
+    const box = TYPED.includes(key) ? `<input type="number" class="num" data-for="${key}" min="${min}" max="${max}" step="${step}" value="${s[key] / scale}">°` : '';
     return `<div class="row"><label>${label}</label><div class="slider"><input type="range" data-k="${key}" data-scale="${scale}" ` +
-           `min="${min}" max="${max}" step="${step}" value="${s[key] / scale}"><b>${fmt(s[key])}</b></div></div>`;
+           `min="${min}" max="${max}" step="${step}" value="${s[key] / scale}">${box}<b>${fmt(s[key])}</b></div></div>`;
   }
   // quick buttons under "points to" (+ = left, as in ROS)
   const SNAPS = [[90, '90° left'], [0, 'ahead'], [-90, '90° right'], [180, 'back']];
@@ -333,10 +351,14 @@ export function createSensorsTab({ status }) {
 
   function renderList() {
     const box = $('slist');
+    // rebuilt in the order (and with the cards hidden) shown now: badges() moves them later
+    const was = [...box.children].map((c) => c.dataset.name);
+    const wasHidden = new Set([...box.children].filter((c) => c.hidden).map((c) => c.dataset.name));
+    const at = (s) => { const i = was.indexOf(s.name); return i < 0 ? was.length : i; };
     box.textContent = '';
     const used = new Map();
     for (const s of sensors) for (const p of Object.values(s.pico || {})) used.set(p, (used.get(p) || 0) + 1);
-    for (const s of sensors) {
+    for (const s of [...sensors].sort((a, b) => at(a) - at(b))) {
       const T = TYPES[s.type];
       const [cls, text] = badge(s);
       const el = document.createElement('div');
@@ -396,7 +418,9 @@ export function createSensorsTab({ status }) {
       el.querySelectorAll('input[type=range]').forEach((inp) => inp.addEventListener('input', () => {
         const k = inp.dataset.k;
         s[k] = r3(Number(inp.value) * Number(inp.dataset.scale));
-        inp.nextElementSibling.textContent = FMT[k](s[k]);
+        inp.parentElement.querySelector('b').textContent = FMT[k](s[k]);
+        const num = inp.parentElement.querySelector('input.num');
+        if (num && document.activeElement !== num) num.value = inp.value;
         if (k === 'yaw_deg' || k === 'pitch_deg') {
           const old = s.name;
           rename(s);
@@ -406,6 +430,15 @@ export function createSensorsTab({ status }) {
           o.classList.toggle('on', Number(o.dataset.yaw) === (s.yaw_deg === -180 ? 180 : s.yaw_deg)));
         if (k === 'range_max') s.stop_distance = Math.min(s.stop_distance, r3(s.range_max - 0.01));
         touched();
+      }));
+      // typed degrees: kept within the slider's range, then applied as if the slider moved
+      el.querySelectorAll('input.num').forEach((num) => num.addEventListener('change', () => {
+        const range = el.querySelector(`input[data-k=${num.dataset.for}]`);
+        const v = Number(num.value);
+        if (num.value === '' || !Number.isFinite(v)) { num.value = range.value; return; }
+        num.value = Math.max(Number(range.min), Math.min(Number(range.max), Math.round(v)));
+        range.value = num.value;
+        range.dispatchEvent(new Event('input'));
       }));
       el.querySelectorAll('.snaps button').forEach((b) => b.addEventListener('click', () => {
         const yaw = el.querySelector('input[data-k=yaw_deg]');
@@ -431,6 +464,7 @@ export function createSensorsTab({ status }) {
         touched();
       });
       if (locked) el.querySelectorAll('input, select, button').forEach((c) => { c.disabled = true; });
+      el.hidden = wasHidden.has(s.name);
       box.append(el);
     }
     $('s-addtype').querySelector('[value=rplidar_c1]').disabled = sensors.some(isLidar);
