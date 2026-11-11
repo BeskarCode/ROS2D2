@@ -16,7 +16,7 @@
 #define FW_VERSION "0.1.0"
 
 constexpr uint8_t LED = LED_BUILTIN;   // GP25 on the Pico 2
-constexpr uint32_t HB_MS = 1000, R_MS = 50, FLICKER_MS = 30;
+constexpr uint32_t HB_MS = 1000, R_MS = 50, FLICKER_MS = 100;
 constexpr size_t LINE_MAX = 200;
 
 SensorCfg cfg[MAX_SENSORS];
@@ -35,6 +35,7 @@ char line[LINE_MAX + 1];
 size_t lineLen = 0;
 bool tooLong = false;
 uint32_t lastHb = 0, lastR = 0, flickerUntil = 0;
+bool readSinceHb = false;    // an R line went out since the last heartbeat (the LED blinks once)
 
 // Leave the pins of the last CFG quiet: XSHUT low keeps a VL53L0X off (its board pulls it up)
 void releasePins() {
@@ -119,6 +120,9 @@ void sendHeartbeat(uint32_t now) {
   for (int i = 0; i < nSensors; i++) states[i] = reading[i].answers ? 'O' : 'N';
   states[nSensors] = 0;
   Serial.println(states);
+  // the LED's one blink a second, if readings went out since the last heartbeat
+  if (readSinceHb) flickerUntil = now + FLICKER_MS;
+  readSinceHb = false;
 }
 
 void sendReadings(uint32_t now) {
@@ -131,10 +135,10 @@ void sendReadings(uint32_t now) {
   }
   if (len == 1) return;
   Serial.println(out);
-  flickerUntil = now + FLICKER_MS;
+  readSinceHb = true;
 }
 
-// Slow blink: waiting for the Pi's CFG. On, with a short flicker per R line: measuring.
+// Short flash once a second: waiting for the Pi's CFG. On, off for a moment once a second: measuring.
 void led(uint32_t now) {
   bool on = configured ? (int32_t)(now - flickerUntil) >= 0 : now % 1000 < 200;
   digitalWrite(LED, on);

@@ -64,7 +64,7 @@ and after US5 every sensor again. Held for 3 s, or 30 s without a press: off. `w
 ## LED
 
 - Slow blink (once a second): running, but the Pi has not sent the sensors yet.
-- On, with a short flicker on each batch of readings: measuring.
+- On, off for a moment once a second (with the heartbeat): measuring. On without the blink: running, but no sensor answers.
 
 ## Build and flash
 
