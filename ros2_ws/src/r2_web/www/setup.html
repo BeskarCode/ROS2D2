@@ -127,6 +127,10 @@
   .gauge .mark { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: var(--text); }
   .stat .l b.ok { color: var(--green); } .stat .l b.warn { color: var(--amber); } .stat .l b.bad { color: var(--red); }
   .stat .l.dim { opacity: .7; }
+  .sysboard { display: grid; gap: 6px; margin-top: 12px; max-width: 760px; }
+  .sysboard .row label { width: 230px; flex: none; }
+  .sysboard .ids { display: flex; flex-wrap: wrap; gap: 4px; }
+  .sysboard .ids button { padding: 2px 8px; font-size: 12px; }
   #s-blind { color: var(--muted); font-size: 12px; margin-top: 8px; } #s-blind b { color: var(--red); }
   #slist { display: grid; gap: 8px; }
   #slist .sensor[hidden] { display: none; }
@@ -325,6 +329,17 @@
     <h3 class="sysh"><i class="fa-solid fa-microchip"></i>Pico board <span class="sub">firmware <b id="sys-pico-version">…</b></span></h3>
     <div class="stats sys4" id="sys-pico" hidden></div>
     <p class="help" id="sys-pico-note" hidden></p>
+    <div class="sysboard" id="sys-board">
+      <div class="row"><label><i class="fa-solid fa-clock"></i>display off after</label><select id="brd-timeout"></select></div>
+      <div class="row"><label><i class="fa-solid fa-sun"></i>brightness</label><select id="brd-bright"></select></div>
+      <div class="row"><label><i class="fa-solid fa-lightbulb"></i>status LEDs</label><select id="brd-leds"></select></div>
+      <div class="row"><label><i class="fa-solid fa-display"></i>display now</label>
+        <span><select id="brd-screen"></select> <button id="brd-on"><i class="fa-solid fa-power-off"></i>On</button>
+        <button id="brd-off">Off</button></span></div>
+      <div class="row"><label><i class="fa-solid fa-hashtag"></i>identify (its LED blinks 5 s)</label><span class="ids" id="brd-identify"></span></div>
+      <p class="status warn" id="brd-why" hidden></p>
+      <p class="help" id="brd-file"></p>
+    </div>
   </section>
 
   <section id="file" hidden>
