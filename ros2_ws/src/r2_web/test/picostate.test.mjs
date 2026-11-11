@@ -1,7 +1,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isConnected, picoPill, sensorBadge } from '../www/picostate.js';
+import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from '../www/picostate.js';
 
 const up = (sensors = {}, more = {}) => ({ connected: true, firmware: '0.1.0', config_error: null, sensors, ...more });
 
@@ -44,4 +44,9 @@ test('"Connected only" keeps the sensors that measure, real or simulated', () =>
   assert.equal(isConnected(sensorBadge('tof_front', up({ tof_front: 'ok' }), null, 100, false).cls), false);   // no reading yet
   assert.equal(isConnected(sensorBadge('tof_front', null, null, 0, false).cls), false);                        // no bridge
   assert.equal(isConnected('bad'), false);                                                                      // lidar offline
+});
+
+test('a Pico sensor that is not responding is grey, a different tone per type', () => {
+  assert.ok(OFF_COLOUR.vl53l0x && OFF_COLOUR.hcsr04 && OFF_COLOUR.vl53l0x !== OFF_COLOUR.hcsr04);
+  assert.equal(OFF_COLOUR.rplidar_c1, undefined);   // the lidar keeps its colour
 });

@@ -6,7 +6,7 @@ import { MODELS } from './models.js';
 import { call, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
-import { isConnected, picoPill, sensorBadge } from './picostate.js';
+import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
 import { PICO_GPIO, R2, TYPES, coverage, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -205,7 +205,8 @@ export function createSensorsTab({ status }) {
         return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
       }));
       const shown = onlyConnected ? sensors.filter((s) => isConnected(badge(s)[0])) : sensors;
-      const state = { sensors: shown, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint(scan), readings: live, hidden, hovered };
+      const colours = Object.fromEntries(sensors.map((s) => [s.name, colourOf(s)]));
+      const state = { sensors: shown, colours, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint(scan), readings: live, hidden, hovered };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
@@ -213,6 +214,9 @@ export function createSensorsTab({ status }) {
       badges();
     });
   }
+
+  // its type's colour, or its grey when a Pico sensor is not measuring
+  const colourOf = (s) => (OFF_COLOUR[s.type] && !isConnected(badge(s)[0]) ? OFF_COLOUR[s.type] : TYPES[s.type].colour);
 
   // Refresh only the badges (the cards hold inputs: rebuilding them would lose the focus)
   // and, with "Connected only", hide the cards of the sensors that are not measuring
@@ -224,6 +228,8 @@ export function createSensorsTab({ status }) {
       if (!el) continue;
       const [cls, text] = badge(s);
       const hide = onlyConnected && !isConnected(cls);
+      const c = colourOf(s);
+      if (card.style.getPropertyValue('--c') !== c) card.style.setProperty('--c', c);
       if (card.hidden !== hide) card.hidden = hide;
       off += hide;
       if (el.className !== `badge ${cls}`) el.className = `badge ${cls}`;
@@ -338,7 +344,7 @@ export function createSensorsTab({ status }) {
       el.addEventListener('mouseenter', () => hover(s.name));
       el.addEventListener('mouseleave', () => hover(null));
       el.dataset.name = s.name;
-      el.style.setProperty('--c', T.colour);
+      el.style.setProperty('--c', colourOf(s));
       el.innerHTML = `
         <div class="top"><span class="title">${T.label}</span><span class="sub"></span><span class="reading">—</span>
           <span class="badge ${cls}">${text}</span>
