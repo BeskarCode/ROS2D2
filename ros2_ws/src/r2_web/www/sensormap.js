@@ -5,6 +5,8 @@
 import { R2, TYPES, freeText, isLidar, reach, toMap, fromMap } from './sensormath.js';
 
 const rad = (d) => d * Math.PI / 180;
+// its type's look, in its grey when it is not responding (state.colours, from sensors.js)
+const look = (s, state) => ({ ...TYPES[s.type], colour: (state.colours && state.colours[s.name]) || TYPES[s.type].colour });
 const ZOOM0 = 1.6;
 
 export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () => {} }) {
@@ -39,7 +41,7 @@ export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () 
     }
     const shown = (s) => !(state.hidden && state.hidden.has(s.name));
     for (const s of state.sensors.filter(shown)) {
-      const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected, hov = s.name === state.hovered;
+      const T = look(s, state), missing = s.found === false, on = s.name === state.selected, hov = s.name === state.hovered;
       const R = state.fullRange ? reach(s) : Math.min(reach(s), 1.5);
       o += `<path data-beam="${s.name}" d="M${fan(s, R)} Z" fill="${T.colour}" fill-opacity="${hov ? 0.38 : missing ? 0.04 : on ? 0.28 : 0.13}" ` +
            `stroke="${hov ? '#e6edf3' : T.colour}" stroke-width="${sw * (hov ? 2.5 : on ? 2 : 1)}"${missing && !hov ? ` stroke-dasharray="${sw * 6} ${sw * 6}"` : ''}/>`;
@@ -48,7 +50,7 @@ export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () 
     for (const s of state.sensors.filter(shown)) {
       const r = state.readings && state.readings[s.name];
       if (r == null || !Number.isFinite(r)) continue;
-      const T = TYPES[s.type];
+      const T = look(s, state);
       o += `<path d="M${fan(s, Math.min(r, reach(s)))} Z" fill="${T.colour}" fill-opacity="0.4" ` +
            `stroke="${T.colour}" stroke-width="${sw * 2.5}"/>`;
     }
@@ -95,7 +97,7 @@ export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () 
     }
     // sensors on top, so they can always be grabbed
     for (const s of state.sensors) {
-      const T = TYPES[s.type], on = s.name === state.selected, hov = s.name === state.hovered;
+      const T = look(s, state), on = s.name === state.selected, hov = s.name === state.hovered;
       const [x, y] = at(s.x, s.y);
       const [dx, dy] = toMap(Math.cos(rad(s.yaw_deg)), Math.sin(rad(s.yaw_deg)));
       // the one under the mouse: a white halo around its dot

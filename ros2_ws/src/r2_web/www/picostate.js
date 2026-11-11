@@ -19,6 +19,8 @@ export function picoPill(state, ageMs) {
 
 // A badge class that means the sensor is there and measuring (for "Connected only")
 export const isConnected = (cls) => cls === 'ok' || cls === 'sim';
+// A Pico sensor that is not measuring is drawn grey, a tone per type (light = ToF, dark = ultrasonic)
+export const OFF_COLOUR = { vl53l0x: '#9aa3ad', hcsr04: '#5c6570' };
 
 export function sensorBadge(name, state, reading, ageMs, simulated) {
   if (simulated) return { cls: 'sim', text: reading ? `simulated · ${metres(reading.range)}` : 'simulated' };

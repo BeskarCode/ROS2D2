@@ -10,6 +10,8 @@ import { TYPES, freeText, isLidar, reach, toThree } from './sensormath.js';
 import { textSprite } from './label3d.js';
 
 const rad = (d) => d * Math.PI / 180;
+// its type's look, in its grey when it is not responding (state.colours, from sensors.js)
+const look = (s, state) => ({ ...TYPES[s.type], colour: (state.colours && state.colours[s.name]) || TYPES[s.type].colour });
 const V = (x, y, z) => new THREE.Vector3(...toThree(x, y, z));
 
 export function createSensorView3d(container, { onHover = () => {} } = {}) {
@@ -71,7 +73,7 @@ export function createSensorView3d(container, { onHover = () => {} } = {}) {
     dyn.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
     dyn.clear();
     for (const s of state.sensors) {
-      const T = TYPES[s.type], missing = s.found === false, on = s.name === state.selected, hov = s.name === state.hovered;
+      const T = look(s, state), missing = s.found === false, on = s.name === state.selected, hov = s.name === state.hovered;
       const dot = new THREE.Mesh(new THREE.SphereGeometry(hov ? 0.04 : on ? 0.028 : 0.02, 16, 8),
         new THREE.MeshBasicMaterial({ color: hov ? '#e6edf3' : T.colour }));
       dot.position.copy(V(s.x, s.y, s.z));
