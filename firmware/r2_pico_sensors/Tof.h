@@ -43,12 +43,16 @@ constexpr uint8_t SDA_PIN = 16, SCL_PIN = 17;
 constexpr int FAILS_TO_LOSE = 3;
 constexpr uint32_t RETRY_MS = 2000;
 constexpr uint32_t STUCK_MS = 500;      // answers but no reading for this long: restart it
+// A VL53L0X has a new reading every ~33 ms (its timing budget): asking every turn of the loop
+// only kept the bus (and core 0) busy, taking it from the display and the other sensors.
+constexpr uint32_t POLL_MS = 5;
 constexpr uint8_t RESULT_INTERRUPT_STATUS = 0x13;
 constexpr uint8_t DEFAULT_ADDRESS = 0x29;
 
 VL53L0X dev[MAX_SENSORS];
 int fails[MAX_SENSORS];
 uint32_t lastReading[MAX_SENSORS];
+uint32_t lastPoll[MAX_SENSORS];
 uint32_t lastRetry = 0;
 
 // Something at 0x29 although every sensor we wake is moved away from it: an XSHUT not wired.
@@ -94,7 +98,7 @@ bool wake(int i) {
 void setup() {
   Wire.setSDA(SDA_PIN);
   Wire.setSCL(SCL_PIN);
-  Wire.setClock(100000);
+  Wire.setClock(400000);     // the display and the VL53L0X both take 400 kHz
   Wire.setTimeout(10, true);
   Wire.begin();
 }
@@ -178,8 +182,10 @@ void debug() {
 }
 
 void loop() {
+  uint32_t now = millis();
   for (int i = 0; i < nSensors; i++) {
-    if (cfg[i].type != 'V' || !reading[i].answers) continue;
+    if (cfg[i].type != 'V' || !reading[i].answers || now - lastPoll[i] < POLL_MS) continue;
+    lastPoll[i] = now;
     i2cTake();
     readOne(i);
     i2cGive();
