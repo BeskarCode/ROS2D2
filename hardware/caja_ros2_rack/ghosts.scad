@@ -21,8 +21,8 @@ module ghost_pico() {
         union() {
             on_board(0, 0, pico_w, pico_h, oled_thick);           // low parts, OLED
             on_board(0, 6, 14, 58, pico_gap - 0.5);               // US1-5 headers + Dupont
-            on_board(50, 6, 80, 58, pico_gap - 0.5);              // VL1-4
-            on_board(24, 65, 43, 73, pico_gap - 0.5);             // EXP header
+            on_board(50, 6, 80, 54, pico_gap - 0.5);              // VL1-4 (last row by 51: its Dupont housings end at 52.3)
+            on_board(24, 65, 42, 73, pico_gap - 0.5);             // EXP header (its Dupont housings end at bx 41.5)
             on_board(29, 0, 51, 55, 13);                          // the Pico on its sockets
             on_board(0, 52, 11, 66, 11);                          // 5 V terminal J1
         }
