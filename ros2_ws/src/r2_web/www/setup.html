@@ -120,6 +120,13 @@
   .sysh { font-size: 15px; margin: 18px 0 4px; display: flex; align-items: baseline; gap: 10px; }
   .sysh .sub { color: var(--muted); font-size: 12px; font-weight: 400; }
   .systog { display: inline-flex; margin: 4px 0; }
+  .gauge { position: relative; height: 8px; border-radius: 4px; background: var(--line); margin: 8px 0 4px; overflow: hidden; }
+  .gauge .z { position: absolute; top: 0; bottom: 0; opacity: .35; }
+  .gauge .z.ok { background: var(--green); } .gauge .z.warn { background: var(--amber); } .gauge .z.bad { background: var(--red); }
+  .gauge .seen { position: absolute; top: 2px; bottom: 2px; background: var(--text); opacity: .45; border-radius: 2px; }
+  .gauge .mark { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: var(--text); }
+  .stat .l b.ok { color: var(--green); } .stat .l b.warn { color: var(--amber); } .stat .l b.bad { color: var(--red); }
+  .stat .l.dim { opacity: .7; }
   #s-blind { color: var(--muted); font-size: 12px; margin-top: 8px; } #s-blind b { color: var(--red); }
   #slist { display: grid; gap: 8px; }
   #slist .sensor[hidden] { display: none; }
@@ -315,6 +322,9 @@
     <h3 class="sysh"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi <span class="sub">software <b id="sys-pi-version">…</b></span></h3>
     <div class="stats sys4" id="sys-pi" hidden></div>
     <p class="status bad" id="sys-pi-warn" hidden></p>
+    <h3 class="sysh"><i class="fa-solid fa-microchip"></i>Pico board <span class="sub">firmware <b id="sys-pico-version">…</b></span></h3>
+    <div class="stats sys4" id="sys-pico" hidden></div>
+    <p class="help" id="sys-pico-note" hidden></p>
   </section>
 
   <section id="file" hidden>

@@ -6,7 +6,7 @@ const WS_URL = `ws://${location.hostname || 'localhost'}:9090`;
 let ws = null;
 let callId = 0;
 const pending = {};
-const handlers = {};       // topic -> callback
+const handlers = {};       // topic -> [callbacks] (two tabs may follow the same topic)
 const subs = {};           // topic -> subscribe message, to send again on reconnect
 
 export function connect(onOpen) {
@@ -14,7 +14,7 @@ export function connect(onOpen) {
   ws.onopen = () => { advertised.clear(); Object.values(subs).forEach(send); onOpen(); };
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data);
-    if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic](m.msg);
+    if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic].forEach((cb) => cb(m.msg));
     if (m.op === 'service_response' && pending[m.id]) { pending[m.id](m.result ? m.values : null); delete pending[m.id]; }
   };
   ws.onclose = () => setTimeout(() => connect(onOpen), 2000);
@@ -38,7 +38,8 @@ export function setParam(node, name, value) {
 }
 
 export function subscribe(topic, type, cb, throttleMs = 0) {
-  handlers[topic] = cb;
+  (handlers[topic] = handlers[topic] || []).push(cb);
+  if (subs[topic]) return;             // already subscribed: the new callback shares it
   subs[topic] = { op: 'subscribe', topic, type, throttle_rate: throttleMs, queue_length: 1 };
   send(subs[topic]);
 }
