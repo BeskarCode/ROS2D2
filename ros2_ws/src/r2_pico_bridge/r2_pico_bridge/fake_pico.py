@@ -25,6 +25,9 @@ class FakePico:
         self.states = ""
         self.readings = {}
         self.cfg_error = None       # set it to answer CFG ERR <this>
+        self.proto = 2              # 1 = an old firmware: no commit, no TM/UI/DISP/ID
+        self.lines = []             # every line received
+        self.tm = False
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
@@ -44,8 +47,14 @@ class FakePico:
             self._stop.set()
 
     def _on(self, line):
+        if line:
+            self.lines.append(line)
         if line == "HELLO":
-            self._send("PICO r2_pico_sensors 0.1.0 proto 1")
+            self._send("PICO r2_pico_sensors 0.1.0 proto 1" if self.proto == 1
+                       else "PICO r2_pico_sensors 0.2.0 proto 2 commit fake123")
+        elif self.proto >= 2 and line in ("TM 1", "TM 0"):
+            self.tm = line == "TM 1"
+            self._send("TM OK")
         elif line == "CFG" or line.startswith("CFG "):
             self.cfg_lines.append(line)
             if self.cfg_error:
@@ -80,6 +89,8 @@ class FakePico:
                 next_hb = now + self.hb_period
                 states = "-" if self.n is None else "".join(self._state(i) for i in range(self.n))
                 self._send(f"HB {int((now - t0) * 1000)} {states}")
+                if self.tm:
+                    self._send(f"T c0=12 c1=40 bus=30 disp=25 wait=3 temp=310 up={int(now - t0)} rps=20,20")
             if now >= next_r and self.n:
                 next_r = now + self.r_period
                 items = [f"{i}:{mm}" for i, mm in sorted(self.readings.items())

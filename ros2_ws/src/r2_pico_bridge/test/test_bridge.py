@@ -39,12 +39,14 @@ class Bench:
             rclpy.parameter.Parameter("config", value=str(self.config)),
             rclpy.parameter.Parameter("reconnect_sec", value=0.2),
             rclpy.parameter.Parameter("stale_sec", value=1.0),
+            rclpy.parameter.Parameter("telemetry_timeout_sec", value=1.0),
         ])
         self.ear = rclpy.create_node("ear")
         self.state = None
         self.connected = None
         self.ranges = {}
         self.ear.create_subscription(String, "/pico/state", self._on_state, 10)
+        self.ask_tm = self.ear.create_publisher(Bool, "/pico/telemetry_request", 10)
         self.ear.create_subscription(
             Bool, "/pico/connected", lambda m: setattr(self, "connected", m.data),
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
@@ -101,7 +103,7 @@ def test_on_connect_it_says_hello_and_sends_the_sensors(bench):
     assert bench.pico.cfg_lines[0] == "CFG V:2 V:3 V:4 V:5 S:10:11 S:12:13 S:14:15 S:18:19 S:20:21"
     assert bench.spin_until(lambda: bench.connected is True)
     assert bench.spin_until(lambda: sensors(bench) == {n: "not_responding" for n in NAMES})
-    assert bench.state["connected"] is True and bench.state["firmware"] == "0.1.0"
+    assert bench.state["connected"] is True and bench.state["firmware"] == "0.2.0"
     assert bench.state["config_error"] is None
     bench.spin_until(lambda: False, 0.5)
     assert bench.ranges == {}
@@ -211,3 +213,40 @@ def test_no_pico_sensors_is_still_connected(bench):
     assert bench.spin_until(lambda: bench.pico.cfg_lines and bench.pico.cfg_lines[-1] == "CFG", 4)
     bench.spin_until(lambda: False, 2.0)        # longer than stale_sec
     assert bench.connected is True and bench.state["connected"] is True
+
+
+def test_state_has_commit_and_proto(bench):
+    assert bench.spin_until(lambda: bench.state and bench.state.get("commit") == "fake123")
+    assert bench.state["firmware"] == "0.2.0" and bench.state["proto"] == 2
+
+
+def test_telemetry_on_request_and_off_after_the_timeout(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    assert bench.state.get("telemetry") is None
+    assert "TM 1" not in bench.pico.lines                    # nothing until asked
+
+    def asking():
+        bench.ask_tm.publish(Bool(data=True))
+        return bench.state and bench.state.get("telemetry")
+    assert bench.spin_until(asking)
+    assert bench.pico.lines.count("TM 1") == 1               # asked once, not on every request
+    assert bench.state["telemetry"]["rps"] == [20, 20]
+    # the console goes away: no more requests -> off within the timeout (1 s here)
+    assert bench.spin_until(lambda: "TM 0" in bench.pico.lines, 3)
+    assert bench.spin_until(lambda: bench.state.get("telemetry") is None, 3)
+
+
+def test_telemetry_false_turns_it_off_at_once(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    assert bench.spin_until(lambda: (bench.ask_tm.publish(Bool(data=True)), "TM 1" in bench.pico.lines)[1])
+    bench.ask_tm.publish(Bool(data=False))
+    assert bench.spin_until(lambda: "TM 0" in bench.pico.lines, 0.5)
+
+
+def test_telemetry_resent_after_reconnect(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    assert bench.spin_until(lambda: (bench.ask_tm.publish(Bool(data=True)), "TM 1" in bench.pico.lines)[1])
+    bench.unplug()
+    assert bench.spin_until(lambda: (bench.ask_tm.publish(Bool(data=True)), bench.connected is False)[1], 4)
+    bench.plug()
+    assert bench.spin_until(lambda: (bench.ask_tm.publish(Bool(data=True)), "TM 1" in bench.pico.lines)[1], 4)

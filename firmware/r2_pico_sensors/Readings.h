@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Config.h"
+#include "Telemetry.h"
 
 struct Reading {
   bool answers = false;   // 'O' in HB; false = 'N'
@@ -18,6 +19,7 @@ inline void report(int i, int16_t mm) {
   reading[i].answers = true;
   reading[i].mm = mm;
   reading[i].fresh = true;
+  tele::read(i);
 }
 
 inline void lost(int i) {

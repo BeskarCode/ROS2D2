@@ -20,7 +20,7 @@ KEY=${KEY:-$HOME/.ssh/r2pi_ed25519}
 HERE=$(cd "$(dirname "$0")" && pwd)
 UF2=$HERE/build/r2_pico_sensors.ino.uf2
 
-arduino-cli compile --fqbn rp2040:rp2040:rpipico2 --output-dir "$HERE/build" "$HERE"
+"$HERE/build.sh"
 scp -q -i "$KEY" "$UF2" "$PI:/tmp/r2_pico_sensors.uf2"
 
 ssh -i "$KEY" "$PI" 'bash -s' <<'REMOTE'

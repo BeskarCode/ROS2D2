@@ -13,7 +13,10 @@
 #include "Tof.h"
 #include "Display.h"
 
-#define FW_VERSION "0.1.0"
+#define FW_VERSION "0.2.0"
+#ifndef FW_COMMIT
+#define FW_COMMIT "unknown"     // build.sh passes the git commit of firmware/r2_pico_sensors
+#endif
 
 constexpr uint8_t LED = LED_BUILTIN;   // GP25 on the Pico 2
 constexpr uint32_t HB_MS = 1000, R_MS = 50, FLICKER_MS = 100;
@@ -75,9 +78,13 @@ void onCfg(const char* args) {
 
 void onLine(const char* l) {
   if (strcmp(l, "HELLO") == 0) {
-    Serial.println("PICO r2_pico_sensors " FW_VERSION " proto 1");
+    Serial.println("PICO r2_pico_sensors " FW_VERSION " proto 2 commit " FW_COMMIT);
   } else if (strcmp(l, "CFG") == 0 || strncmp(l, "CFG ", 4) == 0) {
     onCfg(l + 3);
+  } else if (strcmp(l, "TM 1") == 0 || strcmp(l, "TM 0") == 0) {
+    tele::start(micros());
+    tele::on = l[3] == '1';
+    Serial.println("TM OK");
   } else if (strcmp(l, "DBG") == 0) {
 #ifndef WOKWI
     tof::debug();
@@ -110,6 +117,16 @@ void readSerial() {
   }
 }
 
+// TM: the last second's telemetry (Telemetry.h), right after the heartbeat
+void sendTelemetry(uint32_t now) {
+  uint32_t now_us = micros();
+  char out[40 + MAX_SENSORS * 6];
+  formatTm(out, sizeof out, tele::w, now_us - tele::windowStart, (int)(analogReadTemp() * 10),
+           now / 1000, configured ? nSensors : 0);
+  tele::start(now_us);
+  Serial.println(out);
+}
+
 void sendHeartbeat(uint32_t now) {
   Serial.printf("HB %lu ", (unsigned long)now);
   if (!configured) {
@@ -120,6 +137,7 @@ void sendHeartbeat(uint32_t now) {
   for (int i = 0; i < nSensors; i++) states[i] = reading[i].answers ? 'O' : 'N';
   states[nSensors] = 0;
   Serial.println(states);
+  if (tele::on) sendTelemetry(now);
   // the LED's one blink a second, if readings went out since the last heartbeat
   if (readSinceHb) flickerUntil = now + FLICKER_MS;
   readSinceHb = false;
@@ -161,6 +179,7 @@ void setup() {
 }
 
 void loop() {
+  uint32_t t0 = micros();
   readSerial();
   if (configured) {
     tof::loop();
@@ -179,11 +198,16 @@ void loop() {
 #ifdef WOKWI
   display::loop();
 #endif
+  tele::busy(micros() - t0);
 }
 
 #ifndef WOKWI
 // Core 1: the display, its button and the status LEDs
 void setup1() { display::setup(); }
 
-void loop1() { display::loop(); }
+void loop1() {
+  uint32_t t0 = micros();
+  display::loop();
+  tele::busy(micros() - t0);
+}
 #endif

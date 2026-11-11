@@ -31,7 +31,10 @@ def test_parse_readings():
 
 
 def test_parse_answers():
-    assert parse("PICO r2_pico_sensors 0.1.0 proto 1") == ("hello", "0.1.0", 1)
+    assert parse("PICO r2_pico_sensors 0.1.0 proto 1") == ("hello", "0.1.0", 1, None)
+    assert parse("PICO r2_pico_sensors 0.2.0 proto 2 commit 265a841") == ("hello", "0.2.0", 2, "265a841")
+    assert parse("PICO r2_pico_sensors 0.2.0 proto 2 commit 265a841-dirty") == ("hello", "0.2.0", 2, "265a841-dirty")
+    assert parse("TM OK") == ("tm_ok",)
     assert parse("CFG OK 7") == ("cfg_ok", 7)
     assert parse("CFG ERR pin 16 reserved") == ("cfg_err", "pin 16 reserved")
     assert parse("ERR unknown") == ("err", "unknown")
@@ -44,3 +47,13 @@ def test_parse_rubbish():
 
 def test_parse_heartbeat_with_no_sensors():
     assert parse("HB 5") == ("hb", 5, "")
+
+
+def test_parse_telemetry():
+    assert parse("T c0=12 c1=48 bus=51 disp=46 wait=37 temp=312 up=3600 rps=20,20,0") == ("tm", {
+        "c0": 12, "c1": 48, "bus": 51, "disp": 46, "wait_ms": 37, "temp_c": 31.2, "up_s": 3600,
+        "rps": [20, 20, 0]})
+    assert parse("T c0=1 c1=2 bus=3 disp=0 wait=0 temp=-5 up=7 rps=")[1]["rps"] == []
+    assert parse("T c0=1 c1=2 bus=3 disp=0 wait=0 temp=-5 up=7 rps=")[1]["temp_c"] == -0.5
+    assert parse("T c0=x c1=2 bus=3 disp=0 wait=0 temp=1 up=7 rps=") is None
+    assert parse("T c0=1 c1=2") is None

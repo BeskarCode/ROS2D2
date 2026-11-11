@@ -47,11 +47,19 @@ class PicoBridge(Node):
         self.declare_parameter("config", "")
         self.declare_parameter("reconnect_sec", 2.0)
         self.declare_parameter("stale_sec", 3.0)
+        self.declare_parameter("telemetry_timeout_sec", 5.0)
         config = self.param("config") or default_config()
         self.reloader = Reloader(lambda: config_path(config))
         self.lock = threading.Lock()
         self.ser = None
         self.firmware = None
+        self.proto = None
+        self.commit = None
+        # telemetry (TM): asked for by the console every ~2 s while its System tab shows it
+        self.tm_asked_at = 0.0      # last request (monotonic), 0 = not asked
+        self.tm_sent = False        # TM 1 sent on this connection
+        self.telemetry = None
+        self.telemetry_at = 0.0
         self.config_error = None
         self.last_hb = 0.0
         self.sensors = {}           # name -> settings, as last sent to the Pico
@@ -64,6 +72,7 @@ class PicoBridge(Node):
         self.pub_state = self.create_publisher(String, "/pico/state", 10)
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_connected = self.create_publisher(Bool, "/pico/connected", latched)
+        self.create_subscription(Bool, "/pico/telemetry_request", self.on_telemetry_request, 10)
         self.reload(force=True)
         self.create_timer(1.0, self.tick)
         self.create_timer(0.2, self.check_connected)
@@ -114,6 +123,8 @@ class PicoBridge(Node):
             self.status = {n: "waiting" for n in self.names}
         self._write("HELLO\n")
         self.send_cfg()
+        self.tm_sent = False
+        self.check_telemetry()
         return True
 
     def _lost(self, why):
@@ -126,6 +137,7 @@ class PicoBridge(Node):
                 pass
             self.ser = None
             self.last_hb = 0.0
+            self.tm_sent = False
         self.get_logger().error(f"lost the Pico: {why}")
 
     def _write(self, line):
@@ -169,7 +181,9 @@ class PicoBridge(Node):
             return
         kind = msg[0]
         if kind == "hello":
-            self.firmware = msg[1]
+            self.firmware, self.proto, self.commit = msg[1], msg[2], msg[3]
+        elif kind == "tm":
+            self.telemetry, self.telemetry_at = msg[1], time.monotonic()
         elif kind == "cfg_ok":
             self.config_error = None
         elif kind == "cfg_err":
@@ -216,6 +230,21 @@ class PicoBridge(Node):
             m.range = math.inf if mm == -1 else max(mm / 1000.0, m.min_range)
             self.pub_range[name].publish(m)
 
+    # --- telemetry ------------------------------------------------------------------
+
+    def on_telemetry_request(self, msg):
+        self.tm_asked_at = time.monotonic() if msg.data else 0.0
+        self.check_telemetry()
+
+    def check_telemetry(self):
+        """TM 1 while the console keeps asking, TM 0 once it stops (or says False)."""
+        want = self.tm_asked_at and time.monotonic() - self.tm_asked_at < self.param("telemetry_timeout_sec")
+        if want and not self.tm_sent and self.ser is not None:
+            self.tm_sent = self._write("TM 1\n")
+        elif not want and self.tm_sent:
+            self.tm_sent = False
+            self._write("TM 0\n")
+
     # --- state ----------------------------------------------------------------------
 
     def is_connected(self):
@@ -230,8 +259,10 @@ class PicoBridge(Node):
 
     def publish_state(self, always=False):
         with self.lock:
-            state = {"connected": self.is_connected(), "firmware": self.firmware,
-                     "config_error": self.config_error, "sensors": dict(self.status)}
+            fresh_tm = self.telemetry if time.monotonic() - self.telemetry_at < 3.0 else None
+            state = {"connected": self.is_connected(), "firmware": self.firmware, "proto": self.proto,
+                     "commit": self.commit, "config_error": self.config_error,
+                     "sensors": dict(self.status), "telemetry": fresh_tm}
         text = json.dumps(state)
         if always or text != self.last_json:
             self.last_json = text
@@ -239,6 +270,7 @@ class PicoBridge(Node):
 
     def tick(self):
         self.reload()
+        self.check_telemetry()
         self.publish_state(always=True)
 
     def destroy_node(self):

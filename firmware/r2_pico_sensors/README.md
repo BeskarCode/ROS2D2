@@ -86,9 +86,16 @@ From then on, from Git Bash on the computer:
 PI=<your-user>@<pi-address> firmware/r2_pico_sensors/flash.sh
 ```
 
-It builds, copies the `.uf2` to the Pi, stops the `r2d2` service, restarts the Pico into
-its USB loader (1200 baud on `/dev/r2-pico`), copies the file and starts the service again.
-No BOOTSEL. Host test of the CFG parser: `g++ -std=c++17 -I. test/test_config.cpp && ./a.out`.
+It builds (`build.sh`), copies the `.uf2` to the Pi, stops the `r2d2` service, restarts the
+Pico into its USB loader (1200 baud on `/dev/r2-pico`), copies the file and starts the service
+again. No BOOTSEL.
+
+`build.sh` builds with the git commit of this folder in the firmware (`-dirty` if it has
+changes not committed); the Pico says it in its `HELLO` answer and the console shows it.
+`build.sh --jobs 2 --nice` builds gently (on the Pi, while R2 runs).
+
+Host tests (plain C++, any computer with g++), from this folder:
+`for t in test/*.cpp; do g++ -std=c++17 -Wall -I. $t -o /tmp/t && /tmp/t; done`.
 
 ## Protocol (USB serial, one line each, ASCII)
 
@@ -96,9 +103,10 @@ Pi → Pico:
 
 | Line | Answer |
 |---|---|
-| `HELLO` | `PICO r2_pico_sensors <fw> proto 1` |
+| `HELLO` | `PICO r2_pico_sensors <fw> proto 2 commit <git commit>` (firmware before 0.2.0: `proto 1`, no commit) |
 | `CFG` + up to 12 items: `V:<xshut>` (VL53L0X) or `S:<trig>:<echo>` (HC-SR04); a sensor's index is its place in the line; `CFG` alone = none | `CFG OK <n>` or `CFG ERR <why>` (`bad item <k>`, `pin <p> reserved`, `pin <p> twice`, `too many`). After an error the Pico has no sensors until the next good `CFG`. |
 | `BOOT` | none: the Pico restarts into its USB loader (for flashing) |
+| `TM 1` / `TM 0` | `TM OK`: telemetry on / off (off after a restart). The Pi asks for it only while the console's System tab shows it. |
 | `DBG` | for each VL53L0X that answers: `DBG <index> addr=.. irq=.. rs=..(st..) raw=.. seq=.. mode=.. lim=.. vcsel=.. budget=.. i2c=.. fails=..` (its raw result and settings; `seq=e8` and `budget=33823` when healthy), then `DBG end` |
 | anything else | `ERR unknown` (a line over 200 characters: `ERR too long`) |
 
@@ -108,6 +116,7 @@ Pico → Pi:
 |---|---|
 | `HB <ms> <states>` | every second. `<states>` is `-` with no `CFG` yet, else one letter per sensor: `O` answers, `N` not answering. E.g. `HB 12034 NNNNNNN`. |
 | `R <i>:<mm> <i>:<mm> …` | every 50 ms, the sensors with a new reading since the last `R`. `-1` = answers, nothing in range. |
+| `T c0=<%> c1=<%> bus=<%> disp=<%> wait=<ms> temp=<tenths °C> up=<s> rps=<n>,<n>,…` | with `TM 1`, every second after `HB`: each core's load (loop turns of 20 µs or more, without their waits for the bus), the I2C bus held and the part held by the display, the longest a VL53L0X waited for the bus, the chip's temperature, seconds up, readings per second of each sensor. |
 
 The Pi (`r2_pico_bridge`) sends `HELLO` and `CFG` when it opens the port, and `CFG` again
 when a `HB` shows `-` or a different number of sensors, or when `sensors.yaml` changes.
