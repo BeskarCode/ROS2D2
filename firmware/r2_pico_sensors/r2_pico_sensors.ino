@@ -38,8 +38,8 @@ char line[LINE_MAX + 1];
 size_t lineLen = 0;
 bool tooLong = false;
 uint32_t lastHb = 0, lastR = 0, flickerUntil = 0;
-bool readSinceHb = false;
-const char* lastDs = nullptr;    // the display's screen as last told to the Pi (DS line)    // an R line went out since the last heartbeat (the LED blinks once)
+bool readSinceHb = false;        // an R line went out since the last heartbeat (the LED blinks once)
+const char* lastDs = nullptr;    // the display's screen as last told to the Pi (DS line)
 
 // Leave the pins of the last CFG quiet: XSHUT low keeps a VL53L0X off (its board pulls it up)
 void releasePins() {
@@ -158,14 +158,14 @@ void sendTelemetry(uint32_t now) {
 
 void sendHeartbeat(uint32_t now) {
   Serial.printf("HB %lu ", (unsigned long)now);
-  if (!configured) {
-    Serial.println("-");
-    return;
+  if (configured) {
+    char states[MAX_SENSORS + 1];
+    for (int i = 0; i < nSensors; i++) states[i] = reading[i].answers ? 'O' : 'N';
+    states[nSensors] = 0;
+    Serial.println(states);
+  } else {
+    Serial.println("-");          // no CFG yet (or a bad one): telemetry and DS still go out
   }
-  char states[MAX_SENSORS + 1];
-  for (int i = 0; i < nSensors; i++) states[i] = reading[i].answers ? 'O' : 'N';
-  states[nSensors] = 0;
-  Serial.println(states);
   if (tele::on) sendTelemetry(now);
   // DS: what the display shows, when it changed (the console shows it and its buttons follow)
   const char* ds = display::shownName;

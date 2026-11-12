@@ -132,3 +132,93 @@ def test_check_finds_an_update():
     s = j.status()
     assert s["internet"] is True and s["compare"] == "update"
     assert s["main"] == {"commit": "a8fc309", "subject": "Pico firmware 0.2.0", "date": "2026-11-12T00:30:00+01:00"}
+
+
+def test_compare_abbreviations_of_different_length_are_the_same_commit():
+    anc = lambda a, b: False
+    assert compare("a8fc309", "a8fc3091b2", anc) == "up_to_date"      # Pico built with 7, main read with 10
+    assert compare("a8fc3091b2", "a8fc309", anc) == "up_to_date"
+    assert compare("a8fc3091b2-dirty", "a8fc3091b2", anc) == "unpublished"
+
+
+def test_compare_never_hands_git_an_option():
+    seen = []
+    anc = lambda a, b: seen.append((a, b)) or True
+    assert compare("--output=/tmp/x", "a8fc309", anc) == "unknown"
+    assert compare("a8fc309 x", "1500ee7", anc) == "unknown"
+    assert seen == []
+
+
+def test_check_reads_main_with_a_fixed_abbreviation():
+    f = Fake()
+    job(f).check()
+    assert any("log -1" in c and "--abbrev=10" in c for c in f.calls)
+
+
+def test_check_while_flashing_does_not_touch_git():
+    f = Fake()
+    j = job(f)
+    j.state = "pulling"
+    j.check()
+    assert f.calls == []
+
+
+def test_an_automatic_mode_started_during_the_build_stops_the_copy():
+    f = Fake()
+    real_run = f.run
+
+    def run(cmd, timeout, env=None):
+        if "build.sh" in " ".join(cmd):
+            f.active = True                      # someone starts patrol while it builds
+        return real_run(cmd, timeout, env)
+    f.run = run
+    j = job(f)
+    j.flash()
+    j.wait()
+    s = j.status()
+    assert s["state"] == "failed" and "automatic mode" in s["error"] and s["can_retry"], s
+    assert True not in f.releases                    # the Pico kept its sensors
+    assert not any("r2-pico-flash" in c for c in f.calls)
+
+
+def test_a_build_without_its_commit_line_fails_before_the_copy():
+    f = Fake()
+    real_run = f.run
+    f.run = lambda cmd, t, env=None: (0, "Sketch uses 77432 bytes") if "build.sh" in " ".join(cmd) else real_run(cmd, t, env)
+    j = job(f)
+    j.flash()
+    j.wait()
+    s = j.status()
+    assert s["state"] == "failed" and "commit" in s["error"]
+    assert f.releases == []
+
+
+def test_done_says_up_to_date():
+    f = Fake()
+    j = job(f)
+    j.cmp = "update"
+    j.flash()
+    j.wait()
+    assert j.status()["state"] == "done" and j.status()["compare"] == "up_to_date"
+
+
+def test_an_unexpected_error_gives_the_port_back_and_frees_the_job():
+    f = Fake()
+    calls = []
+
+    def release(on):
+        calls.append(on)
+        if on is True and len(calls) == 1:
+            return True
+        return True
+    f.release = release
+
+    def boom():
+        raise ValueError("ros went away")
+    j = FirmwareJob(run=f.run, release=release, pico_state=boom, autonomous=lambda: False,
+                    installed=lambda: True, sleep=lambda s: None, wait_s=0.05)
+    j.flash()
+    j.wait()
+    s = j.state
+    assert s == "failed" and "ros went away" in j.error
+    assert calls[-1] is False

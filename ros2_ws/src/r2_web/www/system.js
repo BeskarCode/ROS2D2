@@ -167,8 +167,16 @@ export function createSystemTab() {
     $('fw-text').textContent = t.text;
     $('fw-step').hidden = !(busy || fw.state === 'done' || fw.state === 'failed');
     $('fw-step').className = `status ${fw.state === 'failed' ? 'bad' : fw.state === 'done' ? 'ok' : 'warn'}`;
-    $('fw-step').innerHTML = busy ? `<i class="fa-solid fa-spinner fa-spin"></i>${fw.step_text}…`
-      : fw.state === 'failed' ? `Failed: ${fw.error}` : fw.state === 'done' ? `Flashed: the Pico runs ${fw.pico_commit}` : '';
+    // text from the Pi and the Pico goes in as text, never as HTML; only the spinner is markup
+    const step = $('fw-step');
+    step.replaceChildren();
+    if (busy) {
+      const spin = document.createElement('i');
+      spin.className = 'fa-solid fa-spinner fa-spin';
+      step.append(spin);
+    }
+    step.append(busy ? `${fw.step_text}…` : fw.state === 'failed' ? `Failed: ${fw.error}`
+      : fw.state === 'done' ? `Flashed: the Pico runs ${fw.pico_commit}` : '');
     $('fw-check').disabled = busy || !fw.installed;
     $('fw-flash').disabled = busy || !fw.installed;
     $('fw-retry').hidden = !fw.can_retry;

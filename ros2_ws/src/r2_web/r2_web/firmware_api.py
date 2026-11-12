@@ -16,6 +16,8 @@ ARDUINO_CLI = os.path.expanduser("~/.local/bin/arduino-cli")
 FLASH = "/usr/local/sbin/r2-pico-flash"
 FIRMWARE = "firmware/r2_pico_sensors"
 LOG_LINES = 200
+ABBREV = 10                     # build.sh says the commit with this many digits; git's own %h length grows
+COMMIT_RE = re.compile(r"^[0-9a-f]{4,40}(-dirty)?$")
 STEPS = {"pulling": "Getting the new firmware from GitHub", "compiling": "Building it (a few minutes on a Pi 4)",
          "releasing": "Restarting the Pico into its USB loader", "flashing": "Copying the firmware onto the Pico",
          "waiting": "Waiting for the Pico to come back", "done": "Flashed", "failed": "Failed"}
@@ -29,13 +31,18 @@ def autonomous_active(nav, nav_age, follow, follow_age):
     return follow is not None and follow_age <= 1.0
 
 
+def same_commit(a, b):
+    """Two abbreviations of one commit (older builds used git's %h, 7 digits or more)."""
+    return bool(a) and bool(b) and min(len(a), len(b)) >= 7 and (a.startswith(b) or b.startswith(a))
+
+
 def compare(pico_commit, main_commit, is_ancestor):
     """up_to_date | update (main is newer) | unpublished (the Pico's is not on main) | unknown"""
-    if not pico_commit or pico_commit == "unknown":
-        return "unknown"
+    if not pico_commit or not COMMIT_RE.match(pico_commit) or not main_commit or not COMMIT_RE.match(main_commit):
+        return "unknown"            # also keeps anything but a hex commit away from git's command line
     if pico_commit.endswith("-dirty"):
         return "unpublished"
-    if pico_commit == main_commit:
+    if same_commit(pico_commit, main_commit):
         return "up_to_date"
     return "update" if is_ancestor(pico_commit, main_commit) else "unpublished"
 
@@ -66,6 +73,7 @@ class FirmwareJob:
         self.is_ancestor = is_ancestor or (lambda a, b: self.run(
             ["git", "-C", self.clone, "merge-base", "--is-ancestor", a, b], 10)[0] == 0)
         self.lock = threading.Lock()
+        self.check_lock = threading.Lock()
         self.thread = None
         self.state = "idle"
         self.error = None
@@ -99,13 +107,24 @@ class FirmwareJob:
 
     # ---------- check ----------
     def check(self):
-        """git fetch, then compare main's firmware commit with the Pico's. No internet is no failure."""
+        """git fetch, then compare main's firmware commit with the Pico's. No internet is no failure.
+        While a flash runs it leaves git alone (a fetch beside its pull can trip on git's locks)."""
+        if self.state not in ("idle", "done", "failed"):
+            return
+        if not self.check_lock.acquire(blocking=False):
+            return                      # another tab is checking: its answer is the same
+        try:
+            self._check()
+        finally:
+            self.check_lock.release()
+
+    def _check(self):
         code, out = self.run(["git", "-C", self.clone, "fetch", "--quiet", "origin", "main"], 15)
         self.internet = code == 0
         if not self.internet:
             self._note(out or "git fetch failed")
             return
-        code, out = self.run(["git", "-C", self.clone, "log", "-1", "--format=%h|%s|%cI", "origin/main", "--", FIRMWARE], 5)
+        code, out = self.run(["git", "-C", self.clone, "log", "-1", f"--abbrev={ABBREV}", "--format=%h|%s|%cI", "origin/main", "--", FIRMWARE], 5)
         parts = out.split("|", 2) if code == 0 else []
         if len(parts) != 3:
             self.main, self.cmp = None, "unknown"
@@ -139,6 +158,10 @@ class FirmwareJob:
         if self.thread:
             self.thread.join(timeout)
 
+    def _fail(self, e):
+        self.state, self.error = "failed", str(e)
+        self._note(f"failed: {e}")
+
     def _flash(self):
         self.log, self.failed_after_release = [], False
         try:
@@ -146,35 +169,46 @@ class FirmwareJob:
             out = self._step("compiling", [os.path.join(self.clone, FIRMWARE, "build.sh"), "--jobs", "2", "--nice"], 1200,
                              env={"ARDUINO_CLI": ARDUINO_CLI})
             m = re.search(r"^build: r2_pico_sensors commit (\S+)", out, re.M)
-            self.built = m.group(1) if m else None
-        except RuntimeError as e:
-            self.state, self.error = "failed", str(e)
+            if not m:
+                raise RuntimeError("the build did not say which commit it built")
+            self.built = m.group(1)
+        except Exception as e:          # anything: the job must end, never stay 'busy'
+            self._fail(e)
             return
         self._copy()
 
     def _copy(self):
         self.failed_after_release = True
+        released = False
         try:
+            # checked again here: a mode may have started during the minutes of the build, and
+            # from here on the Pico's sensors are gone until it is back
+            if self.autonomous():
+                raise RuntimeError("an automatic mode is driving: stop it and press Retry")
             self.state = "releasing"
             self._note("/pico/release true")
+            released = True             # even a failed call may have left the bridge released
             if not self.release(True):
                 raise RuntimeError("the Pico bridge did not let go of the Pico")
             self._step("flashing", ["sudo", "-n", FLASH], 30)
-        except RuntimeError as e:
+            self.state = "waiting"
+            self._note("/pico/release false")
+            released = False
             self.release(False)
-            self.state, self.error = "failed", str(e)
-            return
-        self.state = "waiting"
-        self._note("/pico/release false")
-        self.release(False)
-        end = time.monotonic() + self.wait_s
-        while time.monotonic() < end:
-            pico = self.pico_state() or {}
-            if pico.get("connected") and pico.get("commit") == self.built:
-                self.state, self.failed_after_release = "done", False
-                self._note(f"the Pico runs {self.built}")
-                return
-            self.sleep(0.5)
-        now = (self.pico_state() or {}).get("commit")
-        self.state = "failed"
-        self.error = f"the Pico did not come back with {self.built} (it says {now})"
+            end = time.monotonic() + self.wait_s
+            while time.monotonic() < end:
+                pico = self.pico_state() or {}
+                if pico.get("connected") and same_commit(pico.get("commit"), self.built):
+                    self.state, self.failed_after_release, self.cmp = "done", False, "up_to_date"
+                    self._note(f"the Pico runs {self.built}")
+                    return
+                self.sleep(0.5)
+            now = (self.pico_state() or {}).get("commit")
+            raise RuntimeError(f"the Pico did not come back with {self.built} (it says {now})")
+        except Exception as e:
+            if released:
+                try:
+                    self.release(False)
+                except Exception as e2:
+                    self._note(f"/pico/release false failed: {e2}")
+            self._fail(e)
