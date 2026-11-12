@@ -1,0 +1,15 @@
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
+# The component manager checks these while it picks the esp_hosted version (newer releases use
+# them to add USB transports) and stops the build if no Kconfig defines them. We use SDIO, so
+# they are always 0. Remove once esp_hosted/esp_wifi_remote no longer need it.
+menu "r2_domecam_p4"
+    config ESP_HOSTED_HOST_USB_CDC_ACM_MANIFEST
+        int "esp_hosted USB manifest (unused, SDIO)"
+        default 0
+    config ESP_HOSTED_HOST_USB_CHERRYUSB_MANIFEST
+        int "esp_hosted USB manifest (unused, SDIO)"
+        default 0
+    config ESP_HOSTED_HOST_USB_RNDIS_MANIFEST
+        int "esp_hosted USB manifest (unused, SDIO)"
+        default 0
+endmenu
