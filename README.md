@@ -28,6 +28,8 @@ proof of concept, split into ROS 2 nodes.
 
 ROS2D2 has its own web console, served by the Pi (`http://<pi>:8080`), to watch and set up the droid
 from any browser.
+Everything it does, page by page: the **[user manual](MANUAL.md)** ([en castellano](MANUAL_es.md)); its
+**Manual** button opens it at the page you are on.
 
 **Navigation**: the floor around R2 seen from above with the lidar's points, the free circle and
 each sensor's beam, R2 in 3D, and every sensor's reading. Click the floor to send R2 there.
