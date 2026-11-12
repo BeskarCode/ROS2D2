@@ -3,6 +3,7 @@
 No ROS here, so it can be tested on its own."""
 
 import os
+import re
 
 from r2_sensors.config import SensorConfigError, parse_sensors
 
@@ -31,9 +32,12 @@ def save_sensors(text, user):
     except SensorConfigError as e:
         return 400, {"error": f"not saved: {e}"}
     os.makedirs(os.path.dirname(user), exist_ok=True)
-    with open(user, "w", encoding="utf-8") as f:
-        f.write(text if text.endswith("\n") else text + "\n")
-    return 200, {"ok": True, "file": user}
+    text = text if text.endswith("\n") else text + "\n"
+    tmp = f"{user}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:     # whole file or nothing: the nodes re-read it any time
+        f.write(text)
+    os.replace(tmp, user)
+    return 200, {"ok": True, "file": user, "yaml": text}
 
 
 def set_enabled(default, user, name, enabled):
@@ -50,7 +54,10 @@ def set_enabled(default, user, name, enabled):
     if name not in sensors:
         return 400, {"error": f"not saved: unknown sensor {name} in {path} (save the console first)"}
     lines = text.splitlines(keepends=True)
-    start = next(i for i, ln in enumerate(lines) if ln.rstrip("\r\n") == f"{name}:")
+    head = re.compile(rf"^{re.escape(name)}:\s*(#.*)?$")
+    start = next((i for i, ln in enumerate(lines) if head.match(ln.rstrip("\r\n"))), None)
+    if start is None:
+        return 400, {"error": f"not changed: {name} is not written as a block in {path}; set its enabled line in the File tab"}
     end = next((i for i in range(start + 1, len(lines)) if lines[i][:1] not in (" ", "\t", "\n", "\r", "#")), len(lines))
     value = f"  enabled: {'true' if enabled else 'false'}\n"
     at = next((i for i in range(start + 1, end) if lines[i].lstrip().startswith("enabled:")), None)

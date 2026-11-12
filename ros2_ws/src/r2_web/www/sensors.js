@@ -396,7 +396,7 @@ export function createSensorsTab({ status }) {
       el.style.setProperty('--c', colourOf(s));
       el.innerHTML = `
         <div class="top"><span class="title">${T.label}</span><span class="sub"></span><span class="reading">—</span>
-          <span class="badge ${cls}">${text}</span>${s.enabled === false ? '<span class="badge bad">ignored</span>' : ''}
+          <span class="badge ${cls}">${text}</span>${s.enabled === false ? '<span class="badge off">ignored</span>' : ''}
           <button class="eye use${s.enabled === false ? ' off' : ''}" title="${s.enabled === false ? 'Ignored: navigation does not use it. Click to use it again' : 'In use. Click to ignore its readings (it keeps measuring)'}">
             <i class="fa-solid ${s.enabled === false ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></button>
           <button class="eye${hidden.has(s.name) ? ' off' : ''}" title="${hidden.has(s.name) ? 'Show' : 'Hide'} its beam on the map">
@@ -552,6 +552,8 @@ export function createSensorsTab({ status }) {
     } catch { status('Not changed: the Pi does not answer.', 'bad'); return; }
     if (res.error) { status(res.error, 'bad'); return; }
     s.enabled = use;
+    // the File tab shows (and would save) the file as it is now, with this line changed
+    loaded = { ...loaded, file: res.file, saved: true, yaml: res.yaml ?? loaded.yaml };
     renderList(); redraw();
     status(use ? `${s.name} is in use again.`
       : warn ? `${s.name} ignored. Nothing in use looks ahead now: navigation will not move (no data).`
