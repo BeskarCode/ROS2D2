@@ -125,3 +125,37 @@ def test_at_most_twelve_pico_sensors():
                    for i, p in enumerate(pins[:13]))
     with pytest.raises(SensorConfigError, match="at most 12 sensors on the Pico"):
         parse_sensors(tofs)
+
+
+# --- the lidar's own settings ----------------------------------------------------------------------
+from r2_sensors.config import scan_sectors  # noqa: E402
+
+
+def test_lidar_defaults_are_todays():
+    s = parse_sensors(LIDAR_200)["lidar"]
+    assert (s["motor"], s["scan_mode"], s["inverted"], s["blind_sectors"]) == ("always", "Standard", False, [])
+
+
+@pytest.mark.parametrize("extra,msg", [("motor: sometimes", "motor"), ("scan_mode: ''", "scan_mode"),
+                                       ("inverted: 1", "inverted"), ("blind_sectors: [[170, 200]]", "blind_sectors"),
+                                       ("blind_sectors: [[10, 10]]", "blind_sectors"),
+                                       ("blind_sectors: [[-180, 180]]", "blind_sectors"),
+                                       ("blind_sectors: [[0, 90], [90, 180], [180, -90], [-90, 0]]", "blind_sectors"),
+                                       ("blind_sectors: [10, 20]", "blind_sectors")])
+def test_lidar_bad_settings_rejected(extra, msg):
+    with pytest.raises(SensorConfigError, match=msg):
+        parse_sensors(LIDAR_200 + "  " + extra + "\n")
+
+
+def test_lidar_good_settings():
+    s = parse_sensors(LIDAR_200 + "  motor: with_modes\n  scan_mode: DenseBoost\n  inverted: true\n"
+                      "  blind_sectors: [[100, 140], [170, -170]]\n")["lidar"]
+    assert (s["motor"], s["scan_mode"], s["inverted"]) == ("with_modes", "DenseBoost", True)
+    assert s["blind_sectors"] == [[100.0, 140.0], [170.0, -170.0]]
+
+
+def test_sectors_mirror_when_inverted():
+    s = parse_sensors(LIDAR_200 + "  blind_sectors: [[100, 140]]\n  inverted: true\n")["lidar"]
+    assert scan_sectors(s) == pytest.approx([(math.radians(-140), math.radians(-100))])
+    s = parse_sensors(LIDAR_200 + "  blind_sectors: [[100, 140]]\n")["lidar"]
+    assert scan_sectors(s) == pytest.approx([(math.radians(100), math.radians(140))])

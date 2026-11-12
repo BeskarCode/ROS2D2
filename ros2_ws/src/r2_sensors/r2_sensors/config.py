@@ -42,6 +42,12 @@ TYPES = {
     "hcsr04": {"fov_deg": 30.0, "range_min": 0.02, "range_max": 3.0},
 }
 LIDARS = ("rplidar_c1",)
+# the lidar's own settings: motor (always | only while an automatic mode is on | off), the driver's scan
+# mode and upside-down mounting, and sectors of the lidar's own view to ignore (degrees, from -> to
+# counter-clockwise, -180..180; R2's own leg). Defaults = the droid before these settings existed.
+LIDAR_MOTOR = ("always", "with_modes", "off")
+FALLBACK_MODES = ("Standard", "DenseBoost")
+LIDAR_DEFAULTS = {"motor": "always", "scan_mode": "Standard", "inverted": False, "blind_sectors": []}
 PICO_PINS = {"vl53l0x": ("xshut",), "hcsr04": ("trig", "echo")}
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 PORT = re.compile(r"^/dev/[A-Za-z0-9_./-]+$")
@@ -109,6 +115,7 @@ def _sensor(name, raw):
     if kind in LIDARS:
         if not isinstance(s.get("port"), str) or not PORT.match(s["port"]):
             raise SensorConfigError(f"{name}: port must be a device path like /dev/r2-lidar")
+        _lidar_settings(name, s)
     else:
         pico = s.get("pico")
         want = PICO_PINS[kind]
@@ -123,6 +130,47 @@ def _sensor(name, raw):
         if len(set(pins)) != len(pins):
             raise SensorConfigError(f"{name}: pico pins must be different")
     return s
+
+
+def _sector_width(a, b):
+    return (b - a) % 360
+
+
+def _lidar_settings(name, s):
+    for k, v in LIDAR_DEFAULTS.items():
+        s.setdefault(k, list(v) if isinstance(v, list) else v)
+    if s["motor"] not in LIDAR_MOTOR:
+        raise SensorConfigError(f"{name}: motor must be one of {', '.join(LIDAR_MOTOR)}")
+    if not isinstance(s["scan_mode"], str) or not s["scan_mode"].strip():
+        raise SensorConfigError(f"{name}: scan_mode must be the name of one of the lidar's modes (Standard...)")
+    if not isinstance(s["inverted"], bool):
+        raise SensorConfigError(f"{name}: inverted must be true or false")
+    sectors = s["blind_sectors"]
+    if not isinstance(sectors, list):
+        raise SensorConfigError(f"{name}: blind_sectors must be a list of [from, to] in degrees")
+    out = []
+    for sec in sectors:
+        if (not isinstance(sec, list) or len(sec) != 2
+                or any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in sec)):
+            raise SensorConfigError(f"{name}: blind_sectors must be a list of [from, to] in degrees")
+        a, b = float(sec[0]), float(sec[1])
+        if not (-180 <= a <= 180 and -180 <= b <= 180) or _sector_width(a, b) == 0:
+            raise SensorConfigError(f"{name}: blind_sectors [{a:g}, {b:g}]: from and to are -180..180 and differ")
+        out.append([a, b])
+    if sum(_sector_width(a, b) for a, b in out) >= 360:
+        raise SensorConfigError(f"{name}: blind_sectors cover the whole view")
+    s["blind_sectors"] = out
+
+
+def scan_sectors(sensor):
+    """The lidar's blind sectors in the scan's own angles (radians): mounted upside down, the driver
+    mirrors the scan, so a sector over R2's leg mirrors with it."""
+    out = []
+    for a, b in sensor.get("blind_sectors", []):
+        if sensor.get("inverted"):
+            a, b = -b, -a
+        out.append((math.radians(a), math.radians(b)))
+    return out
 
 
 def parse_sensors(text):
