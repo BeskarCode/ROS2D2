@@ -143,3 +143,39 @@ test('the carrier board connectors: which one a sensor is on, and the first free
   // a pin used by something else (here a sonar wired by hand on GP10) blocks that connector
   assert.equal(freeConnector('hcsr04', [{ type: 'hcsr04', pico: { trig: 3, echo: 10 } }]), 'US2');
 });
+
+// ---------- the lidar's own settings ----------
+import { lidarModes, lidarInfoText, blindSectorsBase, lidarYamlValue } from '../www/sensormath.js';
+
+test('lidarModes falls back without info', () => {
+  assert.deepEqual(lidarModes(null), ['Standard', 'DenseBoost']);
+  assert.deepEqual(lidarModes({ modes: [] }), ['Standard', 'DenseBoost']);
+  assert.deepEqual(lidarModes({ modes: [{ name: 'Standard' }, { name: 'Express' }] }), ['Standard', 'Express']);
+});
+
+test('lidarInfoText without info', () => {
+  assert.match(lidarInfoText(null, null, null), /unknown/);
+});
+
+test('lidarInfoText with info', () => {
+  const t = lidarInfoText({ model: '0x41', firmware: '1.02', hardware: 18, health: 'OK', scan_mode: 'Standard' }, 10.5, 476);
+  for (const w of ['0x41', '1.02', '18', 'OK', 'Standard', '10.5', '476']) assert.ok(t.includes(w), w);
+});
+
+test('lidarInfoText says when the mode did not start', () => {
+  assert.match(lidarInfoText({ model: '0x41', firmware: '1.02', hardware: 18, health: 'OK', scan_mode: null }, null, null), /did not start/);
+});
+
+test('blindSectorsBase mirrors when inverted and adds the yaw', () => {
+  assert.deepEqual(blindSectorsBase({ yaw_deg: 10, inverted: true, blind_sectors: [[100, 140]] }), [[-130, -90]]);
+  assert.deepEqual(blindSectorsBase({ yaw_deg: 0, blind_sectors: [[170, -170]] }), [[170, -170]]);
+  assert.deepEqual(blindSectorsBase({ yaw_deg: 20, blind_sectors: [[170, 175]] }), [[-170, -165]]);
+  assert.deepEqual(blindSectorsBase({ yaw_deg: 0 }), []);
+});
+
+test('lidar settings are written as YAML sensors.yaml reads', () => {
+  assert.equal(lidarYamlValue([[100, 140], [170, -170]]), '[[100, 140], [170, -170]]');
+  assert.equal(lidarYamlValue([]), '[]');
+  assert.equal(lidarYamlValue(true), 'true');
+  assert.equal(lidarYamlValue('DenseBoost'), 'DenseBoost');
+});

@@ -12,7 +12,9 @@ and a small HTTP API for what ROS topics cannot do:
   GET  /api/sensors   sensors.yaml in use: its text, the sensors, any error in it, and
                       whether the lidar is plugged in (/dev/r2-lidar)
   POST /api/sensors   save sensors.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if
-                      it is valid; the sensors' poses follow at once (sensor_tf reloads it)
+                      it is valid; the sensors' poses follow at once (sensor_tf reloads it); a new
+                      lidar scan mode or upside-down setting restarts only r2d2-lidar
+                      ("lidar_restarted": true)
   GET  /api/nav       nav.yaml in use (the navigator's settings) and any error in it
   POST /api/nav       save nav.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid
   GET  /api/modes     modes.yaml in use (combo of each mode, follow settings), any error in it,
@@ -57,6 +59,7 @@ from r2_nav.modes import USER_MODES
 from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
 from r2_web.modes_api import modes_payload, save_modes
 from r2_web.nav_api import nav_payload, save_nav
+from r2_web.lidar_api import lidar_needs_restart
 from r2_web.sensors_api import save_sensors, sensors_payload
 from r2_web.system_api import system_payload
 from r2_web.firmware_api import FirmwareJob, autonomous_active
@@ -188,7 +191,14 @@ class Handler(SimpleHTTPRequestHandler):
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
-            return self._json(*save_sensors(text, SENSORS_USER_CONFIG))
+            old = sensors_payload(self.sensors_default, SENSORS_USER_CONFIG).get("yaml", "")
+            code, body = save_sensors(text, SENSORS_USER_CONFIG)
+            if code == 200 and lidar_needs_restart(old, text):
+                # the driver's own parameters changed: restart just the lidar, after answering
+                threading.Thread(target=lambda: subprocess.run(
+                    ["sudo", "-n", "systemctl", "restart", "r2d2-lidar"], check=False), daemon=True).start()
+                body = {**body, "lidar_restarted": True}
+            return self._json(code, body)
         if route != "/api/cameras":
             return self._json(404, {"error": "not found"})
         try:

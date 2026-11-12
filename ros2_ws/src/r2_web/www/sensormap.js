@@ -2,7 +2,7 @@
 // Top-down map of the droid and its sensors, in metres, front up (SVG). Sensors and the
 // test object are dragged with the mouse; they never leave the view (one outside after
 // zooming in is drawn on the edge, where it can be picked up again).
-import { R2, TYPES, freeText, isLidar, reach, toMap, fromMap } from './sensormath.js';
+import { R2, TYPES, blindSectorsBase, freeText, isLidar, reach, toMap, fromMap } from './sensormath.js';
 
 const rad = (d) => d * Math.PI / 180;
 // its type's look, in its grey when it is not responding (state.colours, from sensors.js)
@@ -45,6 +45,15 @@ export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () 
       const R = state.fullRange ? reach(s) : Math.min(reach(s), 1.5);
       o += `<path data-beam="${s.name}" d="M${fan(s, R)} Z" fill="${T.colour}" fill-opacity="${hov ? 0.38 : missing ? 0.04 : on ? 0.28 : 0.13}" ` +
            `stroke="${hov ? '#e6edf3' : T.colour}" stroke-width="${sw * (hov ? 2.5 : on ? 2 : 1)}"${missing && !hov ? ` stroke-dasharray="${sw * 6} ${sw * 6}"` : ''}/>`;
+    }
+    // the lidar's blind sectors: where it ignores what it sees (R2's own leg)
+    for (const s of state.sensors.filter((t) => isLidar(t) && shown(t))) {
+      const R = state.fullRange ? reach(s) : Math.min(reach(s), 1.5);
+      for (const [lo, hi] of blindSectorsBase(s)) {
+        const width = (((hi - lo) % 360) + 360) % 360;
+        o += `<path d="M${fan({ ...s, yaw_deg: lo + width / 2, fov_deg: width }, R)} Z" fill="#f85149" fill-opacity="0.18" ` +
+             `stroke="#f85149" stroke-width="${sw * 1.5}" stroke-dasharray="${sw * 5} ${sw * 4}"/>`;
+      }
     }
     // what each sensor measures now: its fan filled up to the reading
     for (const s of state.sensors.filter(shown)) {
