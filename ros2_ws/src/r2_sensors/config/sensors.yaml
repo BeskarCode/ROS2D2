@@ -3,6 +3,7 @@
 # Metres and degrees. x forward, y left, z up from the floor under the body centre
 # (base_link, REP 103). yaw_deg + = left, pitch_deg + = down.
 # This placement is a first guess: move the sensors to where they really are.
+# Any sensor can carry enabled: false: it keeps measuring but navigation ignores it.
 lidar:
   type: rplidar_c1
   port: /dev/r2-lidar

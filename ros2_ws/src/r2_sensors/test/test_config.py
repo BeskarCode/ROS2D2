@@ -165,3 +165,21 @@ def test_lidar_motor_off_survives_yaml():
     # YAML 1.1 reads a bare off as false: still the motor setting "off"
     assert parse_sensors(LIDAR_200 + "  motor: off\n")["lidar"]["motor"] == "off"
     assert parse_sensors(LIDAR_200 + "  motor: 'off'\n")["lidar"]["motor"] == "off"
+
+
+# --- a sensor can be ignored (in use / ignored switch in the console) ------------------------------
+from r2_sensors.config import in_use  # noqa: E402
+
+
+def test_enabled_defaults_true():
+    assert parse_sensors(VL("tof_a", ""))["tof_a"]["enabled"] is True
+
+
+def test_enabled_must_be_bool():
+    with pytest.raises(SensorConfigError, match="enabled"):
+        parse_sensors(VL("tof_a", "enabled: 1"))
+
+
+def test_in_use_drops_ignored():
+    s = parse_sensors(VL("tof_a", "enabled: false") + LIDAR_200)
+    assert list(in_use(s)) == ["lidar"]

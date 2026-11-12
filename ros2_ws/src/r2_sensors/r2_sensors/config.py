@@ -106,6 +106,9 @@ def _sensor(name, raw):
         if key not in raw and key in ("x", "y", "z"):
             raise SensorConfigError(f"{name}: {key} is missing")
         s[key] = _number(name, s, key)
+    s.setdefault("enabled", True)
+    if not isinstance(s["enabled"], bool):
+        raise SensorConfigError(f"{name}: enabled must be true (in use) or false (ignored)")
     if not 0 < s["fov_deg"] <= 360:
         raise SensorConfigError(f"{name}: fov_deg must be more than 0 and at most 360")
     if not 0 <= s["range_min"] < s["range_max"]:
@@ -173,6 +176,11 @@ def scan_sectors(sensor):
             a, b = -b, -a
         out.append((math.radians(a), math.radians(b)))
     return out
+
+
+def in_use(sensors):
+    """The sensors not ignored (enabled: false keeps a sensor measuring but nobody uses it)."""
+    return {n: s for n, s in sensors.items() if s.get("enabled", True)}
 
 
 def parse_sensors(text):
