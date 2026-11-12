@@ -74,6 +74,15 @@ logo_colours = ["marino", "azul", "gris"];
 LOGO_DIR = "../caja_ros2/logo/";
 LOGO_SVG_W = 92;                     // the SVGs are drawn 92 mm wide for the first box: scaled to logo_w here
 
+// --- light pipes (LED face, optional translucent piece) ---------------------------------------
+// the Pico board's LEDs (bx, by on the board, from r2_pico_carrier.kicad_pcb): one per sensor connector + power
+pico_leds = [["VL1", 72.6, 12], ["VL2", 72.6, 24], ["VL3", 72.6, 39], ["VL4", 72.6, 51],
+             ["US1", 21, 12], ["US2", 21, 22], ["US3", 21, 32], ["US4", 21, 42], ["US5", 21, 52],
+             ["PWR", 40.8, 59.5]];
+led_h = 0.8;                         // 0603 LED height, the datasheet's highest
+led_air = 0.5;                       // air between a pipe's tip and its LED: the pipes never touch the board
+lp_d = 3;                            // light pipe diameter
+
 // --- derived ------------------------------------------------------------------------------------
 function pico_x() = wall + pico_gap;                       // board's component face
 function pico_ztop() = H - wall - pico_usb_clear;
