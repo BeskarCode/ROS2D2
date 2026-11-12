@@ -7,7 +7,7 @@ import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
-import { LIDAR_MOTOR, lidarInfoText, lidarModes, lidarYamlValue } from './sensormath.js';
+import { LIDAR_MOTOR, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue } from './sensormath.js';
 import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -229,7 +229,9 @@ export function createSensorsTab({ status }) {
   }
 
   // its type's colour, or its grey when a Pico sensor is not measuring
-  const colourOf = (s) => (OFF_COLOUR[s.type] && !isConnected(badge(s)[0]) ? OFF_COLOUR[s.type] : TYPES[s.type].colour);
+  const IGNORED_COLOUR = '#6e7681';
+  const colourOf = (s) => (s.enabled === false ? IGNORED_COLOUR
+    : OFF_COLOUR[s.type] && !isConnected(badge(s)[0]) ? OFF_COLOUR[s.type] : TYPES[s.type].colour);
 
   // Refresh only the badges (the cards hold inputs: rebuilding them would lose the focus)
   // and, with "Connected only", hide the cards of the sensors that are not measuring
@@ -394,7 +396,9 @@ export function createSensorsTab({ status }) {
       el.style.setProperty('--c', colourOf(s));
       el.innerHTML = `
         <div class="top"><span class="title">${T.label}</span><span class="sub"></span><span class="reading">—</span>
-          <span class="badge ${cls}">${text}</span>
+          <span class="badge ${cls}">${text}</span>${s.enabled === false ? '<span class="badge bad">ignored</span>' : ''}
+          <button class="eye use${s.enabled === false ? ' off' : ''}" title="${s.enabled === false ? 'Ignored: navigation does not use it. Click to use it again' : 'In use. Click to ignore its readings (it keeps measuring)'}">
+            <i class="fa-solid ${s.enabled === false ? 'fa-toggle-off' : 'fa-toggle-on'}"></i></button>
           <button class="eye${hidden.has(s.name) ? ' off' : ''}" title="${hidden.has(s.name) ? 'Show' : 'Hide'} its beam on the map">
             <i class="fa-solid ${hidden.has(s.name) ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
           ${!isLidar(s) && connectorOf(s) ? `<button class="eye idb" title="Identify: ${connectorOf(s)}'s LED on the board blinks for 5 s">
@@ -422,7 +426,7 @@ export function createSensorsTab({ status }) {
       el.querySelector('.sub').textContent = s.name;
       if (el.querySelector('.port')) el.querySelector('.port').textContent = s.port;
       const toggle = (key) => { if (hidden.has(key)) hidden.delete(key); else hidden.add(key); saveHidden(); renderList(); redraw(); };
-      el.querySelector('.eye').addEventListener('click', () => toggle(s.name));
+      el.querySelector('.eye:not(.use):not(.idb):not(.pts)').addEventListener('click', () => toggle(s.name));
       el.querySelector('.eye.pts')?.addEventListener('click', () => toggle(s.name + '#points'));
       el.querySelector('.eye.idb')?.addEventListener('click', () =>
         publish('/pico/command', 'std_msgs/msg/String', { data: `ID ${connectorOf(s)}` }));
@@ -475,6 +479,7 @@ export function createSensorsTab({ status }) {
         yaw.value = b.dataset.yaw;
         yaw.dispatchEvent(new Event('input'));
       }));
+      el.querySelector('.eye.use').addEventListener('click', () => setInUse(s, s.enabled === false));
       if (isLidar(s)) wireLidar(el, s);
       el.querySelector('select.conn')?.addEventListener('change', (e) => {
         const n = e.target.value;
@@ -538,6 +543,21 @@ export function createSensorsTab({ status }) {
     if (s.noBoard) status(`All the board's ${type === 'vl53l0x' ? 'VL' : 'US'} connectors are taken: ${s.name} goes on free Pico pins (no board). Save to keep it.`, 'warn');
   });
 
+  // ---------- in use / ignored: saved at once, only that line (never the card's unsaved changes) ----------
+  async function setInUse(s, use) {
+    const warn = !use && lastFrontInUse(sensors, s.name);
+    let res;
+    try {
+      res = await (await fetch('api/sensors/enabled', { method: 'POST', body: JSON.stringify({ name: s.name, enabled: use }) })).json();
+    } catch { status('Not changed: the Pi does not answer.', 'bad'); return; }
+    if (res.error) { status(res.error, 'bad'); return; }
+    s.enabled = use;
+    renderList(); redraw();
+    status(use ? `${s.name} is in use again.`
+      : warn ? `${s.name} ignored. Nothing in use looks ahead now: navigation will not move (no data).`
+        : `${s.name} ignored: navigation does not use its readings (it keeps measuring).`, warn ? 'warn' : 'ok');
+  }
+
   // ---------- the lidar's own settings ----------
   // motor, scan mode, upside down, blind sectors (degrees of the lidar's own view) and its info line
   function lidarRows(s) {
@@ -595,6 +615,7 @@ export function createSensorsTab({ status }) {
       for (const k of keys) {
         if (s[k] === undefined) continue;
         if (isLidar(s) && ['pitch_deg', 'stop_distance', 'pico'].includes(k)) continue;
+        if (k === 'enabled' && s[k] !== false) continue;      // written only when ignored
         if (k === 'pico') out += `  pico: {${Object.entries(s.pico).map(([p, g]) => `${p}: ${g}`).join(', ')}}\n`;
         else out += `  ${k}: ${typeof s[k] === 'number' ? r3(s[k]) : lidarYamlValue(s[k])}\n`;
       }
