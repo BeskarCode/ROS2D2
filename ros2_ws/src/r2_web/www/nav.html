@@ -85,13 +85,13 @@
     <canvas id="map" width="900" height="600"></canvas>
     <div class="hint" id="maphint">Click the floor to send R2 there.</div>
     <div class="bar">
-      <button id="cancel"><i class="fa-solid fa-xmark"></i>Cancel goal</button>
+      <button id="cancel" title="Forget the goal: R2 stops heading there"><i class="fa-solid fa-xmark"></i>Cancel goal</button>
       <span class="simonly"><button id="autobtn" class="primary" title="Simulated PS + L2 on the foot Nav"><i class="fa-solid fa-play"></i>Autonomous ON</button>
       <button id="stickbtn" title="Simulated touch of the foot stick: the controller takes over"><i class="fa-solid fa-gamepad"></i>Take control</button></span>
-      <span class="simonly"><button id="reset"><i class="fa-solid fa-rotate-left"></i>Reset room</button>
-      <button id="addpost"><i class="fa-solid fa-chair"></i>chair leg</button><button id="addbox"><i class="fa-solid fa-box"></i>box</button>
+      <span class="simonly"><button id="reset" title="Put the simulated room back as it was"><i class="fa-solid fa-rotate-left"></i>Reset room</button>
+      <button id="addpost" title="Add a chair leg (4 cm) to the simulated room: drag it where you want"><i class="fa-solid fa-chair"></i>chair leg</button><button id="addbox" title="Add a box to the simulated room: drag it where you want"><i class="fa-solid fa-box"></i>box</button>
       <button id="addperson" title="A person wearing the colour, for Follow a colour"><i class="fa-solid fa-person"></i>person</button><button id="shirt" disabled title="The selected obstacle wears the colour (or stops wearing it)"><i class="fa-solid fa-shirt"></i>shirt</button>
-      <button id="addlow"><i class="fa-solid fa-box-open"></i>low box</button><button id="del" disabled><i class="fa-solid fa-trash"></i>delete</button></span>
+      <button id="addlow" title="Add a low box (10 cm, under the lidar's plane) to the simulated room"><i class="fa-solid fa-box-open"></i>low box</button><button id="del" disabled title="Delete the selected object from the simulated room"><i class="fa-solid fa-trash"></i>delete</button></span>
       <label class="chk"><input type="checkbox" id="rays" checked><i class="fa-solid fa-wifi"></i>sensor beams</label>
       <label class="chk"><input type="checkbox" id="trail" checked><i class="fa-solid fa-shoe-prints"></i>trail</label>
     </div>

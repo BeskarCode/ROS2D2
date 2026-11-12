@@ -94,7 +94,7 @@ function render() {
       <div class="body">
         <div class="row"><span><span class="title"></span><div class="path"></div></span>
           <label><input type="checkbox" class="use"> <i class="fa-solid fa-power-off"></i>use</label></div>
-        <div class="row"><label><i class="fa-solid fa-hashtag"></i>number</label><div class="step"><button data-a="left"><i class="fa-solid fa-chevron-left"></i></button><b>${r.num}</b><button data-a="right"><i class="fa-solid fa-chevron-right"></i></button></div></div>
+        <div class="row"><label><i class="fa-solid fa-hashtag"></i>number</label><div class="step"><button data-a="left" title="Show this camera earlier in the list"><i class="fa-solid fa-chevron-left"></i></button><b>${r.num}</b><button data-a="right" title="Show this camera later in the list"><i class="fa-solid fa-chevron-right"></i></button></div></div>
         <div class="row"><label><i class="fa-solid fa-expand"></i>size</label><select class="mode">${modes.map((m) => `<option>${m}</option>`).join('')}</select></div>
         <div class="row"><label><i class="fa-solid fa-rotate-right"></i>turn</label><select class="rotate">${[0, 90, 180, 270].map((d) => `<option value="${d}">${d}°</option>`).join('')}</select></div>
         <div class="row"><label><i class="fa-solid fa-compass"></i>points to</label><div class="slider"><input type="range" class="yawr" min="-180" max="180" step="1"><b class="yaw"></b></div></div>
