@@ -198,3 +198,36 @@ export function uniqueName(name, taken) {
   const n = String(name).trim();
   return /^[a-z][a-z0-9_]*$/.test(n) && !taken.has(n) ? n : null;
 }
+
+// ---------- the lidar's own settings (sensors.yaml: motor, scan_mode, inverted, blind_sectors) ----------
+export const LIDAR_MOTOR = [['always', 'Always'], ['with_modes', 'Only with an automatic mode'], ['off', 'Off']];
+const FALLBACK_MODES = ['Standard', 'DenseBoost'];
+
+/** The scan modes the lidar says it has (/lidar/info), or the C1's two while it has not said. */
+export function lidarModes(info) {
+  const names = (info?.modes || []).map((m) => m.name).filter(Boolean);
+  return names.length ? names : [...FALLBACK_MODES];
+}
+
+/** One line about the lidar: what /lidar/info says plus the turns per second and points per turn measured on /scan. */
+export function lidarInfoText(info, hz, points) {
+  const u = (v) => (v === null || v === undefined || v === '' ? 'unknown' : v);
+  const mode = !info ? 'unknown' : info.scan_mode === null ? 'its scan mode did not start' : u(info.scan_mode);
+  return `RPLIDAR ${u(info?.model)} · firmware ${u(info?.firmware)} · hardware ${u(info?.hardware)} · health ${u(info?.health)}`
+    + ` · ${mode} · ${hz ? hz.toFixed(1) : 'unknown'} turns/s · ${points ?? 'unknown'} points/turn`;
+}
+
+const wrap180 = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
+
+/** The blind sectors in base_link degrees, to draw: mirrored when mounted upside down, turned by its yaw. */
+export function blindSectorsBase(s) {
+  return (s.blind_sectors || []).map(([a, b]) => {
+    const [lo, hi] = s.inverted ? [-b, -a] : [a, b];
+    return [wrap180(lo + (s.yaw_deg || 0)), wrap180(hi + (s.yaw_deg || 0))];
+  });
+}
+
+/** A lidar setting as sensors.yaml writes it (lists in flow style). */
+export function lidarYamlValue(v) {
+  return Array.isArray(v) ? JSON.stringify(v).replace(/,/g, ', ') : String(v);
+}

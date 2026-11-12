@@ -7,6 +7,7 @@ import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
+import { LIDAR_MOTOR, lidarInfoText, lidarModes, lidarYamlValue } from './sensormath.js';
 import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -47,6 +48,9 @@ export function createSensorsTab({ status }) {
   const saveHidden = () => { try { localStorage.setItem('r2web.hiddenBeams', JSON.stringify([...hidden])); } catch { /* private window */ } };
   let scan = null;          // live lidar points in base_link: [[x, y]]
   let scanHz = 0;
+  let scanTurns = null;      // turns per second, unrounded, and points per turn (the lidar's info line)
+  let scanPoints = null;
+  let lidarInfo = null;      // /lidar/info: what the lidar says about itself (model, firmware, modes...)
   let scanAt = 0;
   let pico = null;          // /pico/state from r2_pico_bridge, and when it came
   let picoAt = 0;
@@ -171,11 +175,20 @@ export function createSensorsTab({ status }) {
     // shown number when it is 1 Hz off, or the badge flickers between 10 and 11
     const hzNow = m.scan_time > 0 ? 1 / m.scan_time : 0;
     if (!scanHz || Math.abs(hzNow - scanHz) >= 1) scanHz = Math.round(hzNow);
+    scanTurns = hzNow ? (scanTurns ? scanTurns * 0.8 + hzNow * 0.2 : hzNow) : scanTurns;
+    scanPoints = m.ranges.length;
+    const info = document.querySelector('.sensor .lidarinfo');
+    if (info) info.textContent = lidarInfoText(lidarInfo, scanTurns, scanPoints);
     scanAt = Date.now();
     if (first) renderList();
     redraw();
   }, 500);
-  setInterval(() => { if (scan && Date.now() - scanAt > 3000) { scan = null; renderList(); redraw(); } }, 1000);
+  setInterval(() => { if (scan && Date.now() - scanAt > 3000) { scan = null; scanTurns = null; renderList(); redraw(); } }, 1000);
+  // what the lidar says about itself (the driver publishes it once, latched); fills the scan modes
+  subscribe('/lidar/info', 'std_msgs/msg/String', (m) => {
+    try { lidarInfo = JSON.parse(m.data); } catch { return; }
+    renderList();
+  });
 
   // ---------- state ----------
   const taken = (except) => new Set(sensors.filter((t) => t !== except).map((t) => t.name));
@@ -398,7 +411,8 @@ export function createSensorsTab({ status }) {
           ${slider(s, 'range_max', '<i class="fa-solid fa-ruler"></i>range', T.range[0], T.range[1], 0.05, FMT.range_max)}
           ${slider(s, 'z', '<i class="fa-solid fa-arrows-up-down"></i>height', 0.03, 1.0, 0.005, FMT.z)}
           ${isLidar(s) ? '' : slider(s, 'stop_distance', '<i class="fa-solid fa-hand"></i>stop when closer', 0, Math.min(0.8, s.range_max - 0.01), 0.01, FMT.stop_distance)}
-          ${isLidar(s) ? `<div class="row"><label><i class="fa-brands fa-usb"></i>port</label><span class="sub port"></span></div>`
+          ${isLidar(s) ? `<div class="row"><label><i class="fa-brands fa-usb"></i>port</label><span class="sub port"></span></div>
+            ${lidarRows(s)}`
             : connectorRow(s, used)}
           <div class="row"><label><i class="fa-solid fa-location-dot"></i>position</label>
             <span class="sub pos">${posText(s)}</span></div>
@@ -461,6 +475,7 @@ export function createSensorsTab({ status }) {
         yaw.value = b.dataset.yaw;
         yaw.dispatchEvent(new Event('input'));
       }));
+      if (isLidar(s)) wireLidar(el, s);
       el.querySelector('select.conn')?.addEventListener('change', (e) => {
         const n = e.target.value;
         s.noBoard = !n;                 // on screen only (never written to sensors.yaml)
@@ -523,6 +538,52 @@ export function createSensorsTab({ status }) {
     if (s.noBoard) status(`All the board's ${type === 'vl53l0x' ? 'VL' : 'US'} connectors are taken: ${s.name} goes on free Pico pins (no board). Save to keep it.`, 'warn');
   });
 
+  // ---------- the lidar's own settings ----------
+  // motor, scan mode, upside down, blind sectors (degrees of the lidar's own view) and its info line
+  function lidarRows(s) {
+    const modes = lidarModes(lidarInfo);
+    if (s.scan_mode && !modes.includes(s.scan_mode)) modes.push(s.scan_mode);
+    const opt = (v, t, cur) => `<option value="${v}"${v === cur ? ' selected' : ''}>${t}</option>`;
+    const sectors = (s.blind_sectors || []).map(([a, b], i) => `<span class="sector" data-i="${i}">
+        <input type="number" class="num sa" min="-180" max="180" step="1" value="${a}">° to
+        <input type="number" class="num sb" min="-180" max="180" step="1" value="${b}">°
+        <button class="eye srm" title="Remove this blind sector"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
+    return `
+      <div class="row"><label><i class="fa-solid fa-fan"></i>motor</label><select class="lmotor" title="Only with an automatic mode: R2 standing still is quiet; a mode waits up to 3 s for the lidar to spin up">
+        ${LIDAR_MOTOR.map(([v, t]) => opt(v, t, s.motor || 'always')).join('')}</select></div>
+      <div class="row"><label><i class="fa-solid fa-wave-square"></i>scan mode</label><select class="lmode" title="The modes the lidar says it has. Changing it restarts the lidar's driver">
+        ${modes.map((m) => opt(m, m, s.scan_mode || 'Standard')).join('')}</select></div>
+      <div class="row"><label><i class="fa-solid fa-arrows-rotate"></i>upside down</label><label class="chk"><input type="checkbox" class="linv"${s.inverted ? ' checked' : ''}> mounted upside down</label></div>
+      <div class="row"><label title="Angles of the lidar's own view to ignore (R2's leg): from, counter-clockwise, to"><i class="fa-solid fa-ban"></i>blind sectors</label>
+        <span>${sectors}<button class="addsec" title="Add a blind sector"><i class="fa-solid fa-plus"></i>Add</button></span></div>
+      <div class="row"><label><i class="fa-solid fa-circle-info"></i>lidar</label><span class="sub lidarinfo">${lidarInfoText(lidarInfo, scanTurns, scanPoints)}</span></div>`;
+  }
+  function wireLidar(el, s) {
+    el.querySelector('.lmotor').addEventListener('change', (e) => { s.motor = e.target.value; touched(); });
+    el.querySelector('.lmode').addEventListener('change', (e) => { s.scan_mode = e.target.value; touched(); });
+    el.querySelector('.linv').addEventListener('change', (e) => { s.inverted = e.target.checked; touched(); });
+    el.querySelector('.addsec').addEventListener('click', () => {
+      s.blind_sectors = [...(s.blind_sectors || []), [170, -170]];
+      renderList(); touched();
+    });
+    el.querySelectorAll('.sector').forEach((row) => {
+      const i = Number(row.dataset.i);
+      const set = () => {
+        const a = Math.round(Number(row.querySelector('.sa').value));
+        const b = Math.round(Number(row.querySelector('.sb').value));
+        if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+        s.blind_sectors[i] = [Math.max(-180, Math.min(180, a)), Math.max(-180, Math.min(180, b))];
+        touched();
+      };
+      row.querySelector('.sa').addEventListener('change', set);
+      row.querySelector('.sb').addEventListener('change', set);
+      row.querySelector('.srm').addEventListener('click', () => {
+        s.blind_sectors.splice(i, 1);
+        renderList(); touched();
+      });
+    });
+  }
+
   // ---------- file ----------
   function toYaml() {
     let out = '# R2 sensors, saved from the web console (Setup -> Sensors). Hand edits are fine too.\n' +
@@ -535,7 +596,7 @@ export function createSensorsTab({ status }) {
         if (s[k] === undefined) continue;
         if (isLidar(s) && ['pitch_deg', 'stop_distance', 'pico'].includes(k)) continue;
         if (k === 'pico') out += `  pico: {${Object.entries(s.pico).map(([p, g]) => `${p}: ${g}`).join(', ')}}\n`;
-        else out += `  ${k}: ${typeof s[k] === 'number' ? r3(s[k]) : s[k]}\n`;
+        else out += `  ${k}: ${typeof s[k] === 'number' ? r3(s[k]) : lidarYamlValue(s[k])}\n`;
       }
     }
     return out;
@@ -549,7 +610,7 @@ export function createSensorsTab({ status }) {
     if (res.error) { status(res.error, 'bad'); return false; }
     changed = false;
     loaded = { ...loaded, file: res.file, saved: true, yaml: text ?? toYaml() };
-    status(`Saved in ${res.file}. The sensor poses follow at once.`, 'ok');
+    status(`Saved in ${res.file}. The sensor poses follow at once.${res.lidar_restarted ? ' The lidar restarts with its new settings (a few seconds without /scan).' : ''}`, 'ok');
     return true;
   }
 
