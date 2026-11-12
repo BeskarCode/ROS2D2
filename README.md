@@ -97,6 +97,16 @@ without restarting the rest (`journalctl -u r2d2-lidar -f` to watch it). If `/et
 in the simulation the real lidar is not started. The same command names a Mega clone
 (`r2-mega`).
 
+### Ignoring a sensor (Setup → Sensors)
+
+Each sensor's card has an in use / ignored switch (next to its eye). A sensor that gives false
+readings can be ignored at once: navigation and follow stop using it within a second or two, but it
+keeps measuring and its card still shows its reading, greyed, so you can see when it is back and
+switch it on again. The switch saves only that sensor's `enabled` line in `sensors.yaml` (any other
+change in the cards still waits for Save); it stays ignored after a restart. Ignoring the last thing
+that looks ahead shows a warning: with nothing ahead, navigation does not move. An ignored lidar
+keeps spinning as its motor setting says, but the modes treat R2 as having no lidar.
+
 ### The lidar's settings (Setup → Sensors)
 
 The lidar's card in the web console also sets the lidar itself, kept in `sensors.yaml`:
