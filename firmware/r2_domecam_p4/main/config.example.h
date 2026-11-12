@@ -27,3 +27,14 @@
 // Colour order of the pictures the detectors get. If a red shirt is found as blue (README.md,
 // first test with the board), flip this.
 #define CAM_RGB_SWAP false
+
+// Look for faces on the camera from the start (the Pi switches to the colour and back with
+// /control?var=detect&val=0|1|2). The faces go out on http://<camera>:82/faces.
+#define CAM_DETECT_FACES true
+
+// Picture width the detectors search: 320, 640, 800 or 1280 (the height keeps 4:3).
+// Faces: bigger finds them farther away but slower; keep it at 10 pictures a second or more
+// (/status faces_fps). A face of 16 cm at 4 m is about 30 px wide at 640.
+// Colour: a shirt is big, 320 is plenty.
+#define DETECT_FACE_WIDTH  640
+#define DETECT_COLOR_WIDTH 320

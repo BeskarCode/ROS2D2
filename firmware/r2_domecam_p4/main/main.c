@@ -2,6 +2,7 @@
 // r2_domecam_p4: the dome camera on a Waveshare ESP32-P4-WIFI6 + OV5647. Finds the faces or a
 // colour itself and sends the Pi only where they are; video only while someone tunes it.
 #include "camera.h"
+#include "detect.h"
 #include "esp_log.h"
 #include "net.h"
 #include "nvs_flash.h"
@@ -22,4 +23,5 @@ void app_main(void) {
   httpd_handle_t web = web_start();
   if (!web) ESP_LOGE(TAG, "web server did not start");
   stream_start(web);
+  detect_start();
 }
