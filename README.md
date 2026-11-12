@@ -39,7 +39,7 @@ What ROS2D2 adds to a ShadowMD droid, how it connects and the bill of materials:
 | `r2_dome_tracker` | `dome_tracker` | Dome speed from the face position (control law tuned on the droid) |
 | `r2_shadow_bridge` | `mega_bridge`, `foot_calibrate` | The only node that talks to the Mega over USB serial; the feet move only in autonomous mode (PS + L2 on the foot controller), the dome only with face tracking on (PS + L2 on the dome controller); the two are independent |
 | `r2_imu` | `imu_node` | MPU6050 gyro and accelerometer over I2C, plus a Madgwick filter |
-| `r2_sensors` | `sensor_tf`, `fake_lidar`, `scan_crop` | Where the lidar and the distance sensors (VL53L0X, HC-SR04 on a Pico) sit, from `sensors.yaml` (edited in the web console: Setup → Sensors), on `/tf_static`; the lidar's `/scan` cut to what the droid does not hide; a pretend lidar with `lidar:=sim` |
+| `r2_sensors` | `sensor_tf`, `fake_lidar`, `scan_crop`, `lidar_motor` | Where the lidar and the distance sensors (VL53L0X, HC-SR04 on a Pico) sit, from `sensors.yaml` (edited in the web console: Setup → Sensors), on `/tf_static`; the lidar's `/scan` cut to what the droid does not hide; a pretend lidar with `lidar:=sim` |
 | `r2_pico_bridge` | `pico_bridge`, `fake_pico` | Talks to the Raspberry Pi Pico that reads the distance sensors (`firmware/r2_pico_sensors`, on `/dev/r2-pico`): sends it the sensors and pins from `sensors.yaml` (again on every save), publishes `/range/<name>` for each sensor that answers and `/pico/state` (JSON) for the console. Not started with `sim:=true` (the simulator has its own `/range`) or `pico:=false`. Flash the Pico from the PC with `firmware/r2_pico_sensors/flash.sh` |
 | `r2_web` | `web_console` | Web console on port 8080: cameras, faces, 3D dome, camera and sensor setup |
 | `r2_bringup` | | Launch files: `ros2 launch r2_bringup dome_tracker.launch.py` |
@@ -96,6 +96,26 @@ without restarting the rest (`journalctl -u r2d2-lidar -f` to watch it). If `/et
 `sim:=true` or `lidar:=sim` in `R2D2_ARGS` (from testing without the lidar), take it out:
 in the simulation the real lidar is not started. The same command names a Mega clone
 (`r2-mega`).
+
+### The lidar's settings (Setup → Sensors)
+
+The lidar's card in the web console also sets the lidar itself, kept in `sensors.yaml`:
+
+- **motor**: `always` (the default), `with_modes` (spins only while an automatic mode is on; a mode
+  that starts waits up to 3 s for the first scan, then drives as without a lidar; the motor stops
+  5 s after the last mode goes off) or `off`. The `lidar_motor` node does it with the driver's
+  `start_motor` / `stop_motor`.
+- **scan mode**: the modes the lidar says it has (a C1: Standard, 16 m; DenseBoost, 40 m).
+  Changing it, or **upside down**, restarts only `r2d2-lidar`.
+- **blind sectors**: angles of the lidar's own view `scan_crop` ignores (R2's leg); they mirror with
+  upside down, and show shaded on the top-down map.
+- the lidar's **info**: model, firmware, hardware, health, mode, turns per second and points per turn.
+
+The speed of a C1's motor cannot be changed: asked for 480, 900 or 1200 rpm it keeps turning at
+about 10.5 turns per second. The info and the mode list come from `/lidar/info`, which our fork of
+`sllidar_ros2` publishes (`SLLIDAR_COMMIT` in `setup/setup_r2_brain.sh`); without it the card shows
+`unknown` and the two C1 modes. Our fork also makes `start_motor` resume the configured scan mode
+and `stop_motor` really stop a C1.
 
 ## Test bench on a PC (Docker)
 
