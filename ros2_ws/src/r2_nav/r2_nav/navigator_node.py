@@ -65,7 +65,6 @@ class NavigatorNode(Node):
         self.sensors = self.sensors_reloader.poll() or {}
         self.nav = Navigator(cfg, self.sensors)
         self.gate = LidarGate(motor_policy(self.sensors))   # with_modes: wait for the lidar to spin up
-        self.was_auto = False
 
         self.pose = (0.0, 0.0, 0.0)
         self.auto_on = False
@@ -174,6 +173,7 @@ class NavigatorNode(Node):
                 self.out = (0.0, 0.0)
                 self.pub_cmd.publish(Twist())
             self.last = None
+            self.gate.update(self._now(), False)     # back here later: wait for the lidar again
             return
         now = self._now()
         dt = 0.1 if self.last is None else max(0.01, min(0.5, now - self.last))
@@ -189,9 +189,7 @@ class NavigatorNode(Node):
             ranges[name] = r
             filtered[name] = r
         auto = self.auto_on and drives_in(self.mode, "goto")
-        if auto and not self.was_auto:
-            self.gate.activate(now)
-        self.was_auto = auto
+        self.gate.update(now, auto)
         if auto and not self.gate.ready(now):
             auto = False                             # the lidar is spinning up: hold still (<= 5 s)
         d = self.nav.step(now, self.pose, scan_xy, ranges, auto, speed=self.out[0])

@@ -33,8 +33,9 @@ class LidarMotor(Node):
         self.policy = MotorPolicy()
         self.pending = None             # an order the driver has not taken yet (it was not up)
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.create_subscription(Bool, "/r2/auto_mode", lambda m: setattr(self, "auto_on", m.data), latched)
-        self.create_subscription(String, "/r2/mode", lambda m: setattr(self, "mode", m.data), latched)
+        # react at once (not on the next 1 s tick): the C1 needs about 4 s to give its first scan
+        self.create_subscription(Bool, "/r2/auto_mode", lambda m: (setattr(self, "auto_on", m.data), self.tick()), latched)
+        self.create_subscription(String, "/r2/mode", lambda m: (setattr(self, "mode", m.data), self.tick()), latched)
         # the driver publishes /lidar/info each time it starts (spinning): give it the order again
         self.create_subscription(String, "/lidar/info", lambda _m: self.policy.driver_restarted(), latched)
         self.motor_clients = {o: self.create_client(Empty, f"/{o}_motor") for o in ("start", "stop")}

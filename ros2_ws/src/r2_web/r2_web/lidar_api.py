@@ -5,7 +5,7 @@ Only the scan mode and upside-down mounting are the driver's own parameters (the
 and lidar_motor follow the file by themselves), so only they restart r2d2-lidar.
 """
 
-from r2_sensors.config import SensorConfigError, lidar_name, parse_sensors
+from r2_sensors.config import LIDAR_DEFAULTS, SensorConfigError, lidar_name, parse_sensors
 
 
 def _driver(text):
@@ -16,6 +16,11 @@ def _driver(text):
 
 def lidar_needs_restart(old_text, new_text):
     try:
-        return _driver(old_text) != _driver(new_text)
+        new = _driver(new_text)
     except SensorConfigError:
-        return False
+        return False                 # not saved anyway
+    try:
+        old = _driver(old_text)
+    except SensorConfigError:
+        old = (LIDAR_DEFAULTS["scan_mode"], LIDAR_DEFAULTS["inverted"])   # what the driver fell back to
+    return old != new

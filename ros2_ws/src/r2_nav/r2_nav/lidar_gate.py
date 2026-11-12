@@ -21,6 +21,14 @@ class LidarGate:
     def reset(self):
         self.since, self.seen = None, False
 
+    def update(self, now, enabled):
+        """Call every tick with whether this node may move the feet now: the wait is armed when
+        that becomes true, and dropped when it goes false (another mode, auto off)."""
+        if enabled and self.since is None:
+            self.activate(now)
+        elif not enabled and self.since is not None:
+            self.reset()
+
     def on_scan(self, now):
         if self.since is not None and now >= self.since:
             self.seen = True

@@ -159,3 +159,9 @@ def test_sectors_mirror_when_inverted():
     assert scan_sectors(s) == pytest.approx([(math.radians(-140), math.radians(-100))])
     s = parse_sensors(LIDAR_200 + "  blind_sectors: [[100, 140]]\n")["lidar"]
     assert scan_sectors(s) == pytest.approx([(math.radians(100), math.radians(140))])
+
+
+def test_lidar_motor_off_survives_yaml():
+    # YAML 1.1 reads a bare off as false: still the motor setting "off"
+    assert parse_sensors(LIDAR_200 + "  motor: off\n")["lidar"]["motor"] == "off"
+    assert parse_sensors(LIDAR_200 + "  motor: 'off'\n")["lidar"]["motor"] == "off"
