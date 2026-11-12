@@ -25,7 +25,8 @@ def test_ghosts_fit_inside(lay):
 @pytest.mark.parametrize("a,b", [("pico", "pi"), ("pico", "conv"), ("pi", "conv"), ("pico", "xt60"),
                                  ("pico", "switch"), ("xt60", "switch"), ("conv", "xt60"), ("pi", "xt60"),
                                  ("cables", "pi"), ("cables", "conv"), ("cables", "xt60"), ("cables", "switch"),
-                                 ("hdmi", "pico"), ("hdmi", "switch"), ("hdmi", "xt60"), ("hdmi", "cables")])
+                                 ("hdmi", "pico"), ("hdmi", "switch"), ("hdmi", "xt60"), ("hdmi", "cables"),
+                                 ("leds", "cables"), ("leds", "xt60"), ("leds", "switch"), ("leds", "conv")])
 def test_ghost_pairs_do_not_collide(a, b):
     assert is_empty("check_ghost_pair", {"ga": a, "gb": b}), (a, b)
 

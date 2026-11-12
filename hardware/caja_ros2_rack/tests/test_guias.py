@@ -23,3 +23,19 @@ def test_leds_where_the_spec_says():
 def test_light_test_rod_prints_standing():
     lo, hi = stl_bbox(run_scad("prueba_luz"))
     assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.2, abs=0.05)
+
+
+# --- ghosts around the LEDs ------------------------------------------------------------------------
+def test_led_ghosts_sit_on_the_board_under_each_led():
+    lo, hi = stl_bbox(run_scad("ghost_leds_only"))
+    assert lo[0] == pytest.approx(2.5 + 1, abs=0.01)          # the QWIIC cable reaches wall + 1
+    assert hi[0] == pytest.approx(32.5, abs=0.01)             # all of it stands on the parts face
+
+
+@pytest.mark.parametrize("name", list(SPEC))
+def test_each_led_ghost_is_where_its_led_is(name):
+    assert not is_empty("check_led_ghost_at", {"led": name})
+
+
+def test_vl_dupont_ghost_leaves_the_vl_leds_free():
+    assert is_empty("check_vl_dupont_vs_vl_leds")

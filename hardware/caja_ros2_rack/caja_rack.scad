@@ -14,7 +14,7 @@ include <fasteners.scad>
 include <guias.scad>
 
 part = "pared";
-ga = "pico";  gb = "pi";
+ga = "pico";  gb = "pi";  led = "VL1";
 dz = 0;  press = 0;  kind = "all";  gap = 0;  model = "pi4";
 
 module dot() { cube(0.01); }
@@ -99,6 +99,13 @@ else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
 // --- light pipes ---
 else if (part == "prueba_luz") prueba_luz();
+else if (part == "ghost_leds_only") ghost_leds();
+else if (part == "check_led_ghost_at") let(i = search([led], pico_leds)[0], w = led_world(i))
+    intersection() { ghost_leds(); translate([w[0] - 0.6, w[1] - 0.2, w[2] - 0.2]) cube([0.4, 0.4, 0.4]); }
+else if (part == "check_vl_dupont_vs_vl_leds") intersection() {
+    ghost_pico();
+    for (i = [0 : 3]) let(w = led_world(i)) translate([w[0] - pico_gap + 1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_d, h = pico_gap - 1 - led_h - 0.01, $fn = 24);
+}
 else if (part == "echo_leds") {
     for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], led_world(i));
     echo("lp_tip_x", lp_tip_x());
