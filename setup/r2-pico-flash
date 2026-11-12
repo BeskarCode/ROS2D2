@@ -13,16 +13,21 @@ HOME_DIR=$(getent passwd "$USER_NAME" | cut -d: -f6)
 UF2=$HOME_DIR/ros2d2-firmware/firmware/r2_pico_sensors/build/r2_pico_sensors.ino.uf2
 DRIVE=/dev/disk/by-label/RP2350
 
-[ -f "$UF2" ] || { echo "r2-pico-flash: no built firmware ($UF2)"; exit 1; }
+# The file is the user's: refuse a link and read it as the user, so root never copies anything
+# the user could not read. The drive must be the Pico's (Raspberry Pi USB id 2e8a) and is mounted
+# as plain FAT, with no links, devices or programs, so nothing on it can redirect root's write.
+[ -f "$UF2" ] && [ ! -L "$UF2" ] || { echo "r2-pico-flash: no built firmware ($UF2)"; exit 1; }
 i=0
 while [ ! -e "$DRIVE" ]; do
   i=$((i + 1))
   [ $i -gt 50 ] && { echo "r2-pico-flash: the Pico's USB drive did not appear in 10 s"; exit 1; }
   sleep 0.2
 done
+DEV=$(readlink -f "$DRIVE")
+udevadm info --query=property --name="$DEV" 2>/dev/null | grep -qx 'ID_VENDOR_ID=2e8a'   || { echo "r2-pico-flash: $DEV is labelled RP2350 but is not a Pico"; exit 1; }
 MNT=$(mktemp -d)
-mount "$DRIVE" "$MNT" || { rmdir "$MNT"; echo "r2-pico-flash: could not mount the Pico's drive"; exit 1; }
-if cp "$UF2" "$MNT/"; then
+mount -t vfat -o nosuid,nodev,noexec,noatime "$DEV" "$MNT"   || { rmdir "$MNT"; echo "r2-pico-flash: could not mount the Pico's drive"; exit 1; }
+if runuser -u "$USER_NAME" -- cat "$UF2" > "$MNT/NEW.UF2"; then
   sync
   umount "$MNT" 2>/dev/null       # the Pico restarts as soon as the copy ends: it may be gone already
   rmdir "$MNT"
