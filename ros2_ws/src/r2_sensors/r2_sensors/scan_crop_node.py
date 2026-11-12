@@ -11,8 +11,8 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan
 
-from r2_sensors.config import Reloader, angle_bounds, config_path, lidar_name
-from r2_sensors.scan import crop
+from r2_sensors.config import Reloader, angle_bounds, config_path, lidar_name, scan_sectors
+from r2_sensors.scan import crop, mask
 from r2_sensors.sensor_tf_node import default_config
 
 
@@ -36,6 +36,9 @@ class ScanCrop(Node):
         else:
             lower, upper = angle_bounds(self.reloader.sensors[name])
             msg.ranges = crop(list(msg.ranges), msg.angle_min, msg.angle_increment, lower, upper)
+            sectors = scan_sectors(self.reloader.sensors[name])
+            if sectors:
+                msg.ranges = mask(msg.ranges, msg.angle_min, msg.angle_increment, sectors)
         self.pub.publish(msg)
 
 

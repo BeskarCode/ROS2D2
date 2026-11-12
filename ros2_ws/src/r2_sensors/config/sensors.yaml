@@ -11,6 +11,11 @@ lidar:
   z: 0.11
   yaw_deg: 0
   fov_deg: 200
+  # the lidar's own settings (these are the defaults):
+  # motor: always            # always | with_modes (spins only while an automatic mode is on) | off
+  # scan_mode: Standard      # one of the lidar's modes (the C1: Standard 16 m, DenseBoost 40 m)
+  # inverted: false          # mounted upside down
+  # blind_sectors: []        # [[from, to], ...] degrees of the lidar's own view to ignore (R2's leg)
 tof_front_left:
   type: vl53l0x
   x: 0.225

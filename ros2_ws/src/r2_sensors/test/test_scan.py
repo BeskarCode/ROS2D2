@@ -35,3 +35,15 @@ def test_fake_room_sees_the_chair_leg():
 def test_fake_room_turns_with_the_lidar():
     # lidar turned 90 deg left: its ray 0 hits the left wall (y = +1.5)
     assert fake_ranges((0.0, 0.0), math.pi / 2, [0.0], 12.0)[0] == pytest.approx(1.5)
+
+
+def test_mask_drops_only_the_sector():
+    from r2_sensors.scan import mask
+    r = mask([1.0] * 360, -math.pi, math.radians(1), [(math.radians(10), math.radians(20))])
+    assert sum(math.isinf(x) for x in r) == 11 and math.isinf(r[190]) and not math.isinf(r[201])
+
+
+def test_mask_wraps_180():
+    from r2_sensors.scan import mask
+    r = mask([1.0] * 360, -math.pi, math.radians(1), [(math.radians(170), math.radians(-170))])
+    assert math.isinf(r[0]) and math.isinf(r[355]) and not math.isinf(r[180])

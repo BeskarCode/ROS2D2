@@ -18,6 +18,21 @@ def crop(ranges, angle_min, angle_increment, lower, upper):
     return out
 
 
+def mask(ranges, angle_min, angle_increment, sectors):
+    """Rays inside any sector (radians, from -> to counter-clockwise; from > to crosses +-pi)
+    become inf: there the lidar sees R2 itself."""
+    def inside(a, lo, hi):
+        a = math.atan2(math.sin(a), math.cos(a))
+        if lo <= hi:
+            return lo - 1e-9 <= a <= hi + 1e-9
+        return a >= lo - 1e-9 or a <= hi + 1e-9
+    out = []
+    for i, r in enumerate(ranges):
+        a = angle_min + i * angle_increment
+        out.append(math.inf if any(inside(a, lo, hi) for lo, hi in sectors) else r)
+    return out
+
+
 def _hit(ox, oy, dx, dy):
     """Distance along the unit ray (dx, dy) from (ox, oy) to the nearest wall or post."""
     best = math.inf
