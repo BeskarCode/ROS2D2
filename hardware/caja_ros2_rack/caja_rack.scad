@@ -123,7 +123,17 @@ else if (part == "check_guias_vs_pcb") intersection() { guias_luz(); ghost_pico_
 else if (part == "check_guias_held") intersection() { translate([0.5, 0, 0]) guias_luz(); pared(leds = true); }
 else if (part == "check_guias_stops_at_the_wall") intersection() { translate([-0.1, 0, 0]) guias_luz(); pared(leds = true); }
 else if (part == "check_hooks_vs_ghosts") intersection() { lp_hooks(); ghost_all(); }
-else if (part == "echo_lp_tips") { for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], lp_tip_x()); dot(); }
+else if (part == "echo_lp_tips") {
+    for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], lp_tip_x());
+    echo("column_end", pico_x() - 0.05);          // pico_columns() stop 0.05 short of the board's face
+    echo("hook_air", lp_hook_air);
+    dot();
+}
+else if (part == "echo_lp_hooks") let(L = lp_ear[2] + lp_hook_air + lp_hook_lip_h - wall) {
+    echo("air", lp_hook_air); echo("lip", lp_hook_lip); echo("post_len", L);
+    echo("strain_pct", 100 * 3 * lp_hook_t * lp_hook_lip / (2 * L * L));
+    dot();
+}
 else if (part == "check_pared_led_vs_ghosts") intersection() { pared(leds = true); ghost_all(); }
 else if (part == "check_labels_vs_holes") intersection() { lp_labels(1); lp_holes(1); }
 else if (part == "check_labels_vs_logo_led") intersection() { lp_labels(1); logo_svg("todo", 1, true); }

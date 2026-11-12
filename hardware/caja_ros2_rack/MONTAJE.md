@@ -34,7 +34,8 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 | `stl/pared_monocolor.stl` | o bien: pared principal de un color, logo grabado |
 | `stl/pared_led_multicolor_bambu.3mf` | o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y nombres de los conectores (AMS: blanco, marino, azul, gris) |
 | `stl/pared_led_monocolor.stl` | o bien: la pared con LEDs de un color, logo y nombres grabados |
-| `stl/guias_luz.stl` | Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido, de pie, relleno 100 % |
+| `stl/guias_luz.stl` | Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido (o PETG transparente), extremos exteriores sobre la cama, relleno 100 % |
+| `stl/prueba_luz.stl` | Barra de prueba de luz: imprímela antes y ponla sobre un LED encendido para ver si tu filamento deja pasar bastante luz |
 | `stl/base.stl` | Base: suelo, trasera, tabique central |
 | `stl/tapa.stl` | Tapa (techo + lateral + frontal estrecho) |
 | `stl/marco_pi4.stl` | Marco trasero para la Pi 4 (Ethernet arriba) |
@@ -109,7 +110,7 @@ Desde fuera, abajo: el XT60E-F girado, con 2 tornillos a los insertos, y el inte
 
 **Necesitas:** 4× M3 × 6
 
-Con la pared con LEDs, las guías de luz son opcionales (sin ellas los LEDs se ven por los agujeros). Si las pones, van antes de colgar la placa: desde dentro, mete las 10 barras por sus agujeros y empuja el marco contra la pared hasta que los 4 ganchos encajen. Mete la varilla desde dentro por su guía y atornilla la placa a las 4 columnas, componentes hacia la pared. Mira de lado que ninguna barra toca su LED; si alguna toca, lija la punta. Si algún día usas J4 (EXP), su cable rodea la barra PWR. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en la Pico y conecta los sensores: sus cables salen por la ranura de arriba.
+Con la pared con LEDs, las guías de luz son opcionales (sin ellas los LEDs se ven por los agujeros). Si las pones, van antes de colgar la placa: desde dentro, mete las 10 barras por sus agujeros y empuja el marco contra la pared hasta que los 4 ganchos encajen. Mete la varilla desde dentro por su guía. Antes de atornillar, presenta la placa sin tornillos sobre las 4 columnas, componentes hacia la pared: debe asentar en las cuatro sin balancearse; si se balancea, alguna barra toca su LED: lija la punta. Luego atorníllala. Para sacarla, abre los ganchos de dos en dos con un destornillador pequeño. Si algún día usas J4 (EXP), su cable rodea la barra PWR. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en la Pico y conecta los sensores: sus cables salen por la ranura de arriba.
 
 ## 6 · Pared principal a la base
 

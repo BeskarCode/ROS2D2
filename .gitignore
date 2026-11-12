@@ -15,3 +15,6 @@ firmware/**/config.h
 # Windows matches the rule above case-insensitively: the Pico sensors parser is not a secret
 !firmware/r2_pico_sensors/Config.h
 firmware/*/build/
+# Personal photos and zipped STL bundles beside the enclosures stay local
+hardware/**/IMG_*.jpeg
+hardware/**/stl/stl.zip

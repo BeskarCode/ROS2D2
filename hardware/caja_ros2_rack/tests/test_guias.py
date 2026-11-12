@@ -17,12 +17,12 @@ def test_leds_where_the_spec_says():
     for name, (y, z) in SPEC.items():
         x, wy, wz = v[name]
         assert (wy, wz) == pytest.approx((y, z), abs=0.05) and x == pytest.approx(32.5, abs=0.01)
-    assert v["lp_tip_x"] == pytest.approx(31.2, abs=0.01)
+    assert v["lp_tip_x"] == pytest.approx(31.0, abs=0.01)
 
 
 def test_light_test_rod_prints_standing():
     lo, hi = stl_bbox(run_scad("prueba_luz"))
-    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.2, abs=0.05)
+    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.0, abs=0.05)
 
 
 # --- ghosts around the LEDs ------------------------------------------------------------------------
@@ -99,9 +99,21 @@ def test_piece_never_touches_the_board(what):
 
 
 def test_tips_leave_air_over_the_leds():
-    v = echo_values("echo_lp_tips")                 # name -> X of its rod's tip; LED top at 32.5 - 0.8
+    # the board rests on the columns' ends (X 32.45), the LED is up to 0.8 tall, and the hooks let the piece
+    # move inwards by their air: even pushed in, 0.3 mm stays between every tip and its LED
+    v = echo_values("echo_lp_tips")                 # name -> X of its rod's tip; plus column end and hook air
+    led_top = v["column_end"] - 0.8
     for name in SPEC:
-        assert 0.3 <= (32.5 - 0.8) - v[name] <= 0.8, name
+        assert 0.3 <= led_top - (v[name] + v["hook_air"]), name
+        assert led_top - v[name] <= 1.2, name       # and not so far that the light is lost
+
+
+def test_hooks_have_room_for_fdm():
+    v = echo_values("echo_lp_hooks")
+    assert v["air"] >= 0.3                          # ear top to lip: survives a sagging bridge and 0.2 mm layers
+    assert v["lip"] >= 0.6                          # still catches with that air
+    assert v["post_len"] >= 12                      # long enough to bend 0.6 mm without breaking between layers
+    assert v["strain_pct"] <= 1.0                  # root strain bending the lip clear
 
 
 def test_piece_is_held():
@@ -118,4 +130,4 @@ def test_hooks_clear_of_ghosts():
 
 def test_piece_prints_standing():
     lo, hi = stl_bbox(run_scad("guias_luz"))
-    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.2, abs=0.1)
+    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.0, abs=0.1)

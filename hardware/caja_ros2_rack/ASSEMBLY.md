@@ -34,7 +34,8 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 | `stl/pared_monocolor.stl` | or: single-colour main face, engraved logo |
 | `stl/pared_led_multicolor_bambu.3mf` | or: main face with a hole over each LED of the Pico board, logo lower down and the connector names (AMS: white, navy, blue, grey) |
 | `stl/pared_led_monocolor.stl` | or: the LED face in one colour, logo and names engraved |
-| `stl/guias_luz.stl` | Light pipes (optional, only with the LED face): one piece in translucent PLA, standing, 100 % infill |
+| `stl/guias_luz.stl` | Light pipes (optional, only with the LED face): one piece in translucent PLA (or clear PETG), outer ends on the bed, 100 % infill |
+| `stl/prueba_luz.stl` | Light test rod: print it first and hold it on a lit LED to see whether your filament lets enough light through |
 | `stl/base.stl` | Base: floor, back, central divider |
 | `stl/tapa.stl` | Shell (roof + side + narrow front) |
 | `stl/marco_pi4.stl` | Back frame for the Pi 4 (Ethernet at the top) |
@@ -109,7 +110,7 @@ From outside, low down: the XT60E-F turned on its side with 2 screws into the in
 
 **You need:** 4× M3 × 6
 
-With the LED face, the light pipes are optional (without them the LEDs show through the holes). If you fit them, they go in before hanging the board: from inside, slide the 10 rods into their holes and push the frame against the wall until the 4 hooks click. Slide the rod into its guide from inside and screw the board onto the 4 columns, parts towards the wall. Look from the side that no rod touches its LED; if one does, sand its tip. If you ever use J4 (EXP), its cable goes round the PWR rod. Tighten the 5 V in terminal J1, plug the angled micro-USB into the Pico and connect the sensors: their cables leave through the slot at the top.
+With the LED face, the light pipes are optional (without them the LEDs show through the holes). If you fit them, they go in before hanging the board: from inside, slide the 10 rods into their holes and push the frame against the wall until the 4 hooks click. Slide the rod into its guide from inside. Before screwing, offer the board up without screws onto the 4 columns, parts towards the wall: it must sit on all four without rocking; if it rocks, a rod touches its LED: sand its tip. Then screw it on. To take it out, open the hooks two at a time with a small screwdriver. If you ever use J4 (EXP), its cable goes round the PWR rod. Tighten the 5 V in terminal J1, plug the angled micro-USB into the Pico and connect the sensors: their cables leave through the slot at the top.
 
 ## 6 · Main face onto the base
 
