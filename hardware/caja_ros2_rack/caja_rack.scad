@@ -2,7 +2,8 @@
 // Caja ROS2 · option C, "rack blade". Pick what to render with part:
 //   openscad -o pared.stl -D 'part="pared"' caja_rack.scad
 // Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
-// marco_pi4, marco_pi5, prueba_luz.
+// marco_pi4, marco_pi5, prueba_luz; the LED face: pared_led, pared_led_monocolor, logo_marino_led,
+// logo_azul_led, logo_gris_led.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -99,6 +100,25 @@ else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
 // --- light pipes ---
 else if (part == "prueba_luz") prueba_luz();
+else if (part == "pared_led") print_pared() pared(leds = true);
+else if (part == "pared_led_monocolor") print_pared() pared(logo_depth_mono, true);
+else if (part == "logo_marino_led") print_pared() logo_svg("marino", leds = true);
+else if (part == "logo_azul_led") print_pared() logo_svg("azul", leds = true);
+else if (part == "logo_gris_led") print_pared() logo_svg("gris", leds = true);
+else if (part == "logo_todo_led_montado") logo_svg("todo", leds = true);
+else if (part == "lp_labels_montadas") lp_labels();
+else if (part == "echo_lp_holes") {
+    for (i = [0 : len(pico_leds) - 1]) let(w = led_world(i)) echo(pico_leds[i][0], [w[1], w[2], lp_hole]);
+    dot();
+}
+else if (part == "check_lp_holes_open") intersection() {
+    pared(leds = true);
+    for (i = [0 : len(pico_leds) - 1]) let(w = led_world(i)) translate([-1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_d, h = wall + 2, $fn = 24);
+}
+else if (part == "check_pared_led_vs_ghosts") intersection() { pared(leds = true); ghost_all(); }
+else if (part == "check_labels_vs_holes") intersection() { lp_labels(1); lp_holes(1); }
+else if (part == "check_labels_vs_logo_led") intersection() { lp_labels(1); logo_svg("todo", 1, true); }
+else if (part == "check_labels_vs_window") intersection() { lp_labels(1); scale([20, 1, 1]) oled_window(); }
 else if (part == "ghost_leds_only") ghost_leds();
 else if (part == "check_led_ghost_at") let(i = search([led], pico_leds)[0], w = led_world(i))
     intersection() { ghost_leds(); translate([w[0] - 0.6, w[1] - 0.2, w[2] - 0.2]) cube([0.4, 0.4, 0.4]); }

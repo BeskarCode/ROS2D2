@@ -16,7 +16,11 @@ _spec.loader.exec_module(base)
 base.SCAD = HERE / "caja_rack.scad"
 
 LOGO_PARTS = ["logo_marino", "logo_azul", "logo_gris"]
-PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa", "marco_pi4", "marco_pi5", "prueba_luz"]
+LOGO_LED_PARTS = ["logo_marino_led", "logo_azul_led", "logo_gris_led"]
+PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa", "marco_pi4", "marco_pi5",
+               "pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "prueba_luz"]
+# the multicolour main faces: today's, and the LED face (same colour bodies, other STLs)
+FACES = {"pared_multicolor": ("pared", *LOGO_PARTS), "pared_led_multicolor": ("pared_led", *LOGO_LED_PARTS)}
 write_3mf = base.write_3mf
 
 
@@ -29,12 +33,21 @@ def build(out_dir=HERE):
         base.openscad(f, p)
         written.append(f)
         print("ok", f.name, flush=True)
-    face = {n: out_dir / "stl" / f"{n}.stl" for n in ("pared", *LOGO_PARTS)}
-    for name, bambu in (("pared_multicolor.3mf", False), ("pared_multicolor_bambu.3mf", True)):
-        f = out_dir / "stl" / name
-        write_3mf(face, f, bambu=bambu)
-        written.append(f)
-        print("ok", name, flush=True)
+    written += write_faces(out_dir)
+    return written
+
+
+def write_faces(out_dir=HERE, faces=FACES):
+    """The multicolour 3MFs from STLs already in stl/; bodies named as today's (pared, logo_marino, ...)."""
+    out_dir = pathlib.Path(out_dir)
+    written = []
+    for stem, parts in faces.items():
+        face = {key: out_dir / "stl" / f"{p}.stl" for key, p in zip(("pared", *LOGO_PARTS), parts)}
+        for name, bambu in ((f"{stem}.3mf", False), (f"{stem}_bambu.3mf", True)):
+            f = out_dir / "stl" / name
+            write_3mf(face, f, bambu=bambu)
+            written.append(f)
+            print("ok", name, flush=True)
     return written
 
 
