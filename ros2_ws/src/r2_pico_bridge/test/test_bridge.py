@@ -311,3 +311,33 @@ def test_old_firmware_marks_settings_unsupported(tmp_path, monkeypatch):
     finally:
         old.close()
         rclpy.shutdown()
+
+
+def release(bench, on):
+    from std_srvs.srv import SetBool
+    client = bench.ear.create_client(SetBool, "/pico/release")
+    assert client.wait_for_service(timeout_sec=2.0)
+    fut = client.call_async(SetBool.Request(data=on))
+    assert bench.spin_until(lambda: fut.done())
+    return fut.result()
+
+
+def test_release_sends_boot_and_keeps_port_closed(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    assert release(bench, True).success
+    assert bench.spin_until(lambda: "BOOT" in bench.pico.lines)
+    assert bench.spin_until(lambda: bench.connected is False, 4)
+    hellos = bench.pico.lines.count("HELLO")
+    bench.spin_until(lambda: False, 1.5)                    # reconnect_sec is 0.2: it would have
+    assert bench.pico.lines.count("HELLO") == hellos        # opened it again by now
+
+
+def test_release_false_reconnects_and_resends_everything(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    assert release(bench, True).success
+    assert bench.spin_until(lambda: bench.connected is False, 4)
+    bench.unplug()                      # the Pico restarts with the new firmware...
+    bench.plug()                        # ...and comes back as a new serial device
+    assert release(bench, False).success
+    assert bench.spin_until(lambda: bench.pico.cfg_lines and "UI t=30 b=2 led=auto" in bench.pico.lines, 4)
+    assert bench.spin_until(lambda: bench.connected is True)
