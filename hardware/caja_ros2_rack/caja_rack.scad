@@ -2,7 +2,7 @@
 // Caja ROS2 · option C, "rack blade". Pick what to render with part:
 //   openscad -o pared.stl -D 'part="pared"' caja_rack.scad
 // Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
-// marco_pi4, marco_pi5.
+// marco_pi4, marco_pi5, prueba_luz.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -11,6 +11,7 @@ include <base.scad>
 include <tapa.scad>
 include <marco.scad>
 include <fasteners.scad>
+include <guias.scad>
 
 part = "pared";
 ga = "pico";  gb = "pi";
@@ -96,6 +97,13 @@ else if (part == "check_tapa_slide") intersection() { translate([0, 0, dz]) tapa
 else if (part == "check_tapa_vs_ghosts") intersection() { tapa(); ghost_all(); }
 else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
+// --- light pipes ---
+else if (part == "prueba_luz") prueba_luz();
+else if (part == "echo_leds") {
+    for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], led_world(i));
+    echo("lp_tip_x", lp_tip_x());
+    dot();
+}
 // --- hardware ---
 else if (part == "echo_bom") {
     for (k = ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "nut_m3", "m25x6", "m4x12"]) echo(k, count_kind(k));
