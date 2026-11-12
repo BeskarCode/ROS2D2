@@ -58,7 +58,7 @@ fi
 echo "== /usr/local/sbin/r2-pico-flash and its sudoers rule (asks for your password if needed)"
 sudo install -o root -g root -m 0755 "$HERE/r2-pico-flash" /usr/local/sbin/r2-pico-flash
 RULE=$(mktemp)
-echo "$ME ALL=(root) NOPASSWD: /usr/local/sbin/r2-pico-flash" > "$RULE"
+echo "$ME ALL=(root) NOPASSWD: /usr/local/sbin/r2-pico-flash \"\"" > "$RULE"   # "" = no arguments allowed
 sudo visudo -cf "$RULE" >/dev/null
 sudo install -o root -g root -m 0440 "$RULE" /etc/sudoers.d/r2-pico-flash
 rm -f "$RULE"
