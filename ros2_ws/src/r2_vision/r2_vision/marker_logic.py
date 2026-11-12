@@ -8,17 +8,33 @@ from r2_vision.color_marker import (bearing, color_warning, find_marker, match_f
                                     model_from_pixel)
 
 
-def wants_video(mode, preview):
-    """The camera only sends video while someone needs it (it is on_demand)."""
-    return mode == "follow" or bool(preview)
+def wants_video(mode, preview, color_on_camera=False):
+    """The camera only sends video while someone needs it (it is on_demand). When the camera
+    finds the colour itself, following needs no video: only the console preview does."""
+    return (mode == "follow" and not color_on_camera) or bool(preview)
 
 
 def detect_value(old_mode, new_mode, detect_on_camera):
-    """What to tell the dome camera's own face finder when the mode changes: 0 on entering
-    follow, 1 on leaving it, None for nothing (other camera kinds, or no change)."""
+    """What to tell a dome camera that searches itself when the mode changes: 2 (look for the
+    colour) on entering follow, 1 (back to faces) on leaving it, None for nothing (other camera
+    kinds, or no change). See colour_on_camera_result for cameras that cannot find a colour."""
     if not detect_on_camera or (old_mode == "follow") == (new_mode == "follow"):
         return None
-    return 0 if new_mode == "follow" else 1
+    return 2 if new_mode == "follow" else 1
+
+
+def color_controls(model):
+    """The camera's /control variables for a ColorModel, in the order to send them."""
+    return [("color_h", model.h), ("color_s", model.s), ("color_v", model.v),
+            ("color_htol", model.hue_tol), ("color_ltol", model.light_tol)]
+
+
+def colour_on_camera_result(responses):
+    """responses: whether each color_controls variable was accepted. -> (the camera finds the
+    colour itself, detect value to send). An ESP32-S3 camera does not know color_h: then the Pi
+    follows the colour in its video as before, and the camera only pauses its faces (0)."""
+    ok = bool(responses) and all(responses)
+    return (True, 2) if ok else (False, 0)
 
 
 def parse_pick(text):

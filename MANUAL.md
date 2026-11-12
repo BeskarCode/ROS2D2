@@ -137,7 +137,9 @@ longer plays its MarcDuino action. *Dome PS + L2* is face tracking and cannot be
 **Follow a colour**: wear something of a clear colour, **click on it in the camera picture** and
 check how much of the picture it matches (the matches are painted magenta). Its sliders set how
 close a colour must be, the distance to keep, the top speed and how long it searches when it loses
-the colour.
+the colour. With the ESP32-P4 dome camera (`firmware/r2_domecam_p4`) the camera finds the colour
+itself while R2 follows it, so no video goes over the WiFi; with other cameras the Pi finds it in
+the video, as before.
 
 ### Setup → System
 

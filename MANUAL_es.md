@@ -144,7 +144,9 @@ su acción de MarcDuino. *Dome PS + L2* es el seguimiento de caras y no se puede
 **Follow a colour**: ponte algo de un color claro, **haz clic sobre él en la imagen de la cámara** y
 mira cuánto de la imagen coincide (lo que coincide se pinta en magenta). Sus deslizadores ajustan lo
 parecido que tiene que ser el color, la distancia a mantener, la velocidad máxima y cuánto tiempo
-busca cuando lo pierde.
+busca cuando lo pierde. Con la cámara del dome ESP32-P4 (`firmware/r2_domecam_p4`) es la propia
+cámara la que busca el color mientras R2 lo sigue, así que no viaja vídeo por la WiFi; con las demás
+cámaras lo busca la Pi en el vídeo, como antes.
 
 ### Setup → System
 

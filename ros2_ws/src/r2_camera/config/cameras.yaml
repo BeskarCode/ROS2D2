@@ -26,3 +26,5 @@ auto:
 # cam2:
 #   source: http://192.168.68.150:81/stream       # e.g. an ESP32 camera
 #   yaw_deg: 180
+#   detect: camera    # the camera finds the faces (and the colour, on the ESP32-P4) itself
+#   hfov_deg: 50      # the ESP32-P4 dome camera with its OV5647 (r2_domecam_p4)

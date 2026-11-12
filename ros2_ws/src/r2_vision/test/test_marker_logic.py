@@ -3,7 +3,9 @@ import json
 import numpy as np
 
 from r2_vision.color_marker import Marker
-from r2_vision.marker_logic import detect_value, marker_json, parse_pick, pick_result, wants_video
+from r2_vision.color_marker import ColorModel
+from r2_vision.marker_logic import (color_controls, colour_on_camera_result, detect_value, marker_json,
+                                   parse_pick, pick_result, wants_video)
 
 
 def orange_picture():
@@ -17,11 +19,18 @@ def test_wants_video():
     assert not wants_video("", False) and not wants_video("patrol", False)
 
 
+def test_wants_video_colour_on_camera():
+    """The camera finds the colour itself: only the console preview needs its video."""
+    assert not wants_video("follow", False, color_on_camera=True)
+    assert wants_video("follow", True, color_on_camera=True)
+    assert wants_video("follow", False, color_on_camera=False)
+
+
 def test_detect_value():
-    assert detect_value("", "follow", True) == 0
+    assert detect_value("", "follow", True) == 2
     assert detect_value("follow", "", True) == 1
     assert detect_value("follow", "goto", True) == 1
-    assert detect_value("goto", "follow", True) == 0
+    assert detect_value("goto", "follow", True) == 2
     assert detect_value("goto", "patrol", True) is None
     assert detect_value("follow", "follow", True) is None
     assert detect_value("", "follow", False) is None
@@ -56,3 +65,16 @@ def test_marker_json():
     assert d["seen"] and d["bearing"] > 0 and d["area"] == 0.1 and d["t"] == 12.5
     d = json.loads(marker_json(None, 60.0, 1.0))
     assert d["seen"] is False and d["area"] == 0.0
+
+
+def test_color_controls():
+    assert color_controls(ColorModel(5, 200, 180, 12, 70)) == [
+        ("color_h", 5), ("color_s", 200), ("color_v", 180), ("color_htol", 12), ("color_ltol", 70)]
+
+
+def test_fallback_when_camera_rejects_colour():
+    """An ESP32-S3 camera answers 400 to color_h: follow the colour with its video, as before,
+    and only pause its faces (detect=0)."""
+    assert colour_on_camera_result([True, True, True, True, True]) == (True, 2)
+    assert colour_on_camera_result([False, True, True, True, True]) == (False, 0)
+    assert colour_on_camera_result([]) == (False, 0)
