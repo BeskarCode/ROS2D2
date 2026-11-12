@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" role="img" aria-label="Go to a point: R2 drives to the point you clicked, round what is in the way">
+  <!-- ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com) -->
+  <defs>
+    <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1f2630" stroke-width="1"/></pattern>
+    <g id="r2">
+      <circle r="16" fill="#39c5cf" fill-opacity="0.10" stroke="#39c5cf" stroke-opacity="0.5" stroke-dasharray="3 3">
+        <animate attributeName="r" values="14;22;14" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <rect x="-7" y="-14" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <rect x="-7" y="9" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <circle r="9" fill="#161b22" stroke="#8b949e" stroke-width="1.5"/>
+      <path d="M10 0 L4 -4 L4 4 Z" fill="#e6edf3"/>
+    </g>
+  </defs>
+  <rect width="320" height="180" rx="10" fill="#0d1117"/>
+  <rect width="320" height="180" rx="10" fill="url(#g)"/>
+  <!-- what is in the way -->
+  <rect x="145" y="78" width="32" height="32" rx="3" fill="#6e7681" fill-opacity="0.35" stroke="#8b949e"/>
+  <!-- the planned way round it -->
+  <path id="way" d="M40 145 L120 145 Q190 145 195 110 Q198 60 268 46" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.8"/>
+  <!-- the goal -->
+  <g transform="translate(270 46)">
+    <circle r="9" fill="#3fb950" fill-opacity="0.15" stroke="#3fb950"><animate attributeName="r" values="6;11;6" dur="1.2s" repeatCount="indefinite"/></circle>
+    <path d="M0 0 V-22" stroke="#e6edf3" stroke-width="1.5"/><path d="M0 -22 L13 -17 L0 -12 Z" fill="#3fb950"/>
+  </g>
+  <use href="#r2">
+    <animateMotion dur="7s" repeatCount="indefinite" rotate="auto" keyPoints="0;1;1" keyTimes="0;0.8;1" calcMode="linear">
+      <mpath href="#way"/>
+    </animateMotion>
+  </use>
+  <text x="12" y="20" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Go to a point</text>
+  <text x="12" y="168" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">click the floor: R2 goes there, round what is in the way</text>
+</svg>

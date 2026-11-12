@@ -69,7 +69,8 @@ export function createModesTab({ status }) {
       row.innerHTML = `<div class="mname"><i class="fa-solid ${ICONS[m]}"></i><b></b><code></code>
           <span class="badge ok mon" ${active === m ? '' : 'hidden'}><i class="fa-solid fa-circle-play"></i>on now</span></div>
         <select aria-label="controller combination"></select>
-        <div class="mwarn" hidden><i class="fa-solid fa-triangle-exclamation"></i>This combo will no longer play its MarcDuino action</div>`;
+        <div class="mwarn" hidden><i class="fa-solid fa-triangle-exclamation"></i>This combo will no longer play its MarcDuino action</div>
+        <img class="mdiag" src="img/modes/${m}.svg" alt="" loading="lazy">`;
       row.querySelector('b').textContent = MODE_LABELS[m];
       row.querySelector('code').textContent = m;
       const sel = row.querySelector('select');

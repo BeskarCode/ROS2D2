@@ -40,6 +40,13 @@ click; set the lidar (motor, scan mode, blind sectors) and read what it says abo
 
 ![Setup, Sensors: coverage, test object and the in use / ignored switch](media/console-sensors.gif)
 
+**Setup → Modes**: each automatic mode starts with its own controller combination. What each one does:
+
+| | |
+|---|---|
+| ![Go to a point](ros2_ws/src/r2_web/www/img/modes/goto.svg) | ![Go forward](ros2_ws/src/r2_web/www/img/modes/forward.svg) |
+| ![Patrol](ros2_ws/src/r2_web/www/img/modes/patrol.svg) | ![Follow a colour](ros2_ws/src/r2_web/www/img/modes/follow.svg) |
+
 ## Hardware
 
 What ROS2D2 adds to a ShadowMD droid, how it connects and the bill of materials: [HARDWARE.md](HARDWARE.md).

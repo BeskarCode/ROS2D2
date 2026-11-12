@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" role="img" aria-label="Patrol: R2 wanders inside a circle round where it was switched on, turning back in near the edge and stopping now and then to look round">
+  <!-- ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com) -->
+  <defs>
+    <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1f2630" stroke-width="1"/></pattern>
+    <g id="r2">
+      <rect x="-7" y="-14" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <rect x="-7" y="9" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <circle r="9" fill="#161b22" stroke="#8b949e" stroke-width="1.5"/>
+      <path d="M10 0 L4 -4 L4 4 Z" fill="#e6edf3"/>
+    </g>
+  </defs>
+  <rect width="320" height="180" rx="10" fill="#0d1117"/>
+  <rect width="320" height="180" rx="10" fill="url(#g)"/>
+  <!-- the circle round where it was switched on -->
+  <circle cx="160" cy="92" r="70" fill="#d29922" fill-opacity="0.06" stroke="#d29922" stroke-dasharray="6 5"/>
+  <path d="M155 87 L165 97 M165 87 L155 97" stroke="#d29922" stroke-width="1.5"/>
+  <text x="235" y="40" fill="#d29922" font-family="system-ui, sans-serif" font-size="10">radius</text>
+  <path id="way" d="M160 92 C200 58 232 88 206 120 C182 150 122 150 110 116 C100 80 130 48 160 58 C192 68 178 108 160 92 Z" fill="none" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.35"/>
+  <use href="#r2">
+    <!-- two stops to look round -->
+    <animateMotion dur="14s" repeatCount="indefinite" rotate="auto" keyPoints="0;0.3;0.3;0.72;0.72;1" keyTimes="0;0.28;0.4;0.72;0.84;1" calcMode="linear">
+      <mpath href="#way"/>
+    </animateMotion>
+  </use>
+  <text x="12" y="20" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Patrol</text>
+  <text x="12" y="168" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">wanders in a circle round where it started, stops to look</text>
+</svg>
