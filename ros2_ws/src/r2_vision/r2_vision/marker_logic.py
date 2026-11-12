@@ -25,8 +25,9 @@ def detect_value(old_mode, new_mode, detect_on_camera):
 
 def color_controls(model):
     """The camera's /control variables for a ColorModel, in the order to send them."""
-    return [("color_h", model.h), ("color_s", model.s), ("color_v", model.v),
-            ("color_htol", model.hue_tol), ("color_ltol", model.light_tol)]
+    # whole numbers: modes.yaml may hold 12.0, and the camera only takes integers
+    return [("color_h", int(model.h)), ("color_s", int(model.s)), ("color_v", int(model.v)),
+            ("color_htol", int(round(model.hue_tol))), ("color_ltol", int(round(model.light_tol)))]
 
 
 def colour_on_camera_result(responses):

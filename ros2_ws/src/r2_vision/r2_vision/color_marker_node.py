@@ -17,7 +17,10 @@ Topics:
 A dome camera that searches itself (detect: camera) gets the colour (color_h ... color_ltol) and
 detect=2 when follow starts, and finds the colour itself: no video goes over the WiFi. A camera
 that does not know color_h (the ESP32-S3) only pauses its faces (detect=0) and the colour is
-found here in its video, as before. Both get detect=1 back when follow ends.
+found here in its video, as before. Both get detect=1 back when follow ends. The commands go out
+one at a time, in order (camera_commands.CameraCommander). If the camera's blob stops arriving
+while following (the camera rebooted into faces, the WiFi dropped), the colour is followed in its
+video again and the camera is asked to take the colour back.
 """
 
 import json
@@ -37,8 +40,8 @@ from r2_camera.config import config_path, load_cameras
 from r2_nav.modes import load_modes, modes_path
 from r2_vision.color_marker import ColorModel, Marker, find_marker, match_mask
 from r2_vision.image_utils import image_to_bgr
-from r2_vision.marker_logic import (color_controls, colour_on_camera_result, detect_value, marker_json,
-                                   parse_pick, pick_result, wants_video)
+from r2_vision.camera_commands import STALE_SEC, CameraCommander, marker_stale
+from r2_vision.marker_logic import detect_value, marker_json, parse_pick, pick_result, wants_video
 from r2_vision.remote_faces import control_url, faces_url
 
 MASK_PERIOD = 0.2   # at most 5 mask pictures per second
@@ -67,8 +70,10 @@ class ColorMarkerNode(Node):
         self._model = None
         self._color_on_camera = False   # the follow camera finds the colour itself
         self._marker_sub = None
-        self._lock = threading.Lock()   # the camera is told things from worker threads
-        self._dirty = False             # a worker changed _color_on_camera: redo the subscriptions
+        self._lock = threading.Lock()   # the commander's thread reports back here
+        self._dirty = False             # it changed _color_on_camera: redo the subscriptions
+        self._last_raw = None           # when the camera's blob last arrived
+        self._commander = CameraCommander(self._tell, self._on_commander_result)
         self.pub_marker = self.create_publisher(String, "/marker", 10)
         self.pub_result = self.create_publisher(String, "/marker/pick_result", 10)
         self.pub_mask = self.create_publisher(CompressedImage, "/marker/mask/compressed", self._video_qos)
@@ -77,6 +82,7 @@ class ColorMarkerNode(Node):
         self.create_subscription(Bool, "/marker/preview", self._on_preview, 10)
         self.create_subscription(String, "/marker/pick", self._on_pick, 10)
         self.create_timer(0.2, self._apply_dirty)
+        self.create_timer(0.5, self._watchdog)
         self._reload()
 
     def _reload(self):
@@ -101,8 +107,7 @@ class ColorMarkerNode(Node):
         self._prev = None
         if self.mode == "follow" and self._color_on_camera and self._model is not None:
             # modes.yaml changed while following: the camera gets the new colour
-            threading.Thread(target=self._start_camera_colour, args=(self.camera, self._model),
-                             daemon=True).start()
+            self._commander.follow(self.camera, self._model)
         self._update_subscription()
 
     def _cam_params(self):
@@ -135,11 +140,11 @@ class ColorMarkerNode(Node):
         self._prev = None
         v = detect_value(old, self.mode, self._cam_params().get("detect") == "camera")
         if v == 2:
-            threading.Thread(target=self._start_camera_colour, args=(self.camera, self._model),
-                             daemon=True).start()
+            self._commander.follow(self.camera, self._model)
         elif v is not None:
-            self._color_on_camera = False
-            threading.Thread(target=self._tell_detect, args=(self.camera, v), daemon=True).start()
+            with self._lock:
+                self._color_on_camera = False
+            self._commander.leave(self.camera)
         self._update_subscription()
 
     def _apply_dirty(self):
@@ -148,26 +153,36 @@ class ColorMarkerNode(Node):
         if dirty:
             self._update_subscription()
 
-    def _start_camera_colour(self, camera, model):
-        """Worker thread: give the camera the colour; if it takes it, it searches (detect=2),
-        otherwise (ESP32-S3) it only pauses its faces and the colour is found in its video."""
-        oks = [self._tell(camera, var, val) for var, val in color_controls(model)] if model else []
-        on_camera, detect = colour_on_camera_result(oks)
+    def _on_commander_result(self, camera, on_camera):
+        """The commander's thread: the camera took the colour (it finds it itself) or not
+        (ESP32-S3: the colour is found here in its video)."""
         if not on_camera:
             self.get_logger().warning(f"{camera} cannot find the colour itself: following it in its video")
-        if not self._tell(camera, "detect", detect):
-            on_camera = False
         with self._lock:
             if self.mode == "follow" and camera == self.camera:
                 self._color_on_camera = on_camera
+                self._last_raw = self.get_clock().now().nanoseconds / 1e9
                 self._dirty = True
+
+    def _watchdog(self):
+        """Following with the camera's blob, but none for a while: back to the video so R2 is
+        not blind, and ask the camera to take the colour again."""
+        now = self.get_clock().now().nanoseconds / 1e9
+        with self._lock:
+            stale = self.mode == "follow" and self._color_on_camera and marker_stale(self._last_raw, now)
+            if stale:
+                self._color_on_camera = False
+        if not stale:
+            return
+        self.get_logger().warning(f"no colour from {self.camera} for {STALE_SEC:.0f} s: "
+                                  "following it in its video and asking the camera again")
+        self._update_subscription()
+        if self._commander.idle() and self._model is not None:
+            self._commander.follow(self.camera, self._model)
 
     def _on_preview(self, msg):
         self.preview = bool(msg.data)
         self._update_subscription()
-
-    def _tell_detect(self, camera, val):
-        self._tell(camera, "detect", val)
 
     def _tell(self, camera, var, val):
         """/control?var=...&val=... on the camera; True if it answered 200."""
@@ -192,6 +207,8 @@ class ColorMarkerNode(Node):
         except (ValueError, KeyError, TypeError):
             return
         now = self.get_clock().now().nanoseconds / 1e9
+        with self._lock:
+            self._last_raw = now
         hfov = float(self._cam_params().get("hfov_deg", 60.0))
         self.pub_marker.publish(String(data=marker_json(marker, hfov, now - age)))
 
