@@ -134,6 +134,11 @@ int main() {
   check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Errors, true, false), "errors: an empty connector stays dark");
   check(ledOn(true, State::NotResponding, false, 500, LedMode::Errors, false, false) !=
         ledOn(true, State::NotResponding, false, 900, LedMode::Errors, false, false), "errors: one not responding blinks");
+  check(ledOn(true, State::Ok, false, 500, LedMode::Connected, false, false) &&
+        ledOn(true, State::Ok, false, 1500, LedMode::Connected, false, false), "connected: one measuring is steady on, display off");
+  check(!ledOn(true, State::NotResponding, false, 500, LedMode::Connected, true, false) &&
+        !ledOn(true, State::NotResponding, false, 900, LedMode::Connected, true, false), "connected: one not responding stays dark");
+  check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Connected, true, false), "connected: an empty connector stays dark");
   check(ledOn(true, State::Ok, false, 50, LedMode::Off, false, true) != ledOn(true, State::Ok, false, 150, LedMode::Off, false, true),
         "identify blinks at 5 Hz whatever the mode");
 

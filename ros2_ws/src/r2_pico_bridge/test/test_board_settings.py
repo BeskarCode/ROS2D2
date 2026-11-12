@@ -15,7 +15,7 @@ def test_valid_values():
     assert s == {"display_timeout_s": 0, "brightness": 0, "leds": "errors"}
     for t in (10, 30, 60, 300, 0):
         assert parse(f"display_timeout_s: {t}\n")["display_timeout_s"] == t
-    for led in ("auto", "on", "off", "errors"):
+    for led in ("auto", "on", "off", "errors", "connected"):
         assert parse(f"leds: {led}\n")["leds"] == led
 
 
@@ -36,6 +36,7 @@ def test_invalid_values(text, msg):
 def test_ui_line():
     assert ui_line(DEFAULTS) == "UI t=30 b=2 led=auto"
     assert ui_line({"display_timeout_s": 0, "brightness": 3, "leds": "errors"}) == "UI t=0 b=3 led=err"
+    assert ui_line({**DEFAULTS, "leds": "connected"}) == "UI t=30 b=2 led=conn"
 
 
 def test_commands_the_console_may_send():

@@ -31,9 +31,9 @@ inline int connectorOf(const SensorCfg& s) {
 enum class State { NotConfigured, NotResponding, Ok };
 
 // How the status LEDs behave (the Pi's UI led=...): Auto = only while the display is on (as it
-// always was), On = also with the display off, Off = never, Errors = only the sensors not
-// responding, blinking.
-enum class LedMode { Auto, On, Off, Errors };
+// always was), On = also with the display off, Connected = only the sensors measuring (steady,
+// display on or off), Off = never, Errors = only the sensors not responding, blinking.
+enum class LedMode { Auto, On, Off, Errors, Connected };
 
 // A status LED at time now: waiting for the Pi (not configured yet) = a short flash every 2 s;
 // then on = measuring, blinking = not responding, off = no sensor on that connector. The
@@ -44,6 +44,7 @@ inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now, LedMod
   if (identifying) return (now / 100) % 2;
   if (mode == LedMode::Off || (mode == LedMode::Auto && !displayOn)) return false;
   if (mode == LedMode::Errors) return configured && s == State::NotResponding && (now / 400) % 2;
+  if (mode == LedMode::Connected) return configured && s == State::Ok;
   bool on;
   if (!configured) on = now % 2000 < 300;
   else if (s == State::Ok) on = true;

@@ -4,7 +4,7 @@ by the bridge after every CFG and whenever the file changes (the Pico keeps none
 
     display_timeout_s: 30     # 10, 30, 60, 300, or 0 = never off by itself
     brightness: 2             # 0-3
-    leds: auto                # auto (only with the display on) | on | off | errors (only those failing)
+    leds: auto                # auto (only with the display on) | on | connected (only those measuring) | off | errors (only those failing)
 
 Saved from the web console (System tab) in ~/.config/ros2d2/pico_board.yaml; when that file
 exists it wins over the package's one. No ROS here: tested on its own."""
@@ -18,8 +18,8 @@ USER_CONFIG = os.path.expanduser("~/.config/ros2d2/pico_board.yaml")
 DEFAULTS = {"display_timeout_s": 30, "brightness": 2, "leds": "auto"}
 TIMEOUTS = (10, 30, 60, 300, 0)
 BRIGHTNESS = (0, 1, 2, 3)
-LEDS = ("auto", "on", "off", "errors")
-_LED_WORD = {"auto": "auto", "on": "on", "off": "off", "errors": "err"}
+LEDS = ("auto", "on", "connected", "off", "errors")
+_LED_WORD = {"auto": "auto", "on": "on", "connected": "conn", "off": "off", "errors": "err"}
 CONNECTORS = ("VL1", "VL2", "VL3", "VL4", "US1", "US2", "US3", "US4", "US5")
 # What the console may ask the Pico to do now (through /pico/command): nothing else gets through
 _COMMAND = re.compile(r"^(DISP (on|on all|off|on (%s))|ID (%s))$" % ("|".join(CONNECTORS), "|".join(CONNECTORS)))
