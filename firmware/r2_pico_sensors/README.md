@@ -98,6 +98,10 @@ again. No BOOTSEL.
 changes not committed); the Pico says it in its `HELLO` answer and the console shows it.
 `build.sh --jobs 2 --nice` builds gently (on the Pi, while R2 runs).
 
+Flashing 0.2.0 from a PC before the Pi has the new ROS2D2: it works, but the Pi's older bridge
+shows the firmware commit as unknown and ignores the telemetry and display lines until it is
+updated (`setup/deploy.sh`).
+
 Host tests (plain C++, any computer with g++), from this folder:
 `for t in test/*.cpp; do g++ -std=c++17 -Wall -I. $t -o /tmp/t && /tmp/t; done`.
 

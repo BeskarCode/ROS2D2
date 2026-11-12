@@ -45,6 +45,7 @@ const char* volatile shownName = "off";
 
 void applyUi(const UiCfg& c) {
   uiCfg = c;
+  __sync_synchronize();     // the settings land before core 1 sees the flag
   uiCfgChanged = true;
 }
 void requestDisplay(bool on, int screen) { dispReq = on ? (int8_t)screen : REQ_OFF; }
@@ -233,6 +234,7 @@ void setup() {
 void applyRequests(uint32_t now) {
   if (uiCfgChanged) {
     uiCfgChanged = false;
+    __sync_synchronize();   // read the settings after the flag
     ui.awake_ms = uiCfg.awake_ms;
     if (present && lit) {
       uint8_t c[] = {0x81, CONTRAST[uiCfg.brightness & 3]};

@@ -22,7 +22,7 @@ done
 
 COMMIT=unknown
 if git -C "$HERE" rev-parse >/dev/null 2>&1; then
-  COMMIT=$(git -C "$HERE" log -1 --format=%h -- . 2>/dev/null || true)
+  COMMIT=$(git -C "$HERE" log -1 --abbrev=10 --format=%h -- . 2>/dev/null || true)
   [[ -z $COMMIT ]] && COMMIT=unknown
   [[ -n $(git -C "$HERE" status --porcelain -- . 2>/dev/null) ]] && COMMIT="$COMMIT-dirty"
 fi

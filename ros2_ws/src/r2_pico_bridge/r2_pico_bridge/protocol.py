@@ -11,7 +11,7 @@ Pi -> Pico:
                               answers CFG OK <n> or CFG ERR <why>
   BOOT                        restart into the USB loader (to flash it)
   TM 1 / TM 0                 telemetry on / off (answers TM OK; off after a restart)
-  UI t=<s> b=<0-3> led=<auto|on|off|err>
+  UI t=<s> b=<0-3> led=<auto|on|off|err|conn>
                               the carrier board's display timeout, brightness and LED mode
                               (sent after every CFG and when pico_board.yaml changes)
   DISP on [all|VL1..US5] / DISP off    the display on or off now
