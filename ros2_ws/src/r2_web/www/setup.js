@@ -325,6 +325,8 @@ function showTab(name) {
   $('tab-file').classList.toggle('on', name === 'file');
   $('tab-system').classList.toggle('on', name === 'system');
   $('identify').hidden = name !== 'cameras';
+  // the Manual button opens the part of the manual about this tab
+  $('manual').href = `https://github.com/BeskarCode/ROS2D2/blob/main/MANUAL.md#setup--${name}`;
   if (name === 'sensors') sensorsTab.show(); else sensorsTab.hide();
   if (name === 'modes') modesTab.show(); else modesTab.hide();
   if (name === 'system') systemTab.show(); else systemTab.hide();
