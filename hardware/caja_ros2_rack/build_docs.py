@@ -22,6 +22,7 @@ g.IMG = HERE / "montaje" / "img"
 g.VIEWS = {
     "montada": ('scene="montada"', 62, 320),
     "montada_atras": ('scene="montada_atras"', 58, 140),
+    "montada_led": ('scene="montada";leds=true', 75, 270),
     "interior": ('scene="abierta"', 55, 40),
     "despiece": ('scene="despiece"', 60, 330),
     "paso1": ('scene="paso";step=1', 55, 330),
@@ -37,6 +38,14 @@ g.PRINTED = [
     ("pared_multicolor_bambu.3mf", "Pared principal con el logo en 4 colores (AMS: blanco, marino, azul, gris)",
      "Main face with the logo in 4 colours (AMS: white, navy, blue, grey)"),
     ("pared_monocolor.stl", "o bien: pared principal de un color, logo grabado", "or: single-colour main face, engraved logo"),
+    ("pared_led_multicolor_bambu.3mf", "o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y "
+     "nombres de los conectores (AMS: blanco, marino, azul, gris)", "or: main face with a hole over each LED of the Pico "
+     "board, logo lower down and the connector names (AMS: white, navy, blue, grey)"),
+    ("pared_led_monocolor.stl", "o bien: la pared con LEDs de un color, logo y nombres grabados",
+     "or: the LED face in one colour, logo and names engraved"),
+    ("guias_luz.stl", "Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido, de pie, "
+     "relleno 100 %", "Light pipes (optional, only with the LED face): one piece in translucent PLA, standing, "
+     "100 % infill"),
     ("base.stl", "Base: suelo, trasera, tabique central", "Base: floor, back, central divider"),
     ("tapa.stl", "Tapa (techo + lateral + frontal estrecho)", "Shell (roof + side + narrow front)"),
     ("marco_pi4.stl", "Marco trasero para la Pi 4 (Ethernet arriba)", "Back frame for the Pi 4 (Ethernet at the top)"),
@@ -78,11 +87,19 @@ g.STEPS = [
      "en": {"title": "XT60 and switch on the main face", "text": "From outside, low down: the XT60E-F turned on its side "
             "with 2 screws into the inserts, and the switch snapped in."}},
     {"n": 5,
-     "es": {"title": "Varilla y placa de la Pico", "text": "Mete la varilla desde dentro por su guía y atornilla la placa a "
-            "las 4 columnas, componentes hacia la pared. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en "
+     "es": {"title": "Varilla y placa de la Pico", "text": "Con la pared con LEDs, las guías de luz son opcionales "
+            "(sin ellas los LEDs se ven por los agujeros). Si las pones, van antes de colgar la placa: desde dentro, mete "
+            "las 10 barras por sus agujeros y empuja el marco contra la pared hasta que los 4 ganchos encajen. Mete la "
+            "varilla desde dentro por su guía y atornilla la placa a las 4 columnas, componentes hacia la pared. Mira de "
+            "lado que ninguna barra toca su LED; si alguna toca, lija la punta. Si algún día usas J4 (EXP), su cable "
+            "rodea la barra PWR. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en "
             "la Pico y conecta los sensores: sus cables salen por la ranura de arriba."},
-     "en": {"title": "Push rod and Pico board", "text": "Slide the rod into its guide from inside and screw the board onto "
-            "the 4 columns, parts towards the wall. Tighten the 5 V in terminal J1, plug the angled micro-USB into the "
+     "en": {"title": "Push rod and Pico board", "text": "With the LED face, the light pipes are optional (without "
+            "them the LEDs show through the holes). If you fit them, they go in before hanging the board: from inside, "
+            "slide the 10 rods into their holes and push the frame against the wall until the 4 hooks click. Slide the "
+            "rod into its guide from inside and screw the board onto the 4 columns, parts towards the wall. Look from "
+            "the side that no rod touches its LED; if one does, sand its tip. If you ever use J4 (EXP), its cable goes "
+            "round the PWR rod. Tighten the 5 V in terminal J1, plug the angled micro-USB into the "
             "Pico and connect the sensors: their cables leave through the slot at the top."}},
     {"n": 6,
      "es": {"title": "Pared principal a la base", "text": "Los 24 V (XT60 → interruptor → convertidor) suben por delante "
