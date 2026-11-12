@@ -145,7 +145,7 @@ export function sees(s, x, y, size = 0, heightTop = Infinity) {
  * Sensors with found === false do not count.
  */
 export function coverage(sensors, step = 0.05) {
-  const live = sensors.filter((s) => s.found !== false);
+  const live = sensors.filter((s) => s.found !== false && s.enabled !== false);   // ignored ones leave their gap
   let n50 = 0, c50 = 0, n100 = 0, c100 = 0;
   const gaps = [];
   const bins = new Array(36).fill(0);
@@ -230,4 +230,12 @@ export function blindSectorsBase(s) {
 /** A lidar setting as sensors.yaml writes it (lists in flow style). */
 export function lidarYamlValue(v) {
   return Array.isArray(v) ? JSON.stringify(v).replace(/,/g, ', ') : String(v);
+}
+
+/** Ignoring sensor `name` leaves nothing in use looking ahead (no lidar, no sensor within 90 deg of ahead)? */
+export function lastFrontInUse(sensors, name) {
+  const ahead = (s) => isLidar(s) || Math.abs(((((s.yaw_deg || 0) + 180) % 360) + 360) % 360 - 180) < 90;
+  const target = sensors.find((s) => s.name === name);
+  if (!target || !ahead(target)) return false;
+  return !sensors.some((s) => s.name !== name && s.enabled !== false && ahead(s));
 }

@@ -179,3 +179,21 @@ test('lidar settings are written as YAML sensors.yaml reads', () => {
   assert.equal(lidarYamlValue(true), 'true');
   assert.equal(lidarYamlValue('DenseBoost'), 'DenseBoost');
 });
+
+// ---------- ignored sensors (enabled: false) ----------
+import { lastFrontInUse } from '../www/sensormath.js';
+
+test('coverage ignores ignored sensors', () => {
+  assert.equal(coverage([lidar({ enabled: false })]).far, 0);
+  assert.ok(coverage([lidar({ enabled: true })]).far > 0.3);
+});
+
+test('lastFrontInUse: the last sensor looking ahead', () => {
+  const a = { ...tof({ yaw_deg: 0 }), name: 'tof_front' };
+  const back = { ...sonar({ yaw_deg: 180 }), name: 'sonar_rear' };
+  assert.equal(lastFrontInUse([a, back], 'tof_front'), true);
+  assert.equal(lastFrontInUse([a, back, { ...lidar(), name: 'lidar' }], 'tof_front'), false);
+  assert.equal(lastFrontInUse([a, { ...tof({ yaw_deg: 30 }), name: 'tof_left' }], 'tof_front'), false);
+  assert.equal(lastFrontInUse([a, { ...tof({ yaw_deg: 30, enabled: false }), name: 'tof_left' }], 'tof_front'), true);
+  assert.equal(lastFrontInUse([a, back], 'sonar_rear'), false);   // ignoring a rear one: nothing to warn
+});

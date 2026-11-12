@@ -168,8 +168,10 @@ function telemetry() {
     const max = Math.min(s.range_max, 3);
     const frac = (v) => (v == null || !Number.isFinite(v) ? 0 : 1 - Math.min(v, max) / max);
     const reporting = lidar ? d !== undefined : n in filtered;
-    el.querySelector('b').textContent = !reporting ? 'no data' : s.pitch_deg > 30 ? 'floor ok'
-      : d == null || !Number.isFinite(d) ? 'clear' : `${d.toFixed(2)} m`;
+    const ignored = (st.ignored || []).includes(n);
+    el.style.opacity = ignored ? 0.45 : '';
+    el.querySelector('b').textContent = (ignored ? 'ignored · ' : '') + (!reporting ? 'no data' : s.pitch_deg > 30 ? 'floor ok'
+      : d == null || !Number.isFinite(d) ? 'clear' : `${d.toFixed(2)} m`);
     const stop = stops[n] || 0, fill = el.querySelector('.fill');
     fill.style.width = `${Math.round(frac(d) * 100)}%`;
     fill.style.background = stop && d != null && d < stop ? '#f85149' : stop && d != null && d < stop * 2 ? '#d29922' : COL[s.type];
