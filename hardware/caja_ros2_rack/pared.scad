@@ -137,6 +137,7 @@ module pared(depth = logo_depth, leds = false) {
             xt60_bosses();
             rod_guide();
             oled_tunnel();
+            if (leds) lp_hooks();
         }
         oled_window();
         rod_hole();

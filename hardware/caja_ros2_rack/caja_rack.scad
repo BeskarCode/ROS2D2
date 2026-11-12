@@ -3,7 +3,7 @@
 //   openscad -o pared.stl -D 'part="pared"' caja_rack.scad
 // Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
 // marco_pi4, marco_pi5, prueba_luz; the LED face: pared_led, pared_led_monocolor, logo_marino_led,
-// logo_azul_led, logo_gris_led.
+// logo_azul_led, logo_gris_led; the optional light-pipe piece: guias_luz.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -115,6 +115,15 @@ else if (part == "check_lp_holes_open") intersection() {
     pared(leds = true);
     for (i = [0 : len(pico_leds) - 1]) let(w = led_world(i)) translate([-1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_d, h = wall + 2, $fn = 24);
 }
+else if (part == "guias_luz") print_guias() guias_luz();
+else if (part == "guias_luz_montada") guias_luz();
+else if (part == "check_guias_vs_pared") intersection() { guias_luz(); pared(leds = true); }
+else if (part == "check_guias_vs_ghosts") intersection() { guias_luz(); ghost_all(); }
+else if (part == "check_guias_vs_pcb") intersection() { guias_luz(); ghost_pico_pcb(); }
+else if (part == "check_guias_held") intersection() { translate([0.5, 0, 0]) guias_luz(); pared(leds = true); }
+else if (part == "check_guias_stops_at_the_wall") intersection() { translate([-0.1, 0, 0]) guias_luz(); pared(leds = true); }
+else if (part == "check_hooks_vs_ghosts") intersection() { lp_hooks(); ghost_all(); }
+else if (part == "echo_lp_tips") { for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], lp_tip_x()); dot(); }
 else if (part == "check_pared_led_vs_ghosts") intersection() { pared(leds = true); ghost_all(); }
 else if (part == "check_labels_vs_holes") intersection() { lp_labels(1); lp_holes(1); }
 else if (part == "check_labels_vs_logo_led") intersection() { lp_labels(1); logo_svg("todo", 1, true); }

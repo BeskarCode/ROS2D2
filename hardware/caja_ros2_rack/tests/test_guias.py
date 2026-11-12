@@ -86,3 +86,36 @@ def test_labels_inside_the_face():
 def test_led_face_prints_flat(p):
     lo, hi = stl_bbox(run_scad(p))
     assert lo[2] == pytest.approx(0, abs=0.01)
+
+
+# --- the translucent piece and its hooks -------------------------------------------------------------
+def test_piece_clear_of_the_face():
+    assert is_empty("check_guias_vs_pared")         # assembled: neither rods nor frame touch the LED face
+
+
+@pytest.mark.parametrize("what", ["check_guias_vs_ghosts", "check_guias_vs_pcb"])
+def test_piece_never_touches_the_board(what):
+    assert is_empty(what)                           # ghost_all() has the LEDs, D2, J3, Dupont, cables
+
+
+def test_tips_leave_air_over_the_leds():
+    v = echo_values("echo_lp_tips")                 # name -> X of its rod's tip; LED top at 32.5 - 0.8
+    for name in SPEC:
+        assert 0.3 <= (32.5 - 0.8) - v[name] <= 0.8, name
+
+
+def test_piece_is_held():
+    assert not is_empty("check_guias_held")         # pushed 0.5 inwards, the hooks stop it
+
+
+def test_piece_rests_on_the_wall_only():
+    assert not is_empty("check_guias_stops_at_the_wall")   # pushed 0.1 outwards, it meets the wall
+
+
+def test_hooks_clear_of_ghosts():
+    assert is_empty("check_hooks_vs_ghosts")        # without the piece, the hooks are in nobody's way
+
+
+def test_piece_prints_standing():
+    lo, hi = stl_bbox(run_scad("guias_luz"))
+    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.2, abs=0.1)
