@@ -24,6 +24,9 @@ and a small HTTP API for what ROS topics cannot do:
                       LED mode) and any error in it
   POST /api/pico_board   save it in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid; the
                       Pico bridge sees it and sends it to the Pico at once
+  GET  /api/firmware the Pico firmware: toolchain installed, check/flash state and log, the Pico's
+                      commit, main's on GitHub and how they compare
+  POST /api/firmware/check | flash | retry   check GitHub / pull, build and flash / copy again
   GET  /api/system    the Pi's software version (~/r2_ws/VERSION); with ?telemetry=1 also its
                       SD, RAM, CPU, temperature and power/heat flags (System tab, on demand)
 
@@ -44,7 +47,8 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from rcl_interfaces.msg import ParameterDescriptor
 from rclpy.node import Node
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String
+from std_srvs.srv import SetBool
 
 from r2_camera.config import USER_CONFIG, config_path, load_cameras, usb_cameras
 from r2_camera.source import list_modes
@@ -55,6 +59,7 @@ from r2_web.modes_api import modes_payload, save_modes
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.sensors_api import save_sensors, sensors_payload
 from r2_web.system_api import system_payload
+from r2_web.firmware_api import FirmwareJob, autonomous_active
 from r2_web.pico_board_api import pico_board_payload, save_pico_board
 from r2_pico_bridge.board_settings import USER_CONFIG as BOARD_USER_CONFIG
 
@@ -95,6 +100,7 @@ class Handler(SimpleHTTPRequestHandler):
     modes_default = ""
     board_default = ""
     on_modes_saved = staticmethod(lambda: None)
+    firmware = None             # FirmwareJob, set by the node
     prev_stat = None            # the last /proc/stat sample, for the CPU %
     stat_lock = threading.Lock()
 
@@ -123,6 +129,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
         if self.path.split("?")[0] == "/api/pico_board":
             return self._json(200, pico_board_payload(self.board_default, BOARD_USER_CONFIG))
+        if self.path.split("?")[0] == "/api/firmware":
+            return self._json(200, self.firmware.status())
         if self.path.split("?")[0] == "/api/system":
             with Handler.stat_lock:
                 body, Handler.prev_stat = system_payload("telemetry=1" in self.path, Handler.prev_stat)
@@ -162,6 +170,13 @@ class Handler(SimpleHTTPRequestHandler):
             if code == 200:
                 self.on_modes_saved()
             return self._json(code, body)
+        if route in ("/api/firmware/check", "/api/firmware/flash", "/api/firmware/retry"):
+            self.rfile.read(int(self.headers.get("Content-Length", 0) or 0))
+            if route.endswith("check"):
+                self.firmware.check()
+                return self._json(200, self.firmware.status())
+            res = self.firmware.flash() if route.endswith("flash") else self.firmware.retry()
+            return self._json(200 if res == "ok" else 409, {"ok": True} if res == "ok" else {"error": res})
         if route == "/api/pico_board":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
@@ -207,11 +222,44 @@ class WebServerNode(Node):
         Handler.board_default = os.path.join(get_package_share_directory("r2_pico_bridge"), "config", "pico_board.yaml")
         self.pub_reload = self.create_publisher(Empty, "/r2/modes/reload", 10)
         Handler.on_modes_saved = staticmethod(lambda: self.pub_reload.publish(Empty()))
+        # the Pico firmware (System tab): what it needs to know, from ROS
+        self.seen = {}          # topic -> (dict, monotonic time)
+        for topic in ("/pico/state", "/nav/state", "/follow/state"):
+            self.create_subscription(String, topic, lambda m, t=topic: self._remember(t, m), 10)
+        self.release_client = self.create_client(SetBool, "/pico/release")
+        Handler.firmware = FirmwareJob(release=self._release, pico_state=lambda: self._latest("/pico/state", 3.0),
+                                       autonomous=self._autonomous)
         handler = functools.partial(Handler, directory=root)
         self.httpd = ThreadingHTTPServer(("0.0.0.0", port), handler)
         self.httpd.daemon_threads = True
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
         self.get_logger().info(f"Web console on http://<this machine>:{port}/ (serving {root})")
+
+    def _remember(self, topic, msg):
+        try:
+            self.seen[topic] = (json.loads(msg.data), time.monotonic())
+        except ValueError:
+            pass
+
+    def _latest(self, topic, max_age):
+        data, at = self.seen.get(topic, (None, 0.0))
+        return data if time.monotonic() - at <= max_age else None
+
+    def _autonomous(self):
+        now = time.monotonic()
+        nav, nav_at = self.seen.get("/nav/state", (None, 0.0))
+        follow, follow_at = self.seen.get("/follow/state", (None, 0.0))
+        return autonomous_active(nav, now - nav_at, follow, now - follow_at)
+
+    def _release(self, on):
+        """Ask the Pico bridge for the Pico's port (True) or give it back (False). From an HTTP
+        thread: the node spins in the main thread and answers the future."""
+        if not self.release_client.wait_for_service(timeout_sec=3.0):
+            return False
+        fut = self.release_client.call_async(SetBool.Request(data=on))
+        done = threading.Event()
+        fut.add_done_callback(lambda _: done.set())
+        return done.wait(5.0) and fut.result() is not None and fut.result().success
 
     def destroy_node(self):
         self.httpd.shutdown()

@@ -1,0 +1,35 @@
+#!/bin/sh
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
+# Installed as /usr/local/sbin/r2-pico-flash by setup/install_pico_toolchain.sh; run with sudo by
+# the web console. Copies the firmware built in the caller's ~/ros2d2-firmware onto the Pico's
+# USB drive (the Pico must already be in its USB loader: the bridge sends it BOOT). Takes no
+# arguments: it only ever copies that one file. Exit 0 = copied; else one line saying why.
+set -u
+
+[ "$(id -u)" = 0 ] || { echo "r2-pico-flash: run it with sudo"; exit 1; }
+USER_NAME=${SUDO_USER:-}
+[ -n "$USER_NAME" ] && [ "$USER_NAME" != root ] || { echo "r2-pico-flash: run it with sudo from the ROS2D2 user"; exit 1; }
+HOME_DIR=$(getent passwd "$USER_NAME" | cut -d: -f6)
+UF2=$HOME_DIR/ros2d2-firmware/firmware/r2_pico_sensors/build/r2_pico_sensors.ino.uf2
+DRIVE=/dev/disk/by-label/RP2350
+
+[ -f "$UF2" ] || { echo "r2-pico-flash: no built firmware ($UF2)"; exit 1; }
+i=0
+while [ ! -e "$DRIVE" ]; do
+  i=$((i + 1))
+  [ $i -gt 50 ] && { echo "r2-pico-flash: the Pico's USB drive did not appear in 10 s"; exit 1; }
+  sleep 0.2
+done
+MNT=$(mktemp -d)
+mount "$DRIVE" "$MNT" || { rmdir "$MNT"; echo "r2-pico-flash: could not mount the Pico's drive"; exit 1; }
+if cp "$UF2" "$MNT/"; then
+  sync
+  umount "$MNT" 2>/dev/null       # the Pico restarts as soon as the copy ends: it may be gone already
+  rmdir "$MNT"
+  echo "r2-pico-flash: copied"
+  exit 0
+fi
+umount "$MNT" 2>/dev/null
+rmdir "$MNT"
+echo "r2-pico-flash: the copy failed"
+exit 1

@@ -30,6 +30,7 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from sensor_msgs.msg import Range
 from std_msgs.msg import Bool, String
+from std_srvs.srv import SetBool
 
 from r2_pico_bridge import board_settings
 from r2_pico_bridge.protocol import cfg_line, parse
@@ -87,6 +88,9 @@ class PicoBridge(Node):
         self.pub_connected = self.create_publisher(Bool, "/pico/connected", latched)
         self.create_subscription(Bool, "/pico/telemetry_request", self.on_telemetry_request, 10)
         self.create_subscription(String, "/pico/command", self.on_command, 10)
+        # flashing: the web console asks for the port (BOOT, then it stays closed) and gives it back
+        self.released = False
+        self.create_service(SetBool, "/pico/release", self.on_release)
         self.reload_board()
         self.reload(force=True)
         self.create_timer(1.0, self.tick)
@@ -172,6 +176,10 @@ class PicoBridge(Node):
     def _read_loop(self):
         buf = b""
         while not self._stop.is_set():
+            if self.released:
+                self._stop.wait(0.1)
+                buf = b""
+                continue
             if self.ser is None:
                 if not self._connect():
                     self._stop.wait(self.param("reconnect_sec"))
@@ -292,6 +300,20 @@ class PicoBridge(Node):
             return
         if self.settings_supported is not False:
             self._write(msg.data + NL)
+
+    def on_release(self, request, response):
+        """/pico/release true: restart the Pico into its USB loader (BOOT) and leave its port
+        alone, so it can be flashed. false: open it again (HELLO, CFG, UI and TM follow)."""
+        if request.data:
+            self.released = True
+            self._write("BOOT" + NL)
+            self._lost("released for flashing")
+            response.message = "released"
+        else:
+            self.released = False
+            response.message = "taken back"
+        response.success = True
+        return response
 
     # --- telemetry ------------------------------------------------------------------
 

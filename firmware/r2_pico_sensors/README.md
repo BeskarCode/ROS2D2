@@ -75,7 +75,11 @@ arduino-cli config add board_manager.additional_urls https://github.com/earlephi
 arduino-cli core update-index
 arduino-cli core install rp2040:rp2040
 arduino-cli lib install VL53L0X
+arduino-cli lib install "Adafruit GFX Library"
 ```
+
+On the Pi, `setup/install_pico_toolchain.sh` installs all this (and what the web console needs to
+check GitHub for new firmware and flash it from Setup -> System) in one go.
 
 The first time, the Pico has no firmware: hold BOOTSEL while plugging it into the Pi. It
 shows up as a USB drive labelled `RP2350`; copy `build/r2_pico_sensors.ino.uf2` onto it.
