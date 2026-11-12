@@ -24,3 +24,14 @@ def lidar_plan(mode, port_exists, service_installed):
     if port_exists:
         return "sllidar", True
     return None, False
+
+
+def driver_params(sensors):
+    """sllidar_ros2's parameters from the lidar block of sensors.yaml (no lidar or a broken file:
+    the defaults the droid always had)."""
+    from r2_sensors.config import LIDAR_DEFAULTS, lidar_name
+    name = lidar_name(sensors)
+    s = sensors[name] if name else {}
+    return {"serial_port": s.get("port", "/dev/r2-lidar"), "serial_baudrate": 460800,
+            "frame_id": f"{name or 'lidar'}_link", "scan_mode": s.get("scan_mode", LIDAR_DEFAULTS["scan_mode"]),
+            "inverted": s.get("inverted", LIDAR_DEFAULTS["inverted"]), "angle_compensate": True}

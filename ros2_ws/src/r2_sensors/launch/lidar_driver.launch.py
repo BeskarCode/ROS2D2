@@ -20,8 +20,7 @@ _spec.loader.exec_module(_sensors)
 
 
 def driver(context):
-    name, port = _sensors.lidar_port(LaunchConfiguration("sensors_config").perform(context))
-    return [_sensors.sllidar_node(name, port)]
+    return [_sensors.sllidar_node(_sensors.lidar_settings(LaunchConfiguration("sensors_config").perform(context)))]
 
 
 def generate_launch_description():

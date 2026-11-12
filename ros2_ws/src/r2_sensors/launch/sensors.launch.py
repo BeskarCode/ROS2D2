@@ -23,30 +23,27 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-from r2_sensors.config import config_path, lidar_name, load_sensors
-from r2_sensors.lidar_plan import SERVICE_FILE, lidar_plan
+from r2_sensors.config import config_path, load_sensors
+from r2_sensors.lidar_plan import SERVICE_FILE, driver_params, lidar_plan
 
 
-def lidar_port(config):
-    """(name, port) of the lidar in sensors.yaml; a broken file must not stop the droid's launch."""
+def lidar_settings(config):
+    """The driver's parameters from sensors.yaml; a broken file must not stop the droid's launch."""
     try:
         sensors = load_sensors(config_path(config))
     except Exception as e:     # noqa: BLE001
         print(f"[sensors.launch] sensors.yaml: {e}")
         sensors = {}
-    name = lidar_name(sensors)
-    return name, sensors[name]["port"] if name else "/dev/r2-lidar"
+    return driver_params(sensors)
 
 
-def sllidar_node(name, port):
+def sllidar_node(params):
     """The RPLIDAR C1 driver, publishing /scan_raw (also used by lidar_driver.launch.py)."""
     return Node(
         package="sllidar_ros2",
         executable="sllidar_node",
         name="sllidar_node",
-        parameters=[{"serial_port": port, "serial_baudrate": 460800,
-                     "frame_id": f"{name or 'lidar'}_link", "scan_mode": "Standard",
-                     "angle_compensate": True}],
+        parameters=[params],
         remappings=[("scan", "scan_raw")],
         output="screen",
     )
@@ -56,14 +53,15 @@ def lidar_nodes(context):
     config = LaunchConfiguration("sensors_config").perform(context)
     mode = LaunchConfiguration("lidar").perform(context)
     params = [{"config": config}]
-    name, port = lidar_port(config)
+    driver_cfg = lidar_settings(config)
+    port = driver_cfg["serial_port"]
     driver, crop = lidar_plan(mode, os.path.exists(port), os.path.exists(SERVICE_FILE))
     nodes = []
     if driver == "fake":
         nodes.append(Node(package="r2_sensors", executable="fake_lidar", name="fake_lidar",
                           parameters=params, output="screen"))
     elif driver == "sllidar":
-        nodes.append(sllidar_node(name, port))
+        nodes.append(sllidar_node(driver_cfg))
     elif mode == "auto" and os.path.exists(SERVICE_FILE):
         print(f"[sensors.launch] the lidar driver runs in r2d2-lidar.service while {port} is plugged in")
     elif mode == "auto":
