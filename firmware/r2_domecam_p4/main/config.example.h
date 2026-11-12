@@ -10,3 +10,20 @@
 // Name on the network: http://r2-domecam1.local/ . Use r2-domecam2, 3... for more cameras.
 // The same name as the ESP32-S3 camera, so one can replace the other without touching the Pi.
 #define CAM_HOSTNAME  "r2-domecam1"
+
+// Video for the console (only sent while someone watches it): width 320, 640, 800 or 1280
+// (the height keeps 4:3) and JPEG quality 1 (smallest) .. 100 (best).
+// (Also from /control?var=framesize|quality&val=N until the next reboot.)
+#define CAM_STREAM_WIDTH 640
+#define CAM_JPEG_QUALITY 70
+
+// Mounting: fix a camera that sees the world upside down, mirrored or on its side.
+// CAM_ROTATE turns the picture clockwise: 0, 90, 180 or 270. The face finder only finds upright
+// faces, so turn it until they are. (Also from /control?var=vflip|hmirror|rotate&val=N.)
+#define CAM_VFLIP   false
+#define CAM_HMIRROR false
+#define CAM_ROTATE  0
+
+// Colour order of the pictures the detectors get. If a red shirt is found as blue (README.md,
+// first test with the board), flip this.
+#define CAM_RGB_SWAP false
