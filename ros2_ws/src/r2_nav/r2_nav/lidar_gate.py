@@ -6,7 +6,7 @@ started holds still until a scan arrives, or WAIT_S passes; then it drives as it
 without a lidar (with the Pico's sensors). With always or off it never waits.
 """
 
-WAIT_S = 3.0
+WAIT_S = 5.0                    # the C1 takes about 4 s from start_motor to its first scan
 
 
 class LidarGate:

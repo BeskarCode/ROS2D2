@@ -549,7 +549,7 @@ export function createSensorsTab({ status }) {
         <input type="number" class="num sb" min="-180" max="180" step="1" value="${b}">°
         <button class="eye srm" title="Remove this blind sector"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
     return `
-      <div class="row"><label><i class="fa-solid fa-fan"></i>motor</label><select class="lmotor" title="Only with an automatic mode: R2 standing still is quiet; a mode waits up to 3 s for the lidar to spin up">
+      <div class="row"><label><i class="fa-solid fa-fan"></i>motor</label><select class="lmotor" title="Only with an automatic mode: R2 standing still is quiet; a mode waits up to 5 s for the lidar to spin up">
         ${LIDAR_MOTOR.map(([v, t]) => opt(v, t, s.motor || 'always')).join('')}</select></div>
       <div class="row"><label><i class="fa-solid fa-wave-square"></i>scan mode</label><select class="lmode" title="The modes the lidar says it has. Changing it restarts the lidar's driver">
         ${modes.map((m) => opt(m, m, s.scan_mode || 'Standard')).join('')}</select></div>

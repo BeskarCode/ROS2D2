@@ -173,7 +173,7 @@ class FollowNode(Node):
             self.follower.start(self._now())
             self.gate.activate(self._now())
 
-        if not self.gate.ready(self._now()):         # the lidar is spinning up: hold still (<= 3 s)
+        if not self.gate.ready(self._now()):         # the lidar is spinning up: hold still (<= 5 s)
             return
 
         now = self._now()

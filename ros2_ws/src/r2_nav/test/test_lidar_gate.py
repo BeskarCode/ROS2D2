@@ -10,11 +10,12 @@ def test_gate_waits_for_the_first_scan():
     assert g.ready(11.6)
 
 
-def test_gate_gives_up_after_3_s():
-    assert WAIT_S == 3.0
+def test_gate_gives_up_after_5_s():
+    # 5 s (Fernando): start_motor plus spin-up takes about 4 s on the C1
+    assert WAIT_S == 5.0
     g = LidarGate(policy="with_modes")
     g.activate(10.0)
-    assert not g.ready(12.9) and g.ready(13.0)
+    assert not g.ready(14.9) and g.ready(15.0)
 
 
 def test_gate_never_blocks_with_always_or_off():

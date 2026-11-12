@@ -193,7 +193,7 @@ class NavigatorNode(Node):
             self.gate.activate(now)
         self.was_auto = auto
         if auto and not self.gate.ready(now):
-            auto = False                             # the lidar is spinning up: hold still (<= 3 s)
+            auto = False                             # the lidar is spinning up: hold still (<= 5 s)
         d = self.nav.step(now, self.pose, scan_xy, ranges, auto, speed=self.out[0])
 
         v, w = self.out
