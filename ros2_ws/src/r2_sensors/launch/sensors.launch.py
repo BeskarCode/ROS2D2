@@ -69,6 +69,10 @@ def lidar_nodes(context):
     if crop:
         nodes.append(Node(package="r2_sensors", executable="scan_crop", name="scan_crop",
                           parameters=params, output="screen"))
+    if crop and driver != "fake":
+        # spins the motor as sensors.yaml's lidar motor says (always / with_modes / off)
+        nodes.append(Node(package="r2_sensors", executable="lidar_motor", name="lidar_motor",
+                          parameters=params, output="screen"))
     return nodes
 
 
