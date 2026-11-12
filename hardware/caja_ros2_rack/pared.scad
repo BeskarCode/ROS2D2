@@ -22,10 +22,12 @@ module logo_2d(c) {
     if (c == "todo") logo_clean() union() for (k = logo_colours) import(str(LOGO_DIR, "logo_", k, ".svg"));
     else logo_clean() import(str(LOGO_DIR, "logo_", c, ".svg"));
 }
-module logo_svg(c, depth = logo_depth) {
-    yL = D / 2 + logo_w / 2; zlo = logo_zc - logo_h / 2;
+// leds: the LED face's logo, moved down under the OLED window; its navy body also carries the connector names
+module logo_svg(c, depth = logo_depth, leds = false) {
+    yL = D / 2 + logo_w / 2; zlo = (leds ? logo_zc_led : logo_zc) - logo_h / 2;
     multmatrix([[0, 0, -1, depth], [-1, 0, 0, yL], [0, 1, 0, zlo], [0, 0, 0, 1]])
         linear_extrude(depth) scale(logo_w / LOGO_SVG_W) logo_2d(c);
+    if (leds && c == "marino") lp_labels(depth);
 }
 
 // --- pieces ----------------------------------------------------------------------------------------
@@ -125,7 +127,8 @@ module wall_tabs() {
     }
 }
 
-module pared(depth = logo_depth) {
+// leds: the LED face (a hole over each of the Pico board's LEDs, logo moved down, connector names)
+module pared(depth = logo_depth, leds = false) {
     difference() {
         union() {
             cube([wall, D, H]);
@@ -140,7 +143,8 @@ module pared(depth = logo_depth) {
         switch_cut();
         xt60_cut();
         sensor_slot_cut();
-        logo_svg("todo", depth);
+        logo_svg("todo", depth, leds);
+        if (leds) { lp_holes(); lp_labels(depth); }
     }
 }
 

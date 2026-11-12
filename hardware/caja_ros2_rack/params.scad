@@ -82,6 +82,10 @@ pico_leds = [["VL1", 72.6, 12], ["VL2", 72.6, 24], ["VL3", 72.6, 39], ["VL4", 72
 led_h = 0.8;                         // 0603 LED height, the datasheet's highest
 led_air = 0.5;                       // air between a pipe's tip and its LED: the pipes never touch the board
 lp_d = 3;                            // light pipe diameter
+lp_hole = lp_d + 0.4;                // its hole in the LED face: 0.2 per side, goes in without forcing, no play
+logo_zc_led = 27.5;                  // the LED face's logo: centred between the XT60/switch (Z 16) and the window's chamfer (Z 39)
+lp_label_h = 3.5;  lp_label_gap = 1; // connector names beside their dots
+lp_label_font = "Liberation Sans:style=Bold";
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
 
 // --- derived ------------------------------------------------------------------------------------

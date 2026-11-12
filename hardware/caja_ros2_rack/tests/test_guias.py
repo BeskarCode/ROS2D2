@@ -39,3 +39,50 @@ def test_each_led_ghost_is_where_its_led_is(name):
 
 def test_vl_dupont_ghost_leaves_the_vl_leds_free():
     assert is_empty("check_vl_dupont_vs_vl_leds")
+
+
+# --- the LED face, today's face unchanged ------------------------------------------------------------
+TODAY = {"pared": 39695.404, "pared_monocolor": 39545.04, "logo_marino": 81.994, "logo_azul": 121.116,
+         "logo_gris": 22.435}                       # measured before the LED face existed
+
+
+@pytest.mark.parametrize("part", list(TODAY))
+def test_today_face_unchanged(part):
+    assert stl_volume(run_scad(part)) == pytest.approx(TODAY[part], abs=0.01)
+
+
+def test_led_holes_over_each_led():
+    v = echo_values("echo_lp_holes")                # name -> [y, z, d]
+    for name, (y, z) in SPEC.items():
+        hy, hz, d = v[name]
+        assert (hy, hz) == pytest.approx((y, z), abs=0.2) and d >= 3.2, name
+
+
+def test_led_holes_go_through():
+    assert is_empty("check_lp_holes_open")          # the LED face, inside each hole's core: nothing
+
+
+def test_led_logo_in_its_band():
+    lo, hi = stl_bbox(run_scad("logo_todo_led_montado"))
+    assert lo[2] >= 16.5 and hi[2] <= 38.5          # XT60 / switch up to Z 16; the window's chamfer from Z 39
+    assert hi[1] - lo[1] == pytest.approx(80, abs=0.5)
+
+
+def test_led_face_clear_of_ghosts():
+    assert is_empty("check_pared_led_vs_ghosts")
+
+
+@pytest.mark.parametrize("what", ["check_labels_vs_holes", "check_labels_vs_logo_led", "check_labels_vs_window"])
+def test_labels_clear(what):
+    assert is_empty(what)
+
+
+def test_labels_inside_the_face():
+    lo, hi = stl_bbox(run_scad("lp_labels_montadas"))
+    assert lo[1] >= 2 and hi[1] <= 93 and lo[2] >= 2 and hi[2] <= 143
+
+
+@pytest.mark.parametrize("p", ["pared_led", "pared_led_monocolor", "logo_marino_led", "logo_azul_led", "logo_gris_led"])
+def test_led_face_prints_flat(p):
+    lo, hi = stl_bbox(run_scad(p))
+    assert lo[2] == pytest.approx(0, abs=0.01)
