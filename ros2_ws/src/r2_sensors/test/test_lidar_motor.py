@@ -35,3 +35,11 @@ def test_changing_the_policy_acts_at_once():
 def test_mode_active():
     assert mode_active(True, "follow") and mode_active(True, "patrol") and mode_active(True, None)
     assert not mode_active(False, "goto") and not mode_active(True, "dome")
+
+
+def test_a_restarted_driver_gets_the_order_again():
+    p = MotorPolicy()
+    assert p.update(0, "off", False) == "stop"
+    assert p.update(1, "off", False) is None
+    p.driver_restarted()                      # the driver came back up spinning: say it again
+    assert p.update(2, "off", False) == "stop"
