@@ -21,7 +21,7 @@ module ghost_pico() {
         union() {
             on_board(0, 0, pico_w, pico_h, oled_thick);           // low parts, OLED
             on_board(0, 6, 14, 58, pico_gap - 0.5);               // US1-5 headers + Dupont
-            on_board(50, 6, 80, 54, pico_gap - 0.5);              // VL1-4 (last row by 51: its Dupont housings end at 52.3)
+            on_board(50, 6, 69.1, 54, pico_gap - 0.5);            // VL1-4 (housings end at bx 69, by 52.3; their LEDs at bx 72.6 stay free)
             on_board(24, 65, 42, 73, pico_gap - 0.5);             // EXP header (its Dupont housings end at bx 41.5)
             on_board(29, 0, 51, 55, 13);                          // the Pico on its sockets
             on_board(0, 52, 11, 66, 11);                          // 5 V terminal J1
@@ -30,6 +30,10 @@ module ghost_pico() {
             cylinder(d = 8.4, h = pico_gap + 2, $fn = 32);
         translate(pico2world(sw1[0], sw1[1]) + [-sw1_h, 0, 0]) rotate([0, -90, 0])   // push rod path
             cylinder(d = 9, h = pico_gap, $fn = 32);
+        // a well over each LED: within 2 mm of it there is nothing (its 0603 resistor is 2.9 mm away,
+        // 0.5 mm tall); the LED itself is ghost_leds()
+        for (i = [0 : len(pico_leds) - 1]) translate(pico2world(pico_leds[i][1], pico_leds[i][2]) + [0.01, 0, 0])
+            rotate([0, -90, 0]) cylinder(d = led_well_d, h = pico_gap, $fn = 32);
     }
     // J1's wires come in over the board's bx = 0 edge
     a = pico2world(0, 66); b = pico2world(0, 52);
@@ -37,6 +41,16 @@ module ghost_pico() {
     // the Pico's micro-USB, angled plug, over the top edge
     u = pico2world(40, 0);
     box_from([pico_x() - 14, u[1] - 8, u[2]], [pico_x(), u[1] + 8, u[2] + pico_usb_clear - 0.5]);
+}
+
+// the Pico board's LEDs (0603, 1.6 x 0.8, LED1-4 turned 90 deg), D2 (SMA) and the QWIIC plug J3 with its
+// cable straight towards the wall: what is near the light pipes
+module ghost_leds() {
+    for (i = [0 : len(pico_leds) - 1]) let(l = pico_leds[i], a = l[1] > 70 ? [0.4, 0.8] : [0.8, 0.4])
+        on_board(l[1] - a[0], l[2] - a[1], l[1] + a[0], l[2] + a[1], led_h);
+    on_board(35 - 2.2, 59.5 - 1.4, 35 + 2.2, 59.5 + 1.4, 2.3);           // D2
+    on_board(37 - 3, 64.5 - 2.15, 37 + 3, 64.5 + 2.15, 4.3);             // J3
+    on_board(37 - 3, 64.5 - 1.5, 37 + 3, 64.5 + 1.5, pico_gap - 1);      // its cable, to wall + 1
 }
 
 module ghost_pico_pcb() { on_board(0, 0, pico_w, pico_h, -pcb_t); }
@@ -103,7 +117,8 @@ module ghost(name) {
     else if (name == "switch") ghost_switch();
     else if (name == "cables") ghost_cables();
     else if (name == "hdmi") ghost_hdmi();
+    else if (name == "leds") ghost_leds();
     else assert(false, str("unknown ghost ", name));
 }
 
-module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables", "hdmi"]) ghost(g); }
+module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables", "hdmi", "leds"]) ghost(g); }
