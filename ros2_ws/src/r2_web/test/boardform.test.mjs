@@ -7,7 +7,7 @@ import { CONNECTORS, OPTIONS, toYaml } from '../www/boardform.js';
 test('the options are the ones r2_pico_bridge/board_settings.py accepts', () => {
   assert.deepEqual(OPTIONS.display_timeout_s.map(([v]) => v), [10, 30, 60, 300, 0]);
   assert.deepEqual(OPTIONS.brightness.map(([v]) => v), [0, 1, 2, 3]);
-  assert.deepEqual(OPTIONS.leds.map(([v]) => v), ['auto', 'on', 'off', 'errors']);
+  assert.deepEqual(OPTIONS.leds.map(([v]) => v), ['auto', 'on', 'connected', 'off', 'errors']);
   assert.equal(OPTIONS.display_timeout_s.find(([v]) => v === 0)[1], 'never');
   assert.deepEqual(CONNECTORS, ['VL1', 'VL2', 'VL3', 'VL4', 'US1', 'US2', 'US3', 'US4', 'US5']);
 });

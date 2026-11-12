@@ -5,7 +5,8 @@
 export const OPTIONS = {
   display_timeout_s: [[10, '10 s'], [30, '30 s'], [60, '1 min'], [300, '5 min'], [0, 'never']],
   brightness: [[0, 'low'], [1, 'medium'], [2, 'high'], [3, 'full']],
-  leds: [['auto', 'only with the display on'], ['on', 'always on'], ['off', 'always off'], ['errors', 'only the ones failing']],
+  leds: [['auto', 'only with the display on'], ['on', 'always on'], ['connected', 'on, only the ones connected'],
+    ['off', 'always off'], ['errors', 'only the ones failing']],
 };
 
 export const CONNECTORS = ['VL1', 'VL2', 'VL3', 'VL4', 'US1', 'US2', 'US3', 'US4', 'US5'];

@@ -1,7 +1,7 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The carrier board's settings and actions the Pi sends (the Pico keeps none: the Pi sends them
 // again after every CFG):
-//   UI t=<s> b=<0-3> led=<auto|on|off|err>   display timeout (10, 30, 60, 300; 0 = never),
+//   UI t=<s> b=<0-3> led=<auto|on|conn|off|err>   display timeout (10, 30, 60, 300; 0 = never),
 //                                            brightness, LED mode; any of them, any order
 //   DISP on [all|VL1..US5] / DISP off         the display on (every sensor, or one) or off
 //   ID <VL1..US5>                             that connector's LED blinks fast for 5 s
@@ -60,6 +60,7 @@ inline const char* parseUi(const char* args, UiCfg& out) {
       else if (strcmp(v, "on") == 0) next.leds = LedMode::On;
       else if (strcmp(v, "off") == 0) next.leds = LedMode::Off;
       else if (strcmp(v, "err") == 0) next.leds = LedMode::Errors;
+      else if (strcmp(v, "conn") == 0) next.leds = LedMode::Connected;
       else return "bad led";
     } else {
       snprintf(err, sizeof err, "bad item %.10s=%.10s", item, v);

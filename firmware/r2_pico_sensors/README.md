@@ -111,7 +111,7 @@ Pi → Pico:
 | `CFG` + up to 12 items: `V:<xshut>` (VL53L0X) or `S:<trig>:<echo>` (HC-SR04); a sensor's index is its place in the line; `CFG` alone = none | `CFG OK <n>` or `CFG ERR <why>` (`bad item <k>`, `pin <p> reserved`, `pin <p> twice`, `too many`). After an error the Pico has no sensors until the next good `CFG`. |
 | `BOOT` | none: the Pico restarts into its USB loader (for flashing) |
 | `TM 1` / `TM 0` | `TM OK`: telemetry on / off (off after a restart). The Pi asks for it only while the console's System tab shows it. |
-| `UI t=<s> b=<0-3> led=<auto\|on\|off\|err>` | `UI OK` or `UI ERR <why>`: the display's timeout (10, 30, 60, 300 s; 0 = never), brightness and the status LEDs' mode (auto = only with the display on, on, off, err = only those not responding). Any of them, any order. The Pico keeps none: the Pi (`pico_board.yaml`) sends them after every `CFG`. |
+| `UI t=<s> b=<0-3> led=<auto\|on\|conn\|off\|err>` | `UI OK` or `UI ERR <why>`: the display's timeout (10, 30, 60, 300 s; 0 = never), brightness and the status LEDs' mode (auto = only with the display on, on, conn = only those measuring, off, err = only those not responding). Any of them, any order. The Pico keeps none: the Pi (`pico_board.yaml`) sends them after every `CFG`. |
 | `DISP on [all\|VL1..US5]` / `DISP off` | `DISP OK`: the display on (every sensor, or one) or off, now |
 | `ID <VL1..US5>` | `ID OK`: that connector's LED blinks at 5 Hz for 5 s, whatever the LED mode |
 | `DBG` | for each VL53L0X that answers: `DBG <index> addr=.. irq=.. rs=..(st..) raw=.. seq=.. mode=.. lim=.. vcsel=.. budget=.. i2c=.. fails=..` (its raw result and settings; `seq=e8` and `budget=33823` when healthy), then `DBG end` |

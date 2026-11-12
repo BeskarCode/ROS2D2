@@ -32,6 +32,7 @@ int main() {
   check(parseUi(" t=0 b=0 led=err", c) == nullptr && c.awake_ms == 0 && c.leds == LedMode::Errors, "t=0 = never off; err");
   check(parseUi(" led=off t=10", c) == nullptr && c.leds == LedMode::Off && c.awake_ms == 10000 && c.brightness == 0,
         "any order; what is not given stays");
+  check(parseUi(" led=conn", c) == nullptr && c.leds == LedMode::Connected, "conn: only the ones measuring");
   check(parseUi(" led=auto t=300", c) == nullptr && c.leds == LedMode::Auto && c.awake_ms == 300000, "auto, 5 min");
 
   expectUiError(" t=45", "bad t");
