@@ -86,6 +86,18 @@ lp_hole = lp_d + 0.4;                // its hole in the LED face: 0.2 per side, 
 logo_zc_led = 27.5;                  // the LED face's logo: centred between the XT60/switch (Z 16) and the window's chamfer (Z 39)
 lp_label_h = 3.5;  lp_label_gap = 1; // connector names beside their dots
 lp_label_font = "Liberation Sans:style=Bold";
+// the translucent piece: a flat frame against the wall's inside face holds the 10 rods; hooks on the wall
+// snap over two ears on each side. The VL side sits towards the front (its Dupont housings start at Y 21)
+lp_frame_t = 2;  lp_frame_gap = 0.05;            // frame thickness; air to the wall (it rests on it)
+lp_vl_strip = [13.4, 19.4];  lp_us_strip = [66.5, 72];   // Y of the two columns of the frame
+lp_strip_z = [69.5, 115.5];                       // Z of both columns (under the board's column at Z 117)
+lp_bar_z = [68.85, 70.4];  lp_bar_t = 4;          // the cross bar: between the OLED tunnel (top Z 68.7) and the VL
+                                                  // Dupont plugs (from Z 70.5); thicker in X to stay stiff
+lp_pwr_arm = [48.3, 51.7];                        // Y of the arm down to the PWR rod (the tunnel ends at Y 48)
+lp_hole_x = 7;                                    // the holes go this deep: through the tunnel's wall by PWR
+lp_ear = [1.6, 6, 9.5];                           // ear: Y width, Z length, X of its top
+lp_hook_t = 1.4;  lp_hook_gap = 0.2;  lp_hook_lip = 0.5;  lp_hook_lip_h = 1;  lp_hook_air = 0.1;
+lp_hooks_z = [[79.5, 106.5], [77.5, 107.5]];      // VL side, US side
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
 
 // --- derived ------------------------------------------------------------------------------------
