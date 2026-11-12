@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" role="img" aria-label="Follow a colour: R2 follows whoever wears the colour picked in the console, keeping its distance">
+  <!-- ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com) -->
+  <defs>
+    <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1f2630" stroke-width="1"/></pattern>
+    <g id="r2">
+      <!-- the dome camera looking at the colour -->
+      <path d="M0 0 L46 -16 A49 49 0 0 1 46 16 Z" fill="#f0883e" fill-opacity="0.12" stroke="#f0883e" stroke-opacity="0.45"/>
+      <rect x="-7" y="-14" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <rect x="-7" y="9" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <circle r="9" fill="#161b22" stroke="#8b949e" stroke-width="1.5"/>
+      <path d="M10 0 L4 -4 L4 4 Z" fill="#e6edf3"/>
+    </g>
+    <g id="person">
+      <circle r="9" fill="#f0883e" fill-opacity="0.25"><animate attributeName="r" values="8;12;8" dur="1s" repeatCount="indefinite"/></circle>
+      <circle r="6" fill="#f0883e" stroke="#ffd2a6"/>
+    </g>
+  </defs>
+  <rect width="320" height="180" rx="10" fill="#0d1117"/>
+  <rect width="320" height="180" rx="10" fill="url(#g)"/>
+  <path id="way" d="M70 95 C70 45 150 34 186 58 C222 82 262 120 226 146 C190 170 110 150 70 95 Z" fill="none" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.3"/>
+  <!-- whoever wears the colour, a little ahead -->
+  <use href="#person">
+    <animateMotion dur="10s" begin="-1.3s" repeatCount="indefinite" rotate="auto"><mpath href="#way"/></animateMotion>
+  </use>
+  <use href="#r2">
+    <animateMotion dur="10s" begin="0s" repeatCount="indefinite" rotate="auto"><mpath href="#way"/></animateMotion>
+  </use>
+  <text x="12" y="20" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Follow a colour</text>
+  <text x="12" y="168" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">follows the picked colour at its distance; lost: it stops</text>
+</svg>

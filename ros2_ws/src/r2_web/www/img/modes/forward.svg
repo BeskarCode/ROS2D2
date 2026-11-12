@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" role="img" aria-label="Go forward: R2 strolls ahead while there is room; when something crosses it slows down and turns gently to a free gap">
+  <!-- ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com) -->
+  <defs>
+    <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1f2630" stroke-width="1"/></pattern>
+    <g id="r2">
+      <path d="M0 0 L60 -22 A64 64 0 0 1 60 22 Z" fill="#39c5cf" fill-opacity="0.12" stroke="#39c5cf" stroke-opacity="0.4"/>
+      <rect x="-7" y="-14" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <rect x="-7" y="9" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+      <circle r="9" fill="#161b22" stroke="#8b949e" stroke-width="1.5"/>
+      <path d="M10 0 L4 -4 L4 4 Z" fill="#e6edf3"/>
+    </g>
+    <g id="person"><circle r="7" fill="#6e7681" fill-opacity="0.5" stroke="#8b949e"/><circle r="3" fill="#8b949e"/></g>
+  </defs>
+  <rect width="320" height="180" rx="10" fill="#0d1117"/>
+  <rect width="320" height="180" rx="10" fill="url(#g)"/>
+  <!-- people in the way -->
+  <use href="#person" x="178" y="122"/>
+  <use href="#person" x="196" y="140"/>
+  <use href="#person" x="164" y="146"/>
+  <use href="#person" x="214" y="118"/>
+  <path id="way" d="M8 128 L112 128 Q150 128 166 92 Q184 52 318 44" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>
+  <use href="#r2">
+    <!-- slower while it turns towards the gap -->
+    <animateMotion dur="8s" repeatCount="indefinite" rotate="auto" keyPoints="0;0.32;0.5;1" keyTimes="0;0.3;0.62;1" calcMode="linear">
+      <mpath href="#way"/>
+    </animateMotion>
+  </use>
+  <text x="12" y="20" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Go forward</text>
+  <text x="12" y="168" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">ahead while there is room; blocked: it turns to a gap</text>
+</svg>
