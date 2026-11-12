@@ -65,3 +65,9 @@ def test_parse_acks_of_the_board_settings():
     assert parse("DISP OK") == ("ack", "DISP", True, None)
     assert parse("ID ERR bad connector") == ("ack", "ID", False, "bad connector")
     assert parse("XX OK") is None
+
+
+def test_parse_what_the_display_shows():
+    for s in ("off", "logo", "all", "VL1", "US5"):
+        assert parse(f"DS {s}") == ("ds", s)
+    assert parse("DS VL9") is None and parse("DS") is None

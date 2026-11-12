@@ -52,11 +52,15 @@ class FakePico:
         if line == "HELLO":
             self._send("PICO r2_pico_sensors 0.1.0 proto 1" if self.proto == 1
                        else "PICO r2_pico_sensors 0.2.0 proto 2 commit fake123")
+            if self.proto >= 2:
+                self._send("DS off")
         elif self.proto >= 2 and line in ("TM 1", "TM 0"):
             self.tm = line == "TM 1"
             self._send("TM OK")
         elif self.proto >= 2 and line.split(" ")[0] in ("UI", "DISP", "ID"):
             self._send(f"{line.split(' ')[0]} OK")
+            if line.startswith("DISP "):
+                self._send("DS off" if line == "DISP off" else f"DS {line.split(' ')[2] if len(line.split(' ')) > 2 else 'all'}")
         elif line == "CFG" or line.startswith("CFG "):
             self.cfg_lines.append(line)
             if self.cfg_error:

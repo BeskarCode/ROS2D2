@@ -131,6 +131,9 @@
   .sysboard .row label { width: 230px; flex: none; }
   .sysboard .ids { display: flex; flex-wrap: wrap; gap: 4px; }
   .sysboard .ids button { padding: 2px 8px; font-size: 12px; }
+  #brd-on.lit { background: var(--green); border-color: var(--green); color: #0d1117; }
+  #brd-off.lit { background: var(--line); }
+  #fw-log { max-height: 260px; overflow: auto; font-size: 11px; background: var(--bg); padding: 8px; border-radius: 6px; white-space: pre-wrap; }
   #s-blind { color: var(--muted); font-size: 12px; margin-top: 8px; } #s-blind b { color: var(--red); }
   #slist { display: grid; gap: 8px; }
   #slist .sensor[hidden] { display: none; }
@@ -339,6 +342,15 @@
       <div class="row"><label><i class="fa-solid fa-hashtag"></i>identify (its LED blinks 5 s)</label><span class="ids" id="brd-identify"></span></div>
       <p class="status warn" id="brd-why" hidden></p>
       <p class="help" id="brd-file"></p>
+    </div>
+    <h3 class="sysh"><i class="fa-solid fa-download"></i>Pico firmware</h3>
+    <div class="sysboard">
+      <p class="status" id="fw-text">…</p>
+      <div class="row"><span></span><span><button id="fw-check"><i class="fa-solid fa-rotate"></i>Check for update</button>
+        <button class="primary" id="fw-flash"><i class="fa-solid fa-microchip"></i>Flash firmware</button>
+        <button id="fw-retry" hidden><i class="fa-solid fa-rotate-right"></i>Retry</button></span></div>
+      <p class="status" id="fw-step" hidden></p>
+      <details id="fw-logbox" hidden><summary>output</summary><pre id="fw-log"></pre></details>
     </div>
   </section>
 

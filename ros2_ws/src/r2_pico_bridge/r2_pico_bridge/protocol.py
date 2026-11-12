@@ -27,6 +27,7 @@ Pico -> Pi:
                               with TM 1, every second: each core's load, the I2C bus held (and
                               by the display), the longest a VL53L0X waited for it, the chip's
                               temperature, seconds up, readings per second of each sensor
+  DS <off|logo|all|VL1..US5>  what the display shows, when it changes (and after HELLO)
   ERR <text>                  a line it did not understand
 """
 
@@ -38,6 +39,7 @@ PROTO = 2
 _HB = re.compile(r"^HB (\d+)(?: (-|[ON]*))?$")    # no states: CFG with no sensors
 _R_ITEM = re.compile(r"^(\d+):(-?\d+)$")
 _HELLO = re.compile(r"^PICO r2_pico_sensors (\S+) proto (\d+)(?: commit (\S+))?$")
+_DS = re.compile(r"^DS (off|logo|all|VL[1-4]|US[1-5])$")
 _ACK = re.compile(r"^(UI|DISP|ID) (OK|ERR)(?: (.+))?$")
 _TM = re.compile(r"^T c0=(\d+) c1=(\d+) bus=(\d+) disp=(\d+) wait=(\d+) temp=(-?\d+) up=(\d+) rps=((?:\d+(?:,\d+)*)?)$")
 
@@ -72,6 +74,9 @@ def parse(line):
         return ("hello", m.group(1), int(m.group(2)), m.group(3))
     if line == "TM OK":
         return ("tm_ok",)
+    m = _DS.match(line)
+    if m:
+        return ("ds", m.group(1))
     m = _ACK.match(line)
     if m:
         return ("ack", m.group(1), m.group(2) == "OK", m.group(3))

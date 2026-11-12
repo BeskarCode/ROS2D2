@@ -38,7 +38,8 @@ char line[LINE_MAX + 1];
 size_t lineLen = 0;
 bool tooLong = false;
 uint32_t lastHb = 0, lastR = 0, flickerUntil = 0;
-bool readSinceHb = false;    // an R line went out since the last heartbeat (the LED blinks once)
+bool readSinceHb = false;
+const char* lastDs = nullptr;    // the display's screen as last told to the Pi (DS line)    // an R line went out since the last heartbeat (the LED blinks once)
 
 // Leave the pins of the last CFG quiet: XSHUT low keeps a VL53L0X off (its board pulls it up)
 void releasePins() {
@@ -79,6 +80,7 @@ void onCfg(const char* args) {
 void onLine(const char* l) {
   if (strcmp(l, "HELLO") == 0) {
     Serial.println("PICO r2_pico_sensors " FW_VERSION " proto 2 commit " FW_COMMIT);
+    lastDs = nullptr;            // say what the display shows again
   } else if (strcmp(l, "CFG") == 0 || strncmp(l, "CFG ", 4) == 0) {
     onCfg(l + 3);
   } else if (strcmp(l, "TM 1") == 0 || strcmp(l, "TM 0") == 0) {
@@ -165,6 +167,12 @@ void sendHeartbeat(uint32_t now) {
   states[nSensors] = 0;
   Serial.println(states);
   if (tele::on) sendTelemetry(now);
+  // DS: what the display shows, when it changed (the console shows it and its buttons follow)
+  const char* ds = display::shownName;
+  if (ds != lastDs) {
+    lastDs = ds;
+    Serial.printf("DS %s\n", ds);
+  }
   // the LED's one blink a second, if readings went out since the last heartbeat
   if (readSinceHb) flickerUntil = now + FLICKER_MS;
   readSinceHb = false;

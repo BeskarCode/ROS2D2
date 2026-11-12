@@ -2,7 +2,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CPU_ZONES, PI_TEMP_ZONES, PICO_TEMP_ZONES, bytes, level, minMax, pct, throttleText, uptime, versionText, zone } from '../www/systemfmt.js';
+import { CPU_ZONES, PI_TEMP_ZONES, PICO_TEMP_ZONES, bytes, displayButtons, firmwareText, level, minMax, pct, throttleText, uptime, versionText, zone } from '../www/systemfmt.js';
 
 test('bytes', () => {
   assert.equal(bytes(12.3e9), '12.3 GB');
@@ -67,4 +67,24 @@ test('uptime', () => {
   assert.equal(uptime(3720), '1 h 02 min');
   assert.equal(uptime(600), '10 min');
   assert.equal(uptime(null), '–');
+});
+
+test('firmwareText: what the Pico firmware block says', () => {
+  const api = (more) => ({ installed: true, internet: true, compare: 'up_to_date', pico_commit: 'a8fc309',
+    main: { commit: 'a8fc309', subject: 'Pico firmware 0.2.0', date: '2026-11-12T00:30:00+01:00' }, ...more });
+  assert.deepEqual(firmwareText(api({ installed: false })), { cls: 'warn', text: 'Toolchain not installed on the Pi (setup/install_pico_toolchain.sh)' });
+  assert.deepEqual(firmwareText(api({ internet: false })), { cls: 'warn', text: "No internet: can't check" });
+  assert.deepEqual(firmwareText(api({ compare: 'update' })), { cls: 'ok', text: 'New Pico firmware: a8fc309 Pico firmware 0.2.0 (2026-11-12)' });
+  assert.deepEqual(firmwareText(api({})), { cls: '', text: 'Up to date' });
+  assert.deepEqual(firmwareText(api({ compare: 'unpublished', pico_commit: '265a841-dirty' })), { cls: 'warn', text: 'Pico runs an unpublished build (265a841-dirty)' });
+  assert.deepEqual(firmwareText(api({ compare: 'unknown' })), { cls: '', text: 'Unknown Pico version' });
+  assert.deepEqual(firmwareText(api({ internet: null })), { cls: '', text: 'Not checked yet' });
+});
+
+test('displayButtons: the On / Off buttons and the screen list follow the board', () => {
+  assert.deepEqual(displayButtons('off'), { on: false, screen: null });
+  assert.deepEqual(displayButtons('all'), { on: true, screen: 'all' });
+  assert.deepEqual(displayButtons('logo'), { on: true, screen: 'all' });
+  assert.deepEqual(displayButtons('US3'), { on: true, screen: 'US3' });
+  assert.deepEqual(displayButtons(null), { on: false, screen: null });
 });

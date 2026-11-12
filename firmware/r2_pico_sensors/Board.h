@@ -104,6 +104,16 @@ inline void uiTick(Ui& ui, uint32_t now) {
   if (held || (ui.awake_ms && now - ui.lastPress > ui.awake_ms)) ui.screen = Screen::Off;
 }
 
+// What the display shows, for the Pi (DS line): off, logo, all, or a connector's name
+inline const char* screenName(const Ui& ui) {
+  switch (ui.screen) {
+    case Screen::Off: return "off";
+    case Screen::Splash: return "logo";
+    case Screen::All: return "all";
+    default: return CONN_NAME[ui.shown];
+  }
+}
+
 // The all-sensors screen: how many of a bar's n segments light for a reading of mm on a scale of
 // top mm. The nearer the obstacle, the taller; nothing in range (-1) or beyond the scale: none.
 inline int barSegments(int16_t mm, int top, int n) {

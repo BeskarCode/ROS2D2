@@ -2,6 +2,7 @@
 // Host test of the carrier board's connector map and the display's button logic:
 //   g++ -std=c++17 -Wall -I. test/test_board.cpp -o /tmp/b && /tmp/b
 #include <cstdio>
+#include <cstring>
 
 #include "Board.h"
 
@@ -152,6 +153,18 @@ int main() {
   uiButton(never, false, 3700000);
   uiTick(never, 3700000 + HOLD_MS);
   check(never.screen == Screen::Off, "t=0: a 3 s hold still turns it off");
+
+
+  // what the display shows, as the DS line says it
+  Ui d;
+  check(strcmp(screenName(d), "off") == 0, "DS off");
+  uiPress(d, 1000);
+  check(strcmp(screenName(d), "logo") == 0, "DS logo");
+  uiPress(d, 2000);
+  check(strcmp(screenName(d), "all") == 0, "DS all");
+  uiPress(d, 3000);
+  uiPress(d, 4000);
+  check(strcmp(screenName(d), "VL2") == 0, "DS VL2");
 
   if (failures) return 1;
   printf("all passed\n");
