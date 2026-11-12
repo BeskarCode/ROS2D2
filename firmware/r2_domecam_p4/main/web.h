@@ -3,6 +3,10 @@
 #include <stddef.h>
 #include "esp_http_server.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Port 80: / (a page to look at the camera), /status (JSON), /control?var=X&val=N.
 httpd_handle_t web_start(void);
 
@@ -15,3 +19,7 @@ void web_register_status(int (*add)(char *out, size_t size));
 
 // Small helpers for the other servers (:81, :82)
 httpd_handle_t web_start_port(int port, int ctrl_port);
+
+#ifdef __cplusplus
+}
+#endif

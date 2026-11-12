@@ -63,3 +63,38 @@ mirrors the picture for each user (console video, face finder, colour finder).
 | `/control?var=X&val=N` | framesize (320, 640, 800, 1280), quality (1-100), vflip, hmirror (0/1), rotate (0, 90, 180, 270), brightness, ae_level. xclk, aec2, zoom, gainceiling (ESP32-S3 only) answer 400 |
 
 The lens focuses by hand: turn it while looking at `:81/stream` with a face at about 2 m.
+
+## Faces or colour, found on the camera
+
+A task on the second core searches every new picture for **faces** (Espressif's
+`human_face_detect`, MSR+MNP model) or for **a colour** (the same search as
+`r2_vision/color_marker.py` on the Pi), never both. `:82/faces` sends one JSON line per searched
+picture (an empty line every 2 s keeps the connection alive):
+
+```
+{"seq":12,"lat_ms":48,"w":640,"h":480,"rot":0,"mode":"faces","faces":[[x,y,w,h,score],...]}
+{"seq":13,"lat_ms":30,"w":320,"h":240,"rot":0,"mode":"color","faces":[],"marker":[cx,cy,area]}
+```
+
+Boxes in pixels of the searched picture (turned `rot` degrees clockwise), biggest first. `marker`
+is the centre and area of the colour blob as fractions of the picture, or `null` when not seen.
+`lat_ms` is how old the picture is.
+
+| `/control?var=` | Values |
+|-----------------|--------|
+| `detect` | 0 nothing, 1 faces, 2 colour |
+| `score1`, `score2` | face detector thresholds, 1-99 % (default 50) |
+| `color_h` | hue 0-179 (OpenCV scale) |
+| `color_s`, `color_v` | 0-255 |
+| `color_htol` | hue tolerance 2-40 |
+| `color_ltol` | saturation/brightness tolerance 10-120 |
+
+`/status` adds `detect`, `faces_fps`, `faces_clients`, `score1`, `score2` and `color`
+(`[h,s,v,htol,ltol]`). The serial port warns once a minute if faces drop under 10 per second:
+then lower `DETECT_FACE_WIDTH` in `config.h`.
+
+## Tests without the board
+
+The colour search and the `:82/faces` lines are plain C (`components/r2_detect`), built on the PC
+and compared with the Pi's Python code: `python -m pytest firmware/r2_domecam_p4/test` (needs
+`gcc`, or `pip install ziglang`).

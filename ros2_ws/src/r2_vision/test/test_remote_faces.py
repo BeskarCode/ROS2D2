@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 import pytest
 
-from r2_vision.remote_faces import control_url, faces_url, iter_lines, orient_box, parse_line
+from r2_vision.remote_faces import (control_url, faces_url, iter_lines, marker_raw_json, orient_box,
+                                   orient_point, parse_line)
 
 ROTATIONS = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
 FLIPS = {"h": 1, "v": 0, "both": -1}
@@ -75,3 +76,37 @@ def test_control_url_from_faces_url():
 def test_control_url_detect():
     assert control_url("http://r2-domecam1.local:82/faces", "detect", 0) == "http://r2-domecam1.local/control?var=detect&val=0"
     assert control_url("http://r2-domecam1.local:82/faces", "detect", 1) == "http://r2-domecam1.local/control?var=detect&val=1"
+
+
+def test_parse_marker_line():
+    d = parse_line('{"seq":4,"lat_ms":30,"w":320,"h":240,"rot":0,"mode":"color","faces":[],"marker":[0.25,0.5,0.012]}')
+    assert d["mode"] == "color" and d["faces"] == [] and d["marker"] == (0.25, 0.5, 0.012)
+    d = parse_line('{"seq":5,"lat_ms":30,"w":320,"h":240,"mode":"color","faces":[],"marker":null}')
+    assert d["mode"] == "color" and d["marker"] is None
+
+
+def test_parse_old_line_is_faces():
+    d = parse_line('{"seq":3,"lat_ms":66,"w":320,"h":240,"faces":[[10,20,30,40,0.91]]}')
+    assert d["mode"] == "faces" and d["marker"] is None
+
+
+@pytest.mark.parametrize("rotate", [0, 90, 180, 270])
+@pytest.mark.parametrize("flip", ["none", "h", "v", "both"])
+def test_orient_point_matches_orient_box(rotate, flip):
+    """The centre of a box turned with orient_box is the point turned with orient_point."""
+    W, H, x, y, w, h = 320, 240, 40, 30, 60, 20
+    bx, by, bw, bh, ww, hh = orient_box(x, y, w, h, W, H, rotate, flip)
+    cx, cy = orient_point((x + w / 2) / W, (y + h / 2) / H, W, H, rotate, flip)
+    assert cx == pytest.approx((bx + bw / 2) / ww)
+    assert cy == pytest.approx((by + bh / 2) / hh)
+
+
+def test_marker_raw_json_turns_the_blob():
+    import json
+    d = parse_line('{"lat_ms":30,"w":320,"h":240,"rot":0,"mode":"color","faces":[],"marker":[0.25,0.5,0.01]}')
+    m = json.loads(marker_raw_json(d, 0, "none"))
+    assert m == {"seen": True, "cx": 0.25, "cy": 0.5, "area": 0.01, "lat_ms": 30.0}
+    m = json.loads(marker_raw_json(d, 0, "h"))
+    assert m["cx"] == pytest.approx(0.75)
+    d["marker"] = None
+    assert json.loads(marker_raw_json(d, 0, "none"))["seen"] is False
