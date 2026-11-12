@@ -46,3 +46,20 @@ ESP32-P4 chips v3.x and v1.x need different builds. The default is v3.x. Check y
 (delete `sdkconfig` first when switching).
 
 Flash with `idf.py -p COMx flash monitor`, or with esptool from the files in `build/`.
+
+## Camera
+
+The OV5647 runs in its 1280x960 mode with 2x2 binning (45 fps): the only mode that uses the whole
+sensor, so the picture has the full field of view (about 50° wide). The 800x640 and 1920x1080 modes
+crop the middle. The P4's ISP does automatic exposure and white balance; its PPA scales, turns and
+mirrors the picture for each user (console video, face finder, colour finder).
+
+| URL | What |
+|-----|------|
+| `http://r2-domecam1.local/` | page with the video and the status |
+| `/status` | JSON: name, ip, rssi, board, sensor, sensor_mode, framesize, quality, vflip, hmirror, rotate, frames, stream_clients, uptime_s, heap, psram_free |
+| `/capture` | one JPEG |
+| `:81/stream` | MJPEG video, encoded only while someone watches |
+| `/control?var=X&val=N` | framesize (320, 640, 800, 1280), quality (1-100), vflip, hmirror (0/1), rotate (0, 90, 180, 270), brightness, ae_level. xclk, aec2, zoom, gainceiling (ESP32-S3 only) answer 400 |
+
+The lens focuses by hand: turn it while looking at `:81/stream` with a face at about 2 m.
