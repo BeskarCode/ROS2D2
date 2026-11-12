@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -49,12 +50,21 @@ int camera_stream_width(void) { return s_stream_w; }
 const char *camera_sensor(void) { return s_ok ? "OV5647" : "none"; }
 
 static void capture_task(void *arg) {
+  struct timeval tv = {.tv_sec = 1, .tv_usec = 0};   // DQBUF waits forever by default
+  ioctl(s_fd, VIDIOC_S_DQBUF_TIMEOUT, &tv);
+  int64_t last_ok = esp_timer_get_time(), last_warn = 0;
   for (;;) {
     struct v4l2_buffer b = {.type = V4L2_BUF_TYPE_VIDEO_CAPTURE, .memory = V4L2_MEMORY_MMAP};
     if (ioctl(s_fd, VIDIOC_DQBUF, &b) != 0) {
+      int64_t now = esp_timer_get_time();
+      if (now - last_ok > 2000000 && now - last_warn > 10000000) {   // every 10 s while stalled
+        last_warn = now;
+        ESP_LOGW(TAG, "no picture from the camera for %lld s (ribbon? power?)", (now - last_ok) / 1000000);
+      }
       vTaskDelay(pdMS_TO_TICKS(10));
       continue;
     }
+    last_ok = esp_timer_get_time();
     xSemaphoreTake(s_lock, portMAX_DELAY);
     int old = s_held;
     s_held = b.index;

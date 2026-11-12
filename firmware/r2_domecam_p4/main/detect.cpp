@@ -64,7 +64,11 @@ static void detect_task(void *arg) {
       continue;
     }
     int width = mode == DETECT_FACES ? DETECT_FACE_WIDTH : DETECT_COLOR_WIDTH;
-    if (!camera_get_frame(&f, FRAME_RGB888, width, pdMS_TO_TICKS(500))) continue;
+    if (!camera_get_frame(&f, FRAME_RGB888, width, pdMS_TO_TICKS(500))) {
+      // no memory or a wrong DETECT_*_WIDTH fail at once: never spin without a pause
+      vTaskDelay(pdMS_TO_TICKS(50));
+      continue;
+    }
 
     faces_line_t l = {};
     face_box_t boxes[MAX_FACES];

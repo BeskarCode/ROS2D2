@@ -34,8 +34,16 @@ static esp_err_t stream_handler(httpd_req_t *req) {
   frame_t f = {0};
   esp_err_t err = ESP_OK;
   char head[128];
+  int misses = 0;
   while (err == ESP_OK) {
-    if (!camera_get_frame(&f, FRAME_JPEG, camera_stream_width(), pdMS_TO_TICKS(1000))) continue;
+    if (!camera_get_frame(&f, FRAME_JPEG, camera_stream_width(), pdMS_TO_TICKS(1000))) {
+      // No picture for 3 s (camera stalled): end this stream. Without sending, a client that
+      // left would never be noticed and the :81 server would stay busy until a reboot.
+      if (++misses >= 3) err = ESP_FAIL;
+      else vTaskDelay(pdMS_TO_TICKS(50));
+      continue;
+    }
+    misses = 0;
     int n = snprintf(head, sizeof(head), "\r\n--" BOUNDARY "\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n",
                      (unsigned)f.len);
     err = httpd_resp_send_chunk(req, head, n);
