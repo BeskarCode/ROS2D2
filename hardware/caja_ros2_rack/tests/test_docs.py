@@ -57,3 +57,14 @@ def test_readme_has_the_led_face():
     for words in ["pared_led_multicolor_bambu.3mf", "guias_luz.stl", "prueba_luz.stl", "translúcido", "opcional",
                   "montaje/img/montada_led.png"]:
         assert words in md, words
+
+
+def test_led_version_parts_go_in_their_own_folder(tmp_path):
+    import build
+    led = ["pared_led", "pared_led_monocolor", "logo_marino_led", "logo_azul_led", "logo_gris_led", "guias_luz",
+           "prueba_luz"]
+    for p in led:
+        assert build.stl_path(tmp_path, p) == tmp_path / "stl" / "con_leds" / f"{p}.stl"
+    assert build.stl_path(tmp_path, "pared") == tmp_path / "stl" / "pared.stl"
+    assert build.face_path(tmp_path, "pared_led_multicolor_bambu.3mf") == tmp_path / "stl" / "con_leds" / "pared_led_multicolor_bambu.3mf"
+    assert build.face_path(tmp_path, "pared_multicolor.3mf") == tmp_path / "stl" / "pared_multicolor.3mf"
