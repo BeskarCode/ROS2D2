@@ -139,6 +139,8 @@ def _sector_width(a, b):
 def _lidar_settings(name, s):
     for k, v in LIDAR_DEFAULTS.items():
         s.setdefault(k, list(v) if isinstance(v, list) else v)
+    if s["motor"] is False:          # YAML 1.1 reads a bare off as false
+        s["motor"] = "off"
     if s["motor"] not in LIDAR_MOTOR:
         raise SensorConfigError(f"{name}: motor must be one of {', '.join(LIDAR_MOTOR)}")
     if not isinstance(s["scan_mode"], str) or not s["scan_mode"].strip():

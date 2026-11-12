@@ -39,3 +39,32 @@ def test_reset_needs_a_new_activation():
     g.reset()
     g.activate(10.0)
     assert not g.ready(10.1)
+
+
+def test_update_arms_on_the_rising_edge_only():
+    g = LidarGate(policy="with_modes")
+    g.update(0.0, False)
+    assert not g.ready(0.0)                   # not driving: never ready to drive
+    g.update(10.0, True)                       # follow chosen AND auto on: arm here
+    assert not g.ready(11.0)
+    g.update(12.0, True)                       # still on: no re-arm
+    assert g.ready(15.0)
+
+
+def test_mode_first_then_auto_later_still_waits():
+    g = LidarGate(policy="with_modes")
+    for t in range(0, 20):                     # follow chosen at 0, auto (PS+L2) only at 20
+        g.update(float(t), False)
+    g.update(20.0, True)
+    assert not g.ready(21.0)
+    g.on_scan(22.0)
+    assert g.ready(22.1)
+
+
+def test_leaving_and_coming_back_waits_again():
+    g = LidarGate(policy="with_modes")
+    g.update(0.0, True); g.on_scan(1.0)
+    assert g.ready(1.1)
+    g.update(5.0, False)                       # another mode owns the feet (motor may stop)
+    g.update(20.0, True)                       # back: wait again
+    assert not g.ready(20.5)

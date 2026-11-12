@@ -27,7 +27,7 @@ from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, Range
-from std_msgs.msg import Empty, Int16, String
+from std_msgs.msg import Bool, Empty, Int16, String
 
 from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.follow_core import Follower
@@ -71,6 +71,9 @@ class FollowNode(Node):
         self.pub_sound = self.create_publisher(String, "/mega/command", 10)
         self.pub_state = self.create_publisher(String, "/follow/state", 10)
         self.create_subscription(String, "/r2/mode", self._on_mode, latched)
+        # the Mega moves the feet only with auto on: that is when the lidar must already be spinning
+        self.auto_on = False
+        self.create_subscription(Bool, "/r2/auto_mode", lambda m: setattr(self, "auto_on", m.data), latched)
         self.create_subscription(String, "/marker", self._on_marker, 10)
         self.create_subscription(LaserScan, "/scan", self._on_scan, qos_profile_sensor_data)
         self.create_subscription(Empty, "/r2/modes/reload", lambda _m: self._load(), 10)
@@ -162,6 +165,7 @@ class FollowNode(Node):
 
     def _tick(self):
         if not drives_in(self.mode, "follow"):
+            self.gate.update(self._now(), False)
             if self.active:                       # leaving follow: one zero of each, then silence
                 self.active = False
                 self._stop_outputs()
@@ -171,8 +175,9 @@ class FollowNode(Node):
             self.marker = None
             self.follower = Follower(self.follow_cfg, self.nav_cfg, self.sensors)
             self.follower.start(self._now())
-            self.gate.activate(self._now())
 
+        # armed when follow is on AND auto is on (follow can be chosen long before PS+L2)
+        self.gate.update(self._now(), self.auto_on)
         if not self.gate.ready(self._now()):         # the lidar is spinning up: hold still (<= 5 s)
             return
 

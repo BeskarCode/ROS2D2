@@ -11,10 +11,20 @@ def test_restart_only_when_driver_settings_change():
     assert lidar_needs_restart(BASE, BASE + "  inverted: true\n")
     assert not lidar_needs_restart(BASE, BASE + "  scan_mode: Standard\n")   # the default: same driver
     assert not lidar_needs_restart(BASE, "lidar: [broken")
-    assert not lidar_needs_restart("lidar: [broken", BASE)
 
 
 def test_restart_when_the_lidar_comes_or_goes():
     assert lidar_needs_restart("", BASE)
     assert lidar_needs_restart(BASE, "")
     assert not lidar_needs_restart("", "")
+
+
+def test_broken_old_file_counts_as_the_defaults():
+    # the driver started with the defaults (Standard, not inverted) when the old file was broken
+    assert lidar_needs_restart("lidar: [broken", BASE + "  scan_mode: DenseBoost\n")
+    assert not lidar_needs_restart("lidar: [broken", BASE)
+
+
+def test_inputs_parse():
+    from r2_sensors.config import parse_sensors
+    parse_sensors(BASE + "  motor: off\n  blind_sectors: [[100, 140]]\n")
