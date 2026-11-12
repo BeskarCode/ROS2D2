@@ -24,6 +24,22 @@ proof of concept, split into ROS 2 nodes.
  camera ──image_raw──> face detector ──faces──> dome tracker ──/dome/speed_cmd──> Mega bridge ──DM:<speed>──> Mega
 ```
 
+## The web console
+
+ROS2D2 has its own web console, served by the Pi (`http://<pi>:8080`), to watch and set up the droid
+from any browser.
+
+**Navigation**: the floor around R2 seen from above with the lidar's points, the free circle and
+each sensor's beam, R2 in 3D, and every sensor's reading. Click the floor to send R2 there.
+
+![The navigation page: map, R2 in 3D and the sensors' readings](media/console-navigation.gif)
+
+**Setup → Sensors**: where each sensor sits and what it covers. Drag a test object round R2 and the
+sensors that would see it light up; switch a sensor that gives false readings to *ignored* in one
+click; set the lidar (motor, scan mode, blind sectors) and read what it says about itself.
+
+![Setup, Sensors: coverage, test object and the in use / ignored switch](media/console-sensors.gif)
+
 ## Hardware
 
 What ROS2D2 adds to a ShadowMD droid, how it connects and the bill of materials: [HARDWARE.md](HARDWARE.md).
