@@ -119,7 +119,25 @@
   .stat.warn .sbar i { background: var(--amber); } .stat.bad .sbar i { background: var(--red); }
   .sysh { font-size: 15px; margin: 18px 0 4px; display: flex; align-items: baseline; gap: 10px; }
   .sysh .sub { color: var(--muted); font-size: 12px; font-weight: 400; }
-  .systog { display: inline-flex; margin: 4px 0; }
+  /* the telemetry switch: a big pill with an icon, green and "on" while it reads */
+  .systog { display: inline-flex; align-items: center; gap: 10px; margin: 6px 0 10px; padding: 9px 16px;
+            border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer;
+            font-size: 15px; font-weight: 600; color: var(--text); user-select: none; }
+  .systog:hover { border-color: var(--blue); }
+  .systog input { position: absolute; opacity: 0; pointer-events: none; }
+  .systog i { font-size: 18px; color: var(--muted); }
+  .systog .knob { width: 38px; height: 20px; border-radius: 10px; background: var(--line); position: relative; transition: background .15s; }
+  .systog .knob::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+                         background: var(--muted); transition: left .15s, background .15s; }
+  .systog .state { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 22px; }
+  .systog .state::after { content: 'off'; }
+  .systog:has(input:checked) { border-color: var(--green); background: rgba(63,185,80,.10); }
+  .systog:has(input:checked) i { color: var(--green); }
+  .systog:has(input:checked) .knob { background: rgba(63,185,80,.45); }
+  .systog:has(input:checked) .knob::after { left: 20px; background: var(--green); }
+  .systog:has(input:checked) .state { color: var(--green); }
+  .systog:has(input:checked) .state::after { content: 'on'; }
+  .systog:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: 2px; }
   .gauge { position: relative; height: 8px; border-radius: 4px; background: var(--line); margin: 8px 0 4px; overflow: hidden; }
   .gauge .z { position: absolute; top: 0; bottom: 0; opacity: .35; }
   .gauge .z.ok { background: var(--green); } .gauge .z.warn { background: var(--amber); } .gauge .z.bad { background: var(--red); }
@@ -325,7 +343,9 @@
 
   <section id="system" hidden>
     <p class="help">The Pi and the Pico board. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p>
-    <label class="chk systog"><input type="checkbox" id="sys-telemetry"> Telemetry</label>
+    <label class="systog" title="Read how busy the Pi and the Pico are (only while on and this tab is open)">
+      <input type="checkbox" id="sys-telemetry"><i class="fa-solid fa-chart-line"></i>Telemetry
+      <span class="knob"></span><span class="state"></span></label>
     <h3 class="sysh"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi <span class="sub">software <b id="sys-pi-version">…</b></span></h3>
     <div class="stats sys4" id="sys-pi" hidden></div>
     <p class="status bad" id="sys-pi-warn" hidden></p>
