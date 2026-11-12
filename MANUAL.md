@@ -1,0 +1,167 @@
+<p align="center">
+  <img src="media/ros2d2-logo.png" alt="ROS2D2" width="420">
+</p>
+
+# ROS2D2 web console · User manual
+
+[Versión en castellano](MANUAL_es.md)
+
+The console is served by the Pi inside R2: open `http://<pi>:8080` in any browser on the same network
+(the Pi's address on your home network, or `10.42.0.1` on R2's own WiFi). It has three pages, in the
+bar at the top: **Console**, **Navigation** and **Setup**. The **Manual** button opens this manual at
+the part about the page (or tab) you are on. Every button has a tooltip: hold the mouse over it.
+
+The pills next to the menu say how things are: **rosbridge** (the console's link to ROS), the face
+**tracker**, the automatic **mode**, the **Mega** and the **Pico** board. Green is fine, amber means
+look, red means it is not there.
+
+- [Console](#console)
+- [Navigation](#navigation)
+- [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
+  [System](#setup--system) · [File](#setup--file)
+
+---
+
+## Console
+
+![The Console page: cameras, dome and Mega](media/manual/console.png)
+
+**Cameras**: the pictures of R2's cameras, numbered left to right. *Identify* shows each camera's
+number on its picture. *Pixelate faces* blurs the faces it finds (for photos and videos of events).
+Below: how many faces it sees, the best score and where the best one is.
+
+**Dome**: R2 in 3D with the dome turned as the Pi believes it is.
+
+- The bar under it is the dome's speed (left / right).
+- *Track* turns face tracking on or off: the dome turns to look at the nearest face.
+- *Dome to front* turns it back to the front.
+- The dome has no position sensor: its angle is estimated from the speed commands. Time a full
+  turn at speed 80 and type `360 ÷ seconds` in **°/s at speed 80**.
+- *Simulate (no Mega)* tries the tracking with no Mega: the faces move as if the camera had turned.
+- *Camera view* draws where the camera looks.
+
+**Mega**: what goes to the Mega (→) and what it answers (←). *Pause* stops the list scrolling,
+*Clear* empties it, *show replies* hides or shows the answers.
+
+---
+
+## Navigation
+
+![The Navigation page: map, R2 in 3D and readings](media/console-navigation.gif)
+
+**Navigation (map)**: the floor around R2 seen from above. The lidar's points are cyan, each
+sensor's beam is drawn in its colour, and the green dashed circle is the free space round R2 (with
+the distance, *36 cm free*). **Click the floor** to send R2 there (the goal is a green flag);
+*Cancel goal* forgets it. *Sensor beams* and *trail* show or hide the beams and the way R2 has gone.
+R2 only drives there when the automatic mode is on (Go to a point, see [Modes](#setup--modes)).
+
+**R2 in 3D**: the same in 3D, with the lidar's point cloud and the sensors' cones. Drag to orbit,
+wheel to zoom. *Follow R2* keeps it in the middle; *Show the room* draws the simulated room (only in
+simulation, where you can also add chair legs and boxes and drag them).
+
+**Telemetry**: every sensor's reading. The bar fills as things get closer; the red mark is where R2
+stops for that sensor, the thin mark the raw reading before filtering. Greyed with *ignored* means
+that sensor is ignored (see [Sensors](#setup--sensors)). Below: what the navigator is doing and why,
+and whether the Mega is connected (without it nothing reaches the feet).
+
+---
+
+## Setup
+
+Setup has five tabs. **Save** keeps the tab's settings on the Pi (they apply at once);
+**Save and restart** is only needed for the camera list.
+
+### Setup → Cameras
+
+![Setup, Cameras](media/manual/setup-cameras.png)
+
+Every camera plugged into the Pi, with:
+
+- **use** (on or off), **number** (the arrows move it left or right in the list), **size** and
+  **turn** (0, 90, 180, 270°),
+- **points to** and **field of view**: where it looks on R2, so the dome tracking knows where a face is.
+
+*Identify* puts each number on its picture: cover a camera with your hand to see which picture goes
+dark. Direction and field of view apply at once; turning a camera on or off or renumbering needs
+**Save and restart**.
+
+### Setup → Sensors
+
+![Setup, Sensors](media/console-sensors.gif)
+
+R2 seen from above, to scale (rings every 50 cm), and R2 in 3D (*Top*, *3D* or *Both*).
+
+- **Drag a sensor** on the map to move it. Click its card to set where it **points**, how wide it
+  sees (**field of view**), how far (**range**), its **height**, how much it **tilts down**, and at
+  what distance R2 **stops** for it.
+- **Red dots** are places near R2 that no sensor covers; the numbers under the map say how much of
+  the floor is covered up to 50 cm and 1 m, and where R2 is blind.
+- **Test object**: pick one (chair leg, person, wall, low box) and drag it: the sensors that would
+  see it light up, with the distance they would read.
+- **Add sensor** takes the first free connector of the Pico board; **Remove** takes it out.
+- Each card says whether the sensor answers (*plugged in*, *not responding*...). The lightbulb makes
+  its connector's LED blink on the board, to find it.
+
+**In use / ignored**: the switch on each card. A sensor that gives false readings can be ignored in
+one click: navigation and follow stop using it within a second or two, but it keeps measuring and its
+reading stays on the card, greyed, so you can see when it is fine again and switch it back on. The
+switch is saved at once (only that line); it stays ignored after a restart. If nothing in use is left
+looking ahead, the console warns you: R2 will not move.
+
+**The lidar's card** also sets the lidar itself:
+
+- **Motor**: *Always*; *Only with an automatic mode* (R2 standing still is quiet; when a mode starts,
+  it waits up to 5 s for the lidar before moving; the motor stops 5 s after the last mode); or *Off*.
+- **Scan mode**: the modes the lidar says it has (a C1: *Standard*, 16 m; *DenseBoost*, 40 m).
+  Changing it restarts only the lidar for a few seconds.
+- **Upside down**: if it is mounted upside down.
+- **Blind sectors**: angles of the lidar's own view to ignore (R2's leg), drawn red on the map.
+- The **lidar** line: model, firmware, hardware, health, mode, turns per second and points per turn.
+  The C1's speed cannot be changed (it turns at about 10 per second).
+
+**Save** applies at once: ROS moves the sensors and the lidar's cut.
+
+### Setup → Modes
+
+![Setup, Modes](media/manual/setup-modes.png)
+
+Each automatic mode starts with its own **controller combination**; pressing it again switches the
+mode off, and touching the stick takes the control back at once. A combination given to a mode no
+longer plays its MarcDuino action. *Dome PS + L2* is face tracking and cannot be given to a mode.
+
+| | |
+|---|---|
+| ![Go to a point](ros2_ws/src/r2_web/www/img/modes/goto.svg) | ![Go forward](ros2_ws/src/r2_web/www/img/modes/forward.svg) |
+| ![Patrol](ros2_ws/src/r2_web/www/img/modes/patrol.svg) | ![Follow a colour](ros2_ws/src/r2_web/www/img/modes/follow.svg) |
+
+**Follow a colour**: wear something of a clear colour, **click on it in the camera picture** and
+check how much of the picture it matches (the matches are painted magenta). Its sliders set how
+close a colour must be, the distance to keep, the top speed and how long it searches when it loses
+the colour.
+
+### Setup → System
+
+![Setup, System](media/manual/setup-system.png)
+
+**Telemetry** (the green switch): how busy the Pi and the Pico are, only while it is on and this tab
+is open.
+
+- **Raspberry Pi**: software version, free SD, free RAM, CPU, temperature (with its normal, warm and
+  throttling zones) and voltage warnings.
+- **Pico board**: firmware version, each core's load, the I2C bus, readings per second of each
+  sensor and temperature.
+- **Board settings**: how long the board's display stays on, its brightness and when its LEDs light
+  (*only with the display on*, *always on*, *on, only the ones connected*, *always off*, *only the ones
+  failing*); turn the display on (showing the screen you pick) or
+  off; *Identify* makes a connector's LED blink.
+- **Pico firmware**: *Check for update* asks GitHub; *Flash firmware* downloads, builds and flashes
+  it from the Pi (a few minutes; not while an automatic mode drives). If the copy fails, *Retry*
+  copies it again without building.
+
+### Setup → File
+
+![Setup, File](media/manual/setup-file.png)
+
+The settings of the last tab you used, as text (`sensors.yaml`, `modes.yaml`, `cameras.yaml`...).
+You can edit them here or by hand on the Pi (`~/.config/ros2d2/`): both edit the same file. **Save**
+checks the file first and does not save a broken one.
