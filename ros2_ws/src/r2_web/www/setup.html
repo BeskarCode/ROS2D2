@@ -241,12 +241,12 @@
 </header>
 <main>
   <div class="tabs">
-    <button id="tab-form" class="on"><i class="fa-solid fa-video"></i>Cameras</button>
-    <button id="tab-sensors"><i class="fa-solid fa-satellite-dish"></i>Sensors</button>
-    <button id="tab-modes"><i class="fa-solid fa-gamepad"></i>Modes</button>
-    <button id="tab-system"><i class="fa-solid fa-gauge-high"></i>System</button>
-    <button id="tab-file"><i class="fa-solid fa-file-code"></i>File</button>
-    <button id="identify"><i class="fa-solid fa-hashtag"></i>Identify</button>
+    <button id="tab-form" class="on" title="Cameras: which cameras R2 uses, their order, size, turn and where they point"><i class="fa-solid fa-video"></i>Cameras</button>
+    <button id="tab-sensors" title="Sensors: where each sensor sits, what it covers, the lidar's settings, and ignoring a sensor"><i class="fa-solid fa-satellite-dish"></i>Sensors</button>
+    <button id="tab-modes" title="Modes: the controller buttons that start each automatic mode and its settings"><i class="fa-solid fa-gamepad"></i>Modes</button>
+    <button id="tab-system" title="System: the Pi and the Pico board, their versions, telemetry, board settings and firmware"><i class="fa-solid fa-gauge-high"></i>System</button>
+    <button id="tab-file" title="File: the settings file as text, to read or edit by hand"><i class="fa-solid fa-file-code"></i>File</button>
+    <button id="identify" title="Show each camera's number on its own picture, to know which is which"><i class="fa-solid fa-hashtag"></i>Identify</button>
   </div>
 
   <section id="form">
@@ -276,7 +276,7 @@
     <div class="slayout">
       <div class="viewer" id="viewer">
         <div class="maphead">
-          <span class="seg" id="s-view"><button data-v="top">Top</button><button data-v="3d">3D</button><button data-v="both">Both</button></span>
+          <span class="seg" id="s-view"><button data-v="top" title="Only the map seen from above">Top</button><button data-v="3d" title="Only R2 in 3D with the sensors' cones">3D</button><button data-v="both" title="The map from above and R2 in 3D side by side">Both</button></span>
           <button id="s-zin" title="zoom in"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
           <button id="s-zout" title="zoom out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
           <button id="s-reset" title="zoom and test object back"><i class="fa-solid fa-rotate-left"></i>Reset</button>
@@ -308,7 +308,7 @@
           <i class="fa-solid fa-plug-circle-check"></i>Connected only</button><span id="s-hiddenn"></span></div>
         <div id="slist"></div>
         <div class="sadd"><select id="s-addtype"><option value="vl53l0x">VL53L0X</option><option value="hcsr04">HC-SR04</option>
-          <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
+          <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add" title="Add a sensor of the type on the left: it takes the first free connector of the Pico board"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
       </div>
     </div>
   </section>
@@ -357,8 +357,8 @@
       <div class="row"><label><i class="fa-solid fa-sun"></i>brightness</label><select id="brd-bright"></select></div>
       <div class="row"><label><i class="fa-solid fa-lightbulb"></i>status LEDs</label><select id="brd-leds"></select></div>
       <div class="row"><label><i class="fa-solid fa-display"></i>display now</label>
-        <span><select id="brd-screen"></select> <button id="brd-on"><i class="fa-solid fa-power-off"></i>On</button>
-        <button id="brd-off">Off</button></span></div>
+        <span><select id="brd-screen"></select> <button id="brd-on" title="Turn the Pico board's display on, showing the screen picked on the left"><i class="fa-solid fa-power-off"></i>On</button>
+        <button id="brd-off" title="Turn the Pico board's display off">Off</button></span></div>
       <div class="row"><label><i class="fa-solid fa-hashtag"></i>identify (its LED blinks 5 s)</label><span class="ids" id="brd-identify"></span></div>
       <p class="status warn" id="brd-why" hidden></p>
       <p class="help" id="brd-file"></p>
@@ -366,9 +366,9 @@
     <h3 class="sysh"><i class="fa-solid fa-download"></i>Pico firmware</h3>
     <div class="sysboard">
       <p class="status" id="fw-text">…</p>
-      <div class="row"><span></span><span><button id="fw-check"><i class="fa-solid fa-rotate"></i>Check for update</button>
-        <button class="primary" id="fw-flash"><i class="fa-solid fa-microchip"></i>Flash firmware</button>
-        <button id="fw-retry" hidden><i class="fa-solid fa-rotate-right"></i>Retry</button></span></div>
+      <div class="row"><span></span><span><button id="fw-check" title="Ask GitHub whether there is newer firmware for the Pico board"><i class="fa-solid fa-rotate"></i>Check for update</button>
+        <button class="primary" id="fw-flash" title="Download, build and flash the newest Pico firmware (a few minutes; not while an automatic mode drives)"><i class="fa-solid fa-microchip"></i>Flash firmware</button>
+        <button id="fw-retry" hidden title="Copy the firmware already built onto the Pico again (after a failed copy)"><i class="fa-solid fa-rotate-right"></i>Retry</button></span></div>
       <p class="status" id="fw-step" hidden></p>
       <details id="fw-logbox" hidden><summary>output</summary><pre id="fw-log"></pre></details>
     </div>
@@ -381,8 +381,8 @@
   </section>
 
   <div class="bar">
-    <button class="primary" id="save"><i class="fa-solid fa-floppy-disk"></i>Save</button>
-    <button id="restart"><i class="fa-solid fa-power-off"></i>Save and restart</button>
+    <button class="primary" id="save" title="Save these settings on the Pi: they apply at once"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    <button id="restart" title="Save and restart ROS2D2 so a new camera list is used (about 30 s)"><i class="fa-solid fa-power-off"></i>Save and restart</button>
     <span class="status" id="status"></span>
   </div>
 </main>

@@ -409,7 +409,7 @@ export function createSensorsTab({ status }) {
           <div class="row"><label><i class="fa-solid fa-tag"></i>name</label><input class="name" spellcheck="false"></div>
           ${slider(s, 'yaw_deg', '<i class="fa-solid fa-compass"></i>points to', -180, 180, 1, FMT.yaw_deg)}
           <div class="row"><span></span><div class="snaps">${SNAPS.map(([v, t]) =>
-            `<button data-yaw="${v}"${s.yaw_deg === v || (v === 180 && s.yaw_deg === -180) ? ' class="on"' : ''}>${t}</button>`).join('')}</div></div>
+            `<button data-yaw="${v}" title="Point it ${t}"${s.yaw_deg === v || (v === 180 && s.yaw_deg === -180) ? ' class="on"' : ''}>${t}</button>`).join('')}</div></div>
           ${isLidar(s) ? '' : slider(s, 'pitch_deg', '<i class="fa-solid fa-arrow-down"></i>tilt down', -10, 80, 1, FMT.pitch_deg)}
           ${slider(s, 'fov_deg', `<i class="fa-solid fa-eye"></i>${isLidar(s) ? 'not hidden by R2' : 'field of view'}`, T.fov[0], T.fov[1], 1, FMT.fov_deg)}
           ${slider(s, 'range_max', '<i class="fa-solid fa-ruler"></i>range', T.range[0], T.range[1], 0.05, FMT.range_max)}
@@ -421,7 +421,7 @@ export function createSensorsTab({ status }) {
           <div class="row"><label><i class="fa-solid fa-location-dot"></i>position</label>
             <span class="sub pos">${posText(s)}</span></div>
           <div class="row"><span></span><span><button class="defaults" title="field of view and range back to the ${T.label}'s own (${T.fovDeg}°, ${T.rangeMax} m)"><i class="fa-solid fa-rotate-left"></i>Defaults</button>
-            <button class="remove"><i class="fa-solid fa-trash"></i>Remove</button></span></div>
+            <button class="remove" title="Take this sensor out of sensors.yaml (Save to keep it)"><i class="fa-solid fa-trash"></i>Remove</button></span></div>
         </div>`;
       el.querySelector('.sub').textContent = s.name;
       if (el.querySelector('.port')) el.querySelector('.port').textContent = s.port;

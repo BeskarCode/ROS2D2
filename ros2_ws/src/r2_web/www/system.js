@@ -117,7 +117,7 @@ export function createSystemTab() {
   sel('brd-leds', 'leds');
   $('brd-screen').innerHTML = '<option value="all">every sensor</option>' +
     CONNECTORS.map((c) => `<option value="${c}">${c}</option>`).join('');
-  $('brd-identify').innerHTML = CONNECTORS.map((c) => `<button data-c="${c}">${c}</button>`).join('');
+  $('brd-identify').innerHTML = CONNECTORS.map((c) => `<button data-c="${c}" title="Blink ${c}'s LED on the board for 5 s, to find the connector">${c}</button>`).join('');
 
   function boardEnabled() {
     const live = pico && Date.now() - picoAt < 3000 && pico.connected;
