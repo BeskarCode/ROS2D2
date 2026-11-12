@@ -102,7 +102,7 @@ in the simulation the real lidar is not started. The same command names a Mega c
 The lidar's card in the web console also sets the lidar itself, kept in `sensors.yaml`:
 
 - **motor**: `always` (the default), `with_modes` (spins only while an automatic mode is on; a mode
-  that starts waits up to 3 s for the first scan, then drives as without a lidar; the motor stops
+  that starts waits up to 5 s for the first scan, then drives as without a lidar; the motor stops
   5 s after the last mode goes off) or `off`. The `lidar_motor` node does it with the driver's
   `start_motor` / `stop_motor`.
 - **scan mode**: the modes the lidar says it has (a C1: Standard, 16 m; DenseBoost, 40 m).
