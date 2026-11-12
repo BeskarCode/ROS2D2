@@ -18,3 +18,8 @@ firmware/*/build/
 # Personal photos and zipped STL bundles beside the enclosures stay local
 hardware/**/IMG_*.jpeg
 hardware/**/stl/stl.zip
+# ESP-IDF downloads and generated config of the P4 dome camera
+firmware/r2_domecam_p4/managed_components/
+firmware/r2_domecam_p4/sdkconfig
+firmware/r2_domecam_p4/sdkconfig.old
+firmware/r2_domecam_p4/dependencies.lock
