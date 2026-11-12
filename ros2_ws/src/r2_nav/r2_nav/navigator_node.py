@@ -31,6 +31,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, Range
 from std_msgs.msg import Bool, Empty, String
 
+from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.modes import drives_in
 from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, RangeFilter, clamp_param,
                              config_path, is_lidar, load_nav, ramp, state_json)
@@ -63,6 +64,8 @@ class NavigatorNode(Node):
         self.sensors_reloader = Reloader(lambda: sensors_path(sensors_default))
         self.sensors = self.sensors_reloader.poll() or {}
         self.nav = Navigator(cfg, self.sensors)
+        self.gate = LidarGate(motor_policy(self.sensors))   # with_modes: wait for the lidar to spin up
+        self.was_auto = False
 
         self.pose = (0.0, 0.0, 0.0)
         self.auto_on = False
@@ -102,6 +105,7 @@ class NavigatorNode(Node):
         if sensors is not None:
             self.sensors = sensors
             self.nav.reconfigure(sensors=sensors)
+            self.gate.policy = motor_policy(sensors)
             self._subscribe_ranges()
 
     def _now(self):
@@ -132,6 +136,7 @@ class NavigatorNode(Node):
             a = m.angle_min + i * m.angle_increment + ly_aw
             pts.append((lx + r * math.cos(a), ly + r * math.sin(a)))
         self.scan = (self._now(), pts)
+        self.gate.on_scan(self.scan[0])
 
     def _on_range(self, name, m):
         r = m.range
@@ -184,6 +189,11 @@ class NavigatorNode(Node):
             ranges[name] = r
             filtered[name] = r
         auto = self.auto_on and drives_in(self.mode, "goto")
+        if auto and not self.was_auto:
+            self.gate.activate(now)
+        self.was_auto = auto
+        if auto and not self.gate.ready(now):
+            auto = False                             # the lidar is spinning up: hold still (<= 3 s)
         d = self.nav.step(now, self.pose, scan_xy, ranges, auto, speed=self.out[0])
 
         v, w = self.out

@@ -29,6 +29,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from sensor_msgs.msg import LaserScan, Range
 from std_msgs.msg import Empty, Int16, String
 
+from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.follow_core import Follower
 from r2_nav.modes import drives_in, load_modes, modes_path
 from r2_nav.nav_core import NavConfigError, RangeFilter, config_path, is_lidar, load_nav
@@ -53,6 +54,7 @@ class FollowNode(Node):
         self.sensors_reloader = Reloader(lambda: sensors_path(sensors_default))
         self.sensors = self.sensors_reloader.poll() or {}
         self.follower = Follower(self.follow_cfg, self.nav_cfg, self.sensors)
+        self.gate = LidarGate(motor_policy(self.sensors))   # with_modes: wait for the lidar to spin up
 
         self.mode = None
         self.active = False
@@ -111,6 +113,7 @@ class FollowNode(Node):
         if sensors is not None:
             self.sensors = sensors
             self.follower.reconfigure(sensors=sensors)
+            self.gate.policy = motor_policy(sensors)
             self._subscribe_ranges()
 
     # ---------- inputs ----------
@@ -145,6 +148,7 @@ class FollowNode(Node):
             a = m.angle_min + i * m.angle_increment + yaw
             pts.append((lx + r * math.cos(a), ly + r * math.sin(a)))
         self.scan = (self._now(), pts)
+        self.gate.on_scan(self.scan[0])
 
     def _on_range(self, name, m):
         r = m.range
@@ -167,6 +171,10 @@ class FollowNode(Node):
             self.marker = None
             self.follower = Follower(self.follow_cfg, self.nav_cfg, self.sensors)
             self.follower.start(self._now())
+            self.gate.activate(self._now())
+
+        if not self.gate.ready(self._now()):         # the lidar is spinning up: hold still (<= 3 s)
+            return
 
         now = self._now()
         scan_xy = self.scan[1] if self.scan and now - self.scan[0] < STALE else None
