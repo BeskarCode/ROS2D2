@@ -9,9 +9,11 @@ include <tapa.scad>
 include <marco.scad>
 include <fasteners.scad>
 include <models.scad>
+include <guias.scad>
 
 scene = "montada";
 step = 1;
+leds = false;                    // true: the LED face with the light-pipe piece
 
 WHITE = [0.96, 0.96, 0.94];  GREY = [0.80, 0.80, 0.82];  ROD = [1, 0.55, 0.1];
 
@@ -39,14 +41,15 @@ module arrow(from, to) {
 
 module logos() {
     translate([-0.03, 0, 0]) {
-        color([0.05, 0.13, 0.25]) logo_svg("marino");
-        color([0.25, 0.45, 0.75]) logo_svg("azul");
-        color([0.45, 0.47, 0.5]) logo_svg("gris");
+        color([0.05, 0.13, 0.25]) logo_svg("marino", leds = leds);
+        color([0.25, 0.45, 0.75]) logo_svg("azul", leds = leds);
+        color([0.45, 0.47, 0.5]) logo_svg("gris", leds = leds);
     }
 }
 
 module pared_assembly(board = true, rod = true, front = true, e_board = 0, e_rod = 0, e_screw = 0) {
-    color(WHITE) pared(); logos();
+    color(WHITE) pared(leds = leds); logos();
+    if (leds) color([1, 0.35, 0.25, 0.85]) guias_luz();
     hw_group("pared");
     if (front) { model_xt60(); model_switch(); hw_group("xt60"); }
     if (rod) translate([e_rod, 0, 0]) color(ROD) pulsador();

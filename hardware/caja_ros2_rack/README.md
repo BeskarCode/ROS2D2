@@ -49,6 +49,29 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 
 PETG, 0,2 mm, boquilla 0,4, sin soportes.
 
+## Pared con LEDs (opcional)
+
+![Pared con LEDs](montaje/img/montada_led.png)
+
+Otra versión de la pared principal, para ver desde fuera los 10 LEDs de la placa de la Pico: un
+agujero sobre cada uno (VL1–VL4, US1–US5 y PWR) con su nombre al lado, y el logo más abajo, entre
+la ventana de la OLED y el XT60. Imprime **una** de las dos paredes: la de arriba o esta. El resto
+de piezas es el mismo.
+
+| STL | Qué es | Cómo imprimir |
+|---|---|---|
+| `stl/pared_led_multicolor_bambu.3mf` | pared con LEDs + logo y nombres en marino, azul y gris | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
+| `stl/pared_led_multicolor.3mf` | lo mismo, 3MF genérico | |
+| `stl/pared_led_monocolor.stl` | pared con LEDs de un color, logo y nombres grabados 1 mm | cara del logo sobre la cama |
+| `stl/guias_luz.stl` | guías de luz: un marco con las 10 barras de 3 mm (opcional) | **PLA translúcido**, extremos exteriores sobre la cama, relleno 100 % |
+| `stl/prueba_luz.stl` | una barra suelta para probar el filamento | PLA translúcido, de pie, relleno 100 % |
+
+Las guías de luz son **opcionales**: sin ellas los LEDs se ven por los agujeros. Si las pones, se
+enganchan en la pared (4 ganchos) **antes de colgar la placa**, y nunca tocan la placa: cada barra
+acaba 0,5 mm por encima de su LED. Antes de imprimir la pieza, prueba tu filamento con
+`prueba_luz.stl` sobre un LED encendido (el PLA translúcido se ve bien; si el tuyo no, prueba PETG
+transparente). Al montar, mira de lado que ninguna barra toca su LED; si alguna toca, lija la punta.
+
 ## Antes de imprimir: comprueba estas medidas
 
 En `params.scad` (cambia el valor y vuelve a generar):
