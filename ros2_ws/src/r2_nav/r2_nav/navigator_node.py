@@ -35,7 +35,7 @@ from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.modes import drives_in
 from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, RangeFilter, clamp_param,
                              config_path, is_lidar, load_nav, ramp, state_json)
-from r2_sensors.config import Reloader
+from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
 
 STALE = 0.5          # s: a sensor older than this is not reporting
@@ -63,8 +63,8 @@ class NavigatorNode(Node):
         sensors_default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
         self.sensors_reloader = Reloader(lambda: sensors_path(sensors_default))
         self.sensors = self.sensors_reloader.poll() or {}
-        self.nav = Navigator(cfg, self.sensors)
-        self.gate = LidarGate(motor_policy(self.sensors))   # with_modes: wait for the lidar to spin up
+        self.nav = Navigator(cfg, in_use(self.sensors))     # ignored sensors (enabled: false) left out
+        self.gate = LidarGate(motor_policy(in_use(self.sensors)))   # with_modes: wait for the lidar to spin up
 
         self.pose = (0.0, 0.0, 0.0)
         self.auto_on = False
@@ -103,8 +103,8 @@ class NavigatorNode(Node):
         sensors = self.sensors_reloader.poll()
         if sensors is not None:
             self.sensors = sensors
-            self.nav.reconfigure(sensors=sensors)
-            self.gate.policy = motor_policy(sensors)
+            self.nav.reconfigure(sensors=in_use(sensors))
+            self.gate.policy = motor_policy(in_use(sensors))
             self._subscribe_ranges()
 
     def _now(self):
@@ -127,6 +127,9 @@ class NavigatorNode(Node):
 
     def _on_scan(self, m):
         lidar = next((s for s in self.sensors.values() if is_lidar(s)), None)
+        if lidar is not None and not lidar.get("enabled", True):
+            self.scan = None              # the lidar is ignored: as if there were none
+            return
         lx, ly, ly_aw = (lidar["x"], lidar["y"], math.radians(lidar["yaw_deg"])) if lidar else (0.0, 0.0, 0.0)
         pts = []
         for i, r in enumerate(m.ranges):
@@ -215,7 +218,8 @@ class NavigatorNode(Node):
                 self.pub_sound.publish(String(data=cmd))
         d.v, d.w = v, w
         heading = None if d.heading is None else self.pose[2] + d.heading
-        self.pub_state.publish(String(data=state_json(d, self.nav.goal, heading, filtered, raw)))
+        ignored = [n for n, s in self.sensors.items() if not s.get("enabled", True)]
+        self.pub_state.publish(String(data=state_json(d, self.nav.goal, heading, filtered, raw, ignored)))
 
 
 def main():

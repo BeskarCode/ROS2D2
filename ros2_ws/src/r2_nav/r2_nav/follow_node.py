@@ -33,7 +33,7 @@ from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.follow_core import Follower
 from r2_nav.modes import drives_in, load_modes, modes_path
 from r2_nav.nav_core import NavConfigError, RangeFilter, config_path, is_lidar, load_nav
-from r2_sensors.config import Reloader
+from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
 
 STALE = 0.5          # s: a sensor older than this is not reporting
@@ -53,8 +53,8 @@ class FollowNode(Node):
         sensors_default = os.path.join(get_package_share_directory("r2_sensors"), "config", "sensors.yaml")
         self.sensors_reloader = Reloader(lambda: sensors_path(sensors_default))
         self.sensors = self.sensors_reloader.poll() or {}
-        self.follower = Follower(self.follow_cfg, self.nav_cfg, self.sensors)
-        self.gate = LidarGate(motor_policy(self.sensors))   # with_modes: wait for the lidar to spin up
+        self.follower = Follower(self.follow_cfg, self.nav_cfg, in_use(self.sensors))
+        self.gate = LidarGate(motor_policy(in_use(self.sensors)))   # with_modes: wait for the lidar to spin up
 
         self.mode = None
         self.active = False
@@ -115,8 +115,8 @@ class FollowNode(Node):
         sensors = self.sensors_reloader.poll()
         if sensors is not None:
             self.sensors = sensors
-            self.follower.reconfigure(sensors=sensors)
-            self.gate.policy = motor_policy(sensors)
+            self.follower.reconfigure(sensors=in_use(sensors))
+            self.gate.policy = motor_policy(in_use(sensors))
             self._subscribe_ranges()
 
     # ---------- inputs ----------
@@ -143,6 +143,9 @@ class FollowNode(Node):
 
     def _on_scan(self, m):
         lidar = next((s for s in self.sensors.values() if is_lidar(s)), None)
+        if lidar is not None and not lidar.get("enabled", True):
+            self.scan = None              # the lidar is ignored: as if there were none
+            return
         lx, ly, yaw = (lidar["x"], lidar["y"], math.radians(lidar["yaw_deg"])) if lidar else (0.0, 0.0, 0.0)
         pts = []
         for i, r in enumerate(m.ranges):
@@ -173,7 +176,7 @@ class FollowNode(Node):
         if not self.active:                       # entering: start from rest, with nothing stale
             self.active = True
             self.marker = None
-            self.follower = Follower(self.follow_cfg, self.nav_cfg, self.sensors)
+            self.follower = Follower(self.follow_cfg, self.nav_cfg, in_use(self.sensors))
             self.follower.start(self._now())
 
         # armed when follow is on AND auto is on (follow can be chosen long before PS+L2)

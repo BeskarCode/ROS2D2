@@ -320,3 +320,39 @@ def test_coming_back_to_where_it_was_does_not_start_the_count_again():
     assert nav.step(0.1, (0.4, 0.0, 0.0), [], clear_ranges(), True).tries == 1
     d = nav.step(0.2, (0.9, 0.0, 0.0), [], clear_ranges(tof_front=0.1), True)
     assert d.state == "gave up"
+
+
+# ---------- ignored sensors (enabled: false) ----------
+from r2_nav.nav_core import state_json  # noqa: E402
+from r2_sensors.config import in_use  # noqa: E402
+
+
+def test_reconfigure_with_no_sensors_in_use():
+    nav = Navigator(cfg(), SENSORS)
+    nav.reconfigure(sensors={})
+    assert nav.sensors == {}
+
+
+def test_ignored_front_sensor_does_not_stop():
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(2.0, 0.0)
+    d = run(nav, 1, ranges=clear_ranges(tof_front=0.10))[-1]
+    assert d.state == "stop" and "tof_front" in d.why
+    ignored = {n: ({**s, "enabled": False} if n == "tof_front" else s) for n, s in SENSORS.items()}
+    nav2 = Navigator(cfg(), in_use(ignored))
+    nav2.set_goal(2.0, 0.0)
+    d2 = run(nav2, 1, ranges=clear_ranges(tof_front=0.10))[-1]
+    assert "tof_front" not in (d2.why or "")
+
+
+def test_ignored_lidar_counts_as_no_lidar():
+    from r2_nav.lidar_gate import motor_policy
+    s = {n: ({**v, "enabled": False, "motor": "with_modes"} if n == "lidar" else v) for n, v in SENSORS.items()}
+    assert motor_policy(in_use(s)) == "always"
+
+
+def test_state_json_lists_ignored():
+    nav = Navigator(cfg(), SENSORS)
+    d = run(nav, 1)[-1]
+    import json
+    assert json.loads(state_json(d, None, None, {}, {}, ignored=["tof_front"]))["ignored"] == ["tof_front"]
