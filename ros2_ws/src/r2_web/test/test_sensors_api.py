@@ -45,7 +45,7 @@ def test_lidar_device_present(tmp_path):
 def test_save_adds_final_newline(tmp_path):
     _, user = files(tmp_path)
     code, body = save_sensors(GOOD.rstrip("\n"), user)
-    assert code == 200 and body == {"ok": True, "file": user}
+    assert code == 200 and body == {"ok": True, "file": user, "yaml": GOOD}   # the console keeps the text it saved
     with open(user, encoding="utf-8") as f:
         assert f.read() == GOOD
 
@@ -100,3 +100,25 @@ def test_set_enabled_broken_file(tmp_path):
     user.write_text("tof_a: [broken", encoding="utf-8")
     code, body = set_enabled(str(tmp_path / "pkg.yaml"), str(user), "tof_a", False)
     assert code == 400 and user.read_text(encoding="utf-8") == "tof_a: [broken"
+
+
+def test_set_enabled_returns_the_new_text(tmp_path):
+    user = tmp_path / "u.yaml"
+    user.write_text(TWO, encoding="utf-8")
+    code, body = set_enabled(str(tmp_path / "pkg.yaml"), str(user), "tof_a", False)
+    assert code == 200 and body["yaml"] == user.read_text(encoding="utf-8")
+
+
+def test_set_enabled_header_with_a_comment(tmp_path):
+    user = tmp_path / "u.yaml"
+    user.write_text(TWO.replace("tof_b:\n", "tof_b:  # the rear one \n"), encoding="utf-8")
+    code, body = set_enabled(str(tmp_path / "pkg.yaml"), str(user), "tof_b", False)
+    assert code == 200, body
+    assert "tof_b:  # the rear one \n  type: vl53l0x\n  enabled: false\n" in user.read_text(encoding="utf-8")
+
+
+def test_set_enabled_flow_block_is_a_clear_400(tmp_path):
+    user = tmp_path / "u.yaml"
+    user.write_text("tof_a: {type: vl53l0x, x: 0.2, y: 0, z: 0.25, pico: {xshut: 2}}\n", encoding="utf-8")
+    code, body = set_enabled(str(tmp_path / "pkg.yaml"), str(user), "tof_a", False)
+    assert code == 400 and "File tab" in body["error"]

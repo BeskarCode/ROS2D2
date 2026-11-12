@@ -197,3 +197,9 @@ test('lastFrontInUse: the last sensor looking ahead', () => {
   assert.equal(lastFrontInUse([a, { ...tof({ yaw_deg: 30, enabled: false }), name: 'tof_left' }], 'tof_front'), true);
   assert.equal(lastFrontInUse([a, back], 'sonar_rear'), false);   // ignoring a rear one: nothing to warn
 });
+
+test('lastFrontInUse: a floor sensor does not count as looking ahead', () => {
+  const a = { ...tof({ yaw_deg: 0 }), name: 'tof_front' };
+  const floor = { ...tof({ yaw_deg: 0, pitch_deg: 40 }), name: 'tof_floor' };
+  assert.equal(lastFrontInUse([a, floor], 'tof_front'), true);
+});

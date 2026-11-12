@@ -234,7 +234,8 @@ export function lidarYamlValue(v) {
 
 /** Ignoring sensor `name` leaves nothing in use looking ahead (no lidar, no sensor within 90 deg of ahead)? */
 export function lastFrontInUse(sensors, name) {
-  const ahead = (s) => isLidar(s) || Math.abs(((((s.yaw_deg || 0) + 180) % 360) + 360) % 360 - 180) < 90;
+  // a floor sensor (tilted down more than 30 deg) does not count: navigation does not see ahead with it
+  const ahead = (s) => isLidar(s) || ((s.pitch_deg || 0) <= 30 && Math.abs(((((s.yaw_deg || 0) + 180) % 360) + 360) % 360 - 180) < 90);
   const target = sensors.find((s) => s.name === name);
   if (!target || !ahead(target)) return false;
   return !sensors.some((s) => s.name !== name && s.enabled !== false && ahead(s));
