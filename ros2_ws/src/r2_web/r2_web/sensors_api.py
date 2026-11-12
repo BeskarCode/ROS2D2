@@ -34,3 +34,29 @@ def save_sensors(text, user):
     with open(user, "w", encoding="utf-8") as f:
         f.write(text if text.endswith("\n") else text + "\n")
     return 200, {"ok": True, "file": user}
+
+
+def set_enabled(default, user, name, enabled):
+    """(HTTP code, body). The console's in use / ignored switch: changes only that sensor's
+    enabled line in the saved sensors.yaml (the package's when none was saved yet), so nothing
+    else - comments, or changes not saved in the console - is touched."""
+    path = user if os.path.exists(user) else default
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        sensors = parse_sensors(text)
+    except (OSError, SensorConfigError) as e:
+        return 400, {"error": f"not saved: {e}"}
+    if name not in sensors:
+        return 400, {"error": f"not saved: unknown sensor {name} in {path} (save the console first)"}
+    lines = text.splitlines(keepends=True)
+    start = next(i for i, ln in enumerate(lines) if ln.rstrip("\r\n") == f"{name}:")
+    end = next((i for i in range(start + 1, len(lines)) if lines[i][:1] not in (" ", "\t", "\n", "\r", "#")), len(lines))
+    value = f"  enabled: {'true' if enabled else 'false'}\n"
+    at = next((i for i in range(start + 1, end) if lines[i].lstrip().startswith("enabled:")), None)
+    if at is not None:
+        lines[at] = value
+    else:
+        after = next((i for i in range(start + 1, end) if lines[i].lstrip().startswith("type:")), start)
+        lines.insert(after + 1, value)
+    return save_sensors("".join(lines), user)

@@ -11,6 +11,7 @@ and a small HTTP API for what ROS topics cannot do:
                       it then wins over the package's file. The file stays hand-editable.
   GET  /api/sensors   sensors.yaml in use: its text, the sensors, any error in it, and
                       whether the lidar is plugged in (/dev/r2-lidar)
+  POST /api/sensors/enabled   {"name", "enabled"}: a sensor in use or ignored, only that line saved
   POST /api/sensors   save sensors.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if
                       it is valid; the sensors' poses follow at once (sensor_tf reloads it); a new
                       lidar scan mode or upside-down setting restarts only r2d2-lidar
@@ -60,7 +61,7 @@ from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
 from r2_web.modes_api import modes_payload, save_modes
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.lidar_api import lidar_needs_restart
-from r2_web.sensors_api import save_sensors, sensors_payload
+from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
 from r2_web.system_api import system_payload
 from r2_web.firmware_api import FirmwareJob, autonomous_active
 from r2_web.pico_board_api import pico_board_payload, save_pico_board
@@ -186,6 +187,15 @@ class Handler(SimpleHTTPRequestHandler):
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             return self._json(*save_pico_board(text, BOARD_USER_CONFIG))
+        if route == "/api/sensors/enabled":
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+                name, enabled = body["name"], body["enabled"]
+                if not isinstance(name, str) or not isinstance(enabled, bool):
+                    raise ValueError("name must be text and enabled true or false")
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            return self._json(*set_enabled(self.sensors_default, SENSORS_USER_CONFIG, name, enabled))
         if route == "/api/sensors":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
