@@ -55,6 +55,26 @@ sudo bash setup/setup_r2_brain.sh
 It installs ROS 2 Jazzy, the camera and web tools, and the serial port permissions.
 Takes 1.5 to 2.5 hours, mostly waiting on the microSD: use a fast A2 card.
 
+From then on, to put the code of this computer on the Pi (Git Bash on the computer):
+
+```
+PI=<your-user>@<pi-address> setup/deploy.sh              # every package, or name some: r2_web r2_nav
+```
+
+It copies `ros2_ws/src`, rebuilds what it copied and writes `~/r2_ws/VERSION` (the commit),
+which the web console shows in Setup -> System.
+
+So that the console can check GitHub for new Pico firmware and flash it (Setup -> System ->
+Pico firmware), once, on the Pi as the ROS2D2 user (not root):
+
+```
+setup/install_pico_toolchain.sh
+```
+
+It installs `arduino-cli` with the Pico core and libraries (about 2 GB, a few minutes), a copy
+of the repo's `firmware/` in `~/ros2d2-firmware`, and `/usr/local/sbin/r2-pico-flash` with a
+sudoers rule for that one script. A build on a Pi 4 takes 2 to 3 minutes.
+
 ### Naming the USB devices (lidar, Mega, Pico)
 
 ROS2D2 finds its USB serial devices by fixed names: `/dev/r2-mega`, `/dev/r2-lidar` and
