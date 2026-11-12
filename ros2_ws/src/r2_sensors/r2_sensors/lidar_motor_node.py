@@ -3,6 +3,7 @@
 
   in   /r2/auto_mode   std_msgs/Bool     (latched)
   in   /r2/mode        std_msgs/String   (latched)
+  in   /lidar/info     std_msgs/String   (latched; a new one = the driver restarted)
   out  /start_motor, /stop_motor         std_srvs/Empty, sllidar_ros2's services
 
     ros2 run r2_sensors lidar_motor
@@ -34,6 +35,8 @@ class LidarMotor(Node):
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.create_subscription(Bool, "/r2/auto_mode", lambda m: setattr(self, "auto_on", m.data), latched)
         self.create_subscription(String, "/r2/mode", lambda m: setattr(self, "mode", m.data), latched)
+        # the driver publishes /lidar/info each time it starts (spinning): give it the order again
+        self.create_subscription(String, "/lidar/info", lambda _m: self.policy.driver_restarted(), latched)
         self.motor_clients = {o: self.create_client(Empty, f"/{o}_motor") for o in ("start", "stop")}
         self.create_timer(1.0, self.tick)
 

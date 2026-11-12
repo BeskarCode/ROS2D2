@@ -23,6 +23,10 @@ class MotorPolicy:
         self.sent = None            # the last order sent
         self.off_since = None       # when the modes went off (after having been on)
 
+    def driver_restarted(self):
+        """The driver started again (it always starts spinning): the next update says it again."""
+        self.sent = None
+
     def update(self, now, policy, active):
         if active:
             self.off_since = None
