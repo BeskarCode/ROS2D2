@@ -129,7 +129,7 @@ def ramp(current, wanted, max_step):
     return current + max(-max_step, min(max_step, wanted - current))
 
 
-def state_json(d, goal, heading_odom, filtered, raw):
+def state_json(d, goal, heading_odom, filtered, raw, ignored=()):
     """What /nav/state carries for the web page (one JSON object)."""
     r = lambda v: None if v is None else round(v, 3)   # noqa: E731
     return json.dumps({
@@ -137,6 +137,7 @@ def state_json(d, goal, heading_odom, filtered, raw):
         "heading": r(heading_odom), "tries": d.tries, "goal": list(goal) if goal else None,
         "stops": {k: r(v) for k, v in d.stops.items()},
         "filtered": {k: r(v) for k, v in filtered.items()}, "raw": {k: r(v) for k, v in raw.items()},
+        "ignored": list(ignored),
     })
 
 
@@ -313,7 +314,7 @@ class Navigator:
 
     def reconfigure(self, cfg=None, sensors=None):
         self.cfg = cfg or self.cfg
-        self.sensors = sensors or self.sensors
+        self.sensors = self.sensors if sensors is None else sensors   # {} = every sensor ignored
 
     def _front(self):
         return [n for n, s in self.sensors.items() if not is_lidar(s) and not is_floor(s) and abs(s["yaw_deg"]) < 90]

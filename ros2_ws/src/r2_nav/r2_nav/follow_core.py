@@ -69,7 +69,7 @@ class Follower:
     def reconfigure(self, follow_cfg=None, nav_cfg=None, sensors=None):
         self.fcfg = follow_cfg or self.fcfg
         self.cfg = nav_cfg or self.cfg
-        self.sensors = sensors or self.sensors
+        self.sensors = self.sensors if sensors is None else sensors   # {} = every sensor ignored
 
     def _front(self):
         return [n for n, s in self.sensors.items() if not is_lidar(s) and not is_floor(s) and abs(s["yaw_deg"]) < 90]

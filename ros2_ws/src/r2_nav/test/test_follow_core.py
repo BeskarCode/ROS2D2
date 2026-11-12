@@ -198,3 +198,9 @@ def test_grace_ends_with_first_marker():
     run(f, 3, scan=[], ranges=clear_ranges(), mk=lambda t: marker(t))
     out = run(f, 5, scan=[], ranges=clear_ranges(), mk=lambda t: marker(t, seen=False), t0=0.3)
     assert sum(d.events.count("lost") for d in out) == 1      # a marker that says "not seen" is lost at once
+
+
+def test_follower_reconfigure_with_no_sensors_in_use():
+    f = follower()
+    f.reconfigure(sensors={})
+    assert f.sensors == {}
