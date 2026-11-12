@@ -36,10 +36,12 @@ def test_guide(tmp_path, table, lang, name):
 
 
 # the LED face and the optional light-pipe piece
-LIGHT = {"es": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "guias_luz.stl", "opcional",
-                "antes de colgar la placa", "lija la punta", "J4"],
-         "en": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "guias_luz.stl", "optional",
-                "before hanging the board", "sand its tip", "J4"]}
+LIGHT = {"es": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "guias_luz.stl", "prueba_luz.stl",
+                "PETG transparente", "opcional", "antes de colgar la placa", "lija la punta", "J4",
+                "sin tornillos", "sin balancearse", "Para sacarla"],
+         "en": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "guias_luz.stl", "prueba_luz.stl",
+                "clear PETG", "optional", "before hanging the board", "sand its tip", "J4",
+                "without screws", "without rocking", "To take it out"]}
 
 
 @pytest.mark.parametrize("lang,name", [("es", "MONTAJE.md"), ("en", "ASSEMBLY.md")])

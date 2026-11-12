@@ -80,7 +80,8 @@ pico_leds = [["VL1", 72.6, 12], ["VL2", 72.6, 24], ["VL3", 72.6, 39], ["VL4", 72
              ["US1", 21, 12], ["US2", 21, 22], ["US3", 21, 32], ["US4", 21, 42], ["US5", 21, 52],
              ["PWR", 40.8, 59.5]];
 led_h = 0.8;                         // 0603 LED height, the datasheet's highest
-led_air = 0.5;                       // air between a pipe's tip and its LED: the pipes never touch the board
+led_air = 0.7;                       // air between a pipe's tip and its LED (nominal): pushed in by the hooks' air,
+                                     // on a board resting on the columns' ends (0.05 short), 0.3 still stays
 lp_d = 3;                            // light pipe diameter
 lp_hole = lp_d + 0.4;                // its hole in the LED face: 0.2 per side, goes in without forcing, no play
 logo_zc_led = 27.5;                  // the LED face's logo: centred between the XT60/switch (Z 16) and the window's chamfer (Z 39)
@@ -95,8 +96,10 @@ lp_bar_z = [68.85, 70.4];  lp_bar_t = 4;          // the cross bar: between the 
                                                   // Dupont plugs (from Z 70.5); thicker in X to stay stiff
 lp_pwr_arm = [48.3, 51.7];                        // Y of the arm down to the PWR rod (the tunnel ends at Y 48)
 lp_hole_x = 7;                                    // the holes go this deep: through the tunnel's wall by PWR
-lp_ear = [1.6, 6, 9.5];                           // ear: Y width, Z length, X of its top
-lp_hook_t = 1.4;  lp_hook_gap = 0.2;  lp_hook_lip = 0.5;  lp_hook_lip_h = 1;  lp_hook_air = 0.1;
+lp_ear = [1.6, 6, 13.5];                          // ear: Y width, Z length, X of its top (a long post bends easily)
+lp_hook_t = 1.4;  lp_hook_gap = 0.2;  lp_hook_lip = 0.6;  lp_hook_lip_h = 1;
+lp_hook_air = 0.35;                               // ear top to lip: a sagging bridge face and 0.2 mm layers still click
+lp_hook_root = 1.2;                               // chamfer at the post's root (it bends across the layers)
 lp_hooks_z = [[79.5, 106.5], [77.5, 107.5]];      // VL side, US side
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
 

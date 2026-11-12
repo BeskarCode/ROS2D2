@@ -68,9 +68,11 @@ de piezas es el mismo.
 
 Las guías de luz son **opcionales**: sin ellas los LEDs se ven por los agujeros. Si las pones, se
 enganchan en la pared (4 ganchos) **antes de colgar la placa**, y nunca tocan la placa: cada barra
-acaba 0,5 mm por encima de su LED. Antes de imprimir la pieza, prueba tu filamento con
+acaba 0,7 mm por encima de su LED. Antes de imprimir la pieza, prueba tu filamento con
 `prueba_luz.stl` sobre un LED encendido (el PLA translúcido se ve bien; si el tuyo no, prueba PETG
-transparente). Al montar, mira de lado que ninguna barra toca su LED; si alguna toca, lija la punta.
+transparente). Al montar, presenta la placa sin tornillos sobre sus 4 columnas: debe asentar sin
+balancearse; si se balancea, alguna barra toca su LED: lija la punta. Para sacar la pieza, abre los
+ganchos de dos en dos con un destornillador pequeño.
 
 ## Antes de imprimir: comprueba estas medidas
 

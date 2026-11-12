@@ -62,6 +62,8 @@ module lp_hooks() {
         root = side == 0 ? py + lp_hook_t : py)
         translate([0, 0, z - lp_ear[1] / 2]) linear_extrude(lp_ear[1]) union() {
             translate([wall - 0.01, py]) square([lx1 - wall + 0.01, lp_hook_t]);
+            let(o = side == 0 ? py : py + lp_hook_t)                  // root chamfer, on the side away from the frame
+                polygon([[wall - 0.01, o], [wall - 0.01, o + s * lp_hook_root], [wall + lp_hook_root, o]]);
             polygon([[lx0, root], [lx0, tip], [lx1, root]]);         // lip, sloped towards +X
         }
 }
