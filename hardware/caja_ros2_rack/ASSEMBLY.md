@@ -32,10 +32,10 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 |---|---|
 | `stl/pared_multicolor_bambu.3mf` | Main face with the logo in 4 colours (AMS: white, navy, blue, grey) |
 | `stl/pared_monocolor.stl` | or: single-colour main face, engraved logo |
-| `stl/pared_led_multicolor_bambu.3mf` | or: main face with a hole over each LED of the Pico board, logo lower down and the connector names (AMS: white, navy, blue, grey) |
-| `stl/pared_led_monocolor.stl` | or: the LED face in one colour, logo and names engraved |
-| `stl/guias_luz.stl` | Light pipes (optional, only with the LED face): one piece in translucent PLA (or clear PETG), outer ends on the bed, 100 % infill |
-| `stl/prueba_luz.stl` | Light test rod: print it first and hold it on a lit LED to see whether your filament lets enough light through |
+| `stl/con_leds/pared_led_multicolor_bambu.3mf` | or: main face with a hole over each LED of the Pico board, logo lower down and the connector names (AMS: white, navy, blue, grey) |
+| `stl/con_leds/pared_led_monocolor.stl` | or: the LED face in one colour, logo and names engraved |
+| `stl/con_leds/guias_luz.stl` | Light pipes (optional, only with the LED face): one piece in translucent PLA (or clear PETG), outer ends on the bed, 100 % infill |
+| `stl/con_leds/prueba_luz.stl` | Light test rod: print it first and hold it on a lit LED to see whether your filament lets enough light through |
 | `stl/base.stl` | Base: floor, back, central divider |
 | `stl/tapa.stl` | Shell (roof + side + narrow front) |
 | `stl/marco_pi4.stl` | Back frame for the Pi 4 (Ethernet at the top) |

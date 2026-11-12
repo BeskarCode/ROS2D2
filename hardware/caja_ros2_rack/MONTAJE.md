@@ -32,10 +32,10 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 |---|---|
 | `stl/pared_multicolor_bambu.3mf` | Pared principal con el logo en 4 colores (AMS: blanco, marino, azul, gris) |
 | `stl/pared_monocolor.stl` | o bien: pared principal de un color, logo grabado |
-| `stl/pared_led_multicolor_bambu.3mf` | o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y nombres de los conectores (AMS: blanco, marino, azul, gris) |
-| `stl/pared_led_monocolor.stl` | o bien: la pared con LEDs de un color, logo y nombres grabados |
-| `stl/guias_luz.stl` | Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido (o PETG transparente), extremos exteriores sobre la cama, relleno 100 % |
-| `stl/prueba_luz.stl` | Barra de prueba de luz: imprímela antes y ponla sobre un LED encendido para ver si tu filamento deja pasar bastante luz |
+| `stl/con_leds/pared_led_multicolor_bambu.3mf` | o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y nombres de los conectores (AMS: blanco, marino, azul, gris) |
+| `stl/con_leds/pared_led_monocolor.stl` | o bien: la pared con LEDs de un color, logo y nombres grabados |
+| `stl/con_leds/guias_luz.stl` | Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido (o PETG transparente), extremos exteriores sobre la cama, relleno 100 % |
+| `stl/con_leds/prueba_luz.stl` | Barra de prueba de luz: imprímela antes y ponla sobre un LED encendido para ver si tu filamento deja pasar bastante luz |
 | `stl/base.stl` | Base: suelo, trasera, tabique central |
 | `stl/tapa.stl` | Tapa (techo + lateral + frontal estrecho) |
 | `stl/marco_pi4.stl` | Marco trasero para la Pi 4 (Ethernet arriba) |

@@ -38,15 +38,15 @@ g.PRINTED = [
     ("pared_multicolor_bambu.3mf", "Pared principal con el logo en 4 colores (AMS: blanco, marino, azul, gris)",
      "Main face with the logo in 4 colours (AMS: white, navy, blue, grey)"),
     ("pared_monocolor.stl", "o bien: pared principal de un color, logo grabado", "or: single-colour main face, engraved logo"),
-    ("pared_led_multicolor_bambu.3mf", "o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y "
+    ("con_leds/pared_led_multicolor_bambu.3mf", "o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y "
      "nombres de los conectores (AMS: blanco, marino, azul, gris)", "or: main face with a hole over each LED of the Pico "
      "board, logo lower down and the connector names (AMS: white, navy, blue, grey)"),
-    ("pared_led_monocolor.stl", "o bien: la pared con LEDs de un color, logo y nombres grabados",
+    ("con_leds/pared_led_monocolor.stl", "o bien: la pared con LEDs de un color, logo y nombres grabados",
      "or: the LED face in one colour, logo and names engraved"),
-    ("guias_luz.stl", "Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido (o PETG "
+    ("con_leds/guias_luz.stl", "Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido (o PETG "
      "transparente), extremos exteriores sobre la cama, relleno 100 %", "Light pipes (optional, only with the LED "
      "face): one piece in translucent PLA (or clear PETG), outer ends on the bed, 100 % infill"),
-    ("prueba_luz.stl", "Barra de prueba de luz: imprímela antes y ponla sobre un LED encendido para ver si tu "
+    ("con_leds/prueba_luz.stl", "Barra de prueba de luz: imprímela antes y ponla sobre un LED encendido para ver si tu "
      "filamento deja pasar bastante luz", "Light test rod: print it first and hold it on a lit LED to see whether "
      "your filament lets enough light through"),
     ("base.stl", "Base: suelo, trasera, tabique central", "Base: floor, back, central divider"),

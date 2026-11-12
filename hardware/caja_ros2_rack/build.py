@@ -18,7 +18,22 @@ base.SCAD = HERE / "caja_rack.scad"
 LOGO_PARTS = ["logo_marino", "logo_azul", "logo_gris"]
 LOGO_LED_PARTS = ["logo_marino_led", "logo_azul_led", "logo_gris_led"]
 PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa", "marco_pi4", "marco_pi5",
-               "pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "prueba_luz"]
+               "pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "guias_luz", "prueba_luz"]
+# the LED version's parts live in their own folder, stl/con_leds/
+LED_DIR = "con_leds"
+LED_PARTS = {"pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "guias_luz", "prueba_luz"}
+
+
+def stl_path(out_dir, part):
+    out_dir = pathlib.Path(out_dir) / "stl"
+    return (out_dir / LED_DIR if part in LED_PARTS else out_dir) / f"{part}.stl"
+
+
+def face_path(out_dir, name):
+    out_dir = pathlib.Path(out_dir) / "stl"
+    return (out_dir / LED_DIR if name.startswith("pared_led") else out_dir) / name
+
+
 # the multicolour main faces: today's, and the LED face (same colour bodies, other STLs)
 FACES = {"pared_multicolor": ("pared", *LOGO_PARTS), "pared_led_multicolor": ("pared_led", *LOGO_LED_PARTS)}
 write_3mf = base.write_3mf
@@ -26,10 +41,10 @@ write_3mf = base.write_3mf
 
 def build(out_dir=HERE):
     out_dir = pathlib.Path(out_dir)
-    (out_dir / "stl").mkdir(parents=True, exist_ok=True)
+    (out_dir / "stl" / LED_DIR).mkdir(parents=True, exist_ok=True)
     written = []
     for p in PRINT_PARTS:
-        f = out_dir / "stl" / f"{p}.stl"
+        f = stl_path(out_dir, p)
         base.openscad(f, p)
         written.append(f)
         print("ok", f.name, flush=True)
@@ -42,9 +57,9 @@ def write_faces(out_dir=HERE, faces=FACES):
     out_dir = pathlib.Path(out_dir)
     written = []
     for stem, parts in faces.items():
-        face = {key: out_dir / "stl" / f"{p}.stl" for key, p in zip(("pared", *LOGO_PARTS), parts)}
+        face = {key: stl_path(out_dir, p) for key, p in zip(("pared", *LOGO_PARTS), parts)}
         for name, bambu in ((f"{stem}.3mf", False), (f"{stem}_bambu.3mf", True)):
-            f = out_dir / "stl" / name
+            f = face_path(out_dir, name)
             write_3mf(face, f, bambu=bambu)
             written.append(f)
             print("ok", name, flush=True)
