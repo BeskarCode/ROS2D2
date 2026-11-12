@@ -6,7 +6,8 @@
 import { CONNECTORS, OPTIONS, toYaml } from './boardform.js';
 import { publish, subscribe } from './rosbridge.js';
 import {
-  CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, level, minMax, pct, throttleText, uptime, versionText, zone,
+  CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, displayButtons, firmwareText, level, minMax, pct, throttleText,
+  uptime, versionText, zone,
 } from './systemfmt.js';
 
 const $ = (id) => document.getElementById(id);
@@ -125,8 +126,13 @@ export function createSystemTab() {
     $('brd-why').textContent = why;
     $('brd-why').hidden = !why;
     document.querySelectorAll('#sys-board button, #sys-board select').forEach((c) => {
-      c.disabled = !!why && !(c.tagName === 'SELECT' && !old);    // settings can be saved while it is unplugged
+      c.disabled = !!why && !(c.tagName === 'SELECT' && c.id !== 'brd-screen' && !old);   // settings can be saved while it is unplugged
     });
+    // the display's buttons follow what the board says it shows (DS)
+    const d = displayButtons(live ? pico.display : null);
+    $('brd-on').classList.toggle('lit', d.on);
+    $('brd-off').classList.toggle('lit', live && !d.on);
+    if (d.screen && document.activeElement !== $('brd-screen')) $('brd-screen').value = d.screen;
   }
   async function loadBoard() {
     try { board = await (await fetch('api/pico_board', { cache: 'no-store' })).json(); } catch { return; }
@@ -144,9 +150,58 @@ export function createSystemTab() {
   }
   ['brd-timeout', 'brd-bright', 'brd-leds'].forEach((id) => $(id).addEventListener('change', saveBoard));
   const command = (line) => publish('/pico/command', 'std_msgs/msg/String', { data: line });
-  $('brd-on').addEventListener('click', () => command($('brd-screen').value === 'all' ? 'DISP on' : `DISP on ${$('brd-screen').value}`));
+  const displayOn = () => command($('brd-screen').value === 'all' ? 'DISP on' : `DISP on ${$('brd-screen').value}`);
+  $('brd-on').addEventListener('click', displayOn);
+  $('brd-screen').addEventListener('change', displayOn);      // picking a screen shows it at once
   $('brd-off').addEventListener('click', () => command('DISP off'));
   $('brd-identify').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) command(`ID ${b.dataset.c}`); });
+
+  // ---------- the Pico firmware: check GitHub, build and flash it on the Pi ----------
+  let fw = null, fwTimer = null;
+  const BUSY = ['starting', 'pulling', 'compiling', 'releasing', 'flashing', 'waiting'];
+  function showFirmware() {
+    if (!fw) return;
+    const busy = BUSY.includes(fw.state);
+    const t = firmwareText(fw);
+    $('fw-text').className = `status ${t.cls}`;
+    $('fw-text').textContent = t.text;
+    $('fw-step').hidden = !(busy || fw.state === 'done' || fw.state === 'failed');
+    $('fw-step').className = `status ${fw.state === 'failed' ? 'bad' : fw.state === 'done' ? 'ok' : 'warn'}`;
+    $('fw-step').innerHTML = busy ? `<i class="fa-solid fa-spinner fa-spin"></i>${fw.step_text}…`
+      : fw.state === 'failed' ? `Failed: ${fw.error}` : fw.state === 'done' ? `Flashed: the Pico runs ${fw.pico_commit}` : '';
+    $('fw-check').disabled = busy || !fw.installed;
+    $('fw-flash').disabled = busy || !fw.installed;
+    $('fw-retry').hidden = !fw.can_retry;
+    $('fw-log').textContent = fw.log.join('\n');
+    $('fw-logbox').hidden = !fw.log.length;
+    clearTimeout(fwTimer);
+    if (busy && visible) fwTimer = setTimeout(loadFirmware, 1000);
+  }
+  async function loadFirmware() {
+    try { fw = await (await fetch('api/firmware', { cache: 'no-store' })).json(); } catch { return; }
+    showFirmware();
+  }
+  async function fwPost(what) {
+    let res;
+    try { res = await (await fetch(`api/firmware/${what}`, { method: 'POST' })).json(); } catch { res = { error: 'the Pi does not answer' }; }
+    if (res.error) {
+      const why = { busy: 'Already busy flashing.', blocked: 'Stop the automatic mode first.', 'not installed': 'Run setup/install_pico_toolchain.sh on the Pi first.' };
+      $('fw-step').hidden = false;
+      $('fw-step').className = 'status bad';
+      $('fw-step').textContent = why[res.error] || res.error;
+      return;
+    }
+    if (what === 'check') { fw = res; showFirmware(); } else loadFirmware();
+  }
+  $('fw-check').addEventListener('click', () => { $('fw-text').textContent = 'Checking GitHub…'; fwPost('check'); });
+  $('fw-flash').addEventListener('click', () => {
+    const m = fw && fw.main;
+    const what = m ? `${m.commit} (${m.subject})` : "main's latest";
+    const other = fw && fw.compare === 'unpublished' ? '\n\nThe Pico runs a build that is not on GitHub: this replaces it with main.' : '';
+    if (!window.confirm(`Flash the Pico with ${what}?\n\nThe Pi pulls it, builds it (a few minutes) and copies it; the Pico's sensors stop for a few seconds.${other}`)) return;
+    fwPost('flash');
+  });
+  $('fw-retry').addEventListener('click', () => fwPost('retry'));
 
   // ---------- polling ----------
   async function poll() {
@@ -174,7 +229,7 @@ export function createSystemTab() {
   $('sys-telemetry').checked = telemetry;
 
   return {
-    show() { visible = true; restart(); loadBoard(); boardEnabled(); },
+    show() { visible = true; restart(); loadBoard(); boardEnabled(); fwPost('check'); },
     hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; },
   };
 }

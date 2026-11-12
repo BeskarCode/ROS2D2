@@ -48,3 +48,21 @@ export function uptime(s) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
   return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`;
 }
+
+// The Pico firmware block: what GET api/firmware says, in a line
+export function firmwareText(api) {
+  if (!api.installed) return { cls: 'warn', text: 'Toolchain not installed on the Pi (setup/install_pico_toolchain.sh)' };
+  if (api.internet === false) return { cls: 'warn', text: "No internet: can't check" };
+  if (api.internet == null) return { cls: '', text: 'Not checked yet' };
+  const m = api.main;
+  if (api.compare === 'update' && m) return { cls: 'ok', text: `New Pico firmware: ${m.commit} ${m.subject} (${m.date.slice(0, 10)})` };
+  if (api.compare === 'up_to_date') return { cls: '', text: 'Up to date' };
+  if (api.compare === 'unpublished') return { cls: 'warn', text: `Pico runs an unpublished build (${api.pico_commit})` };
+  return { cls: '', text: 'Unknown Pico version' };
+}
+
+// The display's buttons from what the board says it shows (DS): lit or not, and which screen
+export function displayButtons(ds) {
+  if (!ds || ds === 'off') return { on: false, screen: null };
+  return { on: true, screen: ds === 'logo' ? 'all' : ds };
+}

@@ -111,6 +111,9 @@ Pi → Pico:
 | `CFG` + up to 12 items: `V:<xshut>` (VL53L0X) or `S:<trig>:<echo>` (HC-SR04); a sensor's index is its place in the line; `CFG` alone = none | `CFG OK <n>` or `CFG ERR <why>` (`bad item <k>`, `pin <p> reserved`, `pin <p> twice`, `too many`). After an error the Pico has no sensors until the next good `CFG`. |
 | `BOOT` | none: the Pico restarts into its USB loader (for flashing) |
 | `TM 1` / `TM 0` | `TM OK`: telemetry on / off (off after a restart). The Pi asks for it only while the console's System tab shows it. |
+| `UI t=<s> b=<0-3> led=<auto\|on\|off\|err>` | `UI OK` or `UI ERR <why>`: the display's timeout (10, 30, 60, 300 s; 0 = never), brightness and the status LEDs' mode (auto = only with the display on, on, off, err = only those not responding). Any of them, any order. The Pico keeps none: the Pi (`pico_board.yaml`) sends them after every `CFG`. |
+| `DISP on [all\|VL1..US5]` / `DISP off` | `DISP OK`: the display on (every sensor, or one) or off, now |
+| `ID <VL1..US5>` | `ID OK`: that connector's LED blinks at 5 Hz for 5 s, whatever the LED mode |
 | `DBG` | for each VL53L0X that answers: `DBG <index> addr=.. irq=.. rs=..(st..) raw=.. seq=.. mode=.. lim=.. vcsel=.. budget=.. i2c=.. fails=..` (its raw result and settings; `seq=e8` and `budget=33823` when healthy), then `DBG end` |
 | anything else | `ERR unknown` (a line over 200 characters: `ERR too long`) |
 
@@ -120,6 +123,7 @@ Pico → Pi:
 |---|---|
 | `HB <ms> <states>` | every second. `<states>` is `-` with no `CFG` yet, else one letter per sensor: `O` answers, `N` not answering. E.g. `HB 12034 NNNNNNN`. |
 | `R <i>:<mm> <i>:<mm> …` | every 50 ms, the sensors with a new reading since the last `R`. `-1` = answers, nothing in range. |
+| `DS <off\|logo\|all\|VL1..US5>` | what the display shows, when it changes and after `HELLO` (the console's buttons follow it) |
 | `T c0=<%> c1=<%> bus=<%> disp=<%> wait=<ms> temp=<tenths °C> up=<s> rps=<n>,<n>,…` | with `TM 1`, every second after `HB`: each core's load (loop turns of 20 µs or more, without their waits for the bus), the I2C bus held and the part held by the display, the longest a VL53L0X waited for the bus, the chip's temperature, seconds up, readings per second of each sensor. |
 
 The Pi (`r2_pico_bridge`) sends `HELLO` and `CFG` when it opens the port, and `CFG` again

@@ -40,6 +40,8 @@ volatile bool uiCfgChanged = false;
 volatile int8_t dispReq = REQ_NONE;        // REQ_OFF, REQ_ALL or a connector 0..8
 volatile int8_t identifyConn = -1;
 volatile uint32_t identifyUntil = 0;
+// What the display shows now (screenName), read by core 0 for the DS line
+const char* volatile shownName = "off";
 
 void applyUi(const UiCfg& c) {
   uiCfg = c;
@@ -255,6 +257,7 @@ void loop() {
   applyRequests(now);
   uiButton(ui, digitalRead(BUTTON_PIN), now);
   uiTick(ui, now);
+  shownName = screenName(ui);
   bool on = ui.screen != Screen::Off;
   if (!present && now - lastProbe >= PROBE_MS) {     // plugged in later: found within 3 s
     lastProbe = now;

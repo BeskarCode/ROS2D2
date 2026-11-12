@@ -341,3 +341,9 @@ def test_release_false_reconnects_and_resends_everything(bench):
     assert release(bench, False).success
     assert bench.spin_until(lambda: bench.pico.cfg_lines and "UI t=30 b=2 led=auto" in bench.pico.lines, 4)
     assert bench.spin_until(lambda: bench.connected is True)
+
+
+def test_state_says_what_the_display_shows(bench):
+    assert bench.spin_until(lambda: bench.state and bench.state.get("display") == "off")
+    bench.cmd.publish(String(data="DISP on US2"))
+    assert bench.spin_until(lambda: bench.state.get("display") == "US2")

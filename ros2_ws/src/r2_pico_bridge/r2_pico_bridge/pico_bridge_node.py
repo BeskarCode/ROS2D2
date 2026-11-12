@@ -74,6 +74,7 @@ class PicoBridge(Node):
         self.board_seen = None      # (path, mtime) of the file last read
         self.ui_pending = False     # a UI line sent, its answer not seen yet
         self.settings_supported = None   # None = not known yet; False = old firmware (ERR unknown)
+        self.display = None         # what the board's display shows (DS): off, logo, all, VL1..US5
         self.config_error = None
         self.last_hb = 0.0
         self.sensors = {}           # name -> settings, as last sent to the Pico
@@ -144,6 +145,7 @@ class PicoBridge(Node):
         self.send_cfg()
         self.tm_sent = False
         self.settings_supported = None
+        self.display = None
         self.check_telemetry()
         return True
 
@@ -206,6 +208,8 @@ class PicoBridge(Node):
         kind = msg[0]
         if kind == "hello":
             self.firmware, self.proto, self.commit = msg[1], msg[2], msg[3]
+        elif kind == "ds":
+            self.display = msg[1]
         elif kind == "tm":
             self.telemetry, self.telemetry_at = msg[1], time.monotonic()
         elif kind == "cfg_ok":
@@ -350,7 +354,7 @@ class PicoBridge(Node):
             state = {"connected": self.is_connected(), "firmware": self.firmware, "proto": self.proto,
                      "commit": self.commit, "config_error": self.config_error,
                      "sensors": dict(self.status), "telemetry": fresh_tm,
-                     "settings_supported": self.settings_supported}
+                     "settings_supported": self.settings_supported, "display": self.display}
         text = json.dumps(state)
         if always or text != self.last_json:
             self.last_json = text
