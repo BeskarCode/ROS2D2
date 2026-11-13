@@ -2,7 +2,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fbPixels, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, stripItems } from '../www/boardmirror.js';
+import { fbPixels, isLive, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, stripItems } from '../www/boardmirror.js';
 
 const b64 = (bytes) => Buffer.from(bytes).toString('base64');
 
@@ -86,4 +86,12 @@ test('pressKind: held 3 s or more is a long press', () => {
   assert.equal(pressKind(100), 'short');
   assert.equal(pressKind(2999), 'short');
   assert.equal(pressKind(3000), 'long');
+});
+
+test('isLive: the board is live only while /pico/state keeps coming and says connected', () => {
+  const now = 100000;
+  assert.equal(isLive({ connected: true }, now - 1000, now), true);
+  assert.equal(isLive({ connected: true }, now - 3000, now), false);     // nothing for 3 s: stale
+  assert.equal(isLive({ connected: false }, now, now), false);
+  assert.equal(isLive(null, now, now), false);
 });
