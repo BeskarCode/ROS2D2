@@ -71,3 +71,32 @@ def test_parse_what_the_display_shows():
     for s in ("off", "logo", "all", "VL1", "US5"):
         assert parse(f"DS {s}") == ("ds", s)
     assert parse("DS VL9") is None and parse("DS") is None
+
+
+def test_parse_led_levels_of_the_mirror():
+    assert parse("LED 100010000") == ("led", "100010000")
+    assert parse("LED 10001") is None
+    assert parse("LED 10001000x") is None
+    assert parse("LED 1000100001") is None
+
+
+def test_parse_the_display_picture_of_the_mirror():
+    import base64
+    picture = bytes(range(256)) * 4
+    assert parse("FB " + base64.b64encode(picture).decode()) == ("fb", picture)
+    assert parse("FB off") == ("fb", None)
+    assert parse("FB " + base64.b64encode(bytes(1000)).decode()) is None     # not 1024 bytes
+    assert parse("FB @@@") is None
+    assert parse("FB " + base64.b64encode(picture).decode()[:-8]) is None    # cut short by the USB
+
+
+def test_parse_button_presses_of_the_mirror():
+    assert parse("BTN short") == ("btn", "short")
+    assert parse("BTN long") == ("btn", "long")
+    assert parse("BTN x") is None
+
+
+def test_parse_acks_of_the_mirror():
+    assert parse("MIR OK") == ("ack", "MIR", True, None)
+    assert parse("PRESS OK") == ("ack", "PRESS", True, None)
+    assert parse("PRESS ERR bad press") == ("ack", "PRESS", False, "bad press")

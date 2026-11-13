@@ -22,7 +22,7 @@ LEDS = ("auto", "on", "connected", "off", "errors")
 _LED_WORD = {"auto": "auto", "on": "on", "connected": "conn", "off": "off", "errors": "err"}
 CONNECTORS = ("VL1", "VL2", "VL3", "VL4", "US1", "US2", "US3", "US4", "US5")
 # What the console may ask the Pico to do now (through /pico/command): nothing else gets through
-_COMMAND = re.compile(r"^(DISP (on|on all|off|on (%s))|ID (%s))$" % ("|".join(CONNECTORS), "|".join(CONNECTORS)))
+_COMMAND = re.compile(r"^(DISP (on|on all|off|on (%s))|ID (%s)|PRESS (short|long))$" % ("|".join(CONNECTORS), "|".join(CONNECTORS)))
 
 
 class BoardSettingsError(ValueError):
@@ -74,5 +74,6 @@ def ui_line(s):
 
 
 def command_ok(line):
-    """True for the actions the console may send: DISP on [all|<connector>], DISP off, ID <connector>."""
+    """True for the actions the console may send: DISP on [all|<connector>], DISP off, ID <connector>,
+    PRESS short|long."""
     return isinstance(line, str) and bool(_COMMAND.match(line))
