@@ -42,6 +42,15 @@ volatile int8_t identifyConn = -1;
 volatile uint32_t identifyUntil = 0;
 // What the display shows now (screenName), read by core 0 for the DS line
 const char* volatile shownName = "off";
+// The mirror for the web console (Mirror.h). Core 0 sets mirrorWanted and pressReq; core 1
+// writes the rest. fbPages is guarded by fbSeq (odd while core 1 copies into it).
+volatile bool mirrorWanted = false;
+volatile int8_t pressReq = 0;          // 1 = PRESS short, 2 = PRESS long
+volatile int8_t btnEvent = 0;          // 1 = the button pressed, 2 = held until the display went off
+volatile uint16_t ledLevels = 0;       // bit 0 = VL1 ... bit 8 = US5, as last written
+volatile bool fbOn = false;
+volatile uint32_t fbSeq = 0;
+uint8_t fbPages[1024];
 
 void applyUi(const UiCfg& c) {
   uiCfg = c;
@@ -49,6 +58,7 @@ void applyUi(const UiCfg& c) {
   uiCfgChanged = true;
 }
 void requestDisplay(bool on, int screen) { dispReq = on ? (int8_t)screen : REQ_OFF; }
+void requestPress(bool held) { pressReq = held ? 2 : 1; }
 void identify(int c) {
   identifyUntil = millis() + IDENTIFY_MS;
   identifyConn = c;
@@ -120,6 +130,21 @@ bool sendPage(int page) {
   }
   memcpy(sent[page], data, 128);
   return true;
+}
+
+// The canvas as SSD1306 pages (sendPage's layout), for the mirror; core 0 reads it under fbSeq
+void copyForMirror() {
+  fbSeq = fbSeq + 1;            // odd: being written
+  __sync_synchronize();
+  for (int page = 0; page < 8; page++)
+    for (int x = 0; x < 128; x++) {
+      uint8_t v = 0;
+      for (int k = 0; k < 8; k++)
+        if (canvas.getPixel(x, page * 8 + k)) v |= 1 << k;
+      fbPages[page * 128 + x] = v;
+    }
+  __sync_synchronize();
+  fbSeq = fbSeq + 1;            // even: done
 }
 
 void drawSplash() {
@@ -210,13 +235,17 @@ void drawSensor(uint32_t now) {
 }
 
 void drawLeds(uint32_t now) {
+  uint16_t levels = 0;
   for (int c = 0; c < N_CONN; c++) {
     int16_t mm;
     State s = configured ? stateOf(c, &mm) : State::NotConfigured;
     bool identifying = c == identifyConn && (int32_t)(identifyUntil - now) > 0;
-    digitalWrite(CONN_LED[c], ledOn(configured, s, ui.screen == Screen::Sensor && c == ui.shown, now, uiCfg.leds,
-                                    ui.screen != Screen::Off, identifying));
+    bool lit = ledOn(configured, s, ui.screen == Screen::Sensor && c == ui.shown, now, uiCfg.leds,
+                     ui.screen != Screen::Off, identifying);
+    digitalWrite(CONN_LED[c], lit);
+    levels |= (uint16_t)lit << c;
   }
+  ledLevels = levels;
 }
 
 void ledsOff() {
@@ -230,6 +259,13 @@ void setup() {
   ledsOff();
 }
 
+// The physical button; a press it counts is told to the mirror (BTN short)
+void button(uint32_t now) {
+  uint32_t pressedAt = ui.lastPress;
+  uiButton(ui, digitalRead(BUTTON_PIN), now);
+  if (ui.lastPress != pressedAt) btnEvent = 1;
+}
+
 // The Pi's requests: new settings (timeout, brightness at once), the display on or off
 void applyRequests(uint32_t now) {
   if (uiCfgChanged) {
@@ -240,6 +276,12 @@ void applyRequests(uint32_t now) {
       uint8_t c[] = {0x81, CONTRAST[uiCfg.brightness & 3]};
       command(c, sizeof c);
     }
+  }
+  int8_t press = pressReq;
+  if (press) {
+    pressReq = 0;
+    if (press == 2) uiHold(ui, now);
+    else uiPress(ui, now);
   }
   int8_t req = dispReq;
   if (req == REQ_NONE) return;
@@ -257,10 +299,13 @@ void applyRequests(uint32_t now) {
 void loop() {
   uint32_t now = millis();
   applyRequests(now);
-  uiButton(ui, digitalRead(BUTTON_PIN), now);
+  button(now);
+  bool wasOn = ui.screen != Screen::Off;
   uiTick(ui, now);
+  if (wasOn && ui.screen == Screen::Off && !ui.level) btnEvent = 2;   // held until it went off
   shownName = screenName(ui);
   bool on = ui.screen != Screen::Off;
+  fbOn = on;
   if (!present && now - lastProbe >= PROBE_MS) {     // plugged in later: found within 3 s
     lastProbe = now;
     present = probe();
@@ -277,7 +322,7 @@ void loop() {
     drawLeds(now);
   }
   if (!on) return;
-  if (present && now - lastFrame >= FRAME_MS) {
+  if ((present || mirrorWanted) && now - lastFrame >= FRAME_MS) {     // no display: drawn for the mirror only
     lastFrame = now;
     if (now - lastRefresh >= REFRESH_MS) {
       lastRefresh = now;
@@ -288,9 +333,10 @@ void loop() {
     if (ui.screen == Screen::Splash) drawSplash();
     else if (ui.screen == Screen::All) drawAll(now);
     else drawSensor(now);
+    if (mirrorWanted) copyForMirror();
     for (int page = 0; page < 8 && present; page++) {
       present = sendPage(page);
-      uiButton(ui, digitalRead(BUTTON_PIN), millis());     // a short tap is not missed
+      button(millis());     // a short tap is not missed
     }
     sentValid = present;
   }
