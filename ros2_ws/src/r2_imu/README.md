@@ -1,51 +1,52 @@
 # r2_imu
 
-Nodo del giroscopio y acelerómetro MPU6050 del ROS2D2, conectado al I2C de la
-Raspberry. Publica el giro y la aceleración en el mensaje estándar de ROS
-(`sensor_msgs/Imu`), y un filtro Madgwick calcula a partir de ellos la orientación.
+*En castellano: [README_es.md](README_es.md)*
 
-## Conexión
+ROS2D2's node for the MPU6050 gyroscope and accelerometer, on the Raspberry Pi's I2C. It publishes
+the turn rate and the acceleration in ROS's standard message (`sensor_msgs/Imu`), and a Madgwick
+filter works out the orientation from them.
+
+## Wiring
 
 | MPU6050 (GY-521) | Raspberry Pi 4 |
 |---|---|
-| VCC | 3,3 V (pin 1). El GY-521 lleva regulador y también admite 5 V (pin 2) |
+| VCC | 3.3 V (pin 1). The GY-521 has a regulator and also takes 5 V (pin 2) |
 | GND | GND (pin 6) |
 | SDA | GPIO 2 / SDA (pin 3) |
 | SCL | GPIO 3 / SCL (pin 5) |
-| AD0 | Sin conectar (dirección 0x68). A 3,3 V pasa a 0x69 |
+| AD0 | Not connected (address 0x68). At 3.3 V it becomes 0x69 |
 
-Comparte bus con el módulo de voz DF2301QG (0x64); no chocan.
+It shares the bus with the DF2301QG voice module (0x64); they do not clash.
 
-Para comprobar que la Pi lo ve:
+To check that the Pi sees it:
 
 ```
-i2cdetect -y 1          # debe aparecer 68
+i2cdetect -y 1          # 68 must show up
 ```
 
-**Dónde montarlo:** en el cuerpo, centrado y lo más cerca posible del eje del
-foot, sujeto con cinta de doble cara gruesa o espuma para que no le llegue la
-vibración de los motores.
+**Where to mount it:** in the body, centred and as close as possible to the foot's axis, held with
+thick double-sided tape or foam so the motors' vibration does not reach it.
 
-## Uso
+## Use
 
 ```
 ros2 launch r2_imu imu.launch.py
 ```
 
-**Al arrancar, el R2 tiene que estar quieto 2 segundos:** el nodo mide cuánto marca
-el giroscopio en reposo (nunca es exactamente 0) y a partir de ahí lo descuenta.
+**When it starts, R2 must stand still for 2 seconds:** the node measures what the gyroscope reads at
+rest (it is never exactly 0) and takes that off from then on.
 
-| Topic | Tipo | Qué es |
+| Topic | Type | What it is |
 |---|---|---|
-| `/imu/data_raw` | `sensor_msgs/Imu` | Giro (rad/s) y aceleración (m/s²), sin orientación |
-| `/imu/data` | `sensor_msgs/Imu` | Lo mismo con la orientación del filtro Madgwick |
-| `/imu/tilt` | `std_msgs/Float32` | Grados de inclinación respecto a la horizontal |
-| `/imu/temperature` | `sensor_msgs/Temperature` | Temperatura del chip, una vez por segundo |
+| `/imu/data_raw` | `sensor_msgs/Imu` | Turn rate (rad/s) and acceleration (m/s²), no orientation |
+| `/imu/data` | `sensor_msgs/Imu` | The same with the Madgwick filter's orientation |
+| `/imu/tilt` | `std_msgs/Float32` | Degrees of tilt from the horizontal |
+| `/imu/temperature` | `sensor_msgs/Temperature` | The chip's temperature, once a second |
 
-Sin brújula a propósito: dentro de casa, junto a los motores y las baterías, una
-brújula da lecturas falsas. El rumbo se desvía poco a poco y lo corregirá el lidar.
+No compass, on purpose: indoors, next to the motors and the batteries, a compass gives false
+readings. The heading drifts slowly, and the lidar will correct it.
 
-## Probarlo sin el sensor
+## Trying it without the sensor
 
-`docker/imu_bench.sh` lo arranca con un MPU6050 falso (`docker/fakes/smbus2.py`)
-que gira a 10 °/s, y comprueba que el desvío se descuenta y que el filtro sigue el giro.
+`docker/imu_bench.sh` starts it with a fake MPU6050 (`docker/fakes/smbus2.py`) turning at 10 °/s, and
+checks that the offset is taken off and that the filter follows the turn.

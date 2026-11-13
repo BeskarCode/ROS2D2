@@ -1,113 +1,112 @@
-# Caja ROS2 (mini torre)
+# ROS2 box (mini tower)
 
-Caja imprimible para el sistema ROS 2 del R2: Raspberry Pi 4, placa de la Pico, convertidor
-24 → 5 V, conector XT60E-F e interruptor general. Se parece a un mini PC de pie. En el frontal
-van la OLED y el logo ROS2D2 en colores. Los USB/Ethernet de la Pi, el XT60, el interruptor y
-la salida de los cables de sensores van detrás. Lleva rejillas en el techo y en los laterales.
+*En castellano: [README_es.md](README_es.md)*
 
-Medidas exteriores: **107 × 133 × 125 mm** (ancho × fondo × alto), más las 4 orejetas de
-fijación al R2.
+A printable box for R2's ROS 2 system: Raspberry Pi 4, the Pico board, a 24 → 5 V converter, an
+XT60E-F connector and a main switch. It looks like a small standing PC. The OLED and the ROS2D2 logo
+in colour go on the front. The Pi's USB/Ethernet, the XT60, the switch and the exit for the sensor
+cables go at the back. It has vents on the roof and the sides.
 
-![Montaje](montaje/img/montada.png)
+Outside size: **107 × 133 × 125 mm** (width × depth × height), plus the 4 lugs that fix it to R2.
 
-**Instrucciones de montaje paso a paso, con despiece y lista de tornillería:**
-[MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf) — English: [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf)
+![Assembly](montaje/img/montada.png)
 
-## Piezas
+**Step-by-step assembly instructions, with an exploded view and the list of screws:**
+[ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf) — En castellano: [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf)
 
-| STL | Qué es | Cómo imprimir |
+## Parts
+
+| STL | What it is | How to print |
 |---|---|---|
-| `stl/frontal_multicolor.3mf` | frontal + logo negro + logo azul (un objeto, 3 partes) | **cara vista sobre la cama**; en Bambu Studio asigna blanco al `frontal`, negro a `logo_negro` y azul a `logo_azul` |
-| `stl/frontal.stl`, `stl/logo_negro.stl`, `stl/logo_azul.stl` | lo mismo por separado | si importas los 3 STL a la vez, responde **Sí** a "¿cargar como un único objeto con varias partes?" |
-| `stl/frontal_monocolor.stl` | frontal de **un solo color** (sin AMS): el logo va grabado 1 mm en hueco | cara vista sobre la cama |
-| `stl/pulsador.stl` | varilla que acciona el pulsador DISPLAY (SW1) de la placa de la Pico desde el frontal | de pie, sobre su extremo plano |
-| `stl/base.stl` | suelo, trasera, soporte de la Pi, tetones del convertidor y orejetas | suelo sobre la cama |
-| `stl/carcasa.stl` | techo + laterales (U) con las rejillas | techo sobre la cama |
+| `stl/frontal_multicolor.3mf` | front + black logo + blue logo (one object, 3 parts) | **visible face on the bed**; in Bambu Studio give white to `frontal`, black to `logo_negro` and blue to `logo_azul` |
+| `stl/frontal.stl`, `stl/logo_negro.stl`, `stl/logo_azul.stl` | the same, separately | if you import the 3 STLs at once, answer **Yes** to "load as a single object with several parts?" |
+| `stl/frontal_monocolor.stl` | **single-colour** front (no AMS): the logo is engraved 1 mm deep | visible face on the bed |
+| `stl/pulsador.stl` | rod that presses the Pico board's DISPLAY button (SW1) from the front | standing, on its flat end |
+| `stl/base.stl` | floor, back, Pi holder, converter posts and lugs | floor on the bed |
+| `stl/carcasa.stl` | roof + sides (a U) with the vents | roof on the bed |
 
-PETG recomendado (la Pi y el convertidor calientan), capa de 0.2 mm, boquilla 0.4. Ninguna
-pieza necesita soportes.
+PETG recommended (the Pi and the converter get warm), 0.2 mm layers, 0.4 nozzle. No part needs
+supports.
 
-## Tornillería
+## Hardware
 
-| Cantidad | Qué | Dónde |
+| Qty | What | Where |
 |---|---|---|
-| 14 | inserto térmico M3 × 5.7 (Ø exterior ~4 mm) | 4 columnas de la placa de la Pico, 2 pestañas inferiores y 1 superior del frontal, 1 pestaña superior de la trasera, 4 bloques del suelo para la carcasa, 2 tetones del convertidor |
-| 4 | M3 × 6, cabeza alomada | placa de la Pico → columnas del frontal |
-| 2 | M3 × 8, cabeza avellanada | desde debajo del suelo → pestañas inferiores del frontal (un M3 × 10 toca fondo) |
-| 4 | M3 × 8, cabeza avellanada | laterales de la carcasa → bloques del suelo |
-| 2 | M3 × 8, cabeza avellanada | techo de la carcasa → pestañas superiores del frontal y la trasera |
-| 2 | M3 × 8 | orejetas del convertidor → tetones del suelo |
-| 2 | M3 × 10, avellanado + tuerca | XT60E-F (desde fuera; el avellanado lo lleva la brida, la pared tiene agujero liso) |
-| 4 | M2.5 (largo según el soporte del ventilador + 5 mm) | Pi → columnas del soporte (rosca en el plástico, agujero de 2.2 mm) |
-| 4 | M4 | orejetas de la base → R2 (agujero de 4.3 mm) |
-| 1 | interruptor de balancín KCD1 (agujero de panel 19.2 × 13 mm; la pared se adelgaza a 2 mm alrededor para sus pestañas) | trasera |
-| 1 | cable micro-USB **acodado 90°** a USB-A, ~40 cm | Pico → Pi **por fuera**: sale por la ranura de sensores y entra en un USB de la Pi en la trasera |
-| 1 | pasacables en tira o pasamuros | ranura de los cables de sensores (35 × 10 mm) |
+| 14 | M3 × 5.7 heat-set insert (outside Ø ~4 mm) | 4 columns of the Pico board, 2 lower tabs and 1 upper tab of the front, 1 upper tab of the back, 4 floor blocks for the shell, 2 converter posts |
+| 4 | M3 × 6, button head | Pico board → front columns |
+| 2 | M3 × 8, countersunk | from under the floor → the front's lower tabs (an M3 × 10 bottoms out) |
+| 4 | M3 × 8, countersunk | sides of the shell → floor blocks |
+| 2 | M3 × 8, countersunk | roof of the shell → upper tabs of the front and the back |
+| 2 | M3 × 8 | converter ears → floor posts |
+| 2 | M3 × 10, countersunk + nut | XT60E-F (from outside; the countersink is in the flange, the wall has a plain hole) |
+| 4 | M2.5 (length: the fan holder + 5 mm) | Pi → holder columns (thread into the plastic, 2.2 mm hole) |
+| 4 | M4 | base lugs → R2 (4.3 mm hole) |
+| 1 | KCD1 rocker switch (19.2 × 13 mm panel hole; the wall thins to 2 mm round it for its clips) | back |
+| 1 | micro-USB **90° angled** to USB-A cable, ~40 cm | Pico → Pi **outside**: it leaves through the sensor slot and goes into one of the Pi's USB ports at the back |
+| 1 | strip grommet or cable gland | slot for the sensor cables (35 × 10 mm) |
 
-## Montaje
+## Assembly
 
-1. Pon todos los insertos térmicos.
-2. **Base:** atornilla el convertidor a sus tetones. Monta el XT60E-F y el interruptor en la
-   trasera y suelda/crimpa: XT60 → interruptor → entrada del convertidor.
-3. **Pi:** colócala junto al soporte unos milímetros adelantada y deslízala hacia atrás hasta
-   que los USB/Ethernet asomen a ras por sus recortes de la trasera (borde del USB-C arriba).
-   Atorníllala a las columnas y conecta el USB-C de alimentación desde la salida de 5 V.
-4. **Placa de la Pico, con el frontal todavía suelto:** mete primero la varilla del pulsador
-   desde dentro por su guía (la punta sale por el frontal; el collarín la retiene). Después
-   atornilla la placa a las 4 columnas del
-   frontal (componentes mirando al frontal; la OLED queda detrás de su ventana). Ahora, que
-   llegas, aprieta en el borne **J1** el cable de 5 V (déjalo largo para llegar al convertidor),
-   pincha el micro-USB acodado en la Pico y conecta los sensores.
-5. **Frontal a la base:** 2 tornillos desde debajo del suelo. Pasa los cables de sensores y el
-   micro-USB por los canales de los lados de la placa hasta la ranura de la trasera. Saca el
-   micro-USB por la ranura y enchúfalo por fuera en un USB de la Pi.
-6. **Carcasa:** bájala desde arriba y pon los 4 tornillos de los laterales y los 2 del techo.
+1. Fit all the heat-set inserts.
+2. **Base:** screw the converter to its posts. Fit the XT60E-F and the switch on the back and
+   solder/crimp: XT60 → switch → converter input.
+3. **Pi:** put it next to the holder a few millimetres forward and slide it back until the
+   USB/Ethernet ports sit flush in their cut-outs in the back (USB-C edge on top). Screw it to the
+   columns and plug the power USB-C from the 5 V output.
+4. **Pico board, with the front still loose:** first push the button rod in from the inside through
+   its guide (the tip comes out of the front; the collar keeps it in). Then screw the board to the
+   front's 4 columns (parts facing the front; the OLED sits behind its window). Now, while you can
+   reach it, tighten the 5 V wire in terminal **J1** (leave it long enough to reach the converter),
+   plug the angled micro-USB into the Pico and connect the sensors.
+5. **Front to the base:** 2 screws from under the floor. Run the sensor cables and the micro-USB
+   along the channels at the sides of the board to the slot at the back. Take the micro-USB out
+   through the slot and plug it, outside, into one of the Pi's USB ports.
+6. **Shell:** lower it from above and fit the 4 screws on the sides and the 2 on the roof.
 
-Notas:
+Notes:
 
-- El USB-C **J5** de la placa de la Pico no se puede usar dentro de la caja (hay ~11 mm hasta el
-  lateral); dentro, la placa se alimenta por el borne J1.
-- Las orejetas M4 quedan a 6 mm de la pared: usa llave Allen o un destornillador de caña larga.
-- Para quitar el frontal hay que soltar antes la caja del R2 (sus tornillos van por debajo del
-  suelo).
+- The Pico board's USB-C **J5** cannot be used inside the box (there are ~11 mm to the side); inside,
+  the board is powered through terminal J1.
+- The M4 lugs sit 6 mm from the wall: use an Allen key or a long-shaft screwdriver.
+- To take the front off, unscrew the box from R2 first (its screws go under the floor).
 
-## Antes de imprimir: comprueba estas medidas
+## Before printing: check these measurements
 
-Están en `params.scad`; cambia el valor y vuelve a generar.
+They are in `params.scad`; change the value and generate again.
 
-- `xt60_hole_pitch` (25.4): distancia entre los 2 agujeros de la brida del XT60E-F. No viene
-  acotada en el datasheet y está medida sobre el dibujo. **Mídela con el calibre**, y también
-  la sección del cuerpo que atraviesa la pared (`xt60_body`, 9.5 × 17).
-- `sw_cut` (19.2 × 13): agujero de panel del interruptor (no el marco, que mide 21 × 15). Mídelo.
-- `conv_holes`: posición de los 2 agujeros del convertidor desde su esquina delantera-izquierda.
-  Están supuestos; **mídelos** antes de imprimir la base.
-- `pi_fan_clear` (25): altura del ventilador de la Pi sobre la placa.
-- `pi_usbc_clear` (30): hueco sobre el USB-C de la Pi (con un USB-C acodado puede bajar).
-- La ventana de la OLED deja ver la pantalla entera desde unos 20° por la derecha, 12° por la
-  izquierda (ese lado cede sitio a la guía de la varilla del pulsador) y 15° en vertical. Si tu
-  módulo tiene la zona visible desplazada, ajusta `oled_view`.
-- `sw1_h` (5): altura del pulsador DISPLAY sobre la placa. La varilla queda a 0.3 mm de él en
-  reposo y lo aprieta con ~1.3 mm de recorrido; si tu pulsador es más alto o más bajo, cambia
-  este valor y vuelve a generar `pulsador.stl`.
-- Imprime primero **solo el frontal** y prueba la placa de la Pico, la ventana de la OLED y los
-  Dupont de los sensores.
+- `xt60_hole_pitch` (25.4): distance between the 2 holes of the XT60E-F flange. The datasheet does
+  not give it and it was measured on the drawing. **Measure it with a caliper**, and also the size of
+  the body that goes through the wall (`xt60_body`, 9.5 × 17).
+- `sw_cut` (19.2 × 13): the switch's panel hole (not the bezel, which is 21 × 15). Measure it.
+- `conv_holes`: position of the converter's 2 holes from its front-left corner. They are assumed;
+  **measure them** before printing the base.
+- `pi_fan_clear` (25): height of the Pi's fan above the board.
+- `pi_usbc_clear` (30): room above the Pi's USB-C (it can be less with an angled USB-C).
+- The OLED window shows the whole display from about 20° to the right, 12° to the left (that side
+  makes room for the button rod's guide) and 15° up and down. If your module's visible area is off
+  centre, adjust `oled_view`.
+- `sw1_h` (5): height of the DISPLAY button above the board. The rod sits 0.3 mm above it at rest and
+  presses it with ~1.3 mm of travel; if your button is taller or shorter, change this value and
+  generate `pulsador.stl` again.
+- Print **only the front** first and try the Pico board, the OLED window and the sensors' Dupont
+  connectors.
 
-## Generar los ficheros
+## Generating the files
 
-Requiere OpenSCAD 2021.01 (`C:\Program Files\OpenSCAD\openscad.com` o la variable `OPENSCAD`)
-y Python 3 con Pillow y numpy.
+Needs OpenSCAD 2021.01 (`C:\Program Files\OpenSCAD\openscad.com` or the `OPENSCAD` variable) and
+Python 3 with Pillow and numpy.
 
 ```bash
 python -I hardware/caja_ros2/logo/gen_logo.py      # logo PNG -> logo/logo_negro.svg, logo/logo_azul.svg
-python -I hardware/caja_ros2/build.py              # stl/, 3MF y renders/
-python -I hardware/caja_ros2/build_docs.py         # guía de montaje: imágenes, MONTAJE.md, ASSEMBLY.md y PDF
-python -m pytest hardware/caja_ros2/tests          # medidas, choques y alineaciones (~40 min la 1ª vez)
+python -I hardware/caja_ros2/build.py              # stl/, 3MF and renders/
+python -I hardware/caja_ros2/build_docs.py         # assembly guide: images, MONTAJE.md, ASSEMBLY.md and PDF
+python -m pytest hardware/caja_ros2/tests          # sizes, clashes and alignments (~40 min the 1st time)
 ```
 
-`gen_logo.py` lee `ROS2D2/docs/logo-horizontal.png`. Los SVG generados ya están en `logo/`.
+`gen_logo.py` reads `ROS2D2/docs/logo-horizontal.png`. The generated SVGs are already in `logo/`.
 
-Las pruebas modelan como "fantasmas" la Pi, la placa de la Pico, el convertidor, el XT60 y el
-interruptor, cada uno con el hueco que necesitan sus conectores y cables (el Dupont de los
-sensores, los canales laterales, el micro-USB, el USB-C...). Comprueban que ninguna pieza
-impresa los toca, que los puertos de la Pi salen por la trasera, que la ventana coincide con la
-OLED, que la carcasa entra deslizándose desde arriba y que cada pieza apoya plana en la cama.
+The tests model the Pi, the Pico board, the converter, the XT60 and the switch as "ghosts", each with
+the room its connectors and cables need (the sensors' Dupont, the side channels, the micro-USB, the
+USB-C...). They check that no printed part touches them, that the Pi's ports come out at the back,
+that the window matches the OLED, that the shell slides in from above and that every part lies flat
+on the bed.
