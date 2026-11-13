@@ -228,6 +228,20 @@
   .mcard .slider input[type=range] { width: auto; flex: 1; }
   .mcard .slider b { min-width: 72px; }
 
+  /* System: telemetry as ring gauges */
+  .rings { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; margin: 6px 0 14px; }
+  .ring { width: 124px; text-align: center; }
+  .ring svg { width: 104px; height: 104px; display: block; margin: 0 auto -6px; }
+  .ring path { fill: none; stroke-linecap: round; }
+  .ring .band { stroke-width: 5; opacity: .28; }
+  .ring .fill { stroke-width: 9; }
+  .ring .ok { stroke: #3fb950; } .ring .warn { stroke: #d29922; } .ring .bad { stroke: #f85149; }
+  .ring text { fill: var(--text); font: 700 15px system-ui, sans-serif; }
+  .ring .l, .ringtext .l { font-size: 12px; color: var(--muted, #8b949e); }
+  .ring.warn .l:first-of-type { color: #d29922; } .ring.bad .l:first-of-type { color: #f85149; }
+  .ring .dim, .ringtext .dim { font-size: 11px; opacity: .8; }
+  .ringtext { max-width: 260px; padding-top: 30px; }
+  .ringtext b { font-size: 18px; }
   /* System: the live strip and the mirror of the Pico board */
   .syslive { margin-bottom: 18px; }
   .syslive .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
