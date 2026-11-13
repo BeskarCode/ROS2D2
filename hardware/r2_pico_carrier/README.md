@@ -90,59 +90,12 @@ accelerators (PCA9515/9517, LTC4311…) on QWIIC/EXP: U1's B side cannot share a
 ## Ordering it
 
 > **Tested and working** (November 2026): the boards JLCPCB assembled for us read the VL53L0X and
-> the HC-SR04, and the LEDs, the display and its button work. The order packages (Gerber, BOM and
-> placement) are in the folders below. These are the instructions we used to order it.
+> the HC-SR04, and the LEDs, the display and its button work.
 
-There are two packages, one per factory. **Always check the assembly preview before paying.**
-
-### JLCPCB (`jlcpcb/`)
-
-1. jlcpcb.com → *Order now* → *Add gerber file* → `jlcpcb/gerber.zip`. Leave 2 layers, 1.6 mm.
-2. Turn on **PCB Assembly**, **Top** side, *Economic* if it allows it (if not, *Standard*: the
-   headers and sockets are through-hole).
-3. Upload `jlcpcb/bom.csv` and `jlcpcb/cpl.csv`.
-4. In the placement preview check **the orientation** of D1, D2 and D5 (band = cathode), LED1-LED9,
-   U1, D4, **J5** (the USB-C's mouth towards the edge), J3 and **SW1** (if the button comes out
-   turned 90°, it stays pressed). If any is turned, correct it right there. Each header and socket
-   must lie along its row of holes and centred on it (the CPL gives each part's centre: if something
-   is off, it is a real error). U1: the pin-1 dot top left, next to C5.
-5. Check that the BOM's 19 lines have a part and stock. Do not pay for anything that does not add up.
-6. *Confirm Parts Placement* (in the PCB Assembly options) is optional. With *No*, JLCPCB applies its
-   corrections and builds without asking you. With *Yes*, after payment an engineer checks the
-   placement and asks you to confirm it (you have ~3 days; if you do not answer, they build anyway).
-   The CPL already carries the orientation they left in our order (R31-R34 at 270°), but they may
-   mark as *revised* headers or resistors turned 180° or with no visible change: they have no
-   polarity, that is normal. Turn on *Show Revised Items*, check that nothing with polarity (LEDs,
-   diodes, U1, J5) has changed and confirm.
-
-### PCBWay (`pcbway/`)
-
-1. pcbway.com → *PCB Instant Quote* → *Quick-order PCB* → upload `pcbway/gerber.zip`.
-2. Tick **Assembly** (Turnkey), Top side.
-3. Upload `pcbway/bom.csv` and `pcbway/centroid.csv`. The BOM has the manufacturer and the
-   manufacturer's part number (and, as a note, the LCSC number in case they look it up there).
-4. PCBWay checks the BOM by hand and sends you the final price by e-mail; check the orientations in
-   its preview as above.
-
-### If you would rather solder the headers yourself (`jlcpcb-sin-tiras/`, `pcbway-sin-tiras/`)
-
-The same board (the gerbers are identical), but the factory does not fit the 11 pin headers: J2
-(display), US1-US5, VL1-VL4 and J4 (EXP). Everything else, the Pico's sockets included, comes fitted.
-In JLCPCB's review there is hardly anything left to mark. It is ordered as above, with the files in
-that folder (17 BOM lines).
-
-**Is it worth it?** Hardly. Fitting the headers barely raises the price of the batch: the expensive
-part (the Pico's sockets, the extended-parts fee) stays the same, and in exchange you are spared
-soldering 11 connectors. Your call.
-
-Buy them separately and solder them from the top, straight, with the plastic resting on the board:
-
-| Header | How many | Where |
-|---|---|---|
-| Male 1×4, 2.54 mm, straight | 6 | J2, US1-US5 |
-| Male 1×6, 2.54 mm, straight | 5 | VL1-VL4, J4 |
-
-A long 1×40 strip cut to size works too. Solder J2 before the display.
+The files to make it (Gerber, BOM, placement and the board design) are not published in this repo.
+The schematic ([`renders/schematic.pdf`](renders/schematic.pdf)) and the renders are here so you can
+see how it is wired. Without the board, the sensors can be wired to the Pico by hand:
+[`firmware/r2_pico_sensors/wiring.svg`](../../firmware/r2_pico_sensors/wiring.svg).
 
 ## What to buy separately
 
@@ -153,19 +106,3 @@ A long 1×40 strip cut to size works too. Solder J2 before the display.
   you like, also fix it with 4 M2 2.5 mm spacers in H5-H8. Once soldered it does not come off easily.
 - Female-female Dupont cables.
 - 1×20 male pin headers to solder to your Pico 2 (facing down), if it has none.
-
-## Remaking it
-
-Everything comes from `gen/parts.py` (parts, footprints, LCSC and each pad's net), with KiCad 10's
-Python:
-
-```
-$KPY gen/make_sch.py     # schematic (clean ERC)
-$KPY gen/make_pcb.py     # board without tracks: outline, placement, silkscreen
-$KPY gen/route.py        # routing with Freerouting (Java 25 + freerouting-2.5.0.jar)
-$KPY gen/make_fab.py     # jlcpcb/ and pcbway/ packages (and their -sin-tiras/ variants)
-$KPY -m pytest gen       # checks (connections, schematic = parts.py, packages)
-kicad-cli pcb drc --schematic-parity --severity-all r2_pico_carrier.kicad_pcb
-```
-
-`$KPY` = `C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\python.exe`.

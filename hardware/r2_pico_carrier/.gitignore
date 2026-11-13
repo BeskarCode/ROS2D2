@@ -7,3 +7,12 @@ fp-info-cache
 *.ses
 renders/*.svg
 
+
+# Not published: what makes the board (order packages, board design, generators)
+jlcpcb/
+jlcpcb-sin-tiras/
+pcbway/
+pcbway-sin-tiras/
+gen/
+*.kicad_pcb
+*.kicad_prl
