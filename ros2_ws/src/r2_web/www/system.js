@@ -31,7 +31,7 @@ export function createSystemTab() {
     return `${(C + R * Math.cos(a)).toFixed(2)} ${(C + R * Math.sin(a)).toFixed(2)}`;
   };
   const arc = (a, b) => `M${pt(a)} A${R} ${R} 0 ${(b - a) * SWEEP > 180 ? 1 : 0} 1 ${pt(b)}`;
-  function ring(key, label, text, value, zones, lo, hi, unit, sub = '') {
+  function ring(key, label, text, value, zones, lo, hi, unit, sub = '', more = '') {
     seen[key] = minMax(seen[key], value);
     const z = zone(value, zones);
     const f = ringFill(value, lo, hi);
@@ -39,7 +39,7 @@ export function createSystemTab() {
     const fill = f > 0.002 ? `<path class="fill ${z ? z.cls : ''}" d="${arc(0, f)}"/>` : '';
     const s = seen[key];
     const limits = zones.slice(0, -1).map(([top, , l]) => `${l} < ${top}${unit}`).join(' · ');
-    const tip = `${label}${z ? `: ${z.label}` : ''}${s ? ` · seen ${Math.round(s.min)}–${Math.round(s.max)}${unit}` : ''}${limits ? ` · ${limits}` : ''}`;
+    const tip = `${label}${z ? `: ${z.label}` : ''}${s ? ` · seen ${Math.round(s.min)}–${Math.round(s.max)}${unit}` : ''}${limits ? ` · ${limits}` : ''}${more ? ` · ${more}` : ''}`;
     return `<div class="ring ${z ? z.cls : ''}" title="${tip}"><svg viewBox="0 0 96 96">${bands}${fill}` +
       `<text x="48" y="54" text-anchor="middle">${text}</text></svg><div class="l">${label}</div>` +
       `${sub ? `<div class="l dim">${sub}</div>` : ''}</div>`;
@@ -55,7 +55,7 @@ export function createSystemTab() {
     const d = api.disk, m = api.mem;
     const diskFree = d.total ? d.free / d.total : 1;
     const memFree = m.total ? m.available / m.total : 1;
-    const cores = api.cpu ? api.cpu.slice(1).map((c, i) => `core ${i} ${pct(c)}`).join(' · ') : '';
+    const cores = api.cpu && api.cpu.length > 1 ? `cores ${api.cpu.slice(1).map((c) => Math.round(c)).join(' · ')} %` : '';
     box.className = 'rings';
     box.innerHTML =
       ring('pi-sd', 'SD free', bytes(d.free), (1 - diskFree) * 100, USED_SD, 0, 100, ' % used', `of ${bytes(d.total)}`) +
@@ -95,7 +95,7 @@ export function createSystemTab() {
       ring('pico-c0', 'core 0 · measuring', pct(tm.c0), tm.c0, CPU_ZONES, 0, 100, ' %') +
       ring('pico-c1', 'core 1 · display', pct(tm.c1), tm.c1, CPU_ZONES, 0, 100, ' %') +
       ring('pico-bus', 'I2C bus', pct(tm.bus), tm.bus, CPU_ZONES, 0, 100, ' %',
-        `${pct(tm.disp)} display · VL waited ${tm.wait_ms} ms`) +
+        `display ${pct(tm.disp)}`, `a VL53L0X waited up to ${tm.wait_ms} ms for the bus`) +
       ring('pico-temp', 'chip temperature', `${tm.temp_c.toFixed(0)} °C`, tm.temp_c, PICO_TEMP_ZONES, 10, 90, ' °C') +
       `<div class="ringtext"><b>${uptime(tm.up_s)}</b><div class="l">up</div><div class="l dim">${rps || 'no sensors'}</div></div>`;
   }
