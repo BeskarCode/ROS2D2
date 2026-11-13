@@ -44,3 +44,9 @@ def test_commands_the_console_may_send():
         assert command_ok(ok), ok
     for bad in ("DISP on XX", "DISP", "ID VL9", "ID", "BOOT", "CFG", "TM 1", "UI t=30", "DISP off\nBOOT"):
         assert not command_ok(bad), bad
+
+
+def test_the_console_may_press_the_button():
+    assert command_ok("PRESS short") and command_ok("PRESS long")
+    for bad in ("PRESS", "PRESS x", "PRESS short\nBOOT", "MIR 1"):
+        assert not command_ok(bad), bad

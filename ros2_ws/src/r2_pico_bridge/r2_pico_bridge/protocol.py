@@ -16,7 +16,10 @@ Pi -> Pico:
                               (sent after every CFG and when pico_board.yaml changes)
   DISP on [all|VL1..US5] / DISP off    the display on or off now
   ID <VL1..US5>               that connector's LED blinks fast for 5 s
-                              UI, DISP and ID answer <word> OK or <word> ERR <why>; a firmware
+  MIR 1 / MIR 0               the board mirror on / off (proto 3; off on its own 5 s after the
+                              last MIR 1, so the bridge renews it every 2 s)
+  PRESS short / PRESS long    the DISPLAY button pressed / held 3 s, from the console (proto 3)
+                              UI, DISP, ID, MIR and PRESS answer <word> OK or <word> ERR <why>; a firmware
                               before 0.2.0 answers ERR unknown
 
 Pico -> Pi:
@@ -28,19 +31,27 @@ Pico -> Pi:
                               by the display), the longest a VL53L0X waited for it, the chip's
                               temperature, seconds up, readings per second of each sensor
   DS <off|logo|all|VL1..US5>  what the display shows, when it changes (and after HELLO)
+  LED <9 digits 0/1>          with MIR 1: each connector LED's level, VL1..US5
+  FB <base64> / FB off        with MIR 1: the display's picture (8 SSD1306 pages, 1024 bytes)
+  BTN short|long              with MIR 1: the real button was pressed / held until it went off
   ERR <text>                  a line it did not understand
 """
 
+import base64
+import binascii
 import re
 
 from r2_sensors.config import PICO_PINS
 
-PROTO = 2
+PROTO = 3
+FB_BYTES = 1024
 _HB = re.compile(r"^HB (\d+)(?: (-|[ON]*))?$")    # no states: CFG with no sensors
 _R_ITEM = re.compile(r"^(\d+):(-?\d+)$")
 _HELLO = re.compile(r"^PICO r2_pico_sensors (\S+) proto (\d+)(?: commit (\S+))?$")
 _DS = re.compile(r"^DS (off|logo|all|VL[1-4]|US[1-5])$")
-_ACK = re.compile(r"^(UI|DISP|ID) (OK|ERR)(?: (.+))?$")
+_ACK = re.compile(r"^(UI|DISP|ID|MIR|PRESS) (OK|ERR)(?: (.+))?$")
+_LED = re.compile(r"^LED ([01]{9})$")
+_BTN = re.compile(r"^BTN (short|long)$")
 _TM = re.compile(r"^T c0=(\d+) c1=(\d+) bus=(\d+) disp=(\d+) wait=(\d+) temp=(-?\d+) up=(\d+) rps=((?:\d+(?:,\d+)*)?)$")
 
 
@@ -54,6 +65,17 @@ def cfg_line(sensors):
         items.append(("V:" if s["type"] == "vl53l0x" else "S:") + ":".join(pins))
         names.append(name)
     return "CFG" + "".join(" " + i for i in items) + "\n", names
+
+
+def _fb(text):
+    """("fb", 1024 bytes) or ("fb", None) for "off"; None if it is not a whole picture."""
+    if text == "off":
+        return ("fb", None)
+    try:
+        data = base64.b64decode(text, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    return ("fb", data) if len(data) == FB_BYTES else None
 
 
 def parse(line):
@@ -77,6 +99,14 @@ def parse(line):
     m = _DS.match(line)
     if m:
         return ("ds", m.group(1))
+    m = _LED.match(line)
+    if m:
+        return ("led", m.group(1))
+    if line.startswith("FB "):
+        return _fb(line[3:])
+    m = _BTN.match(line)
+    if m:
+        return ("btn", m.group(1))
     m = _ACK.match(line)
     if m:
         return ("ack", m.group(1), m.group(2) == "OK", m.group(3))
