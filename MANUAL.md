@@ -158,7 +158,10 @@ hold). Press the real button and the copy follows. PWR lights when an HC-SR04 an
 this tab is open.
 
 **Telemetry** (the green switch): how busy the Pi and the Pico are, only while it is on and this tab
-is open.
+is open. Each value is a ring with its colour ranges (green, amber, red), filled up to the value in
+its range's colour; hover it for the range seen and the limits.
+
+![Setup, System: telemetry](media/manual/setup-system-telemetry.png)
 
 - **Raspberry Pi**: software version, free SD, free RAM, CPU, temperature (with its normal, warm and
   throttling zones) and voltage warnings.
