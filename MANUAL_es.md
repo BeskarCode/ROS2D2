@@ -166,7 +166,11 @@ ninguno sale punteado, porque la Pico no lo puede saber. La placa solo manda est
 pestaña está abierta.
 
 **Telemetry** (el interruptor verde): lo ocupadas que van la Pi y la Pico, solo mientras está
-encendido y esta pestaña abierta.
+encendido y esta pestaña abierta. Cada valor es un anillo con sus zonas de color (verde, ámbar,
+rojo), relleno hasta el valor con el color de su zona; al pasar el ratón se ven el rango visto y
+los límites.
+
+![Setup, System: telemetría](media/manual/setup-system-telemetry.png)
 
 - **Raspberry Pi**: versión del software, SD libre, RAM libre, CPU, temperatura (con sus zonas
   normal, caliente y de freno) y avisos de tensión.
