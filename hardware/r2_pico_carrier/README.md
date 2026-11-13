@@ -108,7 +108,7 @@ Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje
    de su fila de agujeros y centrado en ella (el CPL da el centro de cada pieza: si algo sale
    desplazado, es un error de verdad). U1: el punto del pin 1 arriba a la izquierda, junto a C5.
 5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
-6. *Confirm Parts Placement* (en las opciones de PCB Assembly) es opcional y cuesta ~0,40 €. Con
+6. *Confirm Parts Placement* (en las opciones de PCB Assembly) es opcional. Con
    *No*, JLCPCB aplica sus correcciones y fabrica sin preguntarte. Con *Yes*, tras el pago un
    ingeniero revisa la colocación y te pide confirmarla (tienes ~3 días; si no contestas, fabrican
    igual). El CPL ya lleva la orientación que dejaron en
@@ -132,10 +132,8 @@ J2 (pantalla), US1-US5, VL1-VL4 y J4 (EXP). El resto, zócalos de la Pico inclui
 En la revisión de JLCPCB apenas queda nada que marcar. Se pide igual que arriba, con los ficheros
 de esa carpeta (17 líneas de BOM).
 
-**¿Compensa?** Poco. Presupuesto de JLCPCB para 5 placas (29 oct 2026, sin IVA ni envío): montaje
-44,69 € con tiras frente a 38,45 € sin ellas, unos 6 € el lote, algo más de 1 € por placa. Lo caro
-(zócalos de la Pico, tarifa de piezas extendidas) se queda igual. Restando lo que cuestan las tiras,
-el ahorro es de ~1 € por placa a cambio de soldar 11 conectores. Tú decides.
+**¿Compensa?** Poco. Montar las tiras apenas sube el precio del lote: lo caro (zócalos de la Pico,
+tarifa de piezas extendidas) se queda igual, y a cambio te ahorras soldar 11 conectores. Tú decides.
 
 Compra aparte y suéldalas por arriba, rectas, con el plástico apoyado en la placa:
 
