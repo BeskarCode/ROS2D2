@@ -1,102 +1,103 @@
-# Caja ROS2 · opción C "rack blade"
+# ROS2 box · option C "rack blade"
 
-Segunda caja para el mismo sistema ROS 2 del R2 (Raspberry Pi 4 o Pi 5, placa de la Pico, convertidor
-24 → 5 V, XT60E-F e interruptor), más pequeña que la mini torre de [`../caja_ros2`](../caja_ros2):
-las placas van **de pie, en paralelo, como cuchillas de un rack**.
+*En castellano: [README_es.md](README_es.md)*
 
-**78 × 95 × 145 mm · 1,07 L** (la mini torre: 107 × 133 × 125, 1,78 L), más 4 orejetas.
+A second box for the same R2 ROS 2 system (Raspberry Pi 4 or Pi 5, the Pico board, a 24 → 5 V
+converter, an XT60E-F and a switch), smaller than the mini tower in [`../caja_ros2`](../caja_ros2):
+the boards stand **upright, side by side, like the blades of a rack**.
 
-Todos los tornillos van a **insertos térmicos**, también los de las placas (M2,5 en la Pi, M3 en el resto).
+**78 × 95 × 145 mm · 1.07 L** (the mini tower: 107 × 133 × 125, 1.78 L), plus 4 lugs.
 
-![Montada](montaje/img/montada.png)
+Every screw goes into a **heat-set insert**, the boards' too (M2.5 for the Pi, M3 for the rest).
 
-**Instrucciones de montaje paso a paso, con despiece, lista de tornillería y plano de conexiones:**
-[MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf) — English: [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf)
+![Assembled](montaje/img/montada.png)
 
-## Cómo va por dentro
+**Step-by-step assembly instructions, with an exploded view, the list of screws and the wiring:**
+[ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf) — En castellano: [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf)
 
-- **Pared principal** (el lateral grande): ventana de la OLED, logo en 4 colores, varilla del
-  pulsador DISPLAY, ranura única para los cables de los sensores (arriba) y, abajo, el XT60E-F
-  (girado) y el interruptor.
-- **Placa de la Pico**: de pie, colgada de 4 columnas de la pared principal, con los componentes
-  hacia ella (30 mm para los Dupont).
-- **Tabique central**: sujeta la Pi (columnas con insertos M2,5) y el convertidor (insertos M3).
-  Tiene dos pasos de cables: arriba y delante, donde salen los cables del convertidor hacia el lado
-  de la Pico; y abajo, bajo la Pi, para el HDMI (y el USB-C si se quiere llevar por ahí).
-- **Raspberry Pi 4 o Pi 5**: de pie, **abajo**, con los USB y el Ethernet en la ventana de la
-  trasera y el USB-C hacia abajo (15 mm libres para las clavijas acodadas USB-C y micro-HDMI).
-- **Convertidor**: de pie, **arriba**, con 5 mm de aire sobre la Pi y los cables hacia delante.
-  Su calor sube y sale por el techo y la rejilla alta del lateral sin pasar por la Pi; la Pi
-  toma aire fresco por las rejillas bajas del frontal y del lateral.
-- **Trasera**: una sola ventana para los conectores de las dos Pi, cerrada con un **marco
-  intercambiable** (`marco_pi4` o `marco_pi5`: la Pi 5 tiene el Ethernet y los USB al revés). Los
-  huecos de los USB tienen 0,5 mm más por cada lado para las pestañas de la carcasa del conector.
-  Al lado, un **HDMI hembra de panel** conectado al HDMI 0 de la Pi, para enchufar un monitor.
-- **Tapa**: techo, lateral derecho y frontal estrecho en una pieza que baja desde arriba.
+## What goes where inside
 
-## Piezas
+- **Main wall** (the large side): the OLED window, the logo in 4 colours, the DISPLAY button rod, a
+  single slot for the sensor cables (at the top) and, at the bottom, the XT60E-F (turned) and the
+  switch.
+- **Pico board**: upright, hanging from 4 columns of the main wall, parts facing it (30 mm for the
+  Dupont connectors).
+- **Middle divider**: holds the Pi (columns with M2.5 inserts) and the converter (M3 inserts). It has
+  two cable passes: top front, where the converter's wires go out towards the Pico side; and bottom,
+  under the Pi, for the HDMI (and the USB-C if you want to route it there).
+- **Raspberry Pi 4 or Pi 5**: upright, **at the bottom**, with the USB and Ethernet in the window at
+  the back and the USB-C facing down (15 mm free for angled USB-C and micro-HDMI plugs).
+- **Converter**: upright, **at the top**, with 5 mm of air above the Pi and its wires facing forward.
+  Its heat rises and leaves through the roof and the side's upper vent without passing the Pi; the Pi
+  takes fresh air through the lower vents of the front and the side.
+- **Back**: a single window for both Pis' connectors, closed with a **swappable frame** (`marco_pi4`
+  or `marco_pi5`: the Pi 5 has the Ethernet and the USB the other way round). The USB openings are
+  0.5 mm bigger on each side for the tabs of the connector's shell. Next to it, an **HDMI panel
+  socket** wired to the Pi's HDMI 0, to plug in a monitor.
+- **Lid**: roof, right side and narrow front in one piece that comes down from above.
 
-| STL | Qué es | Cómo imprimir |
+## Parts
+
+| STL | What it is | How to print |
 |---|---|---|
-| `stl/pared_multicolor_bambu.3mf` | pared principal + logo marino, azul y gris (4 partes con su filamento) | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
-| `stl/pared_multicolor.3mf` | lo mismo, 3MF genérico para otros laminadores | |
-| `stl/pared_monocolor.stl` | pared principal de un color, logo grabado 1 mm | cara del logo sobre la cama |
-| `stl/base.stl` | suelo, trasera, tabique y orejetas | suelo sobre la cama |
-| `stl/tapa.stl` | techo, lateral y frontal estrecho | techo sobre la cama |
-| `stl/pulsador.stl` | varilla del pulsador DISPLAY | de pie |
-| `stl/marco_pi4.stl` | marco trasero para la Pi 4 | cara exterior sobre la cama |
-| `stl/marco_pi5.stl` | marco trasero para la Pi 5 | cara exterior sobre la cama |
+| `stl/pared_multicolor_bambu.3mf` | main wall + navy, blue and grey logo (4 parts with their filament) | logo face on the bed; AMS: 1 white, 2 navy, 3 blue, 4 grey |
+| `stl/pared_multicolor.3mf` | the same, generic 3MF for other slicers | |
+| `stl/pared_monocolor.stl` | single-colour main wall, logo engraved 1 mm | logo face on the bed |
+| `stl/base.stl` | floor, back, divider and lugs | floor on the bed |
+| `stl/tapa.stl` | roof, side and narrow front | roof on the bed |
+| `stl/pulsador.stl` | DISPLAY button rod | standing |
+| `stl/marco_pi4.stl` | back frame for the Pi 4 | outer face on the bed |
+| `stl/marco_pi5.stl` | back frame for the Pi 5 | outer face on the bed |
 
-PETG, 0,2 mm, boquilla 0,4, sin soportes.
+PETG, 0.2 mm, 0.4 nozzle, no supports.
 
-## Pared con LEDs (opcional)
+## Main wall with LEDs (optional)
 
-![Pared con LEDs](montaje/img/montada_led.png)
+![Main wall with LEDs](montaje/img/montada_led.png)
 
-Otra versión de la pared principal, para ver desde fuera los 10 LEDs de la placa de la Pico: un
-agujero sobre cada uno (VL1–VL4, US1–US5 y PWR) con su nombre al lado, y el logo más abajo, entre
-la ventana de la OLED y el XT60. Sus piezas están en `stl/con_leds/`. Imprime **una** de las dos paredes: la de arriba o esta.
-El resto de piezas es el mismo.
+Another version of the main wall, to see the Pico board's 10 LEDs from outside: a hole over each one
+(VL1–VL4, US1–US5 and PWR) with its name beside it, and the logo lower down, between the OLED window
+and the XT60. Its parts are in `stl/con_leds/`. Print **one** of the two walls: the one above or this
+one. The other parts are the same.
 
-| STL | Qué es | Cómo imprimir |
+| STL | What it is | How to print |
 |---|---|---|
-| `stl/con_leds/pared_led_multicolor_bambu.3mf` | pared con LEDs + logo y nombres en marino, azul y gris | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
-| `stl/con_leds/pared_led_multicolor.3mf` | lo mismo, 3MF genérico | |
-| `stl/con_leds/pared_led_monocolor.stl` | pared con LEDs de un color, logo y nombres grabados 1 mm | cara del logo sobre la cama |
-| `stl/con_leds/guias_luz.stl` | guías de luz: un marco con las 10 barras de 3 mm (opcional) | **PLA translúcido**, extremos exteriores sobre la cama, relleno 100 % |
-| `stl/con_leds/prueba_luz.stl` | una barra suelta para probar el filamento | PLA translúcido, de pie, relleno 100 % |
+| `stl/con_leds/pared_led_multicolor_bambu.3mf` | wall with LEDs + logo and names in navy, blue and grey | logo face on the bed; AMS: 1 white, 2 navy, 3 blue, 4 grey |
+| `stl/con_leds/pared_led_multicolor.3mf` | the same, generic 3MF | |
+| `stl/con_leds/pared_led_monocolor.stl` | single-colour wall with LEDs, logo and names engraved 1 mm | logo face on the bed |
+| `stl/con_leds/guias_luz.stl` | light pipes: a frame with the 10 rods of 3 mm (optional) | **translucent PLA**, outer ends on the bed, 100 % infill |
+| `stl/con_leds/prueba_luz.stl` | a single rod to try the filament | translucent PLA, standing, 100 % infill |
 
-Las guías de luz son **opcionales**: sin ellas los LEDs se ven por los agujeros. Si las pones, se
-enganchan en la pared (4 ganchos) **antes de colgar la placa**, y nunca tocan la placa: cada barra
-acaba 0,7 mm por encima de su LED. Antes de imprimir la pieza, prueba tu filamento con
-`prueba_luz.stl` sobre un LED encendido (el PLA translúcido se ve bien; si el tuyo no, prueba PETG
-transparente). Al montar, presenta la placa sin tornillos sobre sus 4 columnas: debe asentar sin
-balancearse; si se balancea, alguna barra toca su LED: lija la punta. Para sacar la pieza, abre los
-ganchos de dos en dos con un destornillador pequeño.
+The light pipes are **optional**: without them the LEDs show through the holes. If you fit them, they
+clip onto the wall (4 hooks) **before the board is hung**, and they never touch the board: each rod
+ends 0.7 mm above its LED. Before printing the piece, try your filament with `prueba_luz.stl` over a
+lit LED (translucent PLA works well; if yours does not, try clear PETG). When assembling, rest the
+board on its 4 columns without screws: it must sit without rocking; if it rocks, a rod touches its
+LED: sand the tip. To take the piece out, open the hooks two at a time with a small screwdriver.
 
-## Antes de imprimir: comprueba estas medidas
+## Before printing: check these measurements
 
-En `params.scad` (cambia el valor y vuelve a generar):
+In `params.scad` (change the value and generate again):
 
-- `conv_holes`: agujeros de las orejetas del convertidor (sacados del plano de RCNUN; comprueba con
-  calibre la distancia a la punta de la orejeta).
-- `xt60_hole_pitch` y `xt60_body`: XT60E-F (paso entre agujeros sin acotar en su plano).
-- `sw_cut`: agujero de panel del interruptor (19,2 × 13 para un KCD1).
-- `sw1_h`: altura del pulsador DISPLAY.
-- `pi_fan_clear`: altura del ventilador de la Pi.
-- `hdmi_body`, `hdmi_flange`, `hdmi_pitch`: el HDMI hembra de panel que compres (cuerpo, brida y
-  distancia entre sus 2 tornillos M3).
+- `conv_holes`: the holes in the converter's ears (taken from RCNUN's drawing; check with a caliper
+  the distance to the tip of the ear).
+- `xt60_hole_pitch` and `xt60_body`: XT60E-F (the hole pitch is not given in its drawing).
+- `sw_cut`: the switch's panel hole (19.2 × 13 for a KCD1).
+- `sw1_h`: height of the DISPLAY button.
+- `pi_fan_clear`: height of the Pi's fan.
+- `hdmi_body`, `hdmi_flange`, `hdmi_pitch`: the HDMI panel socket you buy (body, flange and distance
+  between its 2 M3 screws).
 
-Cables: el **micro-USB acodado lateral de 30 cm** y el **USB-C acodado con hilos** son los mismos
-que en la mini torre (3 A para la Pi 4; **5 A para la Pi 5**); mira «Conectores acodados» en el
-manual. Para el monitor, un cable **micro-HDMI macho acodado → HDMI hembra de panel**, de unos 30 cm.
+Cables: the **30 cm side-angled micro-USB** and the **angled USB-C pigtail** are the same as in the
+mini tower (3 A for the Pi 4; **5 A for the Pi 5**); see "Angled connectors" in the guide. For the
+monitor, an **angled male micro-HDMI → HDMI panel socket** cable, about 30 cm.
 
-## Generar los ficheros
+## Generating the files
 
 ```bash
-python -I hardware/caja_ros2_rack/build.py         # stl/ y los 3MF
-python -I hardware/caja_ros2_rack/build_docs.py    # imágenes, MONTAJE.md, ASSEMBLY.md y PDF
-python -m pytest hardware/caja_ros2_rack/tests     # choques, encajes, tornillería, impresión
+python -I hardware/caja_ros2_rack/build.py         # stl/ and the 3MFs
+python -I hardware/caja_ros2_rack/build_docs.py    # images, MONTAJE.md, ASSEMBLY.md and PDF
+python -m pytest hardware/caja_ros2_rack/tests     # clashes, fits, screws, printing
 ```
 
-El logo y sus SVG se comparten con la mini torre (`../caja_ros2/logo`), escalados a 80 mm.
+The logo and its SVGs are shared with the mini tower (`../caja_ros2/logo`), scaled to 80 mm.

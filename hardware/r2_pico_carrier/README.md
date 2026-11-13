@@ -1,170 +1,170 @@
 # R2 Pico carrier
 
-Placa base para la **Raspberry Pi Pico 2** que lee los sensores de distancia de R2
-(firmware: `firmware/r2_pico_sensors`). Se encarga **ya montada**: tú solo pinchas la Pico
-(con sus pines soldados hacia abajo) y los cables de los sensores.
+*En castellano: [README_es.md](README_es.md)*
 
-![Arriba](renders/top.png)
+A carrier board for the **Raspberry Pi Pico 2** that reads R2's distance sensors (firmware:
+`firmware/r2_pico_sensors`). It is ordered **already assembled**: you only plug in the Pico (with its
+pins soldered facing down) and the sensor cables.
 
-- 80 × 90 mm, 2 capas, 4 agujeros M3 en las esquinas.
-- Llega **montada de fábrica**: solo falta pinchar la Pico y la pantalla.
-- Detrás: el logo redondo de Astromech Spain, **ROS2D2**, **by NandoMadrid**, www.astromechspain.com.
-- Esquema: [`renders/schematic.pdf`](renders/schematic.pdf). Vista 3D: [`renders/3d.png`](renders/3d.png).
+![Top](renders/top.png)
 
-## Conectores
+- 80 × 90 mm, 2 layers, 4 M3 holes in the corners.
+- Arrives **assembled at the factory**: only the Pico and the display are missing.
+- On the back: Astromech Spain's round logo, **ROS2D2**, **by NandoMadrid**, www.astromechspain.com.
+- Schematic: [`renders/schematic.pdf`](renders/schematic.pdf). 3D view: [`renders/3d.png`](renders/3d.png).
 
-Cada conector tiene los pines **en el mismo orden que el módulo**, así que un cable Dupont
-hembra-hembra recto va directo, sin cruzar nada. El pin 1 es el de la izquierda (pad cuadrado).
+## Connectors
 
-| Conector | Pines (izquierda → derecha) | Para |
+Each connector has its pins **in the same order as the module**, so a straight female-female Dupont
+cable goes directly, without crossing anything. Pin 1 is the one on the left (square pad).
+
+| Connector | Pins (left → right) | For |
 |---|---|---|
-| **VL1 … VL4** | 3V3 · GND · SCL · SDA · — (GPIO1, libre) · XSHUT | VL53L0X (GY-530) con cable de hasta 1 m: los cuatro van por el repetidor I2C (PCA9517A) |
-| **US1 … US5** | 5V · TRIG · ECHO · GND | HC-SR04. El divisor de ECHO (1 kΩ / 2 kΩ) ya está en la placa |
-| **OLED** (J2, tira macho) | GND · VCC · SCL · SDA | Pantalla 0,96" SSD1306/SSD1315 I2C de 4 pines: se suelda encima, tumbada, pantalla arriba |
-| **+5V / GND** (borna) | 5 V de la fuente del droide | Alimenta los HC-SR04 y la Pico |
-| **USB-C 5V** (J5, borde izquierdo) | solo alimentación | Lo mismo que la borna, con cualquier cargador USB-C o USB-A→C (5 V) |
-| **QWIIC** (J3, JST-SH 1 mm) | GND · 3V3 · SDA · SCL | Cualquier módulo Qwiic/STEMMA QT a 3,3 V (IMU, más ToF, expansor de GPIO, ADC…) |
-| **EXP** (J4, tira 2,54) | 5V · GND · 3V3 · SCL · SDA · RUN | Ampliaciones: el mismo bus I2C, 5 V y 3,3 V, y RUN (a GND reinicia la Pico) |
-| **DISPLAY** | pulsador | Enciende la pantalla y pasa de sensor |
+| **VL1 … VL4** | 3V3 · GND · SCL · SDA · — (GPIO1, free) · XSHUT | VL53L0X (GY-530) with a cable up to 1 m: all four go through the I2C repeater (PCA9517A) |
+| **US1 … US5** | 5V · TRIG · ECHO · GND | HC-SR04. The ECHO divider (1 kΩ / 2 kΩ) is already on the board |
+| **OLED** (J2, male header) | GND · VCC · SCL · SDA | 0.96" SSD1306/SSD1315 4-pin I2C display: soldered on top, lying flat, screen up |
+| **+5V / GND** (terminal) | 5 V from the droid's supply | Powers the HC-SR04 and the Pico |
+| **USB-C 5V** (J5, left edge) | power only | The same as the terminal, with any USB-C or USB-A→C charger (5 V) |
+| **QWIIC** (J3, JST-SH 1 mm) | GND · 3V3 · SDA · SCL | Any Qwiic/STEMMA QT module at 3.3 V (IMU, more ToF, GPIO expander, ADC…) |
+| **EXP** (J4, 2.54 header) | 5V · GND · 3V3 · SCL · SDA · RUN | Add-ons: the same I2C bus, 5 V and 3.3 V, and RUN (to GND resets the Pico) |
+| **DISPLAY** | push button | Turns the display on and steps through the sensors |
 
-Con el `sensors.yaml` de hoy: `tof_front_left` → VL1, `tof_front` → VL2, `tof_front_right` → VL3,
-`tof_floor` → VL4, `sonar_front_left` → US1, `sonar_front_right` → US2, `sonar_rear` → US3.
-US4 y US5 son para los dos HC-SR04 de repuesto (GP18/19 y GP20/21).
+With today's `sensors.yaml`: `tof_front_left` → VL1, `tof_front` → VL2, `tof_front_right` → VL3,
+`tof_floor` → VL4, `sonar_front_left` → US1, `sonar_front_right` → US2, `sonar_rear` → US3. US4 and
+US5 are for the two spare HC-SR04 (GP18/19 and GP20/21).
 
-**Regla del cable:** cualquier VL53L0X en cualquier VL, con cable de hasta **1 m** (los cuatro a
-la vez también: 4 × 1 m entran con margen en el bus del repetidor). Los HC-SR04 aguantan cables
-largos en cualquier US.
+**Cable rule:** any VL53L0X on any VL, with a cable up to **1 m** (all four at once too: 4 × 1 m fit
+with room to spare on the repeater's bus). The HC-SR04 take long cables on any US.
 
-## Alimentación
+## Power
 
-- **Borna +5V / GND** o **USB-C**: 5 V de la fuente del droide o de cualquier cargador USB-C
-  (las dos resistencias de 5,1 kΩ en CC le piden los 5 V; no hay datos). Cada entrada tiene su
-  diodo, así que se pueden conectar las dos a la vez sin que una alimente a la otra, y las dos
-  pasan por el mismo fusible rearmable (750 mA). El diodo de la borna protege además contra la
-  polaridad invertida. El LED rojo junto a la borna (D4) dice que hay 5 V.
-- **Conecta la borna con el USB de la Pico desenchufado y comprueba la polaridad.** El diodo
-  solo protege si la placa no tiene otra masa: con el USB puesto, la masa de la Pi también es
-  la de la placa, y unos cables al revés harían un corto por el cable USB que no pasa ni por el
-  fusible ni por el diodo.
-- El **USB** de la Pico va a la Pi 4 para los datos. La Pico funciona con el USB o con la borna;
-  los HC-SR04 **solo con la borna o el USB-C** (los LEDs y la pantalla van a 3,3 V: funcionan también
-  solo con USB).
+- **+5V / GND terminal** or **USB-C**: 5 V from the droid's supply or from any USB-C charger (the two
+  5.1 kΩ resistors on CC ask it for the 5 V; there is no data). Each input has its own diode, so both
+  can be connected at once without one feeding the other, and both go through the same resettable
+  fuse (750 mA). The terminal's diode also protects against reversed polarity. The red LED next to
+  the terminal (D4) says there are 5 V.
+- **Connect the terminal with the Pico's USB unplugged, and check the polarity.** The diode only
+  protects if the board has no other ground: with the USB plugged in, the Pi's ground is the board's
+  ground too, and reversed wires would short through the USB cable, past both the fuse and the diode.
+- The Pico's **USB** goes to the Pi 4 for data. The Pico works on the USB or on the terminal; the
+  HC-SR04 **only on the terminal or the USB-C** (the LEDs and the display run on 3.3 V: they also work
+  on the USB alone).
 
-## Pinchar la Pico
+## Plugging in the Pico
 
-Con el **USB hacia el borde de arriba** (donde pone USB) y el pin 1 junto al "1". Al revés o
-desplazada una fila **sí se puede estropear**: los 5 V de VSYS caerían en un GPIO o en GND.
-Míralo dos veces antes de dar corriente.
+With the **USB towards the top edge** (where it says USB) and pin 1 next to the "1". The wrong way
+round, or one row off, **it can be damaged**: VSYS's 5 V would land on a GPIO or on GND. Look twice
+before powering it.
 
-## Pantalla y LEDs
+## Display and LEDs
 
-Apagados hasta que pulsas **DISPLAY**: primera pulsación, el logo; la siguiente, el último
-sensor visto; cada pulsación, el siguiente. A los 30 s sin pulsar se apaga todo.
+Off until you press **DISPLAY**: the first press, the logo; the next, the last sensor seen; each
+press, the next one. After 30 s without a press everything goes off.
 
-Un LED rojo 0603 por conector, junto a él, cada uno en su propio GPIO (GPIO → 1 kΩ → LED → GND,
-~1,3 mA). Los estados van por parpadeo:
+One red 0603 LED per connector, next to it, each on its own GPIO (GPIO → 1 kΩ → LED → GND, ~1.3 mA).
+The states are told by blinking:
 
-| LED | Significa |
+| LED | Means |
 |---|---|
-| encendido fijo | ese sensor mide |
-| parpadeando (0,4 s) | configurado pero no responde |
-| apagado | no hay sensor configurado en ese conector |
-| destello corto cada 2 s, todos | esperando a que la Pi mande la configuración |
-| un parpadeo breve invertido cada segundo | es el conector que sale en la pantalla |
+| steady on | that sensor is measuring |
+| blinking (0.4 s) | configured but not answering |
+| off | no sensor configured on that connector |
+| short flash every 2 s, all of them | waiting for the Pi to send the setup |
+| a short inverted blink every second | it is the connector on the display |
 
-| Conector | VL1 | VL2 | VL3 | VL4 | US1 | US2 | US3 | US4 | US5 |
+| Connector | VL1 | VL2 | VL3 | VL4 | US1 | US2 | US3 | US4 | US5 |
 |---|---|---|---|---|---|---|---|---|---|
-| GPIO del LED | GP28 | GP27 | GP22 | GP9 | GP0 | GP1 | GP6 | GP7 | GP8 |
+| LED GPIO | GP28 | GP27 | GP22 | GP9 | GP0 | GP1 | GP6 | GP7 | GP8 |
 
-Por eso esos GPIO quedan reservados: el firmware y la consola no los ofrecen para sensores.
+That is why those GPIOs are reserved: the firmware and the console do not offer them for sensors.
 
-## Ampliaciones
+## Add-ons
 
-La Pico ya no tiene GPIO libres, así que lo que se añada va por **I2C**: el conector **QWIIC**
-(cable JST-SH de 4 hilos, sin soldar) o la tira **EXP**. Los dos están en el bus corto de la
-Pico (GP16 SDA, GP17 SCL, pull-ups de 4,7 kΩ en la placa), junto con VL1, VL2 y la pantalla: no
-uses las direcciones 0x29 (VL53L0X) ni 0x3C (pantalla), y cables cortos (< 50 cm). Un expansor
-I2C (PCF8574, MCP23017…) da GPIO de sobra si hacen falta.
-No conectes en QWIIC/EXP otros repetidores ni aceleradores I2C (PCA9515/9517, LTC4311…): el lado
-B de U1 no puede compartir bus con ellos.
+The Pico has no free GPIOs left, so anything added goes over **I2C**: the **QWIIC** connector (a
+4-wire JST-SH cable, no soldering) or the **EXP** header. Both are on the Pico's short bus (GP16
+SDA, GP17 SCL, 4.7 kΩ pull-ups on the board), together with VL1, VL2 and the display: do not use
+addresses 0x29 (VL53L0X) or 0x3C (display), and keep cables short (< 50 cm). An I2C expander
+(PCF8574, MCP23017…) gives plenty of GPIOs if needed. Do not connect other I2C repeaters or
+accelerators (PCA9515/9517, LTC4311…) on QWIIC/EXP: U1's B side cannot share a bus with them.
 
-## Pedirla
+## Ordering it
 
-> **Todavía no está probada.** Los paquetes de pedido (Gerber, BOM y colocación) se publicarán aquí
-> cuando lleguen las placas y comprobemos que todo funciona. Hasta entonces, estas instrucciones son
-> las que usamos nosotros para encargarla.
+> **Not tested yet.** The order packages (Gerber, BOM and placement) will be published here once the
+> boards arrive and we check that everything works. Until then, these are the instructions we used
+> to order it.
 
-Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje antes de pagar.**
+There are two packages, one per factory. **Always check the assembly preview before paying.**
 
 ### JLCPCB (`jlcpcb/`)
 
-1. jlcpcb.com → *Order now* → *Add gerber file* → `jlcpcb/gerber.zip`. Deja 2 capas, 1,6 mm.
-2. Activa **PCB Assembly**, cara **Top**, tipo *Economic* si lo permite (si no, *Standard*:
-   las tiras y zócalos son de agujero pasante).
-3. Sube `jlcpcb/bom.csv` y `jlcpcb/cpl.csv`.
-4. En la vista previa de colocación mira **la orientación** de D1, D2 y D5 (raya = cátodo), LED1-LED9,
-   U1, D4, **J5** (la boca del USB-C hacia el borde), J3 y **SW1** (si el pulsador sale girado 90°, queda siempre pulsado). Si alguna está
-   girada, corrígela allí mismo. Cada tira y zócalo debe verse a lo largo
-   de su fila de agujeros y centrado en ella (el CPL da el centro de cada pieza: si algo sale
-   desplazado, es un error de verdad). U1: el punto del pin 1 arriba a la izquierda, junto a C5.
-5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
-6. *Confirm Parts Placement* (en las opciones de PCB Assembly) es opcional. Con
-   *No*, JLCPCB aplica sus correcciones y fabrica sin preguntarte. Con *Yes*, tras el pago un
-   ingeniero revisa la colocación y te pide confirmarla (tienes ~3 días; si no contestas, fabrican
-   igual). El CPL ya lleva la orientación que dejaron en
-   nuestro pedido (R31-R34 a 270°), pero pueden marcar como *revisadas* tiras de pines o resistencias
-   giradas 180° o sin cambio visible: no tienen polaridad, es normal. Activa *Show Revised Items*,
-   comprueba que nada con polaridad (LEDs, diodos, U1, J5) ha cambiado y confirma.
+1. jlcpcb.com → *Order now* → *Add gerber file* → `jlcpcb/gerber.zip`. Leave 2 layers, 1.6 mm.
+2. Turn on **PCB Assembly**, **Top** side, *Economic* if it allows it (if not, *Standard*: the
+   headers and sockets are through-hole).
+3. Upload `jlcpcb/bom.csv` and `jlcpcb/cpl.csv`.
+4. In the placement preview check **the orientation** of D1, D2 and D5 (band = cathode), LED1-LED9,
+   U1, D4, **J5** (the USB-C's mouth towards the edge), J3 and **SW1** (if the button comes out
+   turned 90°, it stays pressed). If any is turned, correct it right there. Each header and socket
+   must lie along its row of holes and centred on it (the CPL gives each part's centre: if something
+   is off, it is a real error). U1: the pin-1 dot top left, next to C5.
+5. Check that the BOM's 19 lines have a part and stock. Do not pay for anything that does not add up.
+6. *Confirm Parts Placement* (in the PCB Assembly options) is optional. With *No*, JLCPCB applies its
+   corrections and builds without asking you. With *Yes*, after payment an engineer checks the
+   placement and asks you to confirm it (you have ~3 days; if you do not answer, they build anyway).
+   The CPL already carries the orientation they left in our order (R31-R34 at 270°), but they may
+   mark as *revised* headers or resistors turned 180° or with no visible change: they have no
+   polarity, that is normal. Turn on *Show Revised Items*, check that nothing with polarity (LEDs,
+   diodes, U1, J5) has changed and confirm.
 
 ### PCBWay (`pcbway/`)
 
-1. pcbway.com → *PCB Instant Quote* → *Quick-order PCB* → sube `pcbway/gerber.zip`.
-2. Marca **Assembly** (Turnkey), cara Top.
-3. Sube `pcbway/bom.csv` y `pcbway/centroid.csv`. El BOM lleva fabricante y referencia de
-   fabricante (y, de nota, el número LCSC por si lo buscan allí).
-4. PCBWay revisa el BOM a mano y te da el precio final por correo; revisa las orientaciones en su
-   vista previa igual que arriba.
+1. pcbway.com → *PCB Instant Quote* → *Quick-order PCB* → upload `pcbway/gerber.zip`.
+2. Tick **Assembly** (Turnkey), Top side.
+3. Upload `pcbway/bom.csv` and `pcbway/centroid.csv`. The BOM has the manufacturer and the
+   manufacturer's part number (and, as a note, the LCSC number in case they look it up there).
+4. PCBWay checks the BOM by hand and sends you the final price by e-mail; check the orientations in
+   its preview as above.
 
-### Si prefieres soldar tú las tiras de pines (`jlcpcb-sin-tiras/`, `pcbway-sin-tiras/`)
+### If you would rather solder the headers yourself (`jlcpcb-sin-tiras/`, `pcbway-sin-tiras/`)
 
-La misma placa (los gerbers son idénticos), pero la fábrica no monta las 11 tiras de pines:
-J2 (pantalla), US1-US5, VL1-VL4 y J4 (EXP). El resto, zócalos de la Pico incluidos, viene montado.
-En la revisión de JLCPCB apenas queda nada que marcar. Se pide igual que arriba, con los ficheros
-de esa carpeta (17 líneas de BOM).
+The same board (the gerbers are identical), but the factory does not fit the 11 pin headers: J2
+(display), US1-US5, VL1-VL4 and J4 (EXP). Everything else, the Pico's sockets included, comes fitted.
+In JLCPCB's review there is hardly anything left to mark. It is ordered as above, with the files in
+that folder (17 BOM lines).
 
-**¿Compensa?** Poco. Montar las tiras apenas sube el precio del lote: lo caro (zócalos de la Pico,
-tarifa de piezas extendidas) se queda igual, y a cambio te ahorras soldar 11 conectores. Tú decides.
+**Is it worth it?** Hardly. Fitting the headers barely raises the price of the batch: the expensive
+part (the Pico's sockets, the extended-parts fee) stays the same, and in exchange you are spared
+soldering 11 connectors. Your call.
 
-Compra aparte y suéldalas por arriba, rectas, con el plástico apoyado en la placa:
+Buy them separately and solder them from the top, straight, with the plastic resting on the board:
 
-| Tira | Cuántas | Dónde |
+| Header | How many | Where |
 |---|---|---|
-| Macho 1×4, 2,54 mm, recta | 6 | J2, US1-US5 |
-| Macho 1×6, 2,54 mm, recta | 5 | VL1-VL4, J4 |
+| Male 1×4, 2.54 mm, straight | 6 | J2, US1-US5 |
+| Male 1×6, 2.54 mm, straight | 5 | VL1-VL4, J4 |
 
-Vale también una tira larga 1×40 cortada a medida. Suelda J2 antes que la pantalla.
+A long 1×40 strip cut to size works too. Solder J2 before the display.
 
-## Qué comprar aparte
+## What to buy separately
 
-- Pantalla OLED 0,96" **128×64 SSD1306 (o SSD1315) I2C de 4 pines**, en orden
-  **GND-VCC-SCL-SDA** (algunas traen VCC-GND: compruébalo), **sin la tira soldada** (suelen
-  traerla suelta). J2 ya viene con 4 pines macho: mete la pantalla por ellos, pantalla arriba y
-  tumbada sobre su silueta, apoyada en el plástico de la tira (2,5 mm), suelda los 4 pines por
-  arriba y corta lo que sobre. Si quieres, fíjala además con 4 separadores M2 de 2,5 mm en
-  H5-H8. Una vez soldada ya no se quita fácilmente.
-- Cables Dupont hembra-hembra.
-- Tiras de pines macho 1×20 para soldar a tu Pico 2 (hacia abajo), si no las tiene.
+- 0.96" OLED display, **128×64 SSD1306 (or SSD1315) 4-pin I2C**, in the order **GND-VCC-SCL-SDA**
+  (some come as VCC-GND: check it), **without the header soldered** (it usually comes loose). J2
+  already comes with 4 male pins: put the display on them, screen up and lying on its outline,
+  resting on the header's plastic (2.5 mm), solder the 4 pins from the top and cut what is left. If
+  you like, also fix it with 4 M2 2.5 mm spacers in H5-H8. Once soldered it does not come off easily.
+- Female-female Dupont cables.
+- 1×20 male pin headers to solder to your Pico 2 (facing down), if it has none.
 
-## Rehacerla
+## Remaking it
 
-Todo sale de `gen/parts.py` (piezas, huellas, LCSC y la red de cada pad), con el Python de KiCad 10:
+Everything comes from `gen/parts.py` (parts, footprints, LCSC and each pad's net), with KiCad 10's
+Python:
 
 ```
-$KPY gen/make_sch.py     # esquema (ERC limpio)
-$KPY gen/make_pcb.py     # placa sin pistas: contorno, colocación, serigrafía
-$KPY gen/route.py        # ruteo con Freerouting (Java 25 + freerouting-2.5.0.jar)
-$KPY gen/make_fab.py     # paquetes jlcpcb/ y pcbway/ (y sus variantes -sin-tiras/)
-$KPY -m pytest gen       # comprobaciones (conexiones, esquema = parts.py, paquetes)
+$KPY gen/make_sch.py     # schematic (clean ERC)
+$KPY gen/make_pcb.py     # board without tracks: outline, placement, silkscreen
+$KPY gen/route.py        # routing with Freerouting (Java 25 + freerouting-2.5.0.jar)
+$KPY gen/make_fab.py     # jlcpcb/ and pcbway/ packages (and their -sin-tiras/ variants)
+$KPY -m pytest gen       # checks (connections, schematic = parts.py, packages)
 kicad-cli pcb drc --schematic-parity --severity-all r2_pico_carrier.kicad_pcb
 ```
 

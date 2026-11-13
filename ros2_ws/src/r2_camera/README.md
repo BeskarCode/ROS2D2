@@ -1,44 +1,46 @@
 # r2_camera
 
-Nodo de cámara del ROS2D2. Hay una instancia por cámara y sirve tanto para
-webcams USB como para cámaras por red (por ejemplo, una ESP32-CAM).
+*En castellano: [README_es.md](README_es.md)*
 
-## Arrancar
+ROS2D2's camera node. There is one instance per camera, and it works both for USB webcams and for
+network cameras (an ESP32-CAM, for example).
+
+## Start
 
 ```
 ros2 launch r2_camera cameras.launch.py
 ```
 
-Arranca una cámara por cada bloque de `config/cameras.yaml`. Cada una publica en:
+It starts one camera for each block of `config/cameras.yaml`. Each one publishes on:
 
-| Topic | Tipo | Para qué |
+| Topic | Type | What for |
 |---|---|---|
-| `/cameras/<nombre>/image_raw` | `sensor_msgs/Image` (bgr8) | Detección (dome tracker...) |
-| `/cameras/<nombre>/image_raw/compressed` | `sensor_msgs/CompressedImage` (JPEG) | Consola web, verlo desde otro equipo |
+| `/cameras/<name>/image_raw` | `sensor_msgs/Image` (bgr8) | Detection (dome tracker...) |
+| `/cameras/<name>/image_raw/compressed` | `sensor_msgs/CompressedImage` (JPEG) | The web console, watching it from another computer |
 
-Solo se publica (y se comprime) cuando alguien está escuchando ese topic.
-Cada imagen lleva la **hora en que se capturó**, para que el control del dome
-pueda compensar el retraso de la cámara.
+It only publishes (and compresses) while someone is listening to that topic. Each picture carries
+**the time it was taken**, so the dome control can make up for the camera's delay.
 
-## Parámetros
+## Parameters
 
-| Parámetro | Por defecto | |
+| Parameter | Default | |
 |---|---|---|
-| `source` | `0` | `/dev/video0`, `/dev/v4l/by-id/...` o una URL `http://.../stream` |
-| `width`, `height`, `fps` | 640, 480, 30 | Solo para USB; la cámara de red decide su formato |
-| `fourcc` | `MJPG` | Formato USB; con MJPG la mayoría de webcams dan los 30 fps |
-| `frame_id` | `camera` | Nombre de la cámara en el modelo del robot |
-| `rotate` | 0 | 0, 90, 180 o 270 (sentido horario) |
-| `flip` | `none` | `none`, `h`, `v` o `both` |
+| `source` | `0` | `/dev/video0`, `/dev/v4l/by-id/...` or a `http://.../stream` URL |
+| `width`, `height`, `fps` | 640, 480, 30 | USB only; a network camera picks its own format |
+| `fourcc` | `MJPG` | USB format; with MJPG most webcams give their 30 fps |
+| `frame_id` | `camera` | The camera's name in the robot model |
+| `rotate` | 0 | 0, 90, 180 or 270 (clockwise) |
+| `flip` | `none` | `none`, `h`, `v` or `both` |
 | `publish_raw`, `publish_compressed` | true, true | |
 | `jpeg_quality` | 70 | 1–100 |
-| `reconnect_sec` | 2.0 | Espera antes de reintentar si la cámara se cae |
+| `reconnect_sec` | 2.0 | Wait before trying again if the camera drops |
 
-Todos se pueden cambiar en marcha. Si cambias la fuente o el formato, la cámara se reabre:
+All of them can be changed while it runs. If you change the source or the format, the camera is
+opened again:
 
 ```
 ros2 param set /cameras/front/camera rotate 180
 ros2 param set /cameras/front/camera source http://192.168.68.150:81/stream
 ```
 
-Si la cámara se desconecta o no responde, el nodo lo reintenta solo.
+If the camera is unplugged or stops answering, the node keeps trying on its own.
