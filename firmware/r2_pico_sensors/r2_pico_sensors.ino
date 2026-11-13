@@ -40,6 +40,7 @@ size_t lineLen = 0;
 bool tooLong = false;
 uint32_t lastHb = 0, lastR = 0, flickerUntil = 0;
 bool readSinceHb = false;        // an R line went out since the last heartbeat (the LED blinks once)
+bool picoLed = false;            // the Pico's own LED as last written (for the mirror)
 const char* lastDs = nullptr;    // the display's screen as last told to the Pi (DS line)
 mirror::State mir;               // the board mirror for the web console (MIR, Mirror.h)
 uint32_t fbSeen = 1;             // display::fbSeq of the last picture looked at (odd: none yet)
@@ -217,7 +218,8 @@ void sendMirror(uint32_t now) {
     display::btnEvent = 0;
     return;
   }
-  if (mirror::ledLine(mir, display::ledLevels, now, out, sizeof out)) Serial.println(out);
+  uint16_t levels = display::ledLevels | (uint16_t)picoLed << 9;
+  if (mirror::ledLine(mir, levels, now, out, sizeof out)) Serial.println(out);
   int8_t b = display::btnEvent;
   if (b) {
     display::btnEvent = 0;
@@ -242,6 +244,7 @@ void sendMirror(uint32_t now) {
 void led(uint32_t now) {
   bool on = configured ? (int32_t)(now - flickerUntil) >= 0 : now % 1000 < 200;
   digitalWrite(LED, on);
+  picoLed = on;
 }
 
 // Wokwi (wokwi/README.md) emulates only one core and has no Pi: there the display runs on core 0

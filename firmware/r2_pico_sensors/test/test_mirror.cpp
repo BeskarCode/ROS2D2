@@ -38,11 +38,13 @@ int main() {
   char out[1400];
   mirror::request(s, true, 0);
   check(mirror::ledLine(s, 0b000010001, 100, out, sizeof out), "first LED line goes out");
-  check(strcmp(out, "LED 100010000") == 0, "LED digits VL1..US5");
+  check(strcmp(out, "LED 1000100000") == 0, "LED digits VL1..US5, then the Pico's own LED");
   check(!mirror::ledLine(s, 0b000010001, 200, out, sizeof out), "same LEDs 100 ms later: nothing");
   check(mirror::ledLine(s, 0b000010001, 1100, out, sizeof out), "same LEDs a second later: again");
   check(mirror::ledLine(s, 0b000010000, 1150, out, sizeof out), "an LED changes: at once");
-  check(strcmp(out, "LED 000010000") == 0, "VL1 off");
+  check(strcmp(out, "LED 0000100000") == 0, "VL1 off");
+  check(mirror::ledLine(s, 0b1000010000, 1160, out, sizeof out), "the Pico's LED changes: at once");
+  check(strcmp(out, "LED 0000100001") == 0, "the Pico's LED is the 10th digit");
 
   // FB lines: on change, at most every 200 ms; FB off once
   uint8_t pages[1024] = {0};

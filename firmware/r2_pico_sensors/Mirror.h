@@ -1,7 +1,8 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The board mirror for the web console (protocol 3). While the Pi keeps asking (MIR 1, renewed
 // every 2 s; off on its own 5 s after the last one), the Pico sends:
-//   LED <9 digits 0/1>   each connector LED's level, VL1..US5: when one changes, and every second
+//   LED <10 digits 0/1>  each connector LED's level, VL1..US5, then the Pico's own green LED:
+//                        when one changes, and every second
 //   FB <base64>          the display's picture (8 SSD1306 pages, 1024 bytes) when it changed,
 //                        at most every 200 ms; FB off once when the display goes off
 //   BTN short|long       the physical button was pressed (long = held until the display went off)
@@ -58,14 +59,14 @@ inline size_t base64(const uint8_t* in, size_t len, char* out) {
   return o;
 }
 
-// levels: bit 0 = VL1 ... bit 8 = US5
+// levels: bit 0 = VL1 ... bit 8 = US5, bit 9 = the Pico's own LED (GP25)
 inline bool ledLine(State& s, uint16_t levels, uint32_t now, char* out, size_t n) {
   if (levels == s.ledsSent && now - s.ledsAt < LED_EVERY_MS) return false;
   s.ledsSent = levels;
   s.ledsAt = now;
-  char d[10];
-  for (int i = 0; i < 9; i++) d[i] = (levels >> i) & 1 ? '1' : '0';
-  d[9] = 0;
+  char d[11];
+  for (int i = 0; i < 10; i++) d[i] = (levels >> i) & 1 ? '1' : '0';
+  d[10] = 0;
   snprintf(out, n, "LED %s", d);
   return true;
 }

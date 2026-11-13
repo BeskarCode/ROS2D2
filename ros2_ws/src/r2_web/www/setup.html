@@ -227,6 +227,47 @@
   .mcard .row label { width: 120px; flex: none; }
   .mcard .slider input[type=range] { width: auto; flex: 1; }
   .mcard .slider b { min-width: 72px; }
+
+  /* System: the live strip and the mirror of the Pico board */
+  .syslive { margin-bottom: 18px; }
+  .syslive .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
+  .syslive .piece { border: 2px solid #3fb950; background: #12261a; border-radius: 8px; padding: 5px 10px; min-width: 96px; }
+  .syslive .piece.off { border-color: #484f58; background: #161b22; color: #8b949e; }
+  .syslive .piece.unknown { border-color: #6e7681; border-style: dashed; background: #161b22; }
+  .syslive .piece b { display: block; font-size: 13px; }
+  .syslive .piece small { color: #8b949e; font-size: 11px; }
+  .syslive .piece.ok small { color: #3fb950; }
+  .syslive .wire { font: 600 10px ui-monospace, monospace; color: #3fb950; border-top: 3px solid #3fb950; padding: 0 6px; }
+  .syslive .wire.off { color: #484f58; border-color: #484f58; }
+  .syslive .pcb { position: relative; display: grid; grid-template-columns: auto 90px auto 1fr; gap: 18px; align-items: center;
+                  background: #12408f; border: 2px solid #0b2a63; border-radius: 10px; padding: 18px 20px; color: #dbe7ff; max-width: 860px; }
+  .syslive .pcb.dead { filter: grayscale(1) brightness(.6); }
+  .syslive .pcb-row { display: flex; align-items: center; gap: 8px; margin: 7px 0; font-size: 13px; }
+  .syslive .pcb-conn { background: #111; color: #e6edf3; font: 600 12px ui-monospace, monospace; padding: 3px 7px; border-radius: 3px; min-width: 34px; text-align: center; }
+  .syslive .pcb-val { min-width: 74px; font: 12px ui-monospace, monospace; color: #cfe0ff; }
+  .syslive .pcb-vl .pcb-val { text-align: right; }
+  .syslive .pcb-led { width: 12px; height: 12px; border-radius: 50%; background: #3a1414; border: 1px solid #000; flex: none; }
+  .syslive .pcb-led.on { background: #ff3b30; box-shadow: 0 0 8px #ff3b30; }
+  .syslive .pcb-pico { position: relative; }
+  .syslive .pcb-led.pico { position: absolute; top: 12px; left: 50%; margin-left: -6px; background: #0e2a12; }
+  .syslive .pcb-led.pico.on { background: #3fff6a; box-shadow: 0 0 8px #3fff6a; }
+  .syslive .pcb-led.pwr.unknown { background: transparent; border: 1px dashed #ff8a80; }
+  .syslive .pcb-pico { background: #2e7d32; border: 2px solid #1b5e20; border-radius: 4px; height: 190px; display: flex; align-items: center;
+                       justify-content: center; color: #fff; font-weight: 700; writing-mode: vertical-rl; }
+  .syslive .pcb-ui { justify-self: end; text-align: center; }
+  .syslive #bv-oled { width: 256px; height: 128px; image-rendering: pixelated; background: #000; border: 6px solid #0b2a63; border-radius: 4px; display: block; }
+  .syslive .pcb-btns { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 11px; }
+  .syslive .pcb-button { width: 30px; height: 30px; border-radius: 50%; padding: 0; background: #555; border: 3px solid #333; cursor: pointer; display: grid; place-items: center; }
+  .syslive .pcb-button i { width: 14px; height: 14px; border-radius: 50%; background: #d4b13a; display: block; }
+  .syslive .pcb-button.pressed { transform: scale(.9); box-shadow: inset 0 0 6px #000; }
+  .syslive .pcb-button:disabled { cursor: not-allowed; opacity: .6; }
+  .syslive .pcb-hold { height: 4px; width: 120px; margin: 6px auto 0; background: #0b2a63; border-radius: 2px; visibility: hidden; }
+  .syslive .pcb-hold.show { visibility: visible; }
+  .syslive .pcb-hold i { display: block; height: 100%; width: 0; background: #ffd400; border-radius: 2px; }
+  .syslive .pcb-cover { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 16px; color: #fff;
+                        background: rgba(13,17,23,.55); border-radius: 10px; }
+  .syslive .pcb-cover[hidden] { display: none; }
+  @media (max-width: 760px) { .syslive .pcb { grid-template-columns: 1fr 60px 1fr; } .syslive .pcb-ui { grid-column: 1 / -1; justify-self: center; } }
 </style>
 </head>
 <body>
@@ -344,6 +385,7 @@
   </section>
 
   <section id="system" hidden>
+    <div id="sys-live" class="syslive"></div>
     <p class="help">The Pi and the Pico board. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p>
     <label class="systog" title="Read how busy the Pi and the Pico are (only while on and this tab is open)">
       <input type="checkbox" id="sys-telemetry"><i class="fa-solid fa-chart-line"></i>Telemetry

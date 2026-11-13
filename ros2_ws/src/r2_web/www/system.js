@@ -4,6 +4,7 @@
 // from /pico/state, asked for with /pico/telemetry_request every 2 s (the bridge sends TM 0
 // once the requests stop). Temperature and load show the ranges they move in.
 import { CONNECTORS, OPTIONS, toYaml } from './boardform.js';
+import { createBoardView } from './boardview.js';
 import { publish, subscribe } from './rosbridge.js';
 import {
   CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, displayButtons, firmwareText, level, minMax, pct, throttleText,
@@ -14,6 +15,7 @@ const $ = (id) => document.getElementById(id);
 const POLL_MS = 2000;
 
 export function createSystemTab() {
+  const boardView = createBoardView($('sys-live'));
   let visible = false;
   let timer = null;
   let telemetry = false;
@@ -103,6 +105,7 @@ export function createSystemTab() {
   }
   subscribe('/pico/state', 'std_msgs/msg/String', (m) => {
     try { pico = JSON.parse(m.data); picoAt = Date.now(); } catch { return; }
+    boardView.pico(pico);
     showPico();
     boardEnabled();
   });
@@ -219,6 +222,7 @@ export function createSystemTab() {
     try {
       const api = await (await fetch(`api/system${telemetry ? '?telemetry=1' : ''}`, { cache: 'no-store' })).json();
       showPi(api);
+      boardView.pi(api);
     } catch { /* restarting */ }
     showPico();
     if (visible) timer = setTimeout(poll, telemetry ? POLL_MS : 5000);
@@ -237,7 +241,7 @@ export function createSystemTab() {
   $('sys-telemetry').checked = telemetry;
 
   return {
-    show() { visible = true; restart(); loadBoard(); boardEnabled(); fwPost('check'); },
-    hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; },
+    show() { visible = true; restart(); loadBoard(); boardEnabled(); fwPost('check'); boardView.show(); },
+    hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; boardView.hide(); },
   };
 }

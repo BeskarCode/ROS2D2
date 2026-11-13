@@ -130,7 +130,7 @@ Pico → Pi:
 | `HB <ms> <states>` | every second. `<states>` is `-` with no `CFG` yet, else one letter per sensor: `O` answers, `N` not answering. E.g. `HB 12034 NNNNNNN`. |
 | `R <i>:<mm> <i>:<mm> …` | every 50 ms, the sensors with a new reading since the last `R`. `-1` = answers, nothing in range. |
 | `DS <off\|logo\|all\|VL1..US5>` | what the display shows, when it changes and after `HELLO` (the console's buttons follow it) |
-| `LED <9 digits 0/1>` | with `MIR 1`: each connector LED's level, VL1..US5, when one changes and every second |
+| `LED <10 digits 0/1>` | with `MIR 1`: each connector LED's level, VL1..US5, then the Pico's own green LED, when one changes and every second |
 | `FB <base64>` / `FB off` | with `MIR 1`: the display's picture (the 8 SSD1306 pages, 1024 bytes: a byte per column, LSB on top) when it changed, at most every 200 ms; `FB off` once when it goes off |
 | `BTN short` / `BTN long` | with `MIR 1`: the real button was pressed / held until the display went off |
 | `T c0=<%> c1=<%> bus=<%> disp=<%> wait=<ms> temp=<tenths °C> up=<s> rps=<n>,<n>,…` | with `TM 1`, every second after `HB`: each core's load (loop turns of 20 µs or more, without their waits for the bus), the I2C bus held and the part held by the display, the longest a VL53L0X waited for the bus, the chip's temperature, seconds up, readings per second of each sensor. |
