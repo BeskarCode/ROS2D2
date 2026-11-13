@@ -105,6 +105,12 @@ inline void uiTick(Ui& ui, uint32_t now) {
   if (held || (ui.awake_ms && now - ui.lastPress > ui.awake_ms)) ui.screen = Screen::Off;
 }
 
+// A hold without the button (PRESS long from the web console): the display goes off
+inline void uiHold(Ui& ui, uint32_t now) {
+  ui.lastPress = now;
+  ui.screen = Screen::Off;
+}
+
 // What the display shows, for the Pi (DS line): off, logo, all, or a connector's name
 inline const char* screenName(const Ui& ui) {
   switch (ui.screen) {
