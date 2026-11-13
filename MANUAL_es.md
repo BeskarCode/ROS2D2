@@ -150,6 +150,19 @@ busca cuando lo pierde.
 
 ![Setup, System](media/manual/setup-system.png)
 
+**Arriba, lo que la Pi detecta**: una tira con el Mega, la Pi, el lidar, la placa de la Pico y cada
+cámara, en verde si están y en gris si no, unidos por los cables USB (verdes cuando están los dos
+extremos). Sabertooth, SyRen, MarcDuino y los mandos no salen: la Pi no los puede ver.
+
+**La placa de la Pico, en directo** (firmware de la Pico 0.3.0 o posterior): una copia de la placa
+real. El LED de cada conector se enciende y parpadea como el real, con la lectura del sensor al
+lado; también el LED verde de la propia Pico; la pantalla enseña la imagen de la pantalla real,
+píxel a píxel. El botón **DISPLAY** funciona como el real: un clic es una pulsación y mantenerlo 3 s
+apaga la pantalla (mientras lo mantienes se llena una barra). Si pulsas el botón de la placa, la
+copia lo sigue. PWR se enciende cuando responde algún HC-SR04 (necesitan sus 5 V); si no responde
+ninguno sale punteado, porque la Pico no lo puede saber. La placa solo manda esto mientras esta
+pestaña está abierta.
+
 **Telemetry** (el interruptor verde): lo ocupadas que van la Pi y la Pico, solo mientras está
 encendido y esta pestaña abierta.
 

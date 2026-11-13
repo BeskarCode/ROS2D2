@@ -77,7 +77,8 @@ def test_parse_led_levels_of_the_mirror():
     assert parse("LED 100010000") == ("led", "100010000")
     assert parse("LED 10001") is None
     assert parse("LED 10001000x") is None
-    assert parse("LED 1000100001") is None
+    assert parse("LED 1000100001") == ("led", "1000100001")    # 10th: the Pico's own LED
+    assert parse("LED 10001000011") is None
 
 
 def test_parse_the_display_picture_of_the_mirror():

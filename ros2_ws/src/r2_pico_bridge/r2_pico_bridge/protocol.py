@@ -31,7 +31,8 @@ Pico -> Pi:
                               by the display), the longest a VL53L0X waited for it, the chip's
                               temperature, seconds up, readings per second of each sensor
   DS <off|logo|all|VL1..US5>  what the display shows, when it changes (and after HELLO)
-  LED <9 digits 0/1>          with MIR 1: each connector LED's level, VL1..US5
+  LED <10 digits 0/1>         with MIR 1: each connector LED's level, VL1..US5, then the Pico's
+                              own green LED (an early 0.3.0 sends only the 9)
   FB <base64> / FB off        with MIR 1: the display's picture (8 SSD1306 pages, 1024 bytes)
   BTN short|long              with MIR 1: the real button was pressed / held until it went off
   ERR <text>                  a line it did not understand
@@ -50,7 +51,7 @@ _R_ITEM = re.compile(r"^(\d+):(-?\d+)$")
 _HELLO = re.compile(r"^PICO r2_pico_sensors (\S+) proto (\d+)(?: commit (\S+))?$")
 _DS = re.compile(r"^DS (off|logo|all|VL[1-4]|US[1-5])$")
 _ACK = re.compile(r"^(UI|DISP|ID|MIR|PRESS) (OK|ERR)(?: (.+))?$")
-_LED = re.compile(r"^LED ([01]{9})$")
+_LED = re.compile(r"^LED ([01]{9,10})$")      # 10th: the Pico's own LED (0.3.0 builds after it)
 _BTN = re.compile(r"^BTN (short|long)$")
 _TM = re.compile(r"^T c0=(\d+) c1=(\d+) bus=(\d+) disp=(\d+) wait=(\d+) temp=(-?\d+) up=(\d+) rps=((?:\d+(?:,\d+)*)?)$")
 

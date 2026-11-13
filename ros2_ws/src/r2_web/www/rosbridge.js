@@ -20,7 +20,12 @@ export function connect(onOpen) {
   ws.onclose = () => setTimeout(() => connect(onOpen), 2000);
 }
 
-const send = (o) => ws && ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(o));
+/** Send if the socket is open; true if it went. */
+function send(o) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+  ws.send(JSON.stringify(o));
+  return true;
+}
 
 export function call(service, type, args) {
   return new Promise((resolve) => {
@@ -45,7 +50,12 @@ export function subscribe(topic, type, cb, throttleMs = 0) {
 }
 
 const advertised = new Set();
+/** Advertise a topic ahead of its first message: ROS needs a moment to match publisher and
+ *  subscriber, and a message published along with the advertise can be lost. */
+export function advertise(topic, type) {
+  if (!advertised.has(topic) && send({ op: 'advertise', topic, type })) advertised.add(topic);
+}
 export function publish(topic, type, msg) {
-  if (!advertised.has(topic)) { send({ op: 'advertise', topic, type }); advertised.add(topic); }
+  advertise(topic, type);
   send({ op: 'publish', topic, msg });
 }

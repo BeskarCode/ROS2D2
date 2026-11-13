@@ -143,6 +143,18 @@ the colour.
 
 ![Setup, System](media/manual/setup-system.png)
 
+**On top, what the Pi finds**: a strip with the Mega, the Pi, the lidar, the Pico board and each
+camera, green when found and grey when not, joined by the USB cables (green when both ends are
+there). Sabertooth, SyRen, MarcDuino and the controllers do not show: the Pi cannot see them.
+
+**The Pico board, live** (Pico firmware 0.3.0 or newer): a copy of the real board. Each connector's
+LED lights and blinks as the real one, with the sensor's reading beside it; the Pico's own green
+LED too; the display shows the real display's picture, pixel for pixel. The **DISPLAY** button works
+like the real one: a click is a press, holding it 3 s turns the display off (a bar fills while you
+hold). Press the real button and the copy follows. PWR lights when an HC-SR04 answers (they need its
+5 V); with none answering it shows dashed, as the Pico cannot tell. The board only sends this while
+this tab is open.
+
 **Telemetry** (the green switch): how busy the Pi and the Pico are, only while it is on and this tab
 is open.
 
