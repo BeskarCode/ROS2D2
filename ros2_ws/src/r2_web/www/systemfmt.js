@@ -30,6 +30,23 @@ export const PI_TEMP_ZONES = [[65, 'ok', 'normal'], [80, 'warn', 'warm'], [Infin
 export const PICO_TEMP_ZONES = [[60, 'ok', 'normal'], [85, 'warn', 'warm'], [Infinity, 'bad', 'too hot']];
 export const CPU_ZONES = [[70, 'ok', 'normal'], [90, 'warn', 'busy'], [Infinity, 'bad', 'saturated']];
 
+/** A ring gauge's coloured zones as fractions of the ring: [{from, to, cls}], clipped to [lo, hi]. */
+export function ringBands(zones, lo, hi) {
+  const at = (v) => Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+  let from = 0;
+  return zones.map(([top, cls]) => {
+    const band = { from, to: at(Math.min(top, hi)), cls };
+    from = band.to;
+    return band;
+  }).filter((b) => b.to > b.from);
+}
+
+/** Where a value sits on a ring gauge, 0..1 (0 when unknown). */
+export function ringFill(value, lo, hi) {
+  if (value == null || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
+}
+
 export function zone(value, zones) {
   if (value == null || !Number.isFinite(value)) return null;
   const [, cls, label] = zones.find(([top]) => value < top);

@@ -2,7 +2,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CPU_ZONES, PI_TEMP_ZONES, PICO_TEMP_ZONES, bytes, displayButtons, firmwareText, level, minMax, pct, throttleText, uptime, versionText, zone } from '../www/systemfmt.js';
+import { CPU_ZONES, PI_TEMP_ZONES, PICO_TEMP_ZONES, ringBands, ringFill, bytes, displayButtons, firmwareText, level, minMax, pct, throttleText, uptime, versionText, zone } from '../www/systemfmt.js';
 
 test('bytes', () => {
   assert.equal(bytes(12.3e9), '12.3 GB');
@@ -87,4 +87,17 @@ test('displayButtons: the On / Off buttons and the screen list follow the board'
   assert.deepEqual(displayButtons('logo'), { on: true, screen: 'all' });
   assert.deepEqual(displayButtons('US3'), { on: true, screen: 'US3' });
   assert.deepEqual(displayButtons(null), { on: false, screen: null });
+});
+
+test('ringBands: the zones as fractions of the ring, clipped to [lo, hi]', () => {
+  assert.deepEqual(ringBands(CPU_ZONES, 0, 100), [
+    { from: 0, to: 0.7, cls: 'ok' }, { from: 0.7, to: 0.9, cls: 'warn' }, { from: 0.9, to: 1, cls: 'bad' }]);
+  assert.deepEqual(ringBands(PI_TEMP_ZONES, 30, 90).map((b) => b.to.toFixed(3)), ['0.583', '0.833', '1.000']);
+});
+
+test('ringFill: where the value sits on the ring, 0..1', () => {
+  assert.equal(ringFill(50, 0, 100), 0.5);
+  assert.equal(ringFill(-5, 0, 100), 0);
+  assert.equal(ringFill(150, 0, 100), 1);
+  assert.equal(ringFill(null, 0, 100), 0);
 });
