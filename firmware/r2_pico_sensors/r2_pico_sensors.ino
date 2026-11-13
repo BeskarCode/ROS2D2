@@ -12,8 +12,9 @@
 #include "Sonar.h"
 #include "Tof.h"
 #include "Display.h"
+#include "Mirror.h"
 
-#define FW_VERSION "0.2.0"
+#define FW_VERSION "0.3.0"
 #ifndef FW_COMMIT
 #define FW_COMMIT "unknown"     // build.sh passes the git commit of firmware/r2_pico_sensors
 #endif
@@ -40,6 +41,9 @@ bool tooLong = false;
 uint32_t lastHb = 0, lastR = 0, flickerUntil = 0;
 bool readSinceHb = false;        // an R line went out since the last heartbeat (the LED blinks once)
 const char* lastDs = nullptr;    // the display's screen as last told to the Pi (DS line)
+mirror::State mir;               // the board mirror for the web console (MIR, Mirror.h)
+uint32_t fbSeen = 1;             // display::fbSeq of the last picture looked at (odd: none yet)
+bool fbOnSeen = false;
 
 // Leave the pins of the last CFG quiet: XSHUT low keeps a VL53L0X off (its board pulls it up)
 void releasePins() {
@@ -79,7 +83,7 @@ void onCfg(const char* args) {
 
 void onLine(const char* l) {
   if (strcmp(l, "HELLO") == 0) {
-    Serial.println("PICO r2_pico_sensors " FW_VERSION " proto 2 commit " FW_COMMIT);
+    Serial.println("PICO r2_pico_sensors " FW_VERSION " proto 3 commit " FW_COMMIT);
     lastDs = nullptr;            // say what the display shows again
   } else if (strcmp(l, "CFG") == 0 || strncmp(l, "CFG ", 4) == 0) {
     onCfg(l + 3);
@@ -87,6 +91,19 @@ void onLine(const char* l) {
     tele::start(micros());
     tele::on = l[3] == '1';
     Serial.println("TM OK");
+  } else if (strcmp(l, "MIR 1") == 0 || strcmp(l, "MIR 0") == 0) {
+    mirror::request(mir, l[4] == '1', millis());
+    display::mirrorWanted = mir.on;
+    fbSeen = 1;                  // send the picture again
+    Serial.println("MIR OK");
+  } else if (strncmp(l, "PRESS ", 6) == 0) {
+    mirror::Press p = mirror::parsePress(l + 6);
+    if (p == mirror::Press::None) {
+      Serial.println("PRESS ERR bad press");
+    } else {
+      display::requestPress(p == mirror::Press::Long);
+      Serial.println("PRESS OK");
+    }
   } else if (strncmp(l, "UI ", 3) == 0) {
     UiCfg next = display::uiCfg;
     const char* err = parseUi(l + 2, next);
@@ -191,6 +208,36 @@ void sendReadings(uint32_t now) {
   readSinceHb = true;
 }
 
+// The board mirror (MIR): the LEDs, the display's picture and the button, while the Pi asks
+void sendMirror(uint32_t now) {
+  static char out[3 + 1368 + 1];
+  static uint8_t pages[1024];
+  if (!mirror::active(mir, now)) {
+    if (display::mirrorWanted) display::mirrorWanted = false;     // nobody looks any more
+    display::btnEvent = 0;
+    return;
+  }
+  if (mirror::ledLine(mir, display::ledLevels, now, out, sizeof out)) Serial.println(out);
+  int8_t b = display::btnEvent;
+  if (b) {
+    display::btnEvent = 0;
+    Serial.println(b == 2 ? "BTN long" : "BTN short");
+  }
+  bool on = display::fbOn;
+  uint32_t seq = display::fbSeq;
+  if (on == fbOnSeen && (seq == fbSeen || (seq & 1))) return;
+  if (on) {
+    if (seq & 1) return;                       // core 1 is copying: next time
+    if (mir.fbSent && now - mir.fbAt < mirror::FB_MIN_MS) return;   // at most 5 pictures a second
+    memcpy(pages, display::fbPages, sizeof pages);
+    __sync_synchronize();
+    if (display::fbSeq != seq) return;         // changed while copying: next time
+  }
+  if (mirror::fbLine(mir, pages, on, now, out, sizeof out)) Serial.println(out);   // false: same picture
+  fbSeen = seq;
+  fbOnSeen = on;
+}
+
 // Short flash once a second: waiting for the Pi's CFG. On, off for a moment once a second: measuring.
 void led(uint32_t now) {
   bool on = configured ? (int32_t)(now - flickerUntil) >= 0 : now % 1000 < 200;
@@ -230,6 +277,7 @@ void loop() {
     sendReadings(now);
   }
   led(now);
+  sendMirror(now);
 #ifdef WOKWI
   display::loop();
 #endif
