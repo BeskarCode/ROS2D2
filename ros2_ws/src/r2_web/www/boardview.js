@@ -3,7 +3,7 @@
 // cameras) and the mirror of the Pico board (its LEDs, its display pixel for pixel and its
 // DISPLAY button, which works both ways). The Pico sends the mirror only while this tab asks
 // for it (/pico/mirror_request every 2 s; the bridge renews MIR, the Pico stops 5 s after).
-import { CONNECTOR_NAMES, LONG_PRESS_MS, fbPixels, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, stripItems } from './boardmirror.js';
+import { CONNECTOR_NAMES, LONG_PRESS_MS, fbPixels, isLive, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, stripItems } from './boardmirror.js';
 import { advertise, publish, subscribe } from './rosbridge.js';
 
 const ASK_MS = 2000;
@@ -43,7 +43,7 @@ export function createBoardView(root) {
 
   // ---------- the strip ----------
   function showStrip() {
-    const live = pico && Date.now() - picoAt < 3000 && pico.connected;
+    const live = isLive(pico, picoAt, Date.now());
     const items = stripItems({
       mega, pi: { temp_c: piTemp }, lidar: { ok: lidarDevice, detail: lidarDevice ? 'plugged in' : 'not connected' },
       pico: live ? pico : null, cameras,
@@ -59,7 +59,7 @@ export function createBoardView(root) {
 
   // ---------- the board ----------
   function showBoard() {
-    const live = pico && Date.now() - picoAt < 3000 && pico.connected;
+    const live = isLive(pico, picoAt, Date.now());
     const leds = live ? ledsOf(mirror.leds) : null;
     const old = live && (pico.mirror_supported === false);
     const cover = !live ? 'Pico disconnected' : old ? 'Needs Pico firmware 0.3.0 (System → Pico firmware)' : '';
@@ -159,6 +159,7 @@ export function createBoardView(root) {
     if (!visible) return;
     publish('/pico/mirror_request', 'std_msgs/msg/Bool', { data: true });
     loadSources();
+    showBoard();            // with no news from the Pi (bridge or socket gone) it goes grey, nothing stale
     askTimer = setTimeout(ask, ASK_MS);
   }
 
@@ -170,9 +171,7 @@ export function createBoardView(root) {
       advertise('/pico/command', 'std_msgs/msg/String');     // ready before the first press
       clearTimeout(askTimer); ask(); showStrip(); showBoard();
     },
-    hide() {
-      if (visible) publish('/pico/mirror_request', 'std_msgs/msg/Bool', { data: false });
-      visible = false; clearTimeout(askTimer); up();
-    },
+    // No "false" on leaving: another tab may still be looking. The bridge stops 5 s after the last request.
+    hide() { visible = false; clearTimeout(askTimer); up(); },
   };
 }

@@ -67,5 +67,8 @@ export function stripItems({ mega, pi, lidar, pico, cameras }) {
   return items;
 }
 
+/** The board is live while /pico/state keeps coming (under 3 s old) and says connected. */
+export const isLive = (pico, picoAt, now) => !!(pico && pico.connected && now - picoAt < 3000);
+
 /** How long the button was held: a short press or a long one (the real button's 3 s). */
 export const pressKind = (ms) => (ms >= LONG_PRESS_MS ? 'long' : 'short');
