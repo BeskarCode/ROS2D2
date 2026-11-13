@@ -66,7 +66,7 @@ arrastrarlas).
 **Telemetry**: la lectura de cada sensor. La barra se llena cuanto más cerca está algo; la marca
 roja es donde R2 se para por ese sensor, y la marca fina la lectura sin filtrar. En gris con
 *ignored* es que ese sensor está ignorado (mira [Sensors](#setup--sensors)). Debajo: qué hace el
-navegador y por qué, y si el Mega está conectado (sin él no llega nada a los pies).
+navegador y por qué, y si el Mega está conectado (sin él no llega nada a los foot).
 
 ---
 
