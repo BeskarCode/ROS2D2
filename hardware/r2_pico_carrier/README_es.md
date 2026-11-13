@@ -94,8 +94,8 @@ B de U1 no puede compartir bus con ellos.
 
 > **Probada y funcionando** (noviembre de 2026): las placas que nos montó JLCPCB leen los VL53L0X y
 > los HC-SR04, y funcionan los LEDs, la pantalla y su pulsador. Los paquetes de pedido (Gerber, BOM y
-> colocación) no están en el repo: se generan con `gen/make_fab.py` (mira «Rehacerla» abajo). Estas
-> son las instrucciones que usamos nosotros para encargarla.
+> colocación) están en las carpetas de abajo. Estas son las instrucciones que usamos nosotros para
+> encargarla.
 
 Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje antes de pagar.**
 

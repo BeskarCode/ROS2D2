@@ -91,8 +91,7 @@ accelerators (PCA9515/9517, LTC4311…) on QWIIC/EXP: U1's B side cannot share a
 
 > **Tested and working** (November 2026): the boards JLCPCB assembled for us read the VL53L0X and
 > the HC-SR04, and the LEDs, the display and its button work. The order packages (Gerber, BOM and
-> placement) are not in the repo: make them with `gen/make_fab.py` (see "Remaking it" below). These
-> are the instructions we used to order it.
+> placement) are in the folders below. These are the instructions we used to order it.
 
 There are two packages, one per factory. **Always check the assembly preview before paying.**
 
