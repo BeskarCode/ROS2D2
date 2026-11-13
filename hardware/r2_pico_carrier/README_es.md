@@ -93,59 +93,12 @@ B de U1 no puede compartir bus con ellos.
 ## Pedirla
 
 > **Probada y funcionando** (noviembre de 2026): las placas que nos montó JLCPCB leen los VL53L0X y
-> los HC-SR04, y funcionan los LEDs, la pantalla y su pulsador. Los paquetes de pedido (Gerber, BOM y
-> colocación) están en las carpetas de abajo. Estas son las instrucciones que usamos nosotros para
-> encargarla.
+> los HC-SR04, y funcionan los LEDs, la pantalla y su pulsador.
 
-Hay dos paquetes, uno por fábrica. **Revisa siempre la vista previa del montaje antes de pagar.**
-
-### JLCPCB (`jlcpcb/`)
-
-1. jlcpcb.com → *Order now* → *Add gerber file* → `jlcpcb/gerber.zip`. Deja 2 capas, 1,6 mm.
-2. Activa **PCB Assembly**, cara **Top**, tipo *Economic* si lo permite (si no, *Standard*:
-   las tiras y zócalos son de agujero pasante).
-3. Sube `jlcpcb/bom.csv` y `jlcpcb/cpl.csv`.
-4. En la vista previa de colocación mira **la orientación** de D1, D2 y D5 (raya = cátodo), LED1-LED9,
-   U1, D4, **J5** (la boca del USB-C hacia el borde), J3 y **SW1** (si el pulsador sale girado 90°, queda siempre pulsado). Si alguna está
-   girada, corrígela allí mismo. Cada tira y zócalo debe verse a lo largo
-   de su fila de agujeros y centrado en ella (el CPL da el centro de cada pieza: si algo sale
-   desplazado, es un error de verdad). U1: el punto del pin 1 arriba a la izquierda, junto a C5.
-5. Comprueba que las 19 líneas del BOM tienen pieza y stock. No pagues nada que no cuadre.
-6. *Confirm Parts Placement* (en las opciones de PCB Assembly) es opcional. Con
-   *No*, JLCPCB aplica sus correcciones y fabrica sin preguntarte. Con *Yes*, tras el pago un
-   ingeniero revisa la colocación y te pide confirmarla (tienes ~3 días; si no contestas, fabrican
-   igual). El CPL ya lleva la orientación que dejaron en
-   nuestro pedido (R31-R34 a 270°), pero pueden marcar como *revisadas* tiras de pines o resistencias
-   giradas 180° o sin cambio visible: no tienen polaridad, es normal. Activa *Show Revised Items*,
-   comprueba que nada con polaridad (LEDs, diodos, U1, J5) ha cambiado y confirma.
-
-### PCBWay (`pcbway/`)
-
-1. pcbway.com → *PCB Instant Quote* → *Quick-order PCB* → sube `pcbway/gerber.zip`.
-2. Marca **Assembly** (Turnkey), cara Top.
-3. Sube `pcbway/bom.csv` y `pcbway/centroid.csv`. El BOM lleva fabricante y referencia de
-   fabricante (y, de nota, el número LCSC por si lo buscan allí).
-4. PCBWay revisa el BOM a mano y te da el precio final por correo; revisa las orientaciones en su
-   vista previa igual que arriba.
-
-### Si prefieres soldar tú las tiras de pines (`jlcpcb-sin-tiras/`, `pcbway-sin-tiras/`)
-
-La misma placa (los gerbers son idénticos), pero la fábrica no monta las 11 tiras de pines:
-J2 (pantalla), US1-US5, VL1-VL4 y J4 (EXP). El resto, zócalos de la Pico incluidos, viene montado.
-En la revisión de JLCPCB apenas queda nada que marcar. Se pide igual que arriba, con los ficheros
-de esa carpeta (17 líneas de BOM).
-
-**¿Compensa?** Poco. Montar las tiras apenas sube el precio del lote: lo caro (zócalos de la Pico,
-tarifa de piezas extendidas) se queda igual, y a cambio te ahorras soldar 11 conectores. Tú decides.
-
-Compra aparte y suéldalas por arriba, rectas, con el plástico apoyado en la placa:
-
-| Tira | Cuántas | Dónde |
-|---|---|---|
-| Macho 1×4, 2,54 mm, recta | 6 | J2, US1-US5 |
-| Macho 1×6, 2,54 mm, recta | 5 | VL1-VL4, J4 |
-
-Vale también una tira larga 1×40 cortada a medida. Suelda J2 antes que la pantalla.
+Los ficheros para fabricarla (Gerber, BOM, colocación y el diseño de la placa) no se publican en este
+repositorio. El esquema ([`renders/schematic.pdf`](renders/schematic.pdf)) y los renders están aquí
+para que veas cómo va conectada. Sin la placa, los sensores se pueden cablear a mano a la Pico:
+[`firmware/r2_pico_sensors/wiring.svg`](../../firmware/r2_pico_sensors/wiring.svg).
 
 ## Qué comprar aparte
 
@@ -157,18 +110,3 @@ Vale también una tira larga 1×40 cortada a medida. Suelda J2 antes que la pant
   H5-H8. Una vez soldada ya no se quita fácilmente.
 - Cables Dupont hembra-hembra.
 - Tiras de pines macho 1×20 para soldar a tu Pico 2 (hacia abajo), si no las tiene.
-
-## Rehacerla
-
-Todo sale de `gen/parts.py` (piezas, huellas, LCSC y la red de cada pad), con el Python de KiCad 10:
-
-```
-$KPY gen/make_sch.py     # esquema (ERC limpio)
-$KPY gen/make_pcb.py     # placa sin pistas: contorno, colocación, serigrafía
-$KPY gen/route.py        # ruteo con Freerouting (Java 25 + freerouting-2.5.0.jar)
-$KPY gen/make_fab.py     # paquetes jlcpcb/ y pcbway/ (y sus variantes -sin-tiras/)
-$KPY -m pytest gen       # comprobaciones (conexiones, esquema = parts.py, paquetes)
-kicad-cli pcb drc --schematic-parity --severity-all r2_pico_carrier.kicad_pcb
-```
-
-`$KPY` = `C:\Users\Usuario\AppData\Local\Programs\KiCad\10.0\bin\python.exe`.
