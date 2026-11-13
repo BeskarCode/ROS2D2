@@ -1,6 +1,7 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The bridge node against a FakePico on a pty (no hardware): rclpy in the test process."""
 
+import base64
 import json
 import math
 import os
@@ -43,6 +44,7 @@ class Bench:
             rclpy.parameter.Parameter("reconnect_sec", value=0.2),
             rclpy.parameter.Parameter("stale_sec", value=1.0),
             rclpy.parameter.Parameter("telemetry_timeout_sec", value=1.0),
+            rclpy.parameter.Parameter("mirror_timeout_sec", value=1.0),
             rclpy.parameter.Parameter("board_config", value=str(self.board)),
         ])
         self.ear = rclpy.create_node("ear")
@@ -52,6 +54,9 @@ class Bench:
         self.ear.create_subscription(String, "/pico/state", self._on_state, 10)
         self.ask_tm = self.ear.create_publisher(Bool, "/pico/telemetry_request", 10)
         self.cmd = self.ear.create_publisher(String, "/pico/command", 10)
+        self.ask_mir = self.ear.create_publisher(Bool, "/pico/mirror_request", 10)
+        self.mirror = []
+        self.ear.create_subscription(String, "/pico/mirror", lambda m: self.mirror.append(json.loads(m.data)), 10)
         self.ear.create_subscription(
             Bool, "/pico/connected", lambda m: setattr(self, "connected", m.data),
             QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
@@ -347,3 +352,85 @@ def test_state_says_what_the_display_shows(bench):
     assert bench.spin_until(lambda: bench.state and bench.state.get("display") == "off")
     bench.cmd.publish(String(data="DISP on US2"))
     assert bench.spin_until(lambda: bench.state.get("display") == "US2")
+
+
+# --- the board mirror (MIR, proto 3) ---------------------------------------------
+
+@pytest.fixture
+def bench3(tmp_path, monkeypatch):
+    rclpy.init()
+    b = Bench(tmp_path, monkeypatch, proto=3)
+    yield b
+    b.close()
+    rclpy.shutdown()
+
+
+def asking_mirror(b):
+    b.ask_mir.publish(Bool(data=True))
+
+
+def test_mirror_request_sends_mir_and_renews_it(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    assert "MIR 1" not in bench3.pico.lines                  # nothing until asked
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), "MIR 1" in bench3.pico.lines)[1])
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), bench3.pico.lines.count("MIR 1") >= 2)[1], 4)
+
+
+def test_two_requesters_do_not_double_mir(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), "MIR 1" in bench3.pico.lines)[1])
+    for _ in range(5):
+        asking_mirror(bench3)
+        bench3.spin_until(lambda: False, 0.1)
+    assert bench3.pico.lines.count("MIR 1") == 1             # renewed every 2 s, not per request
+
+
+def test_mirror_stops_after_the_timeout_and_on_false(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), "MIR 1" in bench3.pico.lines)[1])
+    assert bench3.spin_until(lambda: "MIR 0" in bench3.pico.lines, 3)   # nobody asks any more
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), bench3.pico.lines.count("MIR 1") == 2)[1], 3)
+    bench3.ask_mir.publish(Bool(data=False))
+    assert bench3.spin_until(lambda: bench3.pico.lines.count("MIR 0") == 2, 1)
+
+
+def test_mirror_publishes_leds_and_picture(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    def got():
+        asking_mirror(bench3)
+        return any(m.get("leds") and m.get("fb") for m in bench3.mirror)
+    assert bench3.spin_until(got)
+    m = [m for m in bench3.mirror if m.get("leds") and m.get("fb")][-1]
+    assert m["leds"] == "100010000"
+    assert base64.b64decode(m["fb"]) == FakePico.PICTURE
+    assert m["display_on"] is True and m["supported"] is True
+
+
+def test_mirror_button_press_goes_out_once(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), bench3.pico.mir)[1])
+    bench3.pico.press_button("short")
+    assert bench3.spin_until(lambda: any(m.get("btn") == "short" for m in bench3.mirror))
+    i = next(i for i, m in enumerate(bench3.mirror) if m.get("btn") == "short")
+    assert bench3.spin_until(lambda: len(bench3.mirror) > i + 1)
+    assert bench3.mirror[i + 1]["btn"] is None
+
+
+def test_press_from_the_console_reaches_the_pico(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    assert bench3.spin_until(lambda: (bench3.cmd.publish(String(data="PRESS long")), "PRESS long" in bench3.pico.lines)[1])
+
+
+def test_old_pico_has_no_mirror(bench):
+    assert bench.spin_until(lambda: bench.connected is True)
+    assert bench.spin_until(lambda: (asking_mirror(bench), bench.state.get("mirror_supported") is False)[1])
+    assert "MIR 1" not in bench.pico.lines                   # proto 2: never asked
+
+
+def test_mirror_cleared_when_the_pico_goes(bench3):
+    assert bench3.spin_until(lambda: bench3.connected is True)
+    assert bench3.spin_until(lambda: (asking_mirror(bench3), any(m.get("fb") for m in bench3.mirror))[1])
+    bench3.unplug()
+    assert bench3.spin_until(lambda: bench3.mirror[-1] == {"leds": None, "fb": None, "display_on": False,
+                                                          "btn": None, "supported": None}, 4)
+    bench3.plug()                                            # the fixture unplugs it at the end

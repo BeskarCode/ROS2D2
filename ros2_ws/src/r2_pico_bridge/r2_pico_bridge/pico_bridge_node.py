@@ -17,6 +17,7 @@ saved from the web console wins), reconnect_sec, stale_sec (no HB for this long 
 connected). The protocol is in protocol.py.
 """
 
+import base64
 import json
 import math
 import os
@@ -56,6 +57,7 @@ class PicoBridge(Node):
         self.declare_parameter("reconnect_sec", 2.0)
         self.declare_parameter("stale_sec", 3.0)
         self.declare_parameter("telemetry_timeout_sec", 5.0)
+        self.declare_parameter("mirror_timeout_sec", 5.0)
         self.declare_parameter("board_config", "")      # pico_board.yaml; "" = the user's, else the package's
         config = self.param("config") or default_config()
         self.reloader = Reloader(lambda: config_path(config))
@@ -75,6 +77,11 @@ class PicoBridge(Node):
         self.ui_pending = False     # a UI line sent, its answer not seen yet
         self.settings_supported = None   # None = not known yet; False = old firmware (ERR unknown)
         self.display = None         # what the board's display shows (DS): off, logo, all, VL1..US5
+        # the board mirror (MIR, proto 3): asked for by the console every ~2 s while System shows it
+        self.mir_asked_at = 0.0     # last request (monotonic), 0 = not asked
+        self.mir_sent_at = 0.0      # last MIR 1 written (monotonic), 0 = off
+        self.mirror_supported = None     # None = not known yet; False = firmware before 0.3.0
+        self.mirror = {"leds": None, "fb": None, "display_on": False}
         self.config_error = None
         self.last_hb = 0.0
         self.sensors = {}           # name -> settings, as last sent to the Pico
@@ -89,6 +96,8 @@ class PicoBridge(Node):
         self.pub_connected = self.create_publisher(Bool, "/pico/connected", latched)
         self.create_subscription(Bool, "/pico/telemetry_request", self.on_telemetry_request, 10)
         self.create_subscription(String, "/pico/command", self.on_command, 10)
+        self.create_subscription(Bool, "/pico/mirror_request", self.on_mirror_request, 10)
+        self.pub_mirror = self.create_publisher(String, "/pico/mirror", 10)
         # flashing: the web console asks for the port (BOOT, then it stays closed) and gives it back
         self.released = False
         self.create_service(SetBool, "/pico/release", self.on_release)
@@ -146,6 +155,8 @@ class PicoBridge(Node):
         self.tm_sent = False
         self.settings_supported = None
         self.display = None
+        self.mir_sent_at = 0.0
+        self.mirror_supported = None
         self.check_telemetry()
         return True
 
@@ -208,6 +219,18 @@ class PicoBridge(Node):
         kind = msg[0]
         if kind == "hello":
             self.firmware, self.proto, self.commit = msg[1], msg[2], msg[3]
+            if self.proto < 3:
+                self.mirror_supported = False
+            self.check_mirror()
+        elif kind == "led":
+            self.mirror["leds"] = msg[1]
+            self.publish_mirror()
+        elif kind == "fb":
+            self.mirror["fb"] = base64.b64encode(msg[1]).decode() if msg[1] else None
+            self.mirror["display_on"] = msg[1] is not None
+            self.publish_mirror()
+        elif kind == "btn":
+            self.publish_mirror(btn=msg[1])
         elif kind == "ds":
             self.display = msg[1]
         elif kind == "tm":
@@ -219,11 +242,16 @@ class PicoBridge(Node):
             if msg[1] == "UI":
                 self.ui_pending = False
                 self.settings_supported = True
+            if msg[1] == "MIR":
+                self.mirror_supported = True
             if not msg[2]:
                 self.get_logger().warning(f"pico: {msg[1]} ERR {msg[3]}")
         elif kind == "cfg_err":
             self.config_error = msg[1]
             self.get_logger().error(f"the Pico refused the sensors: {msg[1]}", throttle_duration_sec=60.0)
+        elif kind == "err" and self.mir_sent_at and self.mirror_supported is None and msg[1] == "unknown":
+            self.mirror_supported = False       # a firmware before 0.3.0: no mirror
+            self.mir_sent_at = 0.0
         elif kind == "err" and self.ui_pending and msg[1] == "unknown":
             self.ui_pending = False             # a firmware before 0.2.0: no UI, DISP or ID
             self.settings_supported = False
@@ -336,6 +364,36 @@ class PicoBridge(Node):
             self._write("TM 0\n")
             self.publish_state()
 
+    # --- the board mirror -------------------------------------------------------------
+
+    MIR_RENEW_SEC = 2.0
+
+    def on_mirror_request(self, msg):
+        self.mir_asked_at = time.monotonic() if msg.data else 0.0
+        self.check_mirror()
+
+    def check_mirror(self):
+        """MIR 1 every 2 s while the console keeps asking, MIR 0 once it stops (or says False)."""
+        now = time.monotonic()
+        want = self.mir_asked_at and now - self.mir_asked_at < self.param("mirror_timeout_sec")
+        if self.mirror_supported is False:
+            return
+        if want and self.ser is not None and now - self.mir_sent_at >= self.MIR_RENEW_SEC:
+            if self._write("MIR 1" + NL):
+                self.mir_sent_at = now
+        elif not want and self.mir_sent_at:
+            self.mir_sent_at = 0.0
+            self._write("MIR 0" + NL)
+
+    def publish_mirror(self, btn=None):
+        m = dict(self.mirror, btn=btn, supported=self.mirror_supported)
+        self.pub_mirror.publish(String(data=json.dumps(m)))
+
+    def clear_mirror(self):
+        """The Pico went: nothing old on the console's board."""
+        self.mirror = {"leds": None, "fb": None, "display_on": False}
+        self.pub_mirror.publish(String(data=json.dumps(dict(self.mirror, btn=None, supported=None))))
+
     # --- state ----------------------------------------------------------------------
 
     def is_connected(self):
@@ -346,6 +404,8 @@ class PicoBridge(Node):
         if connected != self.connected:
             self.connected = connected
             self.pub_connected.publish(Bool(data=connected))
+            if not connected:
+                self.clear_mirror()
             self.publish_state()
 
     def publish_state(self, always=False):
@@ -354,7 +414,8 @@ class PicoBridge(Node):
             state = {"connected": self.is_connected(), "firmware": self.firmware, "proto": self.proto,
                      "commit": self.commit, "config_error": self.config_error,
                      "sensors": dict(self.status), "telemetry": fresh_tm,
-                     "settings_supported": self.settings_supported, "display": self.display}
+                     "settings_supported": self.settings_supported, "display": self.display,
+                     "mirror_supported": self.mirror_supported}
         text = json.dumps(state)
         if always or text != self.last_json:
             self.last_json = text
@@ -364,6 +425,7 @@ class PicoBridge(Node):
         self.reload()
         self.reload_board()
         self.check_telemetry()
+        self.check_mirror()
         self.publish_state(always=True)
 
     def destroy_node(self):
