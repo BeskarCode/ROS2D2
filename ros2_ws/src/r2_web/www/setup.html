@@ -255,11 +255,11 @@
   /* System: the live strip and the mirror of the Pico board */
   .syslive { margin-bottom: 18px; }
   /* System: the Pico board on the left, its settings on the right; one column (board first) when narrow */
-  .syscols { display: grid; grid-template-columns: minmax(0, 640px) minmax(380px, 1fr); gap: 24px; align-items: start; }
+  .syscols { display: grid; grid-template-columns: minmax(0, 540px) minmax(380px, 1fr); gap: 40px; align-items: start; }
   .syscols .syslive { position: sticky; top: 12px; margin-bottom: 0; }
   .syscols .sysside > .help:first-child { margin-top: 0; }
   .syscols .sysside .sysh:first-of-type { margin-top: 10px; }
-  @media (max-width: 1100px) { .syscols { grid-template-columns: minmax(0, 1fr); } .syscols .syslive { position: static; margin-bottom: 18px; } }
+  @media (max-width: 1000px) { .syscols { grid-template-columns: minmax(0, 1fr); } .syscols .syslive { position: static; margin-bottom: 18px; } }
   .syslive .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
   .syslive .piece { border: 2px solid #3fb950; background: #12261a; border-radius: 8px; padding: 5px 10px; min-width: 96px; }
   .syslive .piece.off { border-color: #484f58; background: #161b22; color: #8b949e; }
@@ -270,20 +270,20 @@
   .syslive .wire { font: 600 10px ui-monospace, monospace; color: #3fb950; border-top: 3px solid #3fb950; padding: 0 6px; }
   .syslive .wire.off { color: #484f58; border-color: #484f58; }
   /* the Pico board to scale (80 x 90 mm): parts placed in % by boardview.js, text sized in mm (1 mm = 1.25cqw) */
-  .syslive .pcb { position: relative; container-type: inline-size; width: 100%; max-width: 640px; aspect-ratio: 80 / 90;
+  .syslive .pcb { position: relative; container-type: inline-size; width: 100%; max-width: 500px; aspect-ratio: 80 / 90;
                   background: #12408f; border: 2px solid #0b2a63; border-radius: 10px; color: #dbe7ff; overflow: hidden; }
   .syslive .pcb > * { position: absolute; }
   .syslive .pcb.dead { filter: grayscale(1) brightness(.6); }
   .syslive .pcb-name { font: 700 2.6cqw/1 system-ui, sans-serif; color: #fff; }
-  .syslive .pcb-txt { font: 600 1.75cqw/1 system-ui, sans-serif; color: #fff; white-space: nowrap; }
+  .syslive .pcb-txt { font: 600 max(1.75cqw, 9px)/1 system-ui, sans-serif; color: #fff; white-space: nowrap; }
   .syslive .pcb-txt.foot { font-weight: 500; }
-  .syslive .pcb-val { font: 1.75cqw/1 ui-monospace, monospace; color: #cfe0ff; background: rgba(0,0,0,.35); padding: .4cqw .8cqw; border-radius: .6cqw; white-space: nowrap;
+  .syslive .pcb-val { font: max(1.75cqw, 9px)/1 ui-monospace, monospace; color: #cfe0ff; background: rgba(0,0,0,.35); padding: .4cqw .8cqw; border-radius: .6cqw; white-space: nowrap;
                      border-left: .8cqw solid transparent; }
   .syslive .pcb-hdr { display: flex; background: #1a1a1a; border: .15cqw solid #444; box-sizing: border-box; }
   .syslive .pcb-hdr i { flex: 1; display: grid; place-items: center; }
   .syslive .pcb-hdr i::after { content: ''; width: 1.1cqw; height: 1.1cqw; background: #d4b13a; }
   .syslive .pcb-pins { display: flex; align-items: center; }
-  .syslive .pcb-pins span { flex: 1; text-align: center; font: 600 1.45cqw/1 system-ui, sans-serif; color: #fff; white-space: nowrap; }
+  .syslive .pcb-pins span { flex: 1; text-align: center; font: 600 max(1.45cqw, 7.5px)/1 system-ui, sans-serif; color: #fff; white-space: nowrap; }
   .syslive .pcb-led { width: 2cqw; height: 2cqw; border-radius: 50%; background: #3a1414; border: 1px solid #000; transform: translate(-50%, -50%); }
   .syslive .pcb-led.on { background: #ff3b30; box-shadow: 0 0 1.2cqw #ff3b30; }
   .syslive .pcb-led.pico { background: #0e2a12; }
