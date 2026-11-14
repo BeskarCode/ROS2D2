@@ -150,3 +150,55 @@ def test_marker_hidden_behind_box():
     w.apply({"op": "add", "kind": "low", "x": 1.0, "y": 0.0})
     w.apply({"op": "remove", "id": 2})
     assert w.marker_view(ORIGIN)["seen"]                               # a low box does not hide a shirt
+
+
+# ---------- room presets ----------
+from r2_sim.world import ROOMS  # noqa: E402
+
+
+@pytest.mark.parametrize("name", sorted(ROOMS))
+def test_every_preset_start_is_free(name):
+    w = World.preset(name)
+    assert not blocked_move(w, w.pose)
+    assert w.obstacles, name
+
+
+def test_presets_are_the_four_rooms_and_the_default():
+    assert {"default", "living", "corridor", "rooms", "event"} <= set(ROOMS)
+
+
+def test_room_op_loads_and_reset_returns_to_it():
+    w = World.default()
+    w.noise = False
+    assert w.apply({"op": "room", "name": "corridor"}) is None
+    assert w.room == World.preset("corridor").room
+    assert w.noise is False                                       # kept
+    start = list(w.pose)
+    w.apply({"op": "add", "kind": "post", "x": 0.0, "y": 0.0})
+    w.pose = [0.0, 0.0, 0.0]
+    w.apply({"op": "reset"})
+    assert w.pose == start
+    assert len(w.obstacles) == len(World.preset("corridor").obstacles)
+
+
+def test_room_op_unknown_name():
+    err = World.default().apply({"op": "room", "name": "kitchen"})
+    assert err and "corridor" in err
+
+
+def test_wall_is_hit_at_lidar_height():
+    w = World.empty()
+    w.apply({"op": "add", "kind": "wall", "x": 1.0, "y": 0.0, "w": 0.1, "h": 2.0})
+    assert w.cast(0.0, 0.0, 0.0, 5.0, lambda d: 0.245) == pytest.approx(0.95)
+    assert blocked_move(w, (0.8, 0.0, 0.0))
+
+
+def test_event_has_a_person_with_a_shirt():
+    w = World.preset("event")
+    assert any(o.get("marker") and o["kind"] == "post" and o["r"] >= 0.15 for o in w.obstacles)
+
+
+def test_room_name_travels_in_json():
+    w = World.preset("living")
+    assert json.loads(w.to_json())["name"] == "living"
+    assert World.from_json(w.to_json()).name == "living"
