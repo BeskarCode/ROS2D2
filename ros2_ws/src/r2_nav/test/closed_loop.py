@@ -28,9 +28,13 @@ def lidar_points(sim, world, pose, lidar):
 
 
 def drive(world, sensors, goal, cfg=None, seconds=120.0, seed=1, dt=0.1):
+    """goal: (x, y) for Go to a point, or None for Go forward (along R2's heading)."""
     cfg = cfg or parse_nav("")
     nav = Navigator(cfg, sensors)
-    nav.set_goal(*goal)
+    if goal is None:
+        nav.start_forward(world.pose[2])
+    else:
+        nav.set_goal(*goal)
     sim = SensorSim(seed)
     filters = {}
     v_out = w_out = 0.0

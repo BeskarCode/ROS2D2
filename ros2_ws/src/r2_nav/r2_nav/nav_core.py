@@ -62,6 +62,11 @@ TURN_UNITS_PER_RADPS = 30  # and rad/s * 30
 SIDE_SLOW_MIN = 0.3        # things beside the path slow R2 down to this fraction at most
 FLOOR_NEAR = 0.8         # floor sensor reading below 80% of the floor: something low in the way
 FLOOR_FAR = 1.4          # above 140% of the floor (or no echo): a step down or a hole
+SEARCH_TURN = 0.5        # Go forward, boxed in: turns on the spot at this fraction of max_turn
+SEARCH_FREE = 0.3        # m beyond safety_radius that must be free ahead to leave that way
+SEARCH_WIDE = 60         # deg: a way out further off to a side than this is searched for slowly
+SEARCH_NEAR = 0.1        # m beyond safety_radius: closer than this ahead counts as boxed in
+FORWARD_STUCK = 8.0      # s without moving 0.15 m in Go forward: search for a way out
 
 
 class NavConfigError(ValueError):
@@ -289,6 +294,7 @@ class Navigator:
         self.last_t = None
         self.last_obstacle = -1e9
         self.floor_seen = set()        # floor sensors that have given a reading since start-up
+        self.forward_th = None         # Go forward: the heading it travels along (odom), or None
 
     def _reset_try_state(self):
         self.phase = None
@@ -301,15 +307,29 @@ class Navigator:
         self.best_t = None
         self.try_d = math.inf          # the closest it had been to the goal at the last failed try
         self.closest = math.inf        # the closest it has been to the goal
+        self.searching = False         # Go forward: turning slowly to find a way out
+        self.search_dir = 0
+        self.turned = 0.0              # rad turned while searching
+        self.last_th = None
+        self.moved_at = None           # Go forward: (time, x, y) of the last 0.15 m of progress
 
     def set_goal(self, x, y):
+        self.forward_th = None
         self.goal = (x, y)
         self.gave_up = None
         self.tries = 0
         self._reset_try_state()
 
+    def start_forward(self, th):
+        """Go forward: drive along heading th (odom), steering round things; boxed in, turn
+        slowly to find a way out and carry on that way; a full turn with none: give up."""
+        self.goal, self.gave_up, self.tries = None, None, 0
+        self._reset_try_state()
+        self.forward_th = th
+
     def cancel(self):
         self.goal = None
+        self.forward_th = None
         self._reset_try_state()
 
     def reconfigure(self, cfg=None, sensors=None):
@@ -321,6 +341,90 @@ class Navigator:
 
     def _rear(self):
         return next((n for n, s in self.sensors.items() if not is_lidar(s) and not is_floor(s) and abs(s["yaw_deg"]) > 150), None)
+
+    def _sense(self, now, scan_xy, ranges, stops, d):
+        """What is around: obstacle points (base_link), the front or floor sensor that says
+        stop (or None) and, for a floor sensor, why. Adds the "obstacle" event to d."""
+        front = self._front()
+        pts = points_from(scan_xy, ranges, self.sensors)
+        too_close = next((n for n in front if ranges.get(n) is not None and stops[n] > 0 and ranges[n] < stops[n]), None)
+        floor_why = None
+        if too_close is None:
+            for n, s in self.sensors.items():
+                if is_floor(s) and ranges.get(n) is not None:
+                    self.floor_seen.add(n)
+                # no echo before the first reading is the filter starting up, not a drop
+                if is_floor(s) and n in self.floor_seen and n in ranges and floor_problem(s, ranges[n]):
+                    too_close, floor_why = n, floor_problem(s, ranges[n])
+                    break
+        near = min((ranges[n] for n in front if ranges.get(n) is not None), default=math.inf)
+        if near < self.cfg["slow_from"] and now - self.last_obstacle >= OBSTACLE_QUIET:
+            self.last_obstacle = now
+            d.events.append("obstacle")
+        return pts, too_close, floor_why
+
+    def _limits(self):
+        cfg = self.cfg
+        wm = min(math.radians(cfg["max_turn_deg"]), cfg["max_turn_power"] / TURN_UNITS_PER_RADPS)
+        vmax = min(cfg["max_speed"], cfg["max_drive_power"] / DRIVE_UNITS_PER_MPS)
+        return wm, vmax
+
+    def _step_forward(self, now, pose, scan_xy, ranges, stops, d):
+        """Go forward: one decision (see start_forward)."""
+        cfg = self.cfg
+        if scan_xy is None and not any(n in ranges for n in self._front()):
+            d.state, d.why = "no data", "no lidar and no front sensor reporting: not moving blind"
+            return d
+        th = pose[2]
+        pts, too_close, floor_why = self._sense(now, scan_xy, ranges, stops, d)
+        R = cfg["safety_radius"]
+        wm, vmax = self._limits()
+        if self.searching:
+            if self.last_th is not None:
+                self.turned += abs(wrap(th - self.last_th))
+            self.last_th = th
+            if too_close is None and clearance(pts, 0.0) >= R + SEARCH_FREE:
+                # a way out straight ahead: carry on along it
+                self.searching, self.turned, self.last_th, self.search_dir = False, 0.0, None, 0
+                self.forward_th = th
+            elif self.turned >= 2 * math.pi:
+                self.gave_up = "no way out after a full turn: stopped"
+                self.forward_th = None
+                self._reset_try_state()
+                d.state, d.why = "gave up", self.gave_up
+                d.events.append("give_up")
+                return d
+            else:
+                side = "left" if self.search_dir > 0 else "right"
+                d.w = SEARCH_TURN * wm * self.search_dir
+                d.state, d.heading = "searching", 0.0
+                d.why = f"boxed in: turning {side} slowly to find a way out ({math.degrees(self.turned):.0f} of 360 deg)"
+                if too_close:
+                    d.why = f"STOP: {too_close}{': ' + floor_why if floor_why else ''}; " + d.why
+                return d
+        want = wrap(self.forward_th - th)
+        heading, clear = choose_heading(pts, want, cfg)
+        # boxed in, the only way is well off to a side, or not getting anywhere: search slowly
+        x, y = pose[0], pose[1]
+        if self.moved_at is None or math.hypot(x - self.moved_at[1], y - self.moved_at[2]) >= 0.15:
+            self.moved_at = (now, x, y)
+        stuck = now - self.moved_at[0] > FORWARD_STUCK
+        if too_close is not None or clear < R + SEARCH_NEAR or abs(heading) > math.radians(SEARCH_WIDE) or stuck:
+            self.moved_at = None
+            self.searching, self.turned, self.last_th = True, 0.0, th
+            self.search_dir = 1 if clearance(pts, math.radians(60)) >= clearance(pts, math.radians(-60)) else -1
+            d.events.append("blocked")
+            d.w = SEARCH_TURN * wm * self.search_dir
+            d.state, d.heading = "searching", 0.0
+            d.why = f"blocked{' by ' + too_close if too_close else ''}: turning slowly to find a way out"
+            return d
+        slow = lambda dist: max(0.0, min(1.0, (dist - R) / cfg["slow_from"]))   # noqa: E731
+        d.v = vmax * min(slow(clear), max(SIDE_SLOW_MIN, slow(nearest_ahead(pts)))) * max(0.0, math.cos(heading))
+        d.w = max(-wm, min(wm, 1.0 * heading))
+        d.heading = heading
+        d.state = "forward"
+        d.why = "going forward" if abs(wrap(heading - want)) <= math.radians(12) else "going forward, steering round an obstacle"
+        return d
 
     def step(self, now, pose, scan_xy, ranges, auto_on, speed=0.0):
         """One decision. scan_xy: lidar points in base_link, or None when the lidar is silent.
@@ -342,6 +446,8 @@ class Navigator:
         if not auto_on:
             d.state, d.why = "manual", "autonomous mode off: the controller drives"
             return d
+        if self.forward_th is not None:
+            return self._step_forward(now, pose, scan_xy, ranges, stops, d)
         if self.goal is None:
             d.state = "gave up" if self.gave_up else "idle"
             d.why = self.gave_up or "no goal"
@@ -361,27 +467,11 @@ class Navigator:
             d.events.append("arrived")
             return d
         want = wrap(math.atan2(gy - y, gx - x) - th)
-        pts = points_from(scan_xy, ranges, self.sensors)
+        pts, too_close, floor_why = self._sense(now, scan_xy, ranges, stops, d)
         heading, clear = choose_heading(pts, want, cfg)
-        too_close = next((n for n in front if ranges.get(n) is not None and stops[n] > 0 and ranges[n] < stops[n]), None)
-        floor_why = None
-        if too_close is None:
-            for n, s in self.sensors.items():
-                if is_floor(s) and ranges.get(n) is not None:
-                    self.floor_seen.add(n)
-                # no echo before the first reading is the filter starting up, not a drop
-                if is_floor(s) and n in self.floor_seen and n in ranges and floor_problem(s, ranges[n]):
-                    too_close, floor_why = n, floor_problem(s, ranges[n])
-                    break
-
-        near = min((ranges[n] for n in front if ranges.get(n) is not None), default=math.inf)
-        if near < cfg["slow_from"] and now - self.last_obstacle >= OBSTACLE_QUIET:
-            self.last_obstacle = now
-            d.events.append("obstacle")
 
         R = cfg["safety_radius"]
-        wm = min(math.radians(cfg["max_turn_deg"]), cfg["max_turn_power"] / TURN_UNITS_PER_RADPS)
-        vmax = min(cfg["max_speed"], cfg["max_drive_power"] / DRIVE_UNITS_PER_MPS)
+        wm, vmax = self._limits()
         w = max(-wm, min(wm, 1.0 * heading))
         # slower the closer things are: fully for what is in the way, partly for what is beside it
         slow = lambda dist: max(0.0, min(1.0, (dist - R) / cfg["slow_from"]))   # noqa: E731
