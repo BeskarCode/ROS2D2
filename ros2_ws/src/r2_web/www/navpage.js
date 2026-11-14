@@ -143,7 +143,11 @@ function showRooms() {
   }
   if (P.world.name && document.activeElement !== sel) sel.value = P.world.name;
 }
-$('room').onchange = () => { worldCmd({ op: 'room', name: $('room').value }); P.trail = []; addLine(`· room: ${$('room').selectedOptions[0].textContent}`, 'info'); };
+$('room').onchange = () => {
+  worldCmd({ op: 'room', name: $('room').value });
+  P.trail = [];
+  if (P.route.length) { P.route = []; sendRoute(); }          // the old route's points mean nothing in another room
+  addLine(`· room: ${$('room').selectedOptions[0].textContent}`, 'info'); };
 $('modebtns').innerHTML = MODES.map(([m, icon, label]) =>
   `<button data-mode="${m}" title="${label}: on (press again: off)"><i class="fa-solid ${icon}"></i>${label}</button>`).join('');
 $('modebtns').querySelectorAll('button').forEach((b) => { b.onclick = () => worldCmd({ op: 'press', what: `mode:${b.dataset.mode}` }); });
