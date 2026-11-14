@@ -343,8 +343,11 @@ def write_guide(lang, table, path):
     L += ["", f"## {t['angled']}", "", f"![](montaje/img/conectores_{lang}.svg)"]
     for s in STEPS:
         hw = step_hw(table, s["n"], lang)
-        L += ["", f"## {s['n']} · {s[lang]['title']}", "", f"![](montaje/img/paso{s['n']}.png)", "",
-              f"**{t['you_need']}:** {', '.join(hw) if hw else t['nothing']}", "", s[lang]["text"]]
+        L += ["", f"## {s['n']} · {s[lang]['title']}", "", f"![](montaje/img/paso{s['n']}.png)", ""]
+        L += [x for v in s.get("extra_views", []) for x in (f"![](montaje/img/{v}.png)", "")]   # optional 2nd angle
+        L += [f"**{t['you_need']}:** {', '.join(hw) if hw else t['nothing']}", "", s[lang]["text"]]
+        if s[lang].get("list"):                         # optional bullet list after the text
+            L += [""] + [f"- {item}" for item in s[lang]["list"]]
     path.write_text("\n".join(L) + "\n", encoding="utf8")
 
 
@@ -362,9 +365,13 @@ def write_html(lang, table, path):
     for s in STEPS:
         hw = step_hw(table, s["n"], lang)
         chips = "".join(f"<span class=chip>{e(h)}</span>" for h in hw) or f"<span class=none>{t['nothing']}</span>"
-        txt = re.sub(r"`([^`]+)`", r"<code>\1</code>", e(s[lang]["text"]))
+        md = lambda x: re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", re.sub(r"`([^`]+)`", r"<code>\1</code>", e(x)))
+        txt = md(s[lang]["text"])
+        if s[lang].get("list"):                         # optional bullet list after the text
+            txt += "</p><ul>" + "".join(f"<li>{md(x)}</li>" for x in s[lang]["list"]) + "</ul><p>"
         steps += (f"<section class=step><div class=num>{s['n']}</div><h2>{e(s[lang]['title'])}</h2>"
-                  f"<img src='{img('paso%d' % s['n'])}'><div class=hw>{chips}</div><p>{txt}</p></section>")
+                  f"<div class=views><img src='{img('paso%d' % s['n'])}'>"
+                  + "".join(f"<img src='{img(v)}'>" for v in s.get("extra_views", [])) + f"</div><div class=hw>{chips}</div><p>{txt}</p></section>")
     doc = f"""<!doctype html><html lang={lang}><meta charset=utf-8><title>{e(t['title'])}</title>
 <style>
 @page {{ size: A4; margin: 12mm 12mm 16mm;
@@ -378,6 +385,7 @@ td, th {{ border-bottom: 1px solid #ddd; padding: 1.2mm 2mm; text-align: left; v
 .step {{ position: relative; page-break-inside: avoid; border: 1.5px solid #222; border-radius: 3mm;
         padding: 4mm 4mm 3mm 22mm; margin: 0 0 5mm; min-height: 110mm; }}
 .step img {{ width: 100%; max-height: 95mm; object-fit: contain; }}
+.views {{ display: flex; gap: 2mm; }} .views img {{ flex: 1; min-width: 0; }}
 .num {{ position: absolute; left: 4mm; top: 3mm; font-size: 30pt; font-weight: 800; }}
 .chip {{ display: inline-block; border: 1.5px solid #222; border-radius: 2mm; padding: .6mm 2mm; margin: 0 1.5mm 1.5mm 0;
         font-weight: 600; }}

@@ -76,9 +76,17 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 
 ![](montaje/img/paso1.png)
 
+![](montaje/img/paso1_pi.png)
+
 **You need:** 19× M3 insert, 4× M2.5 insert
 
-With the iron at about 220 °C press the inserts in straight and flush. On the main face, 7 M3: 4 in the columns, 2 in the bottom tabs and 1 in the top tab; plus 2 M3 from outside in the XT60's holes. On the base, 10 M3: 2 on top of the divider, 2 in the divider for the converter, 2 in the floor blocks and 4 from outside the back (2 for the frame, 2 for the HDMI); and the 4 M2.5 in the Pi's standoffs.
+With the iron at about 220 °C press the inserts in straight and flush. There are two sizes and they don't swap: 19 M3 (5.7 mm long, 4.0 mm hole) and 4 M2.5 (5 mm long, 3.6 mm hole), the small ones. In the picture, M3 in gold and M2.5 in red.
+
+- **M3** · main face, inside (7): 4 in the Pico board's columns, 2 in the bottom tabs and 1 in the top tab.
+- **M3** · main face, outside (2): the XT60's 2 holes.
+- **M3** · base, inside (6): 2 on top of the divider, 2 in the divider for the converter and 2 in the floor blocks.
+- **M3** · back of the base, outside (4): 2 for the Pi's frame and 2 for the HDMI.
+- **M2.5** · base (4): the Pi's 4 standoffs. They are the box's only M2.5.
 
 ## 2 · Converter onto the divider, high
 
