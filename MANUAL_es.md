@@ -51,6 +51,8 @@ lista, *Clear* la vacía y *show replies* oculta o muestra las respuestas.
 
 ![La página Navigation: mapa, R2 en 3D y lecturas](media/console-navigation.gif)
 
+Vídeo de todos los modos en el simulador: <https://youtu.be/Smfn6zQICm0>
+
 **Navigation (mapa)**: el suelo alrededor de R2 visto desde arriba. Los puntos del lidar son cian,
 el haz de cada sensor va en su color, y el círculo verde discontinuo es el hueco libre alrededor de
 R2 (con la distancia, *36 cm free*). **Haz clic en el suelo** para mandar a R2 allí (el destino es
@@ -189,7 +191,7 @@ cámaras lo busca la Pi en el vídeo, como antes.
 
 ### Setup → System
 
-![Setup, System](media/manual/setup-system.png)
+![Setup, System: la pantalla se enciende, se elige una pantalla, el botón DISPLAY y un LED identificado](media/manual/setup-system.gif)
 
 La pestaña va en dos columnas: a la izquierda la tira y la placa, a la derecha la telemetría y
 los ajustes; en pantallas estrechas, la placa arriba y los ajustes debajo.

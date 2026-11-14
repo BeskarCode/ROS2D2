@@ -677,8 +677,8 @@ export function createSensorsTab({ status }) {
   addEventListener('keydown', (e) => { if (e.key === 'Escape') setMax(false); });
   const modelSel = $('s-model');
   modelSel.innerHTML = Object.entries(MODELS).map(([k, m]) => `<option value="${k}">${m.label}</option>`).join('');
-  let pref = { model: 'simple', view: 'both' };
-  try { pref = { model: localStorage.getItem('r2web.model') || 'simple', view: localStorage.getItem('r2web.sensorView') || 'both' }; } catch { /* private window */ }
+  let pref = { model: 'vladimirov', view: 'both' };
+  try { pref = { model: localStorage.getItem('r2web.model') || 'vladimirov', view: localStorage.getItem('r2web.sensorView') || 'both' }; } catch { /* private window */ }
   modelSel.value = MODELS[pref.model] ? pref.model : 'simple';
   modelSel.addEventListener('change', () => view3d.setModel(modelSel.value).catch((e) => status(`Could not load the model: ${e}`, 'bad')));
   view3d.setModel(modelSel.value).catch(() => {});

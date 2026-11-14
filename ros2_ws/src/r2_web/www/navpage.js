@@ -154,6 +154,7 @@ $('room').onchange = () => {
 // the mode PS + L2 starts, which is on, Stop; in simulation also the fake controller's PS + L2
 createModePick($('modepick'), { onPress: () => worldCmd({ op: 'press', what: 'button' }), log: (t) => addLine(t, 'info') });
 $('modepick').querySelector('.mp-press').classList.add('simonly');
+$('modepick').querySelector('.mp-press').hidden = $('simpill').hidden;     // made after simMode(false) ran
 function setClick(route) {
   P.clickRoute = route;
   $('click-goal').classList.toggle('on', !route);
@@ -309,8 +310,8 @@ $('bar3d').innerHTML = `<label class="chk"><input type="checkbox" id="follow" ch
   <span class="hint" style="padding:0">drag to orbit · wheel to zoom</span>`;
 $('follow').onchange = () => { view3d.opts.follow = $('follow').checked; view3d.redraw(); };
 $('room3d').onchange = () => { view3d.opts.room = $('room3d').checked; view3d.redraw(); };
-let model = 'simple';
-try { model = localStorage.getItem('r2web.model') || 'simple'; } catch { /* private window */ }
+let model = 'vladimirov';
+try { model = localStorage.getItem('r2web.model') || 'vladimirov'; } catch { /* private window */ }
 $('model3d').value = MODELS[model] ? model : 'simple';
 const pickModel = () => {
   try { localStorage.setItem('r2web.model', $('model3d').value); } catch { /* private window */ }

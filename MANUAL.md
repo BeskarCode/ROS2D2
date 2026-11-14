@@ -49,6 +49,8 @@ Below: how many faces it sees, the best score and where the best one is.
 
 ![The Navigation page: map, R2 in 3D and readings](media/console-navigation.gif)
 
+Video of every mode in the simulator: <https://youtu.be/Smfn6zQICm0>
+
 **Navigation (map)**: the floor around R2 seen from above. The lidar's points are cyan, each
 sensor's beam is drawn in its colour, and the green dashed circle is the free space round R2 (with
 the distance, *36 cm free*). **Click the floor** to send R2 there (the goal is a green flag);
@@ -179,7 +181,7 @@ the video, as before.
 
 ### Setup → System
 
-![Setup, System](media/manual/setup-system.png)
+![Setup, System: the display switched on, a screen picked, the DISPLAY button and a LED identified](media/manual/setup-system.gif)
 
 The tab has two columns: the strip and the board on the left, telemetry and the settings on the
 right; on narrow screens, the board on top and the settings below it.
