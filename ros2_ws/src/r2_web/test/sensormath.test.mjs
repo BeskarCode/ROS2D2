@@ -203,3 +203,10 @@ test('lastFrontInUse: a floor sensor does not count as looking ahead', () => {
   const floor = { ...tof({ yaw_deg: 0, pitch_deg: 40 }), name: 'tof_floor' };
   assert.equal(lastFrontInUse([a, floor], 'tof_front'), true);
 });
+
+import { sensorColour } from '../www/sensormath.js';
+test("sensorColour: the sensor's own colour, else its type's", () => {
+  assert.equal(sensorColour({ type: 'vl53l0x' }), '#a371f7');
+  assert.equal(sensorColour({ type: 'vl53l0x', colour: '#FF8800' }), '#ff8800');
+  assert.equal(sensorColour({ type: 'hcsr04', colour: 'red' }), '#f0b429');
+});

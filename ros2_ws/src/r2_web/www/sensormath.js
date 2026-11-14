@@ -228,6 +228,12 @@ export function blindSectorsBase(s) {
 }
 
 /** A lidar setting as sensors.yaml writes it (lists in flow style). */
+/** A sensor's own colour (colour: "#rrggbb" in sensors.yaml), else its type's. */
+export const COLOUR_RE = /^#[0-9a-fA-F]{6}$/;
+export function sensorColour(s) {
+  return s && typeof s.colour === 'string' && COLOUR_RE.test(s.colour) ? s.colour.toLowerCase() : TYPES[s.type].colour;
+}
+
 export function lidarYamlValue(v) {
   return Array.isArray(v) ? JSON.stringify(v).replace(/,/g, ', ') : String(v);
 }
