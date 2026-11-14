@@ -134,4 +134,4 @@ Lower it from above and fit the 3 roof screws and the 2 side screws. Air comes i
 
 **You need:** 4× M4 × 12
 
-Bring the micro-USB out of the notch in the back into a Pi USB port. Screw the box to the R2 through its 4 ears.
+Bring the micro-USB out of the notch in the back, down the outside, and plug its USB-A into a Pi USB port: it is the plug you see outside the box in the picture (it is not loose). Through it the Pi gets the sensor data and flashes the Pico firmware. Screw the box to the R2 through its 4 ears.
