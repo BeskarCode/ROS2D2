@@ -49,7 +49,7 @@ lista, *Clear* la vacía y *show replies* oculta o muestra las respuestas.
 
 ## Navigation
 
-![La página Navigation: mapa, R2 en 3D y lecturas](media/console-navigation.gif)
+![La página Navigation: mapa, R2 en 3D y lecturas](media/console-navigation-modes.gif)
 
 Vídeo de todos los modos en el simulador: <https://youtu.be/Smfn6zQICm0>
 
@@ -131,7 +131,7 @@ cambiar el orden necesita **Save and restart**.
 
 ### Setup → Sensors
 
-![Setup, Sensors](media/console-sensors.gif)
+![Setup, Sensors](media/console-sensors-setup.gif)
 
 R2 visto desde arriba, a escala (anillos cada 50 cm), y R2 en 3D (*Top*, *3D* o *Both*).
 
