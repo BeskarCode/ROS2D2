@@ -119,9 +119,11 @@ g.STEPS = [
      "en": {"title": "Shell", "text": "Lower it from above and fit the 3 roof screws and the 2 side screws. Air comes in "
             "through the low vents (front and side, by the Pi) and leaves through the high ones and the roof."}},
     {"n": 8,
-     "es": {"title": "USB y fijación al R2", "text": "Saca el micro-USB por la muesca de la trasera y enchúfalo en un USB de "
-            "la Pi. Atornilla la caja al R2 por sus 4 orejetas."},
-     "en": {"title": "USB and onto the R2", "text": "Bring the micro-USB out of the notch in the back into a Pi USB port. "
+     "es": {"title": "USB y fijación al R2", "text": "Saca el micro-USB por la muesca de la trasera, bájalo por fuera y enchufa su USB-A en un USB "
+            "de la Pi: es el conector que se ve fuera de la caja en el dibujo (no está suelto). Por él la Pi recibe los sensores y flashea el firmware de la Pico. "
+            "Atornilla la caja al R2 por sus 4 orejetas."},
+     "en": {"title": "USB and onto the R2", "text": "Bring the micro-USB out of the notch in the back, down the outside, and plug its USB-A into a Pi "
+            "USB port: it is the plug you see outside the box in the picture (it is not loose). Through it the Pi gets the sensor data and flashes the Pico firmware. "
             "Screw the box to the R2 through its 4 ears."}},
 ]
 g.NAMES = dict(g.NAMES, ins_m25=("Inserto térmico M2,5 (5 mm de largo, agujero de 3,6 mm)", "M2.5 heat-set insert (5 mm long, 3.6 mm hole)"),

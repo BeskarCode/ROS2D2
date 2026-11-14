@@ -134,4 +134,4 @@ Bájala desde arriba y pon los 3 tornillos del techo y los 2 del lateral. El air
 
 **Necesitas:** 4× M4 × 12
 
-Saca el micro-USB por la muesca de la trasera y enchúfalo en un USB de la Pi. Atornilla la caja al R2 por sus 4 orejetas.
+Saca el micro-USB por la muesca de la trasera, bájalo por fuera y enchufa su USB-A en un USB de la Pi: es el conector que se ve fuera de la caja en el dibujo (no está suelto). Por él la Pi recibe los sensores y flashea el firmware de la Pico. Atornilla la caja al R2 por sus 4 orejetas.
