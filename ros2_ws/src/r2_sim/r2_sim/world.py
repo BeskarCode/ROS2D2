@@ -90,13 +90,13 @@ ROOMS = {
     },
     # a living room: sofa, a table and two chairs (only their legs), a low box on the floor
     "living": {
-        "room": (-3.0, 3.0, -2.5, 2.5),
-        "obstacles": [{"id": 1, "kind": "box", "x": 0.0, "y": 2.0, "w": 2.0, "h": 0.9, "height": 0.8}]
+        "room": (-3.5, 3.5, -3.0, 3.0),
+        "obstacles": [{"id": 1, "kind": "box", "x": 0.0, "y": 2.5, "w": 2.0, "h": 0.9, "height": 0.8}]
         + _legs(0.8, -0.6, 1.2, 0.8, 2)
         + _legs(0.8, -1.4, 0.4, 0.4, 6, 0.45) + _legs(0.8, 0.2, 0.4, 0.4, 10, 0.45)
         + [{"id": 14, "kind": "low", "x": -1.0, "y": -0.8, "w": 0.35, "h": 0.35, "height": 0.10},
-           {"id": 15, "kind": "box", "x": 2.6, "y": 1.5, "w": 0.6, "h": 0.4, "height": 1.0}],
-        "pose": (-2.2, 0.0, 0.0),
+           {"id": 15, "kind": "box", "x": 3.0, "y": 2.0, "w": 0.6, "h": 0.4, "height": 1.0}],
+        "pose": (-2.6, 0.0, 0.0),
     },
     # a long corridor 1.4 m wide with a 1.2 m door half way
     "corridor": {
