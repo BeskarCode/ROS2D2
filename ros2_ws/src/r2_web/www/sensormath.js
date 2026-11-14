@@ -228,6 +228,9 @@ export function blindSectorsBase(s) {
 }
 
 /** A lidar setting as sensors.yaml writes it (lists in flow style). */
+/** The colours a sensor can take in the console: one each for the 9 Pico connectors. */
+export const PALETTE = ['#a371f7', '#f0b429', '#ff7eb6', '#58a6ff', '#fde047', '#c08457', '#2dd4bf', '#a3e635', '#f97316'];
+
 /** A sensor's own colour (colour: "#rrggbb" in sensors.yaml), else its type's. */
 export const COLOUR_RE = /^#[0-9a-fA-F]{6}$/;
 export function sensorColour(s) {

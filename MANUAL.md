@@ -94,8 +94,8 @@ R2 seen from above, to scale (rings every 50 cm), and R2 in 3D (*Top*, *3D* or *
 - **Drag a sensor** on the map to move it. Click its card to set where it **points**, how wide it
   sees (**field of view**), how far (**range**), its **height**, how much it **tilts down**, and at
   what distance R2 **stops** for it.
-- **colour**: each sensor can have its own colour, used on the map, in 3D, on its card and next
-  to its connector on the board (System). The button next to it brings back its type's colour.
+- **colour**: each sensor can take one of 9 fixed colours, used on the map, in 3D, on its card and next
+  to its connector on the board (System); the ones another sensor uses look faded. The button next to it brings back its type's colour.
 - **Red dots** are places near R2 that no sensor covers; the numbers under the map say how much of
   the floor is covered up to 50 cm and 1 m, and where R2 is blind.
 - **Test object**: pick one (chair leg, person, wall, low box) and drag it: the sensors that would

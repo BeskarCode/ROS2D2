@@ -210,3 +210,10 @@ test("sensorColour: the sensor's own colour, else its type's", () => {
   assert.equal(sensorColour({ type: 'vl53l0x', colour: '#FF8800' }), '#ff8800');
   assert.equal(sensorColour({ type: 'hcsr04', colour: 'red' }), '#f0b429');
 });
+
+import { PALETTE } from '../www/sensormath.js';
+test('PALETTE: 9 different colours, one per Pico connector', () => {
+  assert.equal(PALETTE.length, 9);
+  assert.equal(new Set(PALETTE).size, 9);
+  for (const c of PALETTE) assert.match(c, /^#[0-9a-f]{6}$/);
+});

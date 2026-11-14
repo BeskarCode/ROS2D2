@@ -7,7 +7,7 @@ import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
-import { LIDAR_MOTOR, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue, sensorColour } from './sensormath.js';
+import { LIDAR_MOTOR, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue, PALETTE, sensorColour } from './sensormath.js';
 import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -409,7 +409,8 @@ export function createSensorsTab({ status }) {
           <div class="row"><label><i class="fa-solid fa-tag"></i>name</label><input class="name" spellcheck="false"></div>
           <div class="row"><label><i class="fa-solid fa-palette"></i>colour</label><span class="colour">
             <button class="typecol"${s.colour ? '' : ' hidden'} title="Back to the ${T.label}'s colour"><i class="fa-solid fa-rotate-left"></i>${T.label}'s</button>
-            <input type="color" class="pick" value="${sensorColour(s)}" title="Its colour on the map, in 3D and on the board"></span></div>
+            ${PALETTE.map((c) => { const by = sensors.find((o) => o !== s && o.colour === c);
+              return `<button class="sw${s.colour === c ? ' on' : ''}${by ? ' taken' : ''}" data-c="${c}" style="--sw:${c}" title="${by ? `${c}, used by ${by.name}` : c}"></button>`; }).join('')}</span></div>
           ${slider(s, 'yaw_deg', '<i class="fa-solid fa-compass"></i>points to', -180, 180, 1, FMT.yaw_deg)}
           <div class="row"><span></span><div class="snaps">${SNAPS.map(([v, t]) =>
             `<button data-yaw="${v}" title="Point it ${t}"${s.yaw_deg === v || (v === 180 && s.yaw_deg === -180) ? ' class="on"' : ''}>${t}</button>`).join('')}</div></div>
@@ -433,13 +434,11 @@ export function createSensorsTab({ status }) {
       el.querySelector('.eye.pts')?.addEventListener('click', () => toggle(s.name + '#points'));
       el.querySelector('.eye.idb')?.addEventListener('click', () =>
         publish('/pico/command', 'std_msgs/msg/String', { data: `ID ${connectorOf(s)}` }));
-      const pick = el.querySelector('.pick');
-      pick.addEventListener('input', () => {        // live while dragging in the picker
-        s.colour = pick.value;
-        el.querySelector('.typecol').hidden = false;
-        el.style.setProperty('--c', colourOf(s));
+      el.querySelectorAll('.sw').forEach((b) => b.addEventListener('click', () => {
+        s.colour = b.dataset.c;
+        renderList();
         touched();
-      });
+      }));
       el.querySelector('.typecol').addEventListener('click', () => {
         delete s.colour;
         renderList();
