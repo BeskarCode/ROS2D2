@@ -74,3 +74,11 @@ def test_state_query_and_reset_word(mega):
     said(mega)
     mega.on_control("button")
     assert said(mega) == ["AUTO ON goto"]
+
+
+def test_control_mode_word(mega):
+    mega.on_control("mode forward")                # off -> on with that mode, no combo needed
+    mega.on_control("mode patrol")                 # another mode: switches
+    mega.on_control("mode patrol")                 # the same: off
+    mega.on_control("mode dance")                  # unknown: nothing
+    assert said(mega) == ["AUTO ON forward", "AUTO ON patrol", "AUTO OFF button"]

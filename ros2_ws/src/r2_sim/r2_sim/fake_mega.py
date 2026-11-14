@@ -14,6 +14,7 @@ Every received line goes to the log with a timestamp.
 
 The controllers are pretend too: write one word per line to the control FIFO
   button           PS + L2 on the foot Nav: presses whatever FOOT_PS_L2 is bound to
+  mode <name>      the web page's mode buttons (simulator only): like a combo bound to that mode
   combo <COMBO>    presses that combination: off -> on with its mode, the mode that is on -> off
                    (reason button), another mode -> switches; an unbound combo does nothing
   stick            the foot stick moved (autonomous mode off)
@@ -87,10 +88,10 @@ def on_bind(arg):
             say(f"BIND OK {combo} {new_mode}")
 
 
-def press(combo):
+def press(combo, target=None):
     """A controller combination: off -> on with its mode, same mode -> off, other mode -> switch."""
     global auto_on, mode
-    target = bindings.get(combo)
+    target = target or bindings.get(combo)
     if target is None:
         return
     if auto_on and mode == target:
@@ -154,6 +155,9 @@ def on_control(word):
         press("FOOT_PS_L2")
     elif word.startswith("combo "):
         press(word[6:].strip())
+    elif word.startswith("mode "):
+        if word[5:].strip() in MODES:
+            press(None, word[5:].strip())
     elif word in ("stick", "controller"):
         turn_off(word)
     elif word == "dome_button":
