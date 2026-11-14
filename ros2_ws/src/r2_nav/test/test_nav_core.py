@@ -356,3 +356,76 @@ def test_state_json_lists_ignored():
     d = run(nav, 1)[-1]
     import json
     assert json.loads(state_json(d, None, None, {}, {}, ignored=["tof_front"]))["ignored"] == ["tof_front"]
+
+
+# ---------- Go forward ----------
+from r2_nav.nav_core import SEARCH_TURN, wrap  # noqa: E402
+
+
+def wm_of(c):
+    return min(math.radians(c["max_turn_deg"]), c["max_turn_power"] / 30)
+
+
+def wall_ahead(at=0.45, half=0.6):
+    return [(at, y / 20) for y in range(int(-half * 20), int(half * 20) + 1)]
+
+
+def test_forward_drives_straight_in_open_room():
+    nav = Navigator(cfg(), SENSORS)
+    nav.start_forward(0.0)
+    d = run(nav, 20)[-1]
+    assert d.state == "forward" and d.v > 0.1 and abs(d.w) < 0.01
+
+
+def test_forward_keeps_its_heading_after_steering():
+    nav = Navigator(cfg(), SENSORS)
+    nav.start_forward(0.0)
+    d = run(nav, 5, pose=(0.0, 0.0, 0.3))[-1]          # pushed 17 deg left: steers back right
+    assert d.state == "forward" and d.w < 0
+
+
+def test_forward_turns_slowly_when_blocked_and_leaves_by_the_gap():
+    c = cfg()
+    nav = Navigator(c, SENSORS)
+    nav.start_forward(0.0)
+    left_free = wall_ahead() + [(0.2 + k / 10, -0.5) for k in range(10)]   # something on the right too
+    d = run(nav, 3, scan=left_free)[-1]
+    assert d.state == "searching" and d.v == 0
+    assert 0 < d.w <= SEARCH_TURN * wm_of(c) + 1e-9       # slowly, towards the free side
+    d = run(nav, 3, pose=(0.0, 0.0, 1.2), t0=1.0)[-1]   # turned 69 deg: nothing ahead now
+    assert d.state == "forward" and d.v > 0
+    assert nav.forward_th == pytest.approx(1.2)
+
+
+def test_forward_gives_up_after_a_full_turn():
+    c = cfg()
+    nav = Navigator(c, SENSORS)
+    nav.start_forward(0.0)
+    boxed = [(0.45 * math.cos(math.radians(a)), 0.45 * math.sin(math.radians(a))) for a in range(0, 360, 5)]
+    th, t, events, turned = 0.0, 0.0, [], 0.0
+    for _ in range(3000):
+        d = nav.step(t, (0.0, 0.0, th), boxed, clear_ranges(), True)
+        events += d.events
+        if d.state == "gave up":
+            break
+        assert d.v <= 0                                  # never into the box
+        th = wrap(th + d.w * 0.1)
+        turned += abs(d.w * 0.1)
+        t += 0.1
+    assert d.state == "gave up" and "give_up" in events
+    assert turned >= 2 * math.pi - 0.1
+    assert d.v == 0 and d.w == 0 and nav.forward_th is None
+
+
+def test_forward_with_no_data_does_not_move():
+    nav = Navigator(cfg(), SENSORS)
+    nav.start_forward(0.0)
+    d = nav.step(0.0, (0.0, 0.0, 0.0), None, {}, True)
+    assert d.state == "no data" and d.v == 0 and d.w == 0
+
+
+def test_cancel_stops_forward():
+    nav = Navigator(cfg(), SENSORS)
+    nav.start_forward(0.0)
+    nav.cancel()
+    assert nav.forward_th is None and run(nav, 2)[-1].state == "idle"

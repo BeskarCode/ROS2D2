@@ -84,3 +84,23 @@ def test_closed_loop_follow_stops_behind_a_box():
     assert trace[-1][6] == 0.0 and trace[-1][1] in ("searching", "lost"), trace[-1]
     assert not any(row[5] for row in trace)
     assert math.hypot(trace[-1][2] + 2.6, trace[-1][3]) < 0.8      # it did not go looking for it
+
+
+@pytest.mark.parametrize("seed", [1, 2])
+def test_forward_goes_down_the_corridor_through_the_door(seed):
+    w = world_mod.World.preset("corridor")
+    w.apply({"op": "remove", "id": 5})                     # just the walls and the door
+    x0 = w.pose[0]
+    trace = drive(w, SENSORS, None, seconds=90, seed=seed)       # slow between walls (side slow-down)
+    assert not any(t[7] for t in trace), [t for t in trace if t[7]][:3]     # never bumps
+    assert max(t[3] for t in trace) > x0 + 4.0, trace[-1]                   # well past the door at x = 0
+
+
+def test_forward_boxed_in_searches_slowly_and_gives_up():
+    w = world_mod.World.empty()
+    w.room = (-0.75, 0.75, -0.75, 0.75)                    # a cupboard: no way out
+    w.pose = [0.0, 0.0, 0.0]
+    trace = drive(w, SENSORS, None, seconds=200)
+    assert trace[-1][1] == "gave up", trace[-1]
+    assert any(t[1] == "searching" for t in trace)
+    assert not any(t[7] for t in trace)
