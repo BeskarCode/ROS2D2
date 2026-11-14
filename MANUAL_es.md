@@ -58,6 +58,24 @@ una bandera verde); *Cancel goal* lo olvida. *Sensor beams* y *trail* muestran u
 el camino que ha hecho R2. R2 solo va allí con el modo automático encendido (Go to a point, mira
 [Modes](#setup--modes)).
 
+**Ruta de patrulla**: con *route point* activado, cada clic en el suelo añade un punto numerado; en
+Patrol R2 los recorre en bucle (el punto al que va sale relleno). Un punto al que no llega se lo
+salta; si no llega a ninguno, se para. *Clear route* la borra. *goal* hace que el clic vuelva a
+mandar a R2 a un sitio.
+
+**Go forward**: R2 avanza recto en la dirección en la que miraba, esquivando lo que encuentra. Si se
+atasca (o la única salida queda muy a un lado) gira despacio sobre sí mismo buscando un hueco libre y
+sigue por él; si da una vuelta entera sin encontrar salida, se para y suena el sonido de *give up*.
+
+**Solo en simulación**:
+- **Sala**: carga un salón (sofá, patas de mesa y sillas, una caja baja), un pasillo estrecho con
+  puerta, varias salas unidas por puertas o un evento con gente (una con la camiseta del color) y
+  vallas. R2 vuelve a su salida; encima puedes seguir añadiendo patas, cajas y personas.
+- **Botones de modo** (Go to a point, Go forward, Patrol, Follow a colour): encienden ese modo, como
+  su combinación en el mando; pulsar el que está encendido lo apaga.
+- **on / off** junto a cada lectura: simula ese sensor desconectado, para ver qué hace R2 sin él
+  (no toca sensors.yaml).
+
 **R2 en 3D**: lo mismo en 3D, con la nube de puntos del lidar y los conos de los sensores. Arrastra
 para girar y usa la rueda para acercar. *Follow R2* lo mantiene en el centro; *Show the room* dibuja
 la habitación simulada (solo en simulación, donde también se pueden añadir patas de silla y cajas y

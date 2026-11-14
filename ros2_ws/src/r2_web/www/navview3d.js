@@ -58,7 +58,7 @@ export function createNavView3d(container) {
       room.add(m);
     }
     for (const o of w.obstacles) {
-      const mat = new THREE.MeshStandardMaterial({ color: o.kind === 'low' ? '#f85149' : o.kind === 'post' && o.r > 0.1 ? '#8b949e' : '#6e7681' });
+      const mat = new THREE.MeshStandardMaterial({ color: o.kind === 'low' ? '#f85149' : o.kind === 'wall' ? '#c9d1d9' : o.kind === 'post' && o.r > 0.1 ? '#8b949e' : '#6e7681' });
       const m = o.kind === 'post' ? new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, o.height, 20), mat)
         : new THREE.Mesh(new THREE.BoxGeometry(o.h, o.height, o.w), mat);
       m.position.copy(V(o.x, o.y, o.height / 2));

@@ -55,6 +55,23 @@ the distance, *36 cm free*). **Click the floor** to send R2 there (the goal is a
 *Cancel goal* forgets it. *Sensor beams* and *trail* show or hide the beams and the way R2 has gone.
 R2 only drives there when the automatic mode is on (Go to a point, see [Modes](#setup--modes)).
 
+**Patrol route**: with *route point* on, each click on the floor adds a numbered point; in Patrol R2
+goes round them in a loop (the point it heads for is filled). A point it cannot reach is skipped; if
+it reaches none it stops. *Clear route* forgets it. *goal* puts clicks back to sending R2 somewhere.
+
+**Go forward**: R2 drives straight on along the way it was facing, steering round things. When it is
+boxed in (or the only way out is well off to a side) it turns slowly on the spot looking for a free
+way and carries on along it; after a full turn with no way out it stops and plays the *give up* sound.
+
+**Only in simulation**:
+- **Room**: load a living room (sofa, table and chair legs, a low box), a narrow corridor with a
+  door, several rooms joined by doors, or an event with people (one wearing the colour) and
+  barriers. R2 goes back to its start; you can still add chair legs, boxes and people on top.
+- **Mode buttons** (Go to a point, Go forward, Patrol, Follow a colour): switch that mode on, like
+  its combination on the controller; press the one that is on to switch it off.
+- **on / off** next to each reading: simulate that sensor unplugged, to see what R2 does without it
+  (sensors.yaml is not touched).
+
 **R2 in 3D**: the same in 3D, with the lidar's point cloud and the sensors' cones. Drag to orbit,
 wheel to zoom. *Follow R2* keeps it in the middle; *Show the room* draws the simulated room (only in
 simulation, where you can also add chair legs and boxes and drag them).
