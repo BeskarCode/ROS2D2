@@ -3,7 +3,8 @@
 //   openscad -o pared.stl -D 'part="pared"' caja_rack.scad
 // Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
 // marco_pi4, marco_pi5, prueba_luz; the LED face: pared_led, pared_led_monocolor, logo_marino_led,
-// logo_azul_led, logo_gris_led; the optional light-pipe piece: guias_luz.
+// logo_azul_led, logo_gris_led; the optional light-pipe piece: guias_luz; HDMI on the back: soporte_hdmi
+// (FPC kit holder) or tapa_hdmi (blank cover).
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -13,6 +14,7 @@ include <tapa.scad>
 include <marco.scad>
 include <fasteners.scad>
 include <guias.scad>
+include <hdmi_fpc.scad>
 
 part = "pared";
 ga = "pico";  gb = "pi";  led = "VL1";
@@ -86,6 +88,26 @@ else if (part == "check_marco_fills_window") let(w = marco_win()) difference() {
     for (z = [w[1], w[3] - marco_fit]) translate([w[0], D - wall - 1, z]) cube([w[2] - w[0], wall + 2, marco_fit]);
 }
 else if (part == "check_hdmi_cut") intersection() { base(); ghost_hdmi(); }
+// --- HDMI on the back without reprinting the base: FPC holder or blank cover ---
+else if (part == "soporte_hdmi") print_soporte_hdmi() soporte_hdmi();
+else if (part == "tapa_hdmi") print_tapa_hdmi() tapa_hdmi();
+else if (part == "soporte_hdmi_montado") soporte_hdmi();
+else if (part == "tapa_hdmi_montada") tapa_hdmi();
+else if (part == "check_soporte_hdmi_vs_base") intersection() { soporte_hdmi(); base(); }
+else if (part == "check_tapa_hdmi_vs_base") intersection() { tapa_hdmi(); base(); }
+else if (part == "check_soporte_hdmi_vs_marco") intersection() { soporte_hdmi(); union() { marco("pi4"); marco("pi5"); } }
+else if (part == "check_tapa_hdmi_vs_marco") intersection() { tapa_hdmi(); union() { marco("pi4"); marco("pi5"); } }
+else if (part == "check_soporte_hdmi_screws") intersection() { soporte_hdmi(); hdmi_screw_axes(); }
+else if (part == "check_tapa_hdmi_screws") intersection() { tapa_hdmi(); hdmi_screw_axes(); }
+else if (part == "check_tapa_hdmi_fills_window") difference() {
+    translate([hdmi_c[0] - hdmi_body[0] / 2 - 0.3, D - wall, hdmi_c[1] - hdmi_body[1] / 2 - 0.3]) cube([hdmi_body[0] + 0.6, wall, hdmi_body[1] + 0.6]);
+    base(); tapa_hdmi();
+    translate([hdmi_c[0] - hdmi_body[0] / 2 - 0.3, D - wall - 1, hdmi_c[1] - hdmi_body[1] / 2 - 0.3]) difference() {   // the 0.3 fit gap
+        cube([hdmi_body[0] + 0.6, wall + 2, hdmi_body[1] + 0.6]);
+        translate([0.3, -1, 0.3]) cube([hdmi_body[0], wall + 4, hdmi_body[1]]);
+    }
+    translate([0, D - wall - 1, 0]) cube([W, wall - cover_plug + 1, H]);   // the plug is shorter than the wall
+}
 else if (part == "check_xt60_bosses") intersection() { pared(); ghost_xt60(); }
 else if (part == "check_xt60_cut") intersection() { pared(); translate([-xt60_depth, 0, 0]) ghost_xt60(); }
 else if (part == "check_switch_cut") intersection() { pared(); translate([-sw_depth - sw_wires, 0, 0]) ghost_switch(); }
