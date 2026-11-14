@@ -6,6 +6,8 @@ import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
 import { picoPill } from './picostate.js';
 import { MODE_LABELS } from './modesform.js';
+import { createModePick } from './modepick.js';
+import { connect as connectBridge } from './rosbridge.js';
 import { showStream, stopStream } from './mjpeg.js';
 
 const params = new URLSearchParams(location.search);
@@ -562,3 +564,7 @@ function frame() {
 }
 requestAnimationFrame(frame);
 connect();
+
+// ---------- the mode PS + L2 starts, and Stop (its own rosbridge socket: modepick.js is shared with Navigation) ----------
+connectBridge(() => {});
+createModePick($('modepick'));

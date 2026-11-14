@@ -55,6 +55,13 @@ the distance, *36 cm free*). **Click the floor** to send R2 there (the goal is a
 *Cancel goal* forgets it. *Sensor beams* and *trail* show or hide the beams and the way R2 has gone.
 R2 only drives there when the automatic mode is on (Go to a point, see [Modes](#setup--modes)).
 
+**PS + L2 starts** (also on the Console, in the Mega card): pick which mode PS + L2 on the foot
+controller starts (Go to a point, Go forward, Patrol, Follow a colour); the green text says which one
+is on. Only the controller switches a mode on: that keeps someone with the controller in hand
+whenever R2 starts moving by itself. **Stop** switches it off from the page. Picking a mode here is
+the same as giving it PS + L2 in [Modes](#setup--modes): the mode that had PS + L2 gets the picked
+mode's old combination, so none is lost.
+
 **Patrol route**: with *route point* on, each click on the floor adds a numbered point; in Patrol R2
 goes round them in a loop (the point it heads for is filled). A point it cannot reach is skipped; if
 it reaches none it stops. *Clear route* forgets it. *goal* puts clicks back to sending R2 somewhere.
@@ -67,8 +74,8 @@ way and carries on along it; after a full turn with no way out it stops and play
 - **Room**: load a living room (sofa, table and chair legs, a low box), a narrow corridor with a
   door, several rooms joined by doors, or an event with people (one wearing the colour) and
   barriers. R2 goes back to its start; you can still add chair legs, boxes and people on top.
-- **Mode buttons** (Go to a point, Go forward, Patrol, Follow a colour): switch that mode on, like
-  its combination on the controller; press the one that is on to switch it off.
+- **PS + L2** (next to the mode buttons): the simulated controller's PS + L2, to start and stop the
+  mode it is set to.
 - **on / off** next to each reading: simulate that sensor unplugged, to see what R2 does without it
   (sensors.yaml is not touched).
 

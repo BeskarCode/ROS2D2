@@ -69,6 +69,14 @@
   button { background: var(--line); color: var(--text); border: 1px solid #3a4250; border-radius: 6px;
            padding: 6px 12px; font: inherit; cursor: pointer; }
   button.on { background: var(--blue); border-color: var(--blue); }
+  .seg { display: inline-flex; }
+  .seg button { border-radius: 0; margin: 0; }
+  .seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; }
+  .modepick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .modepick .mp-label { color:var(--muted); font-size:12px; }
+  .modepick .mp-state { font-size:12px; color:var(--muted); }
+  .modepick .mp-state.ok { color:var(--green, #3fb950); font-weight:600; }
+
   label { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
   input[type=number] { width: 64px; background: var(--bg); color: var(--text); border: 1px solid var(--line);
                        border-radius: 4px; padding: 3px 6px; font: inherit; }
@@ -197,6 +205,7 @@
 
   <section class="card" id="megacard">
     <h2><span><i class="fa-solid fa-microchip"></i>Mega</span><span id="megastate">no bridge</span></h2>
+    <div class="controls" id="modepick"></div>
     <div id="megalog"></div>
     <div class="controls">
       <button id="megapause" title="Pause the Mega's message log (the messages keep arriving, the list stops scrolling)"><i class="fa-solid fa-pause"></i>Pause</button>

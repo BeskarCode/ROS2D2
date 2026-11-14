@@ -65,3 +65,48 @@ def test_the_form_writes_a_valid_file():
     assert cfg["follow"]["color"] == {"h": 104, "s": 201, "v": 88}
     assert cfg["follow"]["area_ref"] == 0.07123 and cfg["follow"]["max_speed"] == 0.25
     assert cfg["forward"]["sound_on"] == "MD:$PS1" and cfg["goto"]["combo"] == "FOOT_PS_L2"
+
+
+# ---------- which mode PS + L2 starts (Console / Navigation) ----------
+from r2_web.modes_api import set_start_mode  # noqa: E402
+
+
+def saved(user):
+    with open(user, encoding="utf-8") as f:
+        return parse_modes(f.read())
+
+
+def test_start_mode_takes_ps_l2_and_gives_its_combo_back(tmp_path):
+    default, user = files(tmp_path)
+    save_modes("goto: {combo: FOOT_PS_L2}\nforward: {combo: FOOT_UP_L1}\nfollow: {combo: FOOT_UP_PS, distance: 2.0}\n", user)
+    code, body = set_start_mode(default, user, "forward")
+    assert code == 200 and body["start"] == "forward"
+    m = saved(user)
+    assert m["forward"]["combo"] == "FOOT_PS_L2"
+    assert m["goto"]["combo"] == "FOOT_UP_L1"          # swapped, nothing lost
+    assert m["follow"]["combo"] == "FOOT_UP_PS" and m["follow"]["distance"] == 2.0
+
+
+def test_start_mode_from_the_package_default(tmp_path):
+    default, user = files(tmp_path)                      # nothing saved yet: goto has PS + L2
+    assert set_start_mode(default, user, "patrol")[0] == 200
+    m = saved(user)
+    assert m["patrol"]["combo"] == "FOOT_PS_L2" and m["goto"]["combo"] is None
+
+
+def test_start_mode_already_there_changes_nothing(tmp_path):
+    default, user = files(tmp_path)
+    assert set_start_mode(default, user, "goto")[0] == 200
+    assert saved(user)["goto"]["combo"] == "FOOT_PS_L2"
+
+
+def test_start_mode_refuses_unknown_mode_and_broken_file(tmp_path):
+    default, user = files(tmp_path)
+    assert set_start_mode(default, user, "dance")[0] == 400
+    os.makedirs(os.path.dirname(user), exist_ok=True)
+    with open(user, "w", encoding="utf-8") as f:
+        f.write(BAD)
+    code, body = set_start_mode(default, user, "forward")
+    assert code == 400 and "DOME_PS_L2" in body["error"]
+    with open(user, encoding="utf-8") as f:
+        assert f.read() == BAD                           # left alone
