@@ -82,3 +82,11 @@ test('a saved OpenCV colour shows as RGB', () => {
   assert.deepEqual(hsvToRgb({ h: 120, s: 255, v: 128 }), [0, 0, 128]);
   assert.deepEqual(hsvToRgb({ h: 10, s: 0, v: 200 }), [200, 200, 200]);
 });
+
+import { startMode } from '../www/modesform.js';
+test('startMode: the mode PS + L2 starts, or null', () => {
+  assert.equal(startMode(DEFAULTS), 'goto');
+  assert.equal(startMode({ ...DEFAULTS, goto: { combo: null }, patrol: { combo: 'FOOT_PS_L2' } }), 'patrol');
+  assert.equal(startMode({ ...DEFAULTS, goto: { combo: 'FOOT_UP' } }), null);
+  assert.equal(startMode({}), null);
+});

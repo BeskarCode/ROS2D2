@@ -58,6 +58,13 @@ una bandera verde); *Cancel goal* lo olvida. *Sensor beams* y *trail* muestran u
 el camino que ha hecho R2. R2 solo va allí con el modo automático encendido (Go to a point, mira
 [Modes](#setup--modes)).
 
+**PS + L2 starts** (también en la Console, en la tarjeta del Mega): eliges qué modo arranca PS + L2
+en el mando del foot (Go to a point, Go forward, Patrol, Follow a colour); el texto en verde dice cuál
+está en marcha. Encender un modo solo se puede desde el mando: así siempre hay alguien con el mando
+en la mano cuando R2 empieza a moverse solo. **Stop** lo apaga desde la página. Elegir un modo aquí
+es lo mismo que darle PS + L2 en [Modes](#setup--modes): el modo que tenía PS + L2 se queda con la
+combinación que tenía el elegido, así que no se pierde ninguna.
+
 **Ruta de patrulla**: con *route point* activado, cada clic en el suelo añade un punto numerado; en
 Patrol R2 los recorre en bucle (el punto al que va sale relleno). Un punto al que no llega se lo
 salta; si no llega a ninguno, se para. *Clear route* la borra. *goal* hace que el clic vuelva a
@@ -71,8 +78,8 @@ sigue por él; si da una vuelta entera sin encontrar salida, se para y suena el 
 - **Sala**: carga un salón (sofá, patas de mesa y sillas, una caja baja), un pasillo estrecho con
   puerta, varias salas unidas por puertas o un evento con gente (una con la camiseta del color) y
   vallas. R2 vuelve a su salida; encima puedes seguir añadiendo patas, cajas y personas.
-- **Botones de modo** (Go to a point, Go forward, Patrol, Follow a colour): encienden ese modo, como
-  su combinación en el mando; pulsar el que está encendido lo apaga.
+- **PS + L2** (junto a los botones de modo): el PS + L2 del mando simulado, para arrancar y parar el
+  modo que tenga asignado.
 - **on / off** junto a cada lectura: simula ese sensor desconectado, para ver qué hace R2 sin él
   (no toca sensors.yaml).
 

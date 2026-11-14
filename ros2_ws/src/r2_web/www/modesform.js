@@ -96,3 +96,8 @@ export function hsvToRgb({ h, s, v }) {
   const f = (n) => { const k = (n + H / 60) % 6; return V - V * S * Math.max(0, Math.min(k, 4 - k, 1)); };
   return [f(5), f(3), f(1)].map((x) => Math.round(x * 255));
 }
+
+/** The mode PS + L2 (foot Nav) starts, from /api/modes' modes, or null when none has it. */
+export function startMode(modes) {
+  return MODES.find((m) => modes && modes[m] && modes[m].combo === AUTO_COMBO) || null;
+}

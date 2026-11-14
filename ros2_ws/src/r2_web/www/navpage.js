@@ -5,14 +5,13 @@ import { connect, publish, subscribe } from './rosbridge.js';
 import { MODELS } from './models.js';
 import { createNavMap } from './navmap.js';
 import { createNavView3d } from './navview3d.js';
+import { createModePick } from './modepick.js';
 import { freeText, nearestPoint } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const STATE_CLASS = { going: 'ok', arrived: 'ok', forward: 'ok', avoiding: 'warn', turning: 'warn', reversing: 'warn', waiting: 'warn',
                       searching: 'warn', stop: 'bad', 'gave up': 'bad', 'no data': 'bad' };
-const MODES = [['goto', 'fa-location-crosshairs', 'Go to a point'], ['forward', 'fa-arrow-up', 'Go forward'],
-               ['patrol', 'fa-route', 'Patrol'], ['follow', 'fa-shirt', 'Follow a colour']];
 const ROOM_LABELS = { default: 'Test room', living: 'Living room', corridor: 'Narrow corridor', rooms: 'Several rooms', event: 'Event with people' };
 
 export const page = {
@@ -83,15 +82,10 @@ subscribe('/sim/world', 'std_msgs/msg/String', (m) => {
   if (P.world.error) addLine(`· room: ${P.world.error}`, 'info');
 });
 subscribe('/sim/sensors', 'std_msgs/msg/String', (m) => { P.simSensors = JSON.parse(m.data); buildReadings(); });
-subscribe('/r2/mode', 'std_msgs/msg/String', (m) => { P.mode = m.data; showModes(); });
 subscribe('/r2/auto_mode', 'std_msgs/msg/Bool', (m) => {
   P.auto = m.data;
-  showModes();
   $('automode').className = 'pill ' + (m.data ? 'ok' : '');
   $('automode').innerHTML = `<i class="fa-solid fa-gamepad"></i>auto: ${m.data ? 'ON' : 'off'}`;
-  // in simulation the page can press the fake Mega's PS + L2: ON when off, OFF when on
-  $('autobtn').innerHTML = m.data ? '<i class="fa-solid fa-stop"></i>Autonomous OFF' : '<i class="fa-solid fa-play"></i>Autonomous ON';
-  $('autobtn').className = m.data ? '' : 'primary';
 });
 subscribe('/mega/tx', 'std_msgs/msg/String', (m) => {
   if (m.data.startsWith('(not sent) ')) addLine('→ ' + m.data.slice(11) + '   (not sent)', 'unsent');
@@ -148,12 +142,9 @@ $('room').onchange = () => {
   P.trail = [];
   if (P.route.length) { P.route = []; sendRoute(); }          // the old route's points mean nothing in another room
   addLine(`· room: ${$('room').selectedOptions[0].textContent}`, 'info'); };
-$('modebtns').innerHTML = MODES.map(([m, icon, label]) =>
-  `<button data-mode="${m}" title="${label}: on (press again: off)"><i class="fa-solid ${icon}"></i>${label}</button>`).join('');
-$('modebtns').querySelectorAll('button').forEach((b) => { b.onclick = () => worldCmd({ op: 'press', what: `mode:${b.dataset.mode}` }); });
-function showModes() {
-  $('modebtns').querySelectorAll('button').forEach((b) => b.classList.toggle('on', !!P.auto && P.mode === b.dataset.mode));
-}
+// the mode PS + L2 starts, which is on, Stop; in simulation also the fake controller's PS + L2
+createModePick($('modepick'), { onPress: () => worldCmd({ op: 'press', what: 'button' }), log: (t) => addLine(t, 'info') });
+$('modepick').querySelector('.mp-press').classList.add('simonly');
 function setClick(route) {
   P.clickRoute = route;
   $('click-goal').classList.toggle('on', !route);
@@ -196,7 +187,6 @@ const map = createNavMap($('map'), {
 });
 $('cancel').onclick = () => { publish('/nav/cancel', 'std_msgs/msg/Empty', {}); addLine('· goal cancelled', 'info'); };
 $('reset').onclick = () => { worldCmd({ op: 'reset' }); P.trail = []; };
-$('autobtn').onclick = () => worldCmd({ op: 'press', what: 'button' });
 $('stickbtn').onclick = () => worldCmd({ op: 'press', what: 'stick' });
 $('del').onclick = () => { if (P.selected != null) worldCmd({ op: 'remove', id: P.selected }); };
 const add = (kind, x, y) => worldCmd({ op: 'add', kind, x, y });

@@ -66,6 +66,10 @@
   .seg button { border-radius:0; margin:0; }
   .seg button:first-child { border-radius:6px 0 0 6px; } .seg button:last-child { border-radius:0 6px 6px 0; }
   .seg button.on { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .modepick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .modepick .mp-label { color:var(--muted); font-size:12px; }
+  .modepick .mp-state { font-size:12px; color:var(--muted); }
+  .modepick .mp-state.ok { color:var(--green); font-weight:600; }
   #routeinfo { color:var(--muted); font-size:12px; }
   .rd { grid-template-columns:130px 1fr 64px auto; }
   .rd .sw { padding:1px 6px; font-size:11px; }
@@ -95,8 +99,7 @@
     <div class="hint" id="maphint">Click the floor to send R2 there.</div>
     <div class="bar">
       <button id="cancel" title="Forget the goal: R2 stops heading there"><i class="fa-solid fa-xmark"></i>Cancel goal</button>
-      <span class="simonly"><button id="autobtn" class="primary" title="Simulated PS + L2 on the foot Nav"><i class="fa-solid fa-play"></i>Autonomous ON</button>
-      <button id="stickbtn" title="Simulated touch of the foot stick: the controller takes over"><i class="fa-solid fa-gamepad"></i>Take control</button></span>
+      <span class="simonly"><button id="stickbtn" title="Simulated touch of the foot stick: the controller takes over"><i class="fa-solid fa-gamepad"></i>Take control</button></span>
       <span class="simonly"><button id="reset" title="Put the simulated room back as it was"><i class="fa-solid fa-rotate-left"></i>Reset room</button>
       <button id="addpost" title="Add a chair leg (4 cm) to the simulated room: drag it where you want"><i class="fa-solid fa-chair"></i>chair leg</button><button id="addbox" title="Add a box to the simulated room: drag it where you want"><i class="fa-solid fa-box"></i>box</button>
       <button id="addperson" title="A person wearing the colour, for Follow a colour"><i class="fa-solid fa-person"></i>person</button><button id="shirt" disabled title="The selected obstacle wears the colour (or stops wearing it)"><i class="fa-solid fa-shirt"></i>shirt</button>
@@ -104,9 +107,9 @@
       <label class="chk"><input type="checkbox" id="rays" checked><i class="fa-solid fa-wifi"></i>sensor beams</label>
       <label class="chk"><input type="checkbox" id="trail" checked><i class="fa-solid fa-shoe-prints"></i>trail</label>
     </div>
+    <div class="bar" id="modepick"></div>
     <div class="bar">
-      <span class="simonly"><label class="chk" title="Load a room: R2 goes back to its start"><i class="fa-solid fa-house"></i><select id="room"></select></label>
-      <span class="seg" id="modebtns" title="Switch a mode on, like its combination on the controller (press the one that is on to switch it off)"></span></span>
+      <span class="simonly"><label class="chk" title="Load a room: R2 goes back to its start"><i class="fa-solid fa-house"></i><select id="room"></select></label></span>
       <span class="seg" title="What a click on the floor does"><button id="click-goal" class="on" title="A click sends R2 there (Go to a point)"><i class="fa-solid fa-location-crosshairs"></i>goal</button><button id="click-route" title="A click adds a point to the patrol route"><i class="fa-solid fa-route"></i>route point</button></span>
       <button id="clearroute" title="Forget the patrol route"><i class="fa-solid fa-eraser"></i>Clear route</button>
       <span id="routeinfo"></span>

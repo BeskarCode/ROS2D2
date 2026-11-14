@@ -22,6 +22,8 @@ and a small HTTP API for what ROS topics cannot do:
                       and the combo names the page may offer
   POST /api/modes     save modes.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid;
                       then publishes /r2/modes/reload so the Mega bridge sends the new bindings
+  POST /api/modes/start  {"mode": "goto|forward|patrol|follow"}: PS + L2 starts that mode (it swaps
+                      combos with the mode that had PS + L2), saved and sent to the Mega the same way
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
   GET  /api/pico_board   pico_board.yaml in use (the Pico board's display timeout, brightness,
                       LED mode) and any error in it
@@ -58,7 +60,7 @@ from r2_camera.source import list_modes
 from r2_sensors.config import USER_CONFIG as SENSORS_USER_CONFIG
 from r2_nav.modes import USER_MODES
 from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
-from r2_web.modes_api import modes_payload, save_modes
+from r2_web.modes_api import modes_payload, save_modes, set_start_mode
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.lidar_api import lidar_needs_restart
 from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
@@ -165,6 +167,15 @@ class Handler(SimpleHTTPRequestHandler):
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             return self._json(*save_nav(text, NAV_USER_CONFIG))
+        if route == "/api/modes/start":
+            try:
+                mode = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["mode"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            code, body = set_start_mode(self.modes_default, USER_MODES, mode)
+            if code == 200:
+                self.on_modes_saved()
+            return self._json(code, body)
         if route == "/api/modes":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
