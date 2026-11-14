@@ -56,15 +56,16 @@ NAMES = {
     "m3x6_pan": ("Tornillo M3 × 6 de cabeza alomada (ISO 7380)", "M3 × 6 button head screw (ISO 7380)"),
     "m3x6_cyl": ("Tornillo M3 × 6 de cabeza cilíndrica (DIN 912)", "M3 × 6 socket head cap screw (DIN 912)"),
     "m3x10_flat": ("Tornillo M3 × 10 de cabeza avellanada (ISO 10642)", "M3 × 10 countersunk screw (ISO 10642)"),
+    "m3x10_pan": ("Tornillo M3 × 10 de cabeza alomada (ISO 7380)", "M3 × 10 button head screw (ISO 7380)"),
     "nut_m3": ("Tuerca M3 (DIN 934)", "M3 nut (DIN 934)"),
     "m25x6": ("Tornillo M2.5 × 6 (más largo si el ventilador de la Pi lleva separadores)",
               "M2.5 × 6 screw (longer if the Pi's fan sits on spacers)"),
     "m4x12": ("Tornillo M4 × 12 (o el que pida el soporte del R2)", "M4 × 12 screw (or what the R2's mount needs)"),
 }
 SHORT = {"ins_m3": "inserto M3", "m3x8_flat": "M3 × 8 avellanado", "m3x6_pan": "M3 × 6", "m3x6_cyl": "M3 × 6 cilíndrico",
-         "m3x10_flat": "M3 × 10 avellanado", "nut_m3": "tuerca M3", "m25x6": "M2.5 × 6", "m4x12": "M4 × 12"}
+         "m3x10_flat": "M3 × 10 avellanado", "m3x10_pan": "M3 × 10", "nut_m3": "tuerca M3", "m25x6": "M2.5 × 6", "m4x12": "M4 × 12"}
 SHORT_EN = {"ins_m3": "M3 insert", "m3x8_flat": "M3 × 8 countersunk", "m3x6_pan": "M3 × 6", "m3x6_cyl": "M3 × 6 socket head",
-            "m3x10_flat": "M3 × 10 countersunk", "nut_m3": "M3 nut", "m25x6": "M2.5 × 6", "m4x12": "M4 × 12"}
+            "m3x10_flat": "M3 × 10 countersunk", "m3x10_pan": "M3 × 10", "nut_m3": "M3 nut", "m25x6": "M2.5 × 6", "m4x12": "M4 × 12"}
 
 OTHER = [
     ("1", "Interruptor de balancín KCD1 (agujero de panel 19,2 × 13 mm)", "KCD1 rocker switch (panel hole 19.2 × 13 mm)"),

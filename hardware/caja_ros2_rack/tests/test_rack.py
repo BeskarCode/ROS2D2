@@ -119,8 +119,8 @@ def test_hdmi_jack_passes_through_the_back():
     assert is_empty("check_hdmi_cut")
 
 
-def test_xt60_bosses_clear_of_its_body():
-    assert is_empty("check_xt60_bosses")
+def test_xt60_flange_sits_flat_inside():
+    assert is_empty("check_xt60_flange_seat")       # nothing behind the wall where its flange and body go
 
 
 # --- back frame (Pi 4 / Pi 5) --------------------------------------------------------------------------
@@ -188,7 +188,8 @@ def test_overall_size_and_volume():
 
 
 # --- hardware ---------------------------------------------------------------------------------------
-EXPECTED = {"ins_m3": 19, "ins_m25": 4, "m3x8_flat": 9, "m3x6_pan": 8, "m3x6_cyl": 2, "m3x10_flat": 0, "nut_m3": 0,
+EXPECTED = {"ins_m3": 17, "ins_m25": 4, "m3x8_flat": 7, "m3x6_pan": 8, "m3x6_cyl": 2, "m3x10_flat": 0, "m3x10_pan": 2,
+            "nut_m3": 2,
             "m25x6": 4, "m4x12": 4}
 
 
@@ -198,6 +199,6 @@ def test_bom_counts():
 
 
 @pytest.mark.parametrize("model", ["pi4", "pi5"])
-@pytest.mark.parametrize("kind", ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m25x6"])
+@pytest.mark.parametrize("kind", ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_pan", "m25x6"])
 def test_hardware_only_goes_through_holes(kind, model):
     assert is_empty("check_screws_vs_parts", {"kind": kind, "model": model})

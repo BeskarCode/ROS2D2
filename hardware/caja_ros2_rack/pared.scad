@@ -2,14 +2,13 @@
 // The main face (x = 0..wall): the Pico board hangs from its 4 columns, the OLED shows through a
 // chamfered window, the push rod reaches the DISPLAY button, the XT60 and the switch sit low under the board,
 // the sensor cables leave through one slot at the top, the logo is inlaid in 4 colours.
-// Every screw goes into a heat-set insert: the XT60's two from outside into inserts in small bosses behind it.
+// Every screw goes into a heat-set insert but the XT60's two: through the wall and its flange into nuts.
 include <params.scad>
 
 col_d = 8;
 tab = [10, 9, 8];                                 // bottom tabs (X x Y x Z), insert from below
 tab_y = [8, 58];
 top_tab = [10, 10, 7];  top_tab_y = 75;           // under the roof, insert from above
-xt60_boss = [7.5, 4.5];                           // d, length behind the wall (insert from outside, under the flange)
 
 function sw1_world() = pico2world(sw1[0], sw1[1]);
 // window (Y, Z) inner opening; its +Y edge stops short of the push rod's guide
@@ -99,15 +98,11 @@ module switch_cut() {
         cube([wall, sw_cut[0] + 6, sw_cut[1] + 6]);
 }
 
+// the male XT60's lip goes through, its flange stays inside: only the lip's opening and 2 M3 through holes
 module xt60_cut() {
-    c = xt60_c;
-    translate([-1, c[0] - xt60_body[1] / 2, c[1] - xt60_body[0] / 2]) cube([wall + 2, xt60_body[1], xt60_body[0]]);
-    for (s = [-1, 1]) translate([-0.01, c[0] + s * xt60_hole_pitch / 2, c[1]]) rotate([0, 90, 0]) cylinder(d = insert_d, h = insert_h, $fn = 24);
-}
-module xt60_bosses() {
-    c = xt60_c;
-    for (s = [-1, 1]) translate([wall - 0.01, c[0] + s * xt60_hole_pitch / 2, c[1]]) rotate([0, 90, 0])
-        cylinder(d = xt60_boss[0], h = xt60_boss[1] + 0.01, $fn = 32);
+    c = xt60_c; f = xt60_cut_fit;
+    translate([-1, c[0] - xt60_lip[1] / 2 - f, c[1] - xt60_lip[0] / 2 - f]) cube([wall + 2, xt60_lip[1] + 2 * f, xt60_lip[0] + 2 * f]);
+    for (s = [-1, 1]) translate([-1, c[0] + s * xt60_hole_pitch / 2, c[1]]) rotate([0, 90, 0]) cylinder(d = xt60_hole_d, h = wall + 2, $fn = 24);
 }
 
 module sensor_slot_cut() {
@@ -127,17 +122,16 @@ module wall_tabs() {
     }
 }
 
-// leds: the LED face (a hole over each of the Pico board's LEDs, logo moved down, connector names)
+// leds: the LED face (a tube from each of the Pico board's LEDs, lens recesses, logo moved down, connector names)
 module pared(depth = logo_depth, leds = false) {
     difference() {
         union() {
             cube([wall, D, H]);
             pico_columns();
             wall_tabs();
-            xt60_bosses();
             rod_guide();
             oled_tunnel();
-            if (leds) lp_hooks();
+            if (leds) lp_tubes();
         }
         oled_window();
         rod_hole();

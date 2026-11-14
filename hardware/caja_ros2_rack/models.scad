@@ -71,14 +71,21 @@ module model_conv() {
         translate(p + [4.75 + i * 3.5, 0, 31]) rotate([90, 0, 0]) cylinder(d = 3, h = conv_wires - 1, $fn = 12);
 }
 
-// --- XT60E-F (turned 90 deg) and KCD1 on the main face ------------------------------------------------
+// --- male XT60 (turned 90 deg, lip out, flange inside) and KCD1 on the main face ------------------------
 module model_xt60() {
-    c = xt60_c;
+    c = xt60_c; x0 = wall - xt60_lip_l;                  // front of the lip (0.5 proud of the face)
     color([0.95, 0.8, 0.1]) {
-        translate([-xt60_flange_t, c[0] - xt60_flange[1] / 2, c[1] - xt60_flange[0] / 2]) cube([xt60_flange_t, xt60_flange[1], xt60_flange[0]]);
-        translate([0, c[0] - 8, c[1] - 8.3 / 2]) cube([xt60_depth - xt60_flange_t, 16, 8.3]);
+        translate([x0, c[0] - xt60_lip[1] / 2, c[1] - xt60_lip[0] / 2]) cube([xt60_lip_l, xt60_lip[1], xt60_lip[0]]);
+        difference() {
+            translate([wall, c[0] - xt60_flange[1] / 2, c[1] - xt60_flange[0] / 2]) cube([xt60_flange_t, xt60_flange[1], xt60_flange[0]]);
+            for (s = [-1, 1]) translate([wall - 1, c[0] + s * xt60_hole_pitch / 2, c[1]]) rotate([0, 90, 0]) cylinder(d = 3.2, h = xt60_flange_t + 2, $fn = 16);
+        }
+        translate([wall + xt60_flange_t, c[0] - xt60_lip[1] / 2, c[1] - xt60_flange[0] / 2]) cube([4.7, xt60_lip[1], xt60_flange[0]]);
     }
-    for (dy = [-3.2, 3.2]) color(GOLD) translate([-xt60_flange_t - 0.01, c[0] + dy, c[1]]) rotate([0, -90, 0]) cylinder(d = 3.5, h = 0.5, $fn = 16);
+    for (dy = [-3.6, 3.6]) color(GOLD) {
+        translate([x0 - 0.01, c[0] + dy, c[1]]) rotate([0, 90, 0]) cylinder(d = 3.5, h = 0.5, $fn = 16);
+        translate([wall + xt60_flange_t + 4.7, c[0] + dy, c[1]]) rotate([0, 90, 0]) cylinder(d = 3.5, h = 5, $fn = 16);
+    }
 }
 module model_switch() {
     c = sw_c;

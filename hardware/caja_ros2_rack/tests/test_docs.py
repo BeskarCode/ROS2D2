@@ -15,7 +15,7 @@ def table():
 
 def test_bom_matches_the_table(table):
     rows = {r["kind"]: r["qty"] for r in bom(table)}
-    assert rows == dict(collections.Counter(f[0] for f in table)) and rows["ins_m3"] == 19 and rows["ins_m25"] == 4
+    assert rows == dict(collections.Counter(f[0] for f in table)) and rows["ins_m3"] == 17 and rows["ins_m25"] == 4
 
 
 def test_eight_steps_both_languages():
@@ -31,17 +31,15 @@ def test_guide(tmp_path, table, lang, name):
     for n in range(1, 9):
         assert f"montaje/img/paso{n}.png" in md
     assert f"conexiones_{lang}.svg" in md and f"conectores_{lang}.svg" in md
-    assert "pared_multicolor_bambu.3mf" in md and "19× " in md and "marco_pi5.stl" in md
+    assert "pared_multicolor_bambu.3mf" in md and "17× " in md and "marco_pi5.stl" in md
     assert f"escala_{lang}.svg" in md and "github.com/BeskarCode/ROS2D2/tree/main/hardware/caja_ros2_rack" in md
 
 
 # the LED face and the optional light-pipe piece
-LIGHT = {"es": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "guias_luz.stl", "prueba_luz.stl",
-                "PETG transparente", "opcional", "antes de colgar la placa", "lija la punta", "J4",
-                "sin tornillos", "sin balancearse", "Para sacarla"],
-         "en": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "guias_luz.stl", "prueba_luz.stl",
-                "clear PETG", "optional", "before hanging the board", "sand its tip", "J4",
-                "without screws", "without rocking", "To take it out"]}
+LIGHT = {"es": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "lentes_led.stl",
+                "PETG transparente", "lentilla", "a ras", "lija la punta", "J4", "sin tornillos", "sin balancearse"],
+         "en": ["pared_led_multicolor_bambu.3mf", "pared_led_monocolor.stl", "lentes_led.stl",
+                "clear PETG", "lens", "flush", "sand its tip", "J4", "without screws", "without rocking"]}
 
 
 @pytest.mark.parametrize("lang,name", [("es", "MONTAJE.md"), ("en", "ASSEMBLY.md")])
@@ -54,15 +52,14 @@ def test_guide_has_the_led_face_and_the_light_pipes(tmp_path, table, lang, name)
 
 def test_readme_has_the_led_face():
     md = (pathlib.Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf8")
-    for words in ["pared_led_multicolor_bambu.3mf", "guias_luz.stl", "prueba_luz.stl", "translúcido", "opcional",
+    for words in ["pared_led_multicolor_bambu.3mf", "lentes_led.stl", "translúcido", "tubo",
                   "montaje/img/montada_led.png"]:
         assert words in md, words
 
 
 def test_led_version_parts_go_in_their_own_folder(tmp_path):
     import build
-    led = ["pared_led", "pared_led_monocolor", "logo_marino_led", "logo_azul_led", "logo_gris_led", "guias_luz",
-           "prueba_luz"]
+    led = ["pared_led", "pared_led_monocolor", "logo_marino_led", "logo_azul_led", "logo_gris_led", "lentes_led"]
     for p in led:
         assert build.stl_path(tmp_path, p) == tmp_path / "stl" / "con_leds" / f"{p}.stl"
     assert build.stl_path(tmp_path, "pared") == tmp_path / "stl" / "pared.stl"

@@ -90,10 +90,14 @@ module ghost_conv() {
     box_from([p[0] + 2, p[1] - conv_wires, p[2] + 24], [p[0] + 18, p[1], p[2] + 39]);   // wires out the front face
 }
 
-module ghost_xt60() {        // behind the main face, body + wires towards +X (under the Pico board)
+module ghost_xt60() {        // behind the main face: flange, body, pins + wires towards +X (under the Pico board)
     c = xt60_c;
-    box_from([wall, c[0] - xt60_body[1] / 2, c[1] - xt60_body[0] / 2],
-             [wall + xt60_depth - xt60_flange_t + 14, c[0] + xt60_body[1] / 2, c[1] + xt60_body[0] / 2]);
+    box_from([wall, c[0] - xt60_flange[1] / 2, c[1] - xt60_flange[0] / 2],
+             [wall + xt60_depth - xt60_lip_l + 14, c[0] + xt60_flange[1] / 2, c[1] + xt60_flange[0] / 2]);
+}
+module ghost_xt60_lip() {    // the lip, through the wall
+    c = xt60_c;
+    box_from([-1, c[0] - xt60_lip[1] / 2, c[1] - xt60_lip[0] / 2], [wall + 0.01, c[0] + xt60_lip[1] / 2, c[1] + xt60_lip[0] / 2]);
 }
 
 module ghost_switch() {      // behind the main face, its wires towards +X
