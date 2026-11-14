@@ -168,7 +168,9 @@
   .sensor .top { display: flex; align-items: center; gap: 8px; }
   .sensor .title { font-weight: 600; }
   .sensor .colour { display: flex; align-items: center; gap: 6px; }
-  .sensor .colour input[type=color] { width: 46px; height: 26px; padding: 1px; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+  .sensor .colour .sw { width: 22px; height: 22px; padding: 0; border-radius: 50%; background: var(--sw); border: 2px solid transparent; cursor: pointer; position: relative; }
+  .sensor .colour .sw.on { border-color: #e6edf3; box-shadow: 0 0 0 2px var(--sw); }
+  .sensor .colour .sw.taken:not(.on) { opacity: .35; }   /* another sensor has it (still allowed) */
   .sensor .sub { color: var(--muted); font-size: 11px; }
   .sensor .reading { font-variant-numeric: tabular-nums; font-size: 12px; }
   .sensor.hit .reading { color: var(--green); font-weight: 600; }

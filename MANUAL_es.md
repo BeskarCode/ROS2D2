@@ -99,7 +99,7 @@ R2 visto desde arriba, a escala (anillos cada 50 cm), y R2 en 3D (*Top*, *3D* o 
 - **Arrastra un sensor** por el mapa para moverlo. Haz clic en su tarjeta para ajustar hacia dónde
   **apunta**, lo ancho que ve (**field of view**), hasta dónde (**range**), su **altura**, cuánto se
   **inclina hacia abajo** y a qué distancia **se para** R2 por él.
-- **colour**: cada sensor puede tener su propio color, que se usa en el mapa, en el 3D, en su
+- **colour**: cada sensor puede tomar uno de 9 colores fijos (los que ya usa otro salen apagados), que se usa en el mapa, en el 3D, en su
   tarjeta y junto a su conector en la placa (System). El botón de al lado le devuelve el color de su tipo.
 - Los **puntos rojos** son sitios cerca de R2 que no cubre ningún sensor; los números bajo el mapa
   dicen cuánto suelo se cubre hasta 50 cm y hasta 1 m, y hacia dónde está ciego R2.
