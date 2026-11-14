@@ -333,6 +333,12 @@ class SensorSim:
         return max(s["range_min"], d + self.rng.gauss(0, 0.015))
 
 
+def sensors_to_publish(sensors, off):
+    """The sensors the simulator reports: all but the ones switched off on the web page
+    (a switched-off sensor goes silent, like one that is unplugged)."""
+    return {n: s for n, s in sensors.items() if n not in off}
+
+
 def parse_foot(line):
     """(drive, turn) from a ROS:FOOT: line that really went to the Mega, else None."""
     m = FOOT.match(line.strip())

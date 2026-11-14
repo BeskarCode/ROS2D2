@@ -4,8 +4,9 @@ Mega, and its pretend sensors publish on the same topics as the real ones.
 
   in   /mega/tx          std_msgs/String   lines sent to the Mega: ROS:FOOT:<drive>,<turn> moves R2
                                            (as the Mega does: each one lasts 0.3 s)
-  in   /sim/world_cmd    std_msgs/String   JSON edits from the web page: add, move, remove, reset,
-                                           place, noise, save, load, press (the fake Mega's buttons)
+  in   /sim/world_cmd    std_msgs/String   JSON edits from the web page: add, move, remove, room, reset,
+                                           place, noise, save, load, press (the fake Mega's buttons
+                                           and mode:<name>), sensor {name, on} (simulator only)
   out  /odom             nav_msgs/Odometry and TF odom -> base_link
   out  /scan_raw         sensor_msgs/LaserScan   the lidar (scan_crop cuts it into /scan)
   out  /range/<name>     sensor_msgs/Range       each VL53L0X / HC-SR04 of sensors.yaml
@@ -37,7 +38,8 @@ from tf2_msgs.msg import TFMessage
 
 from r2_shadow_bridge.protocol import units_to_twist
 from r2_sensors.config import Reloader, config_path
-from r2_sim.world import SensorSim, World, blocked_move, parse_foot, step_pose
+from r2_nav.modes import MODES
+from r2_sim.world import ROOMS, SensorSim, World, blocked_move, parse_foot, sensors_to_publish, step_pose
 
 SCENES = os.path.expanduser("~/.config/ros2d2/scenes")
 NAME = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
@@ -63,6 +65,7 @@ class SimWorld(Node):
         self.foot = None                   # (time, drive, turn)
         self.bump = False
         self.error = None
+        self.off = set()                   # sensors switched off on the web page (simulator only)
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_odom = self.create_publisher(Odometry, "/odom", 10)
@@ -124,6 +127,8 @@ class SimWorld(Node):
             self.error = self._scene(op, cmd.get("name", ""))
         elif op == "press":
             self.error = self._press(cmd.get("what", ""))
+        elif op == "sensor":
+            self.error = self._switch(cmd.get("name"), cmd.get("on"))
         else:
             self.error = self.world.apply(cmd)
         if self.error:
@@ -150,13 +155,27 @@ class SimWorld(Node):
             return f"scene {name}: {e}"
         return None
 
+    def _switch(self, name, on):
+        """A sensor on or off in the simulator only (sensors.yaml is not touched)."""
+        if name not in self.sensors or not isinstance(on, bool):
+            return f"sensor: name must be one of {', '.join(sorted(self.sensors))} and on true or false"
+        if on:
+            self.off.discard(name)
+        else:
+            self.off.add(name)
+        return None
+
     def _press(self, what):
-        """The fake Mega's controller: button (PS + L2), stick, controller (lost)."""
-        if what not in ("button", "stick", "controller"):
-            return "press: button, stick or controller"
+        """The fake Mega's controller: button (PS + L2), stick, controller (lost), or
+        mode:<goto|forward|patrol|follow> (the page's mode buttons)."""
+        word = what
+        if what.startswith("mode:") and what[5:] in MODES:
+            word = f"mode {what[5:]}"
+        elif what not in ("button", "stick", "controller"):
+            return "press: button, stick, controller or mode:<goto|forward|patrol|follow>"
         try:
             fd = os.open(self.get_parameter("mega_ctl").value, os.O_WRONLY | os.O_NONBLOCK)
-            os.write(fd, (what + "\n").encode())
+            os.write(fd, (word + "\n").encode())
             os.close(fd)
         except OSError as e:
             return f"press: the fake Mega is not running ({e.strerror})"
@@ -201,7 +220,7 @@ class SimWorld(Node):
 
     def _publish_sensors(self, stamp):
         pose = self.world.pose
-        for name, s in self.sensors.items():
+        for name, s in sensors_to_publish(self.sensors, self.off).items():
             if s["type"] == "rplidar_c1":
                 a0, inc, ranges = self.sim.scan(self.world, pose, s, self.get_parameter("scan_step_deg").value)
                 m = LaserScan()
@@ -225,7 +244,7 @@ class SimWorld(Node):
     def _publish_world(self):
         scenes = sorted(f[:-5] for f in os.listdir(SCENES) if f.endswith(".json")) if os.path.isdir(SCENES) else []
         d = json.loads(self.world.to_json())
-        d.update({"scenes": scenes, "bump": self.bump, "error": self.error})
+        d.update({"scenes": scenes, "bump": self.bump, "error": self.error, "off": sorted(self.off), "rooms": list(ROOMS)})
         self.pub_world.publish(String(data=json.dumps(d)))
 
 

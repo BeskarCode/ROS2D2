@@ -202,3 +202,10 @@ def test_room_name_travels_in_json():
     w = World.preset("living")
     assert json.loads(w.to_json())["name"] == "living"
     assert World.from_json(w.to_json()).name == "living"
+
+
+def test_sensors_to_publish_skips_off():
+    from r2_sim.world import sensors_to_publish
+    s = {"lidar": {"type": "rplidar_c1"}, "tof_front": {"type": "vl53l0x"}, "sonar_rear": {"type": "hcsr04"}}
+    assert sorted(sensors_to_publish(s, {"lidar", "sonar_rear"})) == ["tof_front"]
+    assert sorted(sensors_to_publish(s, set())) == ["lidar", "sonar_rear", "tof_front"]
