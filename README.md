@@ -34,13 +34,13 @@ Everything it does, page by page: the **[user manual](MANUAL.md)** ([en castella
 **Navigation**: the floor around R2 seen from above with the lidar's points, the free circle and
 each sensor's beam, R2 in 3D, and every sensor's reading. Click the floor to send R2 there.
 
-![The navigation page: map, R2 in 3D and the sensors' readings](media/console-navigation.gif)
+![The navigation page: map, R2 in 3D and the sensors' readings](media/console-navigation-modes.gif)
 
 **Setup → Sensors**: where each sensor sits and what it covers. Drag a test object round R2 and the
 sensors that would see it light up; switch a sensor that gives false readings to *ignored* in one
 click; set the lidar (motor, scan mode, blind sectors) and read what it says about itself.
 
-![Setup, Sensors: coverage, test object and the in use / ignored switch](media/console-sensors.gif)
+![Setup, Sensors: coverage, test object and the in use / ignored switch](media/console-sensors-setup.gif)
 
 **Setup → Modes**: each automatic mode starts with its own controller combination. What each one does:
 

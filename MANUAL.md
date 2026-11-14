@@ -47,7 +47,7 @@ Below: how many faces it sees, the best score and where the best one is.
 
 ## Navigation
 
-![The Navigation page: map, R2 in 3D and readings](media/console-navigation.gif)
+![The Navigation page: map, R2 in 3D and readings](media/console-navigation-modes.gif)
 
 Video of every mode in the simulator: <https://youtu.be/Smfn6zQICm0>
 
@@ -123,7 +123,7 @@ dark. Direction and field of view apply at once; turning a camera on or off or r
 
 ### Setup → Sensors
 
-![Setup, Sensors](media/console-sensors.gif)
+![Setup, Sensors](media/console-sensors-setup.gif)
 
 R2 seen from above, to scale (rings every 50 cm), and R2 in 3D (*Top*, *3D* or *Both*).
 
