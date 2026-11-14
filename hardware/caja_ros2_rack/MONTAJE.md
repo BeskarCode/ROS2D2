@@ -76,9 +76,17 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 
 ![](montaje/img/paso1.png)
 
+![](montaje/img/paso1_pi.png)
+
 **Necesitas:** 19× inserto M3, 4× inserto M2,5
 
-Con el soldador a unos 220 °C mete los insertos rectos y a ras. En la pared principal, 7 M3: 4 en las columnas, 2 en las pestañas de abajo y 1 en la de arriba; y 2 M3 más por fuera, en los agujeros del XT60. En la base, 10 M3: 2 en lo alto del tabique, 2 en el tabique para el convertidor, 2 en los bloques del suelo y 4 por fuera de la trasera (2 del marco, 2 del HDMI); y los 4 M2,5 en las columnas de la Pi.
+Con el soldador a unos 220 °C mete los insertos rectos y a ras. Hay dos tamaños y no se cambian entre sí: 19 M3 (5,7 mm de largo, agujero de 4,0 mm) y 4 M2,5 (5 mm de largo, agujero de 3,6 mm), que son los pequeños. En el dibujo, los M3 en dorado y los M2,5 en rojo.
+
+- **M3** · pared principal, por dentro (7): 4 en las columnas de la placa de la Pico, 2 en las pestañas de abajo y 1 en la pestaña de arriba.
+- **M3** · pared principal, por fuera (2): los 2 agujeros del XT60.
+- **M3** · base, por dentro (6): 2 en lo alto del tabique, 2 en el tabique para el convertidor y 2 en los bloques del suelo.
+- **M3** · trasera de la base, por fuera (4): 2 del marco de la Pi y 2 del HDMI.
+- **M2,5** · base (4): las 4 columnas de la Pi. Son los únicos M2,5 de la caja.
 
 ## 2 · Convertidor al tabique, arriba
 

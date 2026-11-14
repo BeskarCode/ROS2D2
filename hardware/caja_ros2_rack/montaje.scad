@@ -27,7 +27,7 @@ function grp(f) =
 module hw_group(g, e = 0) {
     for (f = fasteners()) if (grp(f) == g) {
         if (f[0] == "nut_m3") color("silver") translate(f[2] + f[3] * e) along(f[3]) hw_shape("nut_m3");
-        else color(_is_insert(f[0]) ? "goldenrod" : "silver") hw(f, e);
+        else color(hw_colour(f[0])) hw(f, e);
     }
 }
 

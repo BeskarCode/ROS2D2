@@ -95,8 +95,11 @@ module hw(f, explode = 0, arrow = true) {
         }
 }
 
+// M2.5 inserts in red so step 1 shows them apart from the M3
+function hw_colour(k) = k == "ins_m25" ? "orangered" : _is_insert(k) ? "goldenrod" : "silver";
+
 module hardware(kind = "all", step = 0, explode = 0) {
     for (f = fasteners())
         if ((kind == "all" || f[0] == kind) && (step == 0 || f[1] == step))
-            color(_is_insert(f[0]) ? "goldenrod" : "silver") hw(f, explode);
+            color(hw_colour(f[0])) hw(f, explode);
 }
