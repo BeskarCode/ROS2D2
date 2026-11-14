@@ -18,6 +18,7 @@ KINDS = {                 # defaults for each kind of obstacle
     "post": {"r": 0.025, "height": 0.75},     # a chair leg (r 0.15, 1.7 m: a person)
     "box": {"w": 0.5, "h": 0.5, "height": 0.6},
     "low": {"w": 0.3, "h": 0.3, "height": 0.10},   # under the lidar
+    "wall": {"w": 1.0, "h": 0.1, "height": 2.0},   # an inside wall or a door frame
 }
 CAMERA_Z = 0.9            # m: the dome camera's height
 SHIRT_Z = 1.2             # m: where the coloured shirt is, on a person
@@ -54,6 +55,79 @@ def _ray_circle(ox, oy, dx, dy, o):
     return along - math.sqrt(r * r - off2) if along > 0 and off2 <= r * r else math.inf
 
 
+def _legs(x, y, w, h, first_id, height=0.75):
+    """The four legs of a table or a chair (w x h, centred on x, y): sensors see only those."""
+    return [{"id": first_id + i, "kind": "post", "x": x + sx * w / 2, "y": y + sy * h / 2, "r": 0.025, "height": height}
+            for i, (sx, sy) in enumerate(((-1, -1), (1, -1), (1, 1), (-1, 1)))]
+
+
+def _wall(oid, x0, y0, x1, y1):
+    """A 10 cm thick inside wall from (x0, y0) to (x1, y1), along x or along y."""
+    horizontal = abs(y1 - y0) < abs(x1 - x0)
+    return {"id": oid, "kind": "wall", "x": (x0 + x1) / 2, "y": (y0 + y1) / 2,
+            "w": abs(x1 - x0) if horizontal else 0.1, "h": 0.1 if horizontal else abs(y1 - y0), "height": 2.0}
+
+
+def _person(oid, x, y, shirt=False):
+    o = {"id": oid, "kind": "post", "x": x, "y": y, "r": 0.15, "height": 1.7}
+    if shirt:
+        o["marker"] = True
+    return o
+
+
+# Rooms the web page can load: room bounds, obstacles, R2's start (x, y, heading)
+ROOMS = {
+    "default": {
+        "room": ROOM,
+        "obstacles": [
+            {"id": 1, "kind": "box", "x": 0.2, "y": 0.0, "w": 0.8, "h": 0.5, "height": 0.75},
+            {"id": 2, "kind": "post", "x": -0.9, "y": 0.5, "r": 0.025, "height": 0.75},
+            {"id": 3, "kind": "post", "x": -0.6, "y": 0.5, "r": 0.025, "height": 0.75},
+            {"id": 4, "kind": "post", "x": 1.3, "y": -0.9, "r": 0.15, "height": 1.7},
+            {"id": 5, "kind": "low", "x": 1.0, "y": 1.1, "w": 0.35, "h": 0.35, "height": 0.10},
+        ],
+        "pose": (-2.2, -1.2, math.radians(20)),
+    },
+    # a living room: sofa, a table and two chairs (only their legs), a low box on the floor
+    "living": {
+        "room": (-3.0, 3.0, -2.5, 2.5),
+        "obstacles": [{"id": 1, "kind": "box", "x": 0.0, "y": 2.0, "w": 2.0, "h": 0.9, "height": 0.8}]
+        + _legs(0.8, -0.6, 1.2, 0.8, 2)
+        + _legs(0.8, -1.4, 0.4, 0.4, 6, 0.45) + _legs(0.8, 0.2, 0.4, 0.4, 10, 0.45)
+        + [{"id": 14, "kind": "low", "x": -1.0, "y": -0.8, "w": 0.35, "h": 0.35, "height": 0.10},
+           {"id": 15, "kind": "box", "x": 2.6, "y": 1.5, "w": 0.6, "h": 0.4, "height": 1.0}],
+        "pose": (-2.2, 0.0, 0.0),
+    },
+    # a long corridor 1.4 m wide with a 1.2 m door half way
+    "corridor": {
+        "room": (-4.0, 4.0, -1.5, 1.5),
+        "obstacles": [_wall(1, -4.0, 0.7, 4.0, 0.7), _wall(2, -4.0, -0.7, 4.0, -0.7),
+                      _wall(3, 0.0, 0.6, 0.0, 0.65), _wall(4, 0.0, -0.65, 0.0, -0.6),
+                      {"id": 5, "kind": "box", "x": 2.2, "y": 0.4, "w": 0.4, "h": 0.4, "height": 0.9}],
+        "pose": (-3.4, 0.0, 0.0),
+    },
+    # three rooms: a wall across with a door, and the right half split again with another door
+    "rooms": {
+        "room": (-4.0, 4.0, -3.0, 3.0),
+        "obstacles": [_wall(1, 0.0, -3.0, 0.0, -0.6), _wall(2, 0.0, 0.6, 0.0, 3.0),
+                      _wall(3, 0.0, 0.0, 1.4, 0.0), _wall(4, 2.6, 0.0, 4.0, 0.0),
+                      {"id": 5, "kind": "box", "x": -2.5, "y": 2.2, "w": 1.0, "h": 0.6, "height": 0.8},
+                      {"id": 6, "kind": "box", "x": 3.0, "y": -2.3, "w": 1.2, "h": 0.5, "height": 0.9}]
+        + _legs(-2.0, -1.5, 1.0, 0.7, 7),
+        "pose": (-3.0, 0.0, 0.0),
+    },
+    # a meet-up: people standing around (one with the coloured shirt) and two barriers
+    "event": {
+        "room": (-4.0, 4.0, -3.0, 3.0),
+        "obstacles": [_person(1, 1.5, 0.5, shirt=True), _person(2, 0.5, -1.5), _person(3, -1.0, 1.8),
+                      _person(4, 2.5, -1.8), _person(5, 2.8, 1.9), _person(6, -2.0, -2.0),
+                      {"id": 7, "kind": "box", "x": -0.5, "y": 0.6, "w": 2.0, "h": 0.1, "height": 1.0},
+                      {"id": 8, "kind": "box", "x": 3.3, "y": 0.0, "w": 0.1, "h": 2.0, "height": 1.0}],
+        "pose": (-3.0, -0.5, 0.0),
+    },
+}
+
+
 class World:
     def __init__(self, obstacles=(), pose=(0.0, 0.0, 0.0), room=ROOM):
         self.room = tuple(room)
@@ -62,6 +136,7 @@ class World:
         self.noise = True
         self.next_id = max((o["id"] for o in self.obstacles), default=0) + 1
         self._initial = (copy.deepcopy(self.obstacles), list(self.pose))
+        self.name = None                # the preset it came from, if any
 
     @classmethod
     def empty(cls):
@@ -71,23 +146,25 @@ class World:
 
     @classmethod
     def default(cls):
-        obs = [
-            {"id": 1, "kind": "box", "x": 0.2, "y": 0.0, "w": 0.8, "h": 0.5, "height": 0.75},
-            {"id": 2, "kind": "post", "x": -0.9, "y": 0.5, "r": 0.025, "height": 0.75},
-            {"id": 3, "kind": "post", "x": -0.6, "y": 0.5, "r": 0.025, "height": 0.75},
-            {"id": 4, "kind": "post", "x": 1.3, "y": -0.9, "r": 0.15, "height": 1.7},
-            {"id": 5, "kind": "low", "x": 1.0, "y": 1.1, "w": 0.35, "h": 0.35, "height": 0.10},
-        ]
-        return cls(obs, (-2.2, -1.2, math.radians(20)))
+        return cls.preset("default")
+
+    @classmethod
+    def preset(cls, name):
+        r = ROOMS[name]
+        w = cls(copy.deepcopy(r["obstacles"]), r["pose"], r["room"])
+        w.name = name
+        return w
 
     def to_json(self):
-        return json.dumps({"room": list(self.room), "obstacles": self.obstacles, "pose": self.pose, "noise": self.noise})
+        return json.dumps({"room": list(self.room), "obstacles": self.obstacles, "pose": self.pose, "noise": self.noise,
+                           "name": self.name})
 
     @classmethod
     def from_json(cls, text):
         d = json.loads(text)
         w = cls(d.get("obstacles", []), d.get("pose", (0, 0, 0)), d.get("room", ROOM))
         w.noise = bool(d.get("noise", True))
+        w.name = d.get("name") if d.get("name") in ROOMS else None
         return w
 
     # ---------- editing (from the web page) ----------
@@ -127,6 +204,14 @@ class World:
                     return f"no obstacle {cmd['id']}"
                 self.obstacles = [o for o in self.obstacles if o["id"] != cmd["id"]]
                 return None
+            if op == "room":
+                if cmd.get("name") not in ROOMS:
+                    return f"room must be one of {', '.join(ROOMS)}"
+                new = World.preset(cmd["name"])
+                noise = self.noise
+                self.__dict__.update(new.__dict__)
+                self.noise = noise
+                return None
             if op == "reset":
                 self.obstacles, self.pose = copy.deepcopy(self._initial[0]), list(self._initial[1])
                 self.next_id = max((o["id"] for o in self.obstacles), default=0) + 1
@@ -139,7 +224,7 @@ class World:
                 return None
         except (KeyError, TypeError, ValueError) as e:
             return f"{op}: missing or bad value ({e})"
-        return "op must be add, marker, move, remove, reset, place or noise"
+        return "op must be add, marker, move, remove, room, reset, place or noise"
 
     def _find(self, oid):
         return next((o for o in self.obstacles if o["id"] == oid), None)
