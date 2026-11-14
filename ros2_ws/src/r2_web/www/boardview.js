@@ -5,6 +5,7 @@
 // for it (/pico/mirror_request every 2 s; the bridge renews MIR, the Pico stops 5 s after).
 import { CONNECTOR_NAMES, LONG_PRESS_MS, fbPixels, isLive, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, stripItems } from './boardmirror.js';
 import { advertise, publish, subscribe } from './rosbridge.js';
+import { sensorColour } from './sensormath.js';
 
 const ASK_MS = 2000;
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -114,7 +115,9 @@ export function createBoardView(root) {
     for (const c of CONNECTOR_NAMES) {
       const r = byConn[c];
       const st = r && live && pico.sensors ? pico.sensors[r.name] : null;
-      root.querySelector(`[data-val="${c}"]`).textContent = !r ? '—' : st === 'ok' ? metres(r.m) : st === 'not_responding' ? 'no answer' : '—';
+      const val = root.querySelector(`[data-val="${c}"]`);
+      val.textContent = !r ? '—' : st === 'ok' ? metres(r.m) : st === 'not_responding' ? 'no answer' : '—';
+      val.style.borderLeftColor = r && sensors[r.name] ? sensorColour(sensors[r.name]) : 'transparent';   // the sensor's colour
     }
     drawOled(live && !old ? fbPixels(mirror.fb) : null);
   }

@@ -64,7 +64,7 @@ export function createSensorView3d(container, { onHover = () => {} } = {}) {
     const h = rad(Math.min(s.fov_deg, 359.9));
     const g = new THREE.CircleGeometry(R, 96, rad(s.yaw_deg - 90) - h / 2, h);
     const out = [new THREE.Mesh(g, mat),
-      new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: TYPES[s.type].colour, transparent: true, opacity: 0.6 }))];
+      new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: mat.color, transparent: true, opacity: 0.6 }))];
     for (const m of out) { m.rotation.x = -Math.PI / 2; m.position.copy(V(s.x, s.y, s.z)); }
     return out;
   }

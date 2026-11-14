@@ -167,6 +167,8 @@
   .sensor.sel { border-color: var(--c); box-shadow: 0 0 0 1px var(--c); cursor: default; }
   .sensor .top { display: flex; align-items: center; gap: 8px; }
   .sensor .title { font-weight: 600; }
+  .sensor .colour { display: flex; align-items: center; gap: 6px; }
+  .sensor .colour input[type=color] { width: 46px; height: 26px; padding: 1px; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
   .sensor .sub { color: var(--muted); font-size: 11px; }
   .sensor .reading { font-variant-numeric: tabular-nums; font-size: 12px; }
   .sensor.hit .reading { color: var(--green); font-weight: 600; }
@@ -268,7 +270,8 @@
   .syslive .pcb-name { font: 700 2.6cqw/1 system-ui, sans-serif; color: #fff; }
   .syslive .pcb-txt { font: 600 1.75cqw/1 system-ui, sans-serif; color: #fff; white-space: nowrap; }
   .syslive .pcb-txt.foot { font-weight: 500; }
-  .syslive .pcb-val { font: 1.75cqw/1 ui-monospace, monospace; color: #cfe0ff; background: rgba(0,0,0,.35); padding: .4cqw .8cqw; border-radius: .6cqw; white-space: nowrap; }
+  .syslive .pcb-val { font: 1.75cqw/1 ui-monospace, monospace; color: #cfe0ff; background: rgba(0,0,0,.35); padding: .4cqw .8cqw; border-radius: .6cqw; white-space: nowrap;
+                     border-left: .8cqw solid transparent; }
   .syslive .pcb-hdr { display: flex; background: #1a1a1a; border: .15cqw solid #444; box-sizing: border-box; }
   .syslive .pcb-hdr i { flex: 1; display: grid; place-items: center; }
   .syslive .pcb-hdr i::after { content: ''; width: 1.1cqw; height: 1.1cqw; background: #d4b13a; }

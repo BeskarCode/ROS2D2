@@ -50,6 +50,7 @@ FALLBACK_MODES = ("Standard", "DenseBoost")
 LIDAR_DEFAULTS = {"motor": "always", "scan_mode": "Standard", "inverted": False, "blind_sectors": []}
 PICO_PINS = {"vl53l0x": ("xshut",), "hcsr04": ("trig", "echo")}
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
+COLOUR = re.compile(r"^#[0-9a-fA-F]{6}$")
 PORT = re.compile(r"^/dev/[A-Za-z0-9_./-]+$")
 GPIO = range(0, 29)
 # Not for sensors: the VL53L0X's I2C (GP16 SDA, GP17 SCL), the Pico's own (GP23-25, GP25 = LED)
@@ -109,6 +110,9 @@ def _sensor(name, raw):
     s.setdefault("enabled", True)
     if not isinstance(s["enabled"], bool):
         raise SensorConfigError(f"{name}: enabled must be true (in use) or false (ignored)")
+    # its colour in the web console (optional; without it, its type's colour). Quoted: # starts a YAML comment
+    if "colour" in s and not (isinstance(s["colour"], str) and COLOUR.match(s["colour"])):
+        raise SensorConfigError(f'{name}: colour must be like "#ff8800" (in quotes)')
     if not 0 < s["fov_deg"] <= 360:
         raise SensorConfigError(f"{name}: fov_deg must be more than 0 and at most 360")
     if not 0 <= s["range_min"] < s["range_max"]:

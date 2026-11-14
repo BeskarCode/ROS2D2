@@ -183,3 +183,14 @@ def test_enabled_must_be_bool():
 def test_in_use_drops_ignored():
     s = parse_sensors(VL("tof_a", "enabled: false") + LIDAR_200)
     assert list(in_use(s)) == ["lidar"]
+
+
+def test_colour_optional_and_kept():
+    assert "colour" not in parse_sensors(VL("tof_a", ""))["tof_a"]
+    assert parse_sensors(VL("tof_a", 'colour: "#ff8800"'))["tof_a"]["colour"] == "#ff8800"
+
+
+@pytest.mark.parametrize("bad", ["colour: #ff8800", 'colour: "red"', 'colour: "#ff88"', "colour: 3"])
+def test_colour_must_be_hex(bad):
+    with pytest.raises(SensorConfigError, match="colour"):
+        parse_sensors(VL("tof_a", bad))

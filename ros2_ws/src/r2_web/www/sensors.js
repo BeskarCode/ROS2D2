@@ -7,7 +7,7 @@ import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
-import { LIDAR_MOTOR, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue } from './sensormath.js';
+import { LIDAR_MOTOR, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue, sensorColour } from './sensormath.js';
 import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -228,10 +228,10 @@ export function createSensorsTab({ status }) {
     });
   }
 
-  // its type's colour, or its grey when a Pico sensor is not measuring
+  // its own colour (or its type's), or its grey when a Pico sensor is not measuring
   const IGNORED_COLOUR = '#6e7681';
   const colourOf = (s) => (s.enabled === false ? IGNORED_COLOUR
-    : OFF_COLOUR[s.type] && !isConnected(badge(s)[0]) ? OFF_COLOUR[s.type] : TYPES[s.type].colour);
+    : OFF_COLOUR[s.type] && !isConnected(badge(s)[0]) ? OFF_COLOUR[s.type] : sensorColour(s));
 
   // Refresh only the badges (the cards hold inputs: rebuilding them would lose the focus)
   // and, with "Connected only", hide the cards of the sensors that are not measuring
@@ -407,6 +407,9 @@ export function createSensorsTab({ status }) {
             <i class="fa-solid ${hidden.has(s.name + '#points') ? 'fa-circle' : 'fa-braille'}"></i></button>` : ''}</div>
         <div class="edit">
           <div class="row"><label><i class="fa-solid fa-tag"></i>name</label><input class="name" spellcheck="false"></div>
+          <div class="row"><label><i class="fa-solid fa-palette"></i>colour</label><span class="colour">
+            <button class="typecol"${s.colour ? '' : ' hidden'} title="Back to the ${T.label}'s colour"><i class="fa-solid fa-rotate-left"></i>${T.label}'s</button>
+            <input type="color" class="pick" value="${sensorColour(s)}" title="Its colour on the map, in 3D and on the board"></span></div>
           ${slider(s, 'yaw_deg', '<i class="fa-solid fa-compass"></i>points to', -180, 180, 1, FMT.yaw_deg)}
           <div class="row"><span></span><div class="snaps">${SNAPS.map(([v, t]) =>
             `<button data-yaw="${v}" title="Point it ${t}"${s.yaw_deg === v || (v === 180 && s.yaw_deg === -180) ? ' class="on"' : ''}>${t}</button>`).join('')}</div></div>
@@ -430,6 +433,18 @@ export function createSensorsTab({ status }) {
       el.querySelector('.eye.pts')?.addEventListener('click', () => toggle(s.name + '#points'));
       el.querySelector('.eye.idb')?.addEventListener('click', () =>
         publish('/pico/command', 'std_msgs/msg/String', { data: `ID ${connectorOf(s)}` }));
+      const pick = el.querySelector('.pick');
+      pick.addEventListener('input', () => {        // live while dragging in the picker
+        s.colour = pick.value;
+        el.querySelector('.typecol').hidden = false;
+        el.style.setProperty('--c', colourOf(s));
+        touched();
+      });
+      el.querySelector('.typecol').addEventListener('click', () => {
+        delete s.colour;
+        renderList();
+        touched();
+      });
       const name = el.querySelector('.name');
       name.value = s.name;
       name.addEventListener('change', () => {
@@ -619,6 +634,7 @@ export function createSensorsTab({ status }) {
         if (isLidar(s) && ['pitch_deg', 'stop_distance', 'pico'].includes(k)) continue;
         if (k === 'enabled' && s[k] !== false) continue;      // written only when ignored
         if (k === 'pico') out += `  pico: {${Object.entries(s.pico).map(([p, g]) => `${p}: ${g}`).join(', ')}}\n`;
+        else if (k === 'colour') out += `  colour: "${s[k]}"\n`;      // quoted: # starts a YAML comment
         else out += `  ${k}: ${typeof s[k] === 'number' ? r3(s[k]) : lidarYamlValue(s[k])}\n`;
       }
     }
