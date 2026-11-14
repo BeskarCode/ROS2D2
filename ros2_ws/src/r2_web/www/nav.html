@@ -62,6 +62,14 @@
   .log { font:12px/1.5 ui-monospace,Consolas,monospace; padding:8px 12px; flex:1; min-height:80px; overflow:auto; background:#0b0f14; }
   .log .tx { color:#79c0ff; } .log .unsent { color:var(--amber); } .log .rx { color:var(--muted); } .log .info { color:var(--muted); }
   .log .sound { color:var(--green); }
+  .seg { display:inline-flex; }
+  .seg button { border-radius:0; margin:0; }
+  .seg button:first-child { border-radius:6px 0 0 6px; } .seg button:last-child { border-radius:0 6px 6px 0; }
+  .seg button.on { background:var(--blue); border-color:var(--blue); color:#fff; }
+  #routeinfo { color:var(--muted); font-size:12px; }
+  .rd { grid-template-columns:130px 1fr 64px auto; }
+  .rd .sw { padding:1px 6px; font-size:11px; }
+  .rd .sw.off { color:var(--red); border-color:var(--red); }
 </style>
 </head>
 <body>
@@ -95,6 +103,13 @@
       <button id="addlow" title="Add a low box (10 cm, under the lidar's plane) to the simulated room"><i class="fa-solid fa-box-open"></i>low box</button><button id="del" disabled title="Delete the selected object from the simulated room"><i class="fa-solid fa-trash"></i>delete</button></span>
       <label class="chk"><input type="checkbox" id="rays" checked><i class="fa-solid fa-wifi"></i>sensor beams</label>
       <label class="chk"><input type="checkbox" id="trail" checked><i class="fa-solid fa-shoe-prints"></i>trail</label>
+    </div>
+    <div class="bar">
+      <span class="simonly"><label class="chk" title="Load a room: R2 goes back to its start"><i class="fa-solid fa-house"></i><select id="room"></select></label>
+      <span class="seg" id="modebtns" title="Switch a mode on, like its combination on the controller (press the one that is on to switch it off)"></span></span>
+      <span class="seg" title="What a click on the floor does"><button id="click-goal" class="on" title="A click sends R2 there (Go to a point)"><i class="fa-solid fa-location-crosshairs"></i>goal</button><button id="click-route" title="A click adds a point to the patrol route"><i class="fa-solid fa-route"></i>route point</button></span>
+      <button id="clearroute" title="Forget the patrol route"><i class="fa-solid fa-eraser"></i>Clear route</button>
+      <span id="routeinfo"></span>
     </div>
     <div id="settings"></div>
   </section>

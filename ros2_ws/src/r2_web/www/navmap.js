@@ -38,7 +38,7 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
       g.strokeStyle = '#8b949e'; g.lineWidth = 3; g.strokeRect(...P(x0, y1), (x1 - x0) * S(), (y1 - y0) * S());
       for (const o of st.world.obstacles) {
         const sel = o.id === st.selected;
-        g.fillStyle = o.kind === 'low' ? 'rgba(248,81,73,.35)' : '#2b3340';
+        g.fillStyle = o.kind === 'low' ? 'rgba(248,81,73,.35)' : o.kind === 'wall' ? '#8b949e' : '#2b3340';
         g.strokeStyle = sel ? '#3b82f6' : o.kind === 'low' ? '#f85149' : '#8b949e'; g.lineWidth = sel ? 3 : 1.5;
         if (o.kind === 'post') { g.beginPath(); g.arc(...P(o.x, o.y), Math.max(o.r * S(), 4), 0, 7); g.fill(); g.stroke(); }
         else { const [x, y] = P(o.x - o.w / 2, o.y + o.h / 2); g.fillRect(x, y, o.w * S(), o.h * S()); g.strokeRect(x, y, o.w * S(), o.h * S()); }
@@ -49,6 +49,21 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
       g.strokeStyle = 'rgba(59,130,246,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(...P(...st.trail[0]));
       for (const t of st.trail) g.lineTo(...P(...t));
       g.stroke();
+    }
+    // the patrol route: numbered points joined in a loop, the one it heads for filled
+    if (st.route && st.route.length) {
+      g.setLineDash([6, 6]); g.strokeStyle = 'rgba(210,153,34,.8)'; g.lineWidth = 2; g.beginPath();
+      st.route.forEach((p, i) => (i ? g.lineTo(...P(...p)) : g.moveTo(...P(...p))));
+      if (st.route.length > 2) g.closePath();
+      g.stroke(); g.setLineDash([]);
+      g.font = 'bold 12px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      st.route.forEach((p, i) => {
+        const [px, py] = P(...p);
+        g.fillStyle = i === st.routeI ? '#d29922' : '#0d1117'; g.strokeStyle = '#d29922'; g.lineWidth = 2;
+        g.beginPath(); g.arc(px, py, 10, 0, 7); g.fill(); g.stroke();
+        g.fillStyle = i === st.routeI ? '#0d1117' : '#d29922'; g.fillText(String(i + 1), px, py + 1);
+      });
+      g.textAlign = 'start'; g.textBaseline = 'alphabetic';
     }
     if (st.goal) {
       const [gx, gy] = P(...st.goal);
@@ -104,7 +119,7 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
       g.beginPath(); g.moveTo(cx, cy); g.lineTo(...P(px, py)); g.stroke();
       g.fillStyle = '#ffa657'; g.beginPath(); g.arc(...P(px, py), 4.5, 0, 7); g.fill();
     }
-    if (st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data'].includes(st.state)) {
+    if (st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data', 'searching'].includes(st.state)) {
       const [x0, y0] = P(pose.x, pose.y), L = 30 + 160 * Math.abs(st.v || 0);
       g.strokeStyle = { stop: '#f85149', avoiding: '#d29922', turning: '#d29922', reversing: '#d29922', waiting: '#d29922' }[st.state] || '#3fb950';
       g.lineWidth = 4; g.beginPath(); g.moveTo(x0, y0);
