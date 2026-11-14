@@ -121,3 +121,14 @@ def drives_in(mode, mine):
     if mode is None:
         return mine == "goto"
     return mode == mine
+
+
+NAV_MODES = ("goto", "forward", "patrol")       # the modes the navigator drives (follow has its own node)
+
+
+def nav_mode(mode):
+    """Which of NAV_MODES the navigator runs for /r2/mode, or None when another node drives.
+    None (an old bridge) and "" (autonomous mode off) count as goto, as before."""
+    if not mode:
+        return "goto"
+    return mode if mode in NAV_MODES else None
