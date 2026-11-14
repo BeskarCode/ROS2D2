@@ -1,6 +1,8 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-"""The navigator node: drives the feet towards a goal with the logic in nav_core, only while
-the autonomous mode is on (switched on with the controller, PS + L2).
+"""The navigator node: drives the feet with the logic in nav_core, only while the autonomous
+mode is on (switched on with the controller). Modes it drives: goto (towards /nav/goal),
+forward (straight on, searching slowly for a way out when boxed in) and patrol (round the
+route on /nav/patrol). Follow a colour has its own node.
 
   in   /nav/goal          geometry_msgs/PoseStamped  where to go (frame odom)
   in   /nav/cancel        std_msgs/Empty             forget the goal
@@ -8,7 +10,8 @@ the autonomous mode is on (switched on with the controller, PS + L2).
   in   /scan              sensor_msgs/LaserScan      the lidar, already cut to what R2 does not hide
   in   /range/<name>      sensor_msgs/Range          each distance sensor of sensors.yaml
   in   /r2/auto_mode      std_msgs/Bool              from the Mega bridge (latched)
-  in   /r2/mode           std_msgs/String            which mode is on (latched); it drives only in goto
+  in   /nav/patrol        std_msgs/String            the patrol route, JSON [[x, y], ...] in odom (latched)
+  in   /r2/mode           std_msgs/String            which mode is on (latched); it drives in goto, forward, patrol
   out  /foot/cmd_vel      geometry_msgs/Twist        10 Hz, with acceleration ramps
   out  /mega/command      std_msgs/String            the sound of each event (S1:$..)
   out  /nav/state         std_msgs/String            JSON for the web console (see nav_core.state_json)
@@ -32,7 +35,8 @@ from sensor_msgs.msg import LaserScan, Range
 from std_msgs.msg import Bool, Empty, String
 
 from r2_nav.lidar_gate import LidarGate, motor_policy
-from r2_nav.modes import drives_in
+from r2_nav.modes import nav_mode
+from r2_nav.patrol import Patrol, parse_route
 from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, RangeFilter, clamp_param,
                              config_path, is_lidar, load_nav, ramp, state_json)
 from r2_sensors.config import Reloader, in_use
@@ -75,6 +79,8 @@ class NavigatorNode(Node):
         self.range_subs = {}
         self.out = (0.0, 0.0)
         self.last = None
+        self.patrol = Patrol()
+        self.running = None         # (mode the navigator runs, autonomous on) at the last tick
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         self.pub_cmd = self.create_publisher(Twist, "/foot/cmd_vel", 10)
@@ -85,6 +91,7 @@ class NavigatorNode(Node):
         self.create_subscription(Odometry, "/odom", self._on_odom, 10)
         self.create_subscription(LaserScan, "/scan", self._on_scan, qos_profile_sensor_data)
         self.create_subscription(String, "/r2/mode", self._on_mode, latched)
+        self.create_subscription(String, "/nav/patrol", self._on_patrol, latched)
         self.create_subscription(Bool, "/r2/auto_mode", self._on_auto, latched)
         self._subscribe_ranges()
         self.create_timer(1.0, self._reload_sensors)
@@ -121,6 +128,38 @@ class NavigatorNode(Node):
 
     def _on_mode(self, m):
         self.mode = m.data
+
+    def _on_patrol(self, m):
+        route = parse_route(m.data)
+        if route is None:
+            self.get_logger().warning(f"/nav/patrol: not a list of [x, y]: {m.data[:80]}")
+            return
+        self.patrol.set(route)
+        self.get_logger().info(f"patrol route: {len(route)} points")
+        if self.running == ("patrol", True):
+            self._patrol_goal()
+
+    def _patrol_goal(self):
+        p = self.patrol.current()
+        if p is None:
+            self.nav.cancel()
+        else:
+            self.nav.set_goal(*p)
+
+    def _mode_changed(self, mine, auto):
+        """Entering a mode with autonomous on: forward sets off along R2's heading, patrol goes to
+        its route's point; leaving forward or patrol forgets where it was going."""
+        before = self.running
+        self.running = (mine, auto)
+        if before is not None and before[0] in ("forward", "patrol") and before[1]:
+            self.nav.cancel()
+        if not auto:
+            return
+        if mine == "forward":
+            self.nav.start_forward(self.pose[2])
+        elif mine == "patrol":
+            self.patrol.set(self.patrol.points)          # from its first point again
+            self._patrol_goal()
 
     def _on_auto(self, m):
         self.auto_on = m.data
@@ -170,13 +209,17 @@ class NavigatorNode(Node):
 
     # ---------- the 10 Hz loop ----------
     def _tick(self):
-        if self.mode and not drives_in(self.mode, "goto"):
+        mine = nav_mode(self.mode)
+        if mine is None:
             # another mode (follow...) owns the feet: one zero on the way in, then silence
             if self.out != (0.0, 0.0):
                 self.out = (0.0, 0.0)
                 self.pub_cmd.publish(Twist())
             self.last = None
             self.gate.update(self._now(), False)     # back here later: wait for the lidar again
+            if self.running is not None and self.running[0] in ("forward", "patrol"):
+                self.nav.cancel()
+            self.running = None
             return
         now = self._now()
         dt = 0.1 if self.last is None else max(0.01, min(0.5, now - self.last))
@@ -191,11 +234,24 @@ class NavigatorNode(Node):
                 r = self.filters.setdefault(name, RangeFilter()).update(r)
             ranges[name] = r
             filtered[name] = r
-        auto = self.auto_on and drives_in(self.mode, "goto")
+        auto = self.auto_on
+        if (mine, auto) != self.running:
+            self._mode_changed(mine, auto)
         self.gate.update(now, auto)
         if auto and not self.gate.ready(now):
             auto = False                             # the lidar is spinning up: hold still (<= 5 s)
         d = self.nav.step(now, self.pose, scan_xy, ranges, auto, speed=self.out[0])
+        if mine == "patrol" and auto:
+            if d.state in ("arrived", "gave up"):
+                nxt = self.patrol.after(d.state)
+                if len(self.patrol.points) == 1 and d.state == "arrived":
+                    d.why = "patrol: a route of one point: staying there"     # no arriving again 10 times a second
+                elif nxt is not None:
+                    self.nav.set_goal(*nxt)
+                elif self.patrol.points:
+                    d.why = "patrol: could not reach any point of the route: stopped"
+            elif d.state == "idle" and not self.patrol.points:
+                d.why = "patrol: no route yet (click points on the Navigation page)"
 
         v, w = self.out
         if not auto:
@@ -219,7 +275,9 @@ class NavigatorNode(Node):
         d.v, d.w = v, w
         heading = None if d.heading is None else self.pose[2] + d.heading
         ignored = [n for n, s in self.sensors.items() if not s.get("enabled", True)]
-        self.pub_state.publish(String(data=state_json(d, self.nav.goal, heading, filtered, raw, ignored)))
+        route = {"route": [list(p) for p in self.patrol.points], "route_i": self.patrol.i} if mine == "patrol" else {}
+        self.pub_state.publish(String(data=state_json(d, self.nav.goal, heading, filtered, raw, ignored,
+                                                      mode=mine, **route)))
 
 
 def main():

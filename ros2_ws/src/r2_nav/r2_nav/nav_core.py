@@ -134,7 +134,7 @@ def ramp(current, wanted, max_step):
     return current + max(-max_step, min(max_step, wanted - current))
 
 
-def state_json(d, goal, heading_odom, filtered, raw, ignored=()):
+def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", route=(), route_i=None):
     """What /nav/state carries for the web page (one JSON object)."""
     r = lambda v: None if v is None else round(v, 3)   # noqa: E731
     return json.dumps({
@@ -142,7 +142,7 @@ def state_json(d, goal, heading_odom, filtered, raw, ignored=()):
         "heading": r(heading_odom), "tries": d.tries, "goal": list(goal) if goal else None,
         "stops": {k: r(v) for k, v in d.stops.items()},
         "filtered": {k: r(v) for k, v in filtered.items()}, "raw": {k: r(v) for k, v in raw.items()},
-        "ignored": list(ignored),
+        "ignored": list(ignored), "mode": mode, "route": [list(p) for p in route], "route_i": route_i,
     })
 
 

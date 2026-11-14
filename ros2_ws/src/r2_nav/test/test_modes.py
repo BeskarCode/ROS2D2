@@ -73,3 +73,11 @@ def test_user_file_wins(tmp_path, monkeypatch):
     assert modes.modes_path("/etc/x.yaml") == "/etc/x.yaml"
     user.write_text("")
     assert modes.modes_path("/etc/x.yaml") == str(user)
+
+
+def test_nav_mode_the_navigator_runs():
+    from r2_nav.modes import nav_mode
+    assert nav_mode(None) == "goto"                 # an old bridge: as before
+    assert [nav_mode(m) for m in ("goto", "forward", "patrol")] == ["goto", "forward", "patrol"]
+    assert nav_mode("") == "goto"                   # off: the navigator still reports (manual)
+    assert nav_mode("follow") is None
