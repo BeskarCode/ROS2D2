@@ -359,7 +359,7 @@ def test_state_json_lists_ignored():
 
 
 # ---------- Go forward ----------
-from r2_nav.nav_core import SEARCH_TURN, wrap  # noqa: E402
+from r2_nav.nav_core import wrap  # noqa: E402
 
 
 def wm_of(c):
@@ -391,7 +391,7 @@ def test_forward_turns_slowly_when_blocked_and_leaves_by_the_gap():
     left_free = wall_ahead() + [(0.2 + k / 10, -0.5) for k in range(10)]   # something on the right too
     d = run(nav, 3, scan=left_free)[-1]
     assert d.state == "searching" and d.v == 0
-    assert 0 < d.w <= SEARCH_TURN * wm_of(c) + 1e-9       # slowly, towards the free side
+    assert 0 < d.w <= c["search_turn"] * wm_of(c) + 1e-9   # slowly, towards the free side
     d = run(nav, 3, pose=(0.0, 0.0, 1.2), t0=1.0)[-1]   # turned 69 deg: nothing ahead now
     assert d.state == "forward" and d.v > 0
     assert nav.forward_th == pytest.approx(1.2)
@@ -429,3 +429,51 @@ def test_cancel_stops_forward():
     nav.start_forward(0.0)
     nav.cancel()
     assert nav.forward_th is None and run(nav, 2)[-1].state == "idle"
+
+
+# ---------- nothing inside the safety circle ahead (goto, patrol, forward) ----------
+BESIDE_LEFT = [(0.3, 0.4)]            # 0.50 m away (< 0.55), 53 deg left: outside the 0.72 m wide path
+
+
+def test_goto_does_not_drive_on_with_something_inside_the_circle_ahead():
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(3.0, 0.0)
+    d = run(nav, 3, scan=BESIDE_LEFT)[-1]
+    assert d.v <= 0 and d.w < 0                      # turns away from it (right), no closer
+    assert "safety circle" in d.why
+
+
+def test_something_inside_the_circle_behind_does_not_stop_it():
+    nav = Navigator(cfg(), SENSORS)
+    nav.set_goal(3.0, 0.0)
+    d = run(nav, 10, scan=[(-0.25, 0.45)])[-1]
+    assert d.v > 0                                   # moving away from it
+    nav2 = Navigator(cfg(), SENSORS)
+    nav2.set_goal(3.0, 0.0)
+    d = run(nav2, 10, scan=[(0.1, 0.54)])[-1]        # a wall alongside, 80 deg: not ahead
+    assert d.v > 0 and "safety circle" not in d.why
+
+
+def test_forward_searches_with_something_inside_the_circle_ahead():
+    nav = Navigator(cfg(), SENSORS)
+    nav.start_forward(0.0)
+    d = run(nav, 3, scan=BESIDE_LEFT)[-1]
+    assert d.state == "searching" and d.v == 0 and d.w < 0
+
+
+# ---------- the Go forward / safety circle settings live in nav.yaml ----------
+def test_new_settings_have_defaults_and_ranges():
+    c = parse_nav("")
+    assert (c["safety_cone_deg"], c["search_turn"], c["search_free"], c["search_wide_deg"],
+            c["search_near"], c["forward_stuck_s"]) == (60, 0.5, 0.3, 60, 0.1, 8)
+    assert parse_nav("search_turn: 0.8\n")["search_turn"] == 0.8
+    with pytest.raises(NavConfigError, match="safety_cone_deg"):
+        parse_nav("safety_cone_deg: 120\n")
+
+
+def test_search_turn_comes_from_the_settings():
+    c = cfg(search_turn=1.0)
+    nav = Navigator(c, SENSORS)
+    nav.start_forward(0.0)
+    d = run(nav, 3, scan=wall_ahead() + [(0.2 + k / 10, -0.5) for k in range(10)])[-1]
+    assert d.state == "searching" and d.w == pytest.approx(wm_of(c))

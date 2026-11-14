@@ -8,8 +8,24 @@ import tempfile
 from r2_nav.nav_core import NavConfigError, parse_nav
 
 
+def _defaults(default):
+    """The package's nav.yaml (what "Defaults" on the page goes back to), or the built-in values."""
+    try:
+        with open(default, encoding="utf-8") as f:
+            return parse_nav(f.read())
+    except (OSError, NavConfigError):
+        return parse_nav("")
+
+
 def nav_payload(default, user):
-    """What the Navigation page loads. A broken file comes back as `error`, never raises."""
+    """What the Navigation page loads, with the package defaults. A broken file comes back as
+    `error`, never raises."""
+    out = _payload(default, user)
+    out["defaults"] = _defaults(default)
+    return out
+
+
+def _payload(default, user):
     path = user if os.path.isfile(user) else default
     try:
         with open(path, encoding="utf-8") as f:

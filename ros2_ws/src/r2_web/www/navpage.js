@@ -6,6 +6,8 @@ import { MODELS } from './models.js';
 import { createNavMap } from './navmap.js';
 import { createNavView3d } from './navview3d.js';
 import { createModePick } from './modepick.js';
+import { GROUPS, FIELDS, changedKeys, toNavYaml } from './navsettings.js';
+import { call } from './rosbridge.js';
 import { freeText, nearestPoint } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
@@ -26,7 +28,14 @@ const P = page;
 // ---------- settings from the web server (sensors.yaml, nav.yaml) ----------
 async function loadFiles() {
   try { P.sensors = (await (await fetch('api/sensors', { cache: 'no-store' })).json()).sensors || {}; } catch { /* restarting */ }
-  try { P.nav = (await (await fetch('api/nav', { cache: 'no-store' })).json()).nav || {}; } catch { /* restarting */ }
+  try {
+    const api = await (await fetch('api/nav', { cache: 'no-store' })).json();
+    P.nav = api.nav || {};
+    P.navDefaults = api.defaults || {};
+    P.navSaved = api.saved;
+    P.navError = api.error;
+  } catch { /* restarting */ }
+  buildSettings();
   buildReadings();
 }
 
@@ -318,3 +327,70 @@ drawers.push((st) => view3d.draw(st));
   }
   requestAnimationFrame(frame);
 })();
+
+// ---------- settings (nav.yaml): applied live to the navigator, Save keeps them ----------
+// The navigator uses the package defaults until the user saves their own (~/.config/ros2d2/nav.yaml).
+const isInt = (k) => Number.isInteger(P.navDefaults[k]) && FIELDS.find((f) => f.key === k)?.step >= 1;
+function paramValue(k, v) {
+  if (typeof v === 'boolean') return { type: 1, bool_value: v };
+  if (typeof v === 'string') return { type: 4, string_value: v };
+  return isInt(k) ? { type: 2, integer_value: Math.round(v) } : { type: 3, double_value: v };
+}
+async function applyLive(k, v) {
+  const r = await call('/navigator/set_parameters', 'rcl_interfaces/srv/SetParameters', { parameters: [{ name: k, value: paramValue(k, v) }] });
+  const res = r && r.results && r.results[0];
+  if (res && !res.successful) addLine(`· ${k}: ${res.reason}`, 'info');
+}
+let settingsDirty = false;
+function settingsState() {
+  const ch = changedKeys(P.nav, P.navDefaults);
+  const st = $('settings').querySelector('.st');
+  if (!st) return;
+  st.textContent = (P.navError ? `nav.yaml: ${P.navError} · ` : '')
+    + (settingsDirty ? 'changed: applied now, Save to keep it' : P.navSaved ? `your settings (${ch.length} changed from the defaults)` : 'the defaults');
+  st.style.color = settingsDirty ? 'var(--amber)' : '';
+  $('settings').querySelectorAll('.f').forEach((el) => el.classList.toggle('changed', ch.includes(el.dataset.k)));
+}
+function fmt(f, v) {
+  if (f.bool) return v ? 'on' : 'off';
+  if (f.options) return v;
+  return `${Math.round(v * 100) / 100} ${f.unit || ''}`.trim();
+}
+function buildSettings() {
+  if (!P.nav || !Object.keys(P.nav).length) return;
+  const open = $('settings').querySelector('details')?.open;
+  $('settings').innerHTML = `<details${open ? ' open' : ''}><summary><i class="fa-solid fa-sliders"></i>Settings <span class="st"></span></summary>
+    <div class="groups">${GROUPS.map(([title, icon, fields]) => `<div><h4><i class="fa-solid ${icon}"></i> ${title}</h4>${fields.map((f) => {
+      const ctl = f.bool ? `<input type="checkbox" data-k="${f.key}">`
+        : f.options ? `<select data-k="${f.key}">${f.options.map((o) => `<option>${o}</option>`).join('')}</select>`
+        : `<input type="range" data-k="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}">`;
+      return `<div class="f" data-k="${f.key}" title="${f.help || ''}"><label>${f.label}</label>${ctl}<b></b></div>`;
+    }).join('')}</div>`).join('')}</div>
+    <div class="acts"><button class="primary" id="nav-save" title="Keep these settings in ~/.config/ros2d2/nav.yaml"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+      <button id="nav-defaults" title="Every setting back to the package's defaults (applied now; Save to keep it)"><i class="fa-solid fa-rotate-left"></i>Defaults</button></div></details>`;
+  for (const f of FIELDS) {
+    const row = $('settings').querySelector(`.f[data-k="${f.key}"]`), inp = row.querySelector('[data-k]');
+    const show = () => { row.querySelector('b').textContent = fmt(f, P.nav[f.key]); };
+    if (f.bool) inp.checked = !!P.nav[f.key]; else inp.value = P.nav[f.key];
+    show();
+    const ev = f.bool || f.options ? 'change' : 'input';
+    inp.addEventListener(ev, () => {
+      P.nav[f.key] = f.bool ? inp.checked : f.options ? inp.value : Number(inp.value);
+      settingsDirty = true; show(); settingsState();
+    });
+    inp.addEventListener('change', () => applyLive(f.key, P.nav[f.key]));
+  }
+  $('nav-save').onclick = async () => {
+    const r = await fetch('api/nav', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ yaml: toNavYaml(P.nav) }) });
+    const body = await r.json();
+    if (r.ok) { settingsDirty = false; P.navSaved = true; addLine(`· settings saved: ${body.file}`, 'info'); } else addLine(`· ${body.error}`, 'info');
+    settingsState();
+  };
+  $('nav-defaults').onclick = () => {
+    for (const f of FIELDS) { P.nav[f.key] = P.navDefaults[f.key]; applyLive(f.key, P.nav[f.key]); }
+    settingsDirty = true;
+    buildSettings();
+    $('settings').querySelector('details').open = true;
+  };
+  settingsState();
+}

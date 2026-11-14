@@ -74,6 +74,18 @@ mandar a R2 a un sitio.
 atasca (o la única salida queda muy a un lado) gira despacio sobre sí mismo buscando un hueco libre y
 sigue por él; si da una vuelta entera sin encontrar salida, se para y suena el sonido de *give up*.
 
+**Círculo de seguridad**: el círculo rojo discontinuo alrededor de R2 (*safety circle* en Settings).
+R2 no avanza mientras haya algo dentro de él por delante (dentro de *circle watched ahead*, 60° a
+cada lado por defecto): gira hacia el otro lado hasta que queda libre. Lo que tiene al lado o detrás
+(una pared por la que va pegado) no lo para.
+
+**Settings**: todos los ajustes de cómo se mueve R2 solo (nav.yaml), por grupos: círculo de
+seguridad, velocidad, qué hacer cuando se bloquea (Go to a point, Patrol), la búsqueda lenta de Go
+forward y los sensores de distancia. Un cambio se aplica al momento (pruébalo en el simulador);
+**Save** lo guarda en `~/.config/ros2d2/nav.yaml` y **Defaults** vuelve a los valores del paquete.
+Hasta que guardes, R2 usa los de por defecto; un ajuste cambiado respecto al de por defecto sale en
+ámbar.
+
 **Solo en simulación**:
 - **Sala**: carga un salón (sofá, patas de mesa y sillas, una caja baja), un pasillo estrecho con
   puerta, varias salas unidas por puertas o un evento con gente (una con la camiseta del color) y
