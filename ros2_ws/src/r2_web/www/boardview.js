@@ -1,5 +1,5 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-// Setup -> System, on top: the live strip (what the Pi finds: Mega, Pi, lidar, Pico board,
+// Setup -> System, on the left (on top when narrow): the live strip (what the Pi finds: Mega, Pi, lidar, Pico board,
 // cameras) and the mirror of the Pico board (its LEDs, its display pixel for pixel and its
 // DISPLAY button, which works both ways). The Pico sends the mirror only while this tab asks
 // for it (/pico/mirror_request every 2 s; the bridge renews MIR, the Pico stops 5 s after).
@@ -10,29 +10,67 @@ const ASK_MS = 2000;
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const metres = (m) => (m === undefined ? '—' : m === Infinity ? 'nothing' : `${m.toFixed(2)} m`);
 
+// The board drawn to scale from the PCB (80 x 90 mm, origin top left, KiCad coordinates in mm):
+// each part sits where it is on the real board, the display at its real size.
+const W = 80, H = 90;
+const at = (x, y) => `left:${(x / W * 100).toFixed(3)}%;top:${(y / H * 100).toFixed(3)}%`;
+const box = (x0, y0, x1, y1) => `${at(x0, y0)};width:${((x1 - x0) / W * 100).toFixed(3)}%;height:${((y1 - y0) / H * 100).toFixed(3)}%`;
+const PITCH = 2.54;
+// a pin header lying flat: first pin at (x, y), the others to the right
+function header(x, y, pins, labels, above = false) {
+  const x0 = x - PITCH / 2, x1 = x + (pins - 1) * PITCH + PITCH / 2;
+  const holes = Array.from({ length: pins }, () => '<i></i>').join('');
+  const text = labels.map((l) => `<span>${l}</span>`).join('');
+  return `<div class="pcb-hdr" style="${box(x0, y - PITCH / 2, x1, y + PITCH / 2)}">${holes}</div>`
+    + `<div class="pcb-pins" style="${above ? box(x0, y - PITCH / 2 - 2.6, x1, y - PITCH / 2 - 0.3) : box(x0, y + PITCH / 2 + 0.3, x1, y + PITCH / 2 + 2.6)}">${text}</div>`;
+}
+const US_Y = { US1: 12, US2: 22, US3: 32, US4: 42, US5: 52 };   // US1-5 at x 3, their LEDs at x 21
+const VL_Y = { VL1: 12, VL2: 24, VL3: 39, VL4: 51 };            // VL1-4 at x 55, their LEDs at x 72.6
+function boardHtml() {
+  const us = Object.entries(US_Y).map(([c, y]) =>
+    `<b class="pcb-name" style="${at(2, y - 4.4)}">${c}</b>`
+    + `<span class="pcb-val" data-val="${c}" style="${at(9, y - 4.2)}">—</span>`
+    + header(3, y, 4, ['5V', 'TR', 'EC', 'G'])
+    + `<span class="pcb-led" data-led="${c}" style="${at(21, y)}"></span>`).join('');
+  const vl = Object.entries(VL_Y).map(([c, y]) =>
+    `<b class="pcb-name" style="${at(54, y - 4.4)}">${c}</b>`
+    + `<span class="pcb-val" data-val="${c}" style="${at(60.5, y - 4.2)}">—</span>`
+    + header(55, y, 6, ['3V3', 'G', 'SCL', 'SDA', '–', 'XS'])
+    + `<span class="pcb-led" data-led="${c}" style="${at(72.6, y)}"></span>`).join('');
+  const holes = [[3.5, 3.5], [76.5, 3.5], [3.5, 86.5], [76.5, 86.5]]
+    .map(([x, y]) => `<span class="pcb-hole" style="${at(x, y)}"></span>`).join('');
+  return holes + us + vl
+    // the Pico 2 (21 x 51 mm) on its two sockets, USB at the top; its own LED next to the USB
+    + `<div class="pcb-pico" style="${box(29.5, 2.1, 50.5, 53.1)}"><small>USB</small><span>Pico 2</span></div>`
+    + `<span class="pcb-led pico" id="bv-picoled" style="${at(36.5, 5)}" title="The Pico's own LED: a slow blink = waiting for the Pi; on with a short blink every second = measuring"></span>`
+    // power: terminal block, USB-C, PWR LED (D4)
+    + `<div class="pcb-term" style="${box(1.5, 56.5, 11.5, 67.5)}"><i></i><i></i></div>`
+    + `<b class="pcb-txt" style="${at(13, 58.6)}">+5V</b><b class="pcb-txt" style="${at(13, 63.8)}">GND</b>`
+    + `<div class="pcb-usbc" style="${box(0, 71.5, 6, 79.5)}"></div><b class="pcb-txt" style="${at(2.5, 81)}">USB-C 5V</b>`
+    + `<span class="pcb-led pwr" id="bv-pwr" style="${at(40.8, 59.5)}" title="PWR: the 5 V input (USB-C or terminal). Known only while an HC-SR04 answers"></span>`
+    + `<b class="pcb-txt" style="${at(42.3, 58.6)}">PWR</b>`
+    // QWIIC (J3) and EXP (J4)
+    + `<div class="pcb-qwiic" style="${box(34.2, 62.8, 39.8, 66.2)}"></div><b class="pcb-txt" style="${at(41, 64)}">QWIIC</b>`
+    + `<b class="pcb-txt" style="${at(26.7, 65.8)}">EXP</b>`
+    + header(27.5, 69, 6, ['5V', 'G', '3V3', 'SCL', 'SDA', 'RUN'])
+    // the logo and the DISPLAY button (SW1)
+    + `<img class="pcb-logo" src="img/pcb-logo.png" alt="" style="${box(15.5, 72.5, 27.5, 84.5)}">`
+    + `<b class="pcb-txt" style="${at(36.6, 75)}">SW1</b>`
+    + `<button class="pcb-button" id="bv-btn" style="${box(35.2, 76.2, 40.8, 81.8)}" title="DISPLAY: click = a press; hold 3 s = off, like the real button"><i></i></button>`
+    + `<b class="pcb-txt" style="${at(35.3, 82.8)}">DISPLAY</b>`
+    + `<div class="pcb-hold" id="bv-hold" style="${box(33, 85.6, 43, 86.4)}"><i></i></div>`
+    // the 0.96" SSD1306 module on J2: its board, its glass and the 21.74 x 10.86 mm screen
+    + `<div class="pcb-oledmod" style="${box(45.5, 60.5, 73, 88.5)}"></div>`
+    + header(54.69, 62, 4, ['G', 'V', 'SCL', 'SDA'], true)
+    + `<div class="pcb-glass" style="${box(46.1, 67.2, 72.4, 84.4)}"></div>`
+    + `<canvas id="bv-oled" width="128" height="64" style="${box(48.38, 70.4, 70.12, 81.26)}" title="The board's display, as it is now"></canvas>`
+    + `<b class="pcb-txt foot" style="${at(13, 87.6)}">ROS2D2 · NandoMadrid · rev A</b>`;
+}
+
 export function createBoardView(root) {
   root.innerHTML = `
     <div class="strip" id="bv-strip"></div>
-    <div class="pcb" id="bv-pcb">
-      <div class="pcb-col pcb-us">${CONNECTOR_NAMES.slice(4).map((c) => row(c, 'left')).join('')}</div>
-      <div class="pcb-pico"><span class="pcb-led pico" id="bv-picoled" title="The Pico's own LED: a slow blink = waiting for the Pi; on with a short blink every second = measuring"></span><span>Pico 2</span></div>
-      <div class="pcb-col pcb-vl">${CONNECTOR_NAMES.slice(0, 4).map((c) => row(c, 'right')).join('')}</div>
-      <div class="pcb-ui">
-        <canvas id="bv-oled" width="128" height="64" title="The board's display, as it is now"></canvas>
-        <div class="pcb-btns">
-          <span class="pcb-led pwr" id="bv-pwr" title="PWR: the 5 V input (USB-C or terminal). Known only while an HC-SR04 answers"></span><b>PWR</b>
-          <button class="pcb-button" id="bv-btn" title="DISPLAY: click = a press; hold 3 s = off, like the real button"><i></i></button><b>DISPLAY</b>
-        </div>
-        <div class="pcb-hold" id="bv-hold"><i></i></div>
-      </div>
-      <div class="pcb-cover" id="bv-cover" hidden></div>
-    </div>`;
-  function row(c, side) {
-    const led = `<span class="pcb-led" data-led="${c}"></span>`;
-    const conn = `<span class="pcb-conn">${c}</span>`;
-    const val = `<span class="pcb-val" data-val="${c}">—</span>`;
-    return `<div class="pcb-row">${side === 'left' ? conn + led + val : val + led + conn}</div>`;
-  }
+    <div class="pcb" id="bv-pcb">${boardHtml()}<div class="pcb-cover" id="bv-cover" hidden></div></div>`;
   const $ = (id) => root.querySelector(`#${id}`);
   const oled = $('bv-oled').getContext('2d');
 

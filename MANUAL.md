@@ -145,11 +145,16 @@ the video, as before.
 
 ![Setup, System](media/manual/setup-system.png)
 
+The tab has two columns: the strip and the board on the left, telemetry and the settings on the
+right; on narrow screens, the board on top and the settings below it.
+
 **On top, what the Pi finds**: a strip with the Mega, the Pi, the lidar, the Pico board and each
 camera, green when found and grey when not, joined by the USB cables (green when both ends are
 there). Sabertooth, SyRen, MarcDuino and the controllers do not show: the Pi cannot see them.
 
-**The Pico board, live** (Pico firmware 0.3.0 or newer): a copy of the real board. Each connector's
+**The Pico board, live** (Pico firmware 0.3.0 or newer): a copy of the real board,
+to scale and with each part where it is on the PCB: the connectors, the Pico, the DISPLAY button and
+the 0.96" display on its module, at its real size. Each connector's
 LED lights and blinks as the real one, with the sensor's reading beside it; the Pico's own green
 LED too; the display shows the real display's picture, pixel for pixel. The **DISPLAY** button works
 like the real one: a click is a press, holding it 3 s turns the display off (a bar fills while you
