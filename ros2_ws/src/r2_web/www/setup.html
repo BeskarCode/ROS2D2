@@ -70,10 +70,15 @@
   .slider { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; }
   .slider input[type=range] { width: 200px; accent-color: var(--blue); }
   .slider b { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
-  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
-  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
-  .coverage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px;
-              position: sticky; top: 12px; }
+  /* Cameras: the coverage box and every camera in one grid, all the same width and height */
+  .layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); grid-auto-rows: 1fr; gap: 16px; }
+  .layout > .grid { display: contents; }
+  .coverage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .coverage svg { max-height: 300px; }
+  /* every control in a camera card the same width (slider + its value) */
+  .cam .body .row > select, .cam .body .row > .step, .cam .body .row > .slider { width: 262px; max-width: 70%; flex: none; box-sizing: border-box; }
+  .cam .body .row > .step { justify-content: space-between; }
+  .cam .body .row > .slider input[type=range] { width: auto; flex: 1; min-width: 0; }
   .coverage svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
   .coverage .legend { color: var(--muted); font-size: 12px; }
   .cam .badge { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: 11px; vertical-align: 1px; }
