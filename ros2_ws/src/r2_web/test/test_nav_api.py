@@ -54,3 +54,13 @@ def test_save_is_atomic(tmp_path):
 def test_save_refuses_non_text(tmp_path):
     _, user = files(tmp_path)
     assert save_nav(123, user)[0] == 400
+
+
+def test_payload_carries_the_package_defaults(tmp_path):
+    default = tmp_path / "pkg.yaml"
+    default.write_text("max_speed: 0.3\n", encoding="utf-8")
+    user = tmp_path / "user" / "nav.yaml"
+    assert save_nav("max_speed: 0.2\nsearch_turn: 0.9\n", str(user))[0] == 200
+    p = nav_payload(str(default), str(user))
+    assert p["nav"]["max_speed"] == 0.2 and p["nav"]["search_turn"] == 0.9      # the user's
+    assert p["defaults"]["max_speed"] == 0.3 and p["defaults"]["search_turn"] == 0.5   # the package's

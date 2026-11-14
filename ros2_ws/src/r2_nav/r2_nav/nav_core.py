@@ -22,6 +22,12 @@ nav.yaml (the web console's Navigation page edits it):
     on_blocked: turn          # turn | reverse | wait
     allow_reverse: true
     give_up_after: 3          # tries; then it stops until it gets a new goal
+    safety_cone_deg: 60       # something inside the circle within this angle of ahead stops it
+    search_turn: 0.5          # Go forward, boxed in: turns on the spot at this fraction of max_turn
+    search_free: 0.3          # m beyond the circle that must be free ahead to leave that way
+    search_wide_deg: 60       # a way out further off to a side than this is searched for slowly
+    search_near: 0.1          # m beyond the circle: closer than this ahead counts as boxed in
+    forward_stuck_s: 8        # s without moving 0.15 m in Go forward: search for a way out
     sounds: {auto_on: "S1:$11", obstacle: "S1:$21", blocked: "S1:$31", give_up: "S1:$41", arrived: "S1:$W"}
 """
 
@@ -41,11 +47,15 @@ DEFAULTS = {
     "turn_accel_deg": 20, "max_drive_power": 40, "max_turn_power": 30,
     "goal_tolerance": 0.25, "sensors_may_stop_earlier": True, "filter": True, "on_blocked": "turn",
     "allow_reverse": True, "give_up_after": 3,
+    "safety_cone_deg": 60, "search_turn": 0.5, "search_free": 0.3, "search_wide_deg": 60, "search_near": 0.1,
+    "forward_stuck_s": 8,
     "sounds": {"auto_on": "S1:$11", "obstacle": "S1:$21", "blocked": "S1:$31", "give_up": "S1:$41", "arrived": "S1:$W"},
 }
 RANGES = {"safety_radius": (0.25, 1.5), "slow_from": (0.1, 3.0), "max_speed": (0.05, 0.4), "max_turn_deg": (5, 34),
           "accel": (0.05, 2.0), "turn_accel_deg": (5, 180), "max_drive_power": (5, 127), "max_turn_power": (5, 127),
-          "goal_tolerance": (0.05, 1.0), "give_up_after": (1, 20)}
+          "goal_tolerance": (0.05, 1.0), "give_up_after": (1, 20),
+          "safety_cone_deg": (20, 90), "search_turn": (0.2, 1.0), "search_free": (0.1, 1.0), "search_wide_deg": (20, 90),
+          "search_near": (0.0, 0.5), "forward_stuck_s": (3, 30)}
 BLOCKED_MODES = ("turn", "reverse", "wait")
 SOUND = re.compile(r"^(S1|S3|MD):[ -~]{1,20}$")
 
@@ -62,11 +72,6 @@ TURN_UNITS_PER_RADPS = 30  # and rad/s * 30
 SIDE_SLOW_MIN = 0.3        # things beside the path slow R2 down to this fraction at most
 FLOOR_NEAR = 0.8         # floor sensor reading below 80% of the floor: something low in the way
 FLOOR_FAR = 1.4          # above 140% of the floor (or no echo): a step down or a hole
-SEARCH_TURN = 0.5        # Go forward, boxed in: turns on the spot at this fraction of max_turn
-SEARCH_FREE = 0.3        # m beyond safety_radius that must be free ahead to leave that way
-SEARCH_WIDE = 60         # deg: a way out further off to a side than this is searched for slowly
-SEARCH_NEAR = 0.1        # m beyond safety_radius: closer than this ahead counts as boxed in
-FORWARD_STUCK = 8.0      # s without moving 0.15 m in Go forward: search for a way out
 
 
 class NavConfigError(ValueError):
@@ -256,6 +261,20 @@ def clearance(points, heading, half_width=0.36):
     return best
 
 
+INSIDE_MARGIN = 0.03      # m: just inside the circle (a wall it runs along at the edge) does not count
+
+
+def inside_ahead(points, radius, cone_deg=60):
+    """The nearest point inside the safety circle and within cone_deg of ahead, or None. Driving
+    forward would bring it closer; one behind or beside (a wall it runs along) does not stop R2."""
+    best = None
+    for x, y in points:
+        d = math.hypot(x, y)
+        if x > 0 and abs(math.atan2(y, x)) <= math.radians(cone_deg) and d < radius - INSIDE_MARGIN and (best is None or d < best[2]):
+            best = (x, y, d)
+    return best
+
+
 def choose_heading(points, goal_bearing, cfg):
     """The heading (-90..+90 deg, 10 deg steps) that best mixes 'towards the goal' and 'free'."""
     margin = cfg["safety_radius"] + cfg["slow_from"]
@@ -383,7 +402,8 @@ class Navigator:
             if self.last_th is not None:
                 self.turned += abs(wrap(th - self.last_th))
             self.last_th = th
-            if too_close is None and clearance(pts, 0.0) >= R + SEARCH_FREE:
+            if (too_close is None and inside_ahead(pts, R, cfg["safety_cone_deg"]) is None
+                    and clearance(pts, 0.0) >= R + cfg["search_free"]):
                 # a way out straight ahead: carry on along it
                 self.searching, self.turned, self.last_th, self.search_dir = False, 0.0, None, 0
                 self.forward_th = th
@@ -396,7 +416,7 @@ class Navigator:
                 return d
             else:
                 side = "left" if self.search_dir > 0 else "right"
-                d.w = SEARCH_TURN * wm * self.search_dir
+                d.w = cfg["search_turn"] * wm * self.search_dir
                 d.state, d.heading = "searching", 0.0
                 d.why = f"boxed in: turning {side} slowly to find a way out ({math.degrees(self.turned):.0f} of 360 deg)"
                 if too_close:
@@ -408,13 +428,18 @@ class Navigator:
         x, y = pose[0], pose[1]
         if self.moved_at is None or math.hypot(x - self.moved_at[1], y - self.moved_at[2]) >= 0.15:
             self.moved_at = (now, x, y)
-        stuck = now - self.moved_at[0] > FORWARD_STUCK
-        if too_close is not None or clear < R + SEARCH_NEAR or abs(heading) > math.radians(SEARCH_WIDE) or stuck:
+        stuck = now - self.moved_at[0] > cfg["forward_stuck_s"]
+        intruder = inside_ahead(pts, R, cfg["safety_cone_deg"])
+        if (too_close is not None or clear < R + cfg["search_near"] or abs(heading) > math.radians(cfg["search_wide_deg"]) or stuck
+                or intruder is not None):
             self.moved_at = None
             self.searching, self.turned, self.last_th = True, 0.0, th
-            self.search_dir = 1 if clearance(pts, math.radians(60)) >= clearance(pts, math.radians(-60)) else -1
+            if intruder is not None:               # away from what is inside the circle
+                self.search_dir = -1 if intruder[1] > 0 else 1
+            else:
+                self.search_dir = 1 if clearance(pts, math.radians(60)) >= clearance(pts, math.radians(-60)) else -1
             d.events.append("blocked")
-            d.w = SEARCH_TURN * wm * self.search_dir
+            d.w = cfg["search_turn"] * wm * self.search_dir
             d.state, d.heading = "searching", 0.0
             d.why = f"blocked{' by ' + too_close if too_close else ''}: turning slowly to find a way out"
             return d
@@ -478,7 +503,8 @@ class Navigator:
         v = vmax * min(slow(clear), max(SIDE_SLOW_MIN, slow(nearest_ahead(pts)))) * max(0.0, math.cos(heading))
         state = "avoiding" if abs(wrap(heading - want)) > math.radians(12) else "going"
         why = ("steering round an obstacle" if state == "avoiding" else "heading for the goal") + f", {gd:.2f} m to go"
-        blocked = too_close is not None or clear < R
+        intruder = inside_ahead(pts, R, cfg["safety_cone_deg"])
+        blocked = too_close is not None or clear < R or intruder is not None
 
         self.closest = min(self.closest, gd)
         # progress watchdog: going round in circles, stuck in a corner or wandering away from the
@@ -529,7 +555,10 @@ class Navigator:
             self.phase, self.backed, self.free_steps = "turn", 0.0, 0
         if self.phase == "turn":
             if not self.turn_dir:
-                self.turn_dir = 1 if clearance(pts, math.radians(60)) >= clearance(pts, math.radians(-60)) else -1
+                if intruder is not None:           # away from what is inside the circle
+                    self.turn_dir = -1 if intruder[1] > 0 else 1
+                else:
+                    self.turn_dir = 1 if clearance(pts, math.radians(60)) >= clearance(pts, math.radians(-60)) else -1
             if blocked or self.free_steps < FREE_STEPS:
                 self.free_steps = 0 if blocked else self.free_steps + 1
                 side = "left" if self.turn_dir > 0 else "right"
@@ -540,6 +569,8 @@ class Navigator:
                     why = f"STOP: {too_close}: {floor_why} ahead, turning {side}"
                 elif too_close:
                     why = f"STOP: {too_close} reads {ranges[too_close]:.2f} m < {stops[too_close]:.2f} m, turning {side}"
+                elif intruder is not None:
+                    why = f"keeping the safety circle clear: something {intruder[2]:.2f} m away ahead, turning {side}"
                 else:
                     why = f"turning {side} until the way is clear"
             else:

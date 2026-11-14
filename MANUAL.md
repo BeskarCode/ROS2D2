@@ -70,6 +70,16 @@ it reaches none it stops. *Clear route* forgets it. *goal* puts clicks back to s
 boxed in (or the only way out is well off to a side) it turns slowly on the spot looking for a free
 way and carries on along it; after a full turn with no way out it stops and plays the *give up* sound.
 
+**Safety circle**: the red dashed circle round R2 (*safety circle* in Settings). R2 does not drive on
+while something is inside it ahead (within *circle watched ahead*, 60° each side by default): it
+turns away until it is clear. Something beside or behind (a wall it runs along) does not stop it.
+
+**Settings**: every setting of how R2 moves on its own (nav.yaml), in groups: safety circle, speed,
+what to do when blocked (Go to a point, Patrol), Go forward's slow search, and the distance sensors.
+A change applies at once (try it in the simulator); **Save** keeps it in `~/.config/ros2d2/nav.yaml`,
+**Defaults** brings back the package's values. Until you save, R2 uses the defaults; a setting you
+changed from its default shows in amber.
+
 **Only in simulation**:
 - **Room**: load a living room (sofa, table and chair legs, a low box), a narrow corridor with a
   door, several rooms joined by doors, or an event with people (one wearing the colour) and
