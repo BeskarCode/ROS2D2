@@ -12,6 +12,7 @@ function fkind(k) =
     k == "m3x6_pan"   ? [6, 2.9, "pan", 5.5, 2.4] :
     k == "m3x6_cyl"   ? [6, 2.9, "cyl", 5.5, 3] :
     k == "m3x10_flat" ? [10, 2.9, "flat", 6.0, 1.4] :
+    k == "m3x10_pan"  ? [10, 2.9, "pan", 5.5, 2.4] :
     k == "nut_m3"     ? [2.4, 5.5, "nut", 0, 0] :
     k == "m25x6"      ? [6, 2.0, "pan", 4.5, 1.8] :
     k == "m4x12"      ? [12, 3.9, "pan", 7, 2.8] : undef;
@@ -32,15 +33,15 @@ function fasteners() = concat(
     [for (h = conv_holes) ["ins_m3", 1, [div_x[1], conv_y + h[0], conv_p0()[2] + h[1]], [-1, 0, 0]]],
     [for (h = pi_holes) ["ins_m25", 1, [pi_x_pcb(), pi_y0() + h[0], pi_z0() + h[1]], [-1, 0, 0]]],
     [for (p = concat(_back_screws(), _hdmi_screws())) ["ins_m3", 1, [p[0], D, p[1]], [0, -1, 0]]],
-    [for (s = [-1, 1]) ["ins_m3", 1, [0, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
     // step 2: converter onto the divider
     [for (h = conv_holes) ["m3x6_cyl", 2, [div_x[1] + conv_ear_t, conv_y + h[0], conv_p0()[2] + h[1]], [-1, 0, 0]]],
     // step 3: Pi onto the divider's standoffs, then the back frame for that Pi and the HDMI panel jack
     [for (h = pi_holes) ["m25x6", 3, [pi_x_pcb() + pcb_t, pi_y0() + h[0], pi_z0() + h[1]], [-1, 0, 0]]],
     [for (p = _back_screws()) ["m3x6_pan", 3, [p[0], D + marco_t, p[1]], [0, -1, 0]]],
     [for (p = _hdmi_screws()) ["m3x6_pan", 3, [p[0], D + hdmi_flange_t, p[1]], [0, -1, 0]]],
-    // step 4: XT60E-F from outside the main face, into the inserts
-    [for (s = [-1, 1]) ["m3x8_flat", 4, [-xt60_flange_t, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
+    // step 4: male XT60 from inside, 2 M3 from outside through the wall and its flange into nuts behind it
+    [for (s = [-1, 1]) ["m3x10_pan", 4, [0, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
+    [for (s = [-1, 1]) ["nut_m3", 4, [wall + xt60_flange_t + 2.4, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
     // step 5: Pico board onto the main face's columns
     [for (h = pico_holes) ["m3x6_pan", 5, pico2world(h[0], h[1]) + [pcb_t, 0, 0], [-1, 0, 0]]],
     // step 6: main face onto the base, from under the floor

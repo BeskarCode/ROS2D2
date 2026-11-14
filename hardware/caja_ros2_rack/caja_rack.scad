@@ -2,8 +2,8 @@
 // Caja ROS2 · option C, "rack blade". Pick what to render with part:
 //   openscad -o pared.stl -D 'part="pared"' caja_rack.scad
 // Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
-// marco_pi4, marco_pi5, prueba_luz; the LED face: pared_led, pared_led_monocolor, logo_marino_led,
-// logo_azul_led, logo_gris_led; the optional light-pipe piece: guias_luz; HDMI on the back: soporte_hdmi
+// marco_pi4, marco_pi5; the LED face: pared_led, pared_led_monocolor, logo_marino_led,
+// logo_azul_led, logo_gris_led; its translucent lenses: lentes_led; HDMI on the back: soporte_hdmi
 // (FPC kit holder) or tapa_hdmi (blank cover).
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
@@ -108,8 +108,8 @@ else if (part == "check_tapa_hdmi_fills_window") difference() {
     }
     translate([0, D - wall - 1, 0]) cube([W, wall - cover_plug + 1, H]);   // the plug is shorter than the wall
 }
-else if (part == "check_xt60_bosses") intersection() { pared(); ghost_xt60(); }
-else if (part == "check_xt60_cut") intersection() { pared(); translate([-xt60_depth, 0, 0]) ghost_xt60(); }
+else if (part == "check_xt60_flange_seat") intersection() { pared(); ghost_xt60(); }
+else if (part == "check_xt60_cut") intersection() { pared(); ghost_xt60_lip(); }
 else if (part == "check_switch_cut") intersection() { pared(); translate([-sw_depth - sw_wires, 0, 0]) ghost_switch(); }
 else if (part == "check_pi_standoffs_touch") intersection() { pi_standoffs(0.2); ghost_pi_pcb(); }
 else if (part == "check_base_vs_pared") intersection() { base(); pared(); }
@@ -121,7 +121,6 @@ else if (part == "check_tapa_vs_ghosts") intersection() { tapa(); ghost_all(); }
 else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
 // --- light pipes ---
-else if (part == "prueba_luz") prueba_luz();
 else if (part == "pared_led") print_pared() pared(leds = true);
 else if (part == "pared_led_monocolor") print_pared() pared(logo_depth_mono, true);
 else if (part == "logo_marino_led") print_pared() logo_svg("marino", leds = true);
@@ -135,25 +134,20 @@ else if (part == "echo_lp_holes") {
 }
 else if (part == "check_lp_holes_open") intersection() {
     pared(leds = true);
-    for (i = [0 : len(pico_leds) - 1]) let(w = led_world(i)) translate([-1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_d, h = wall + 2, $fn = 24);
+    for (i = [0 : len(pico_leds) - 1]) let(w = led_world(i)) translate([-1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_bore - 0.2, h = wall + 2, $fn = 24);
 }
-else if (part == "guias_luz") print_guias() guias_luz();
-else if (part == "guias_luz_montada") guias_luz();
-else if (part == "check_guias_vs_pared") intersection() { guias_luz(); pared(leds = true); }
-else if (part == "check_guias_vs_ghosts") intersection() { guias_luz(); ghost_all(); }
-else if (part == "check_guias_vs_pcb") intersection() { guias_luz(); ghost_pico_pcb(); }
-else if (part == "check_guias_held") intersection() { translate([0.5, 0, 0]) guias_luz(); pared(leds = true); }
-else if (part == "check_guias_stops_at_the_wall") intersection() { translate([-0.1, 0, 0]) guias_luz(); pared(leds = true); }
-else if (part == "check_hooks_vs_ghosts") intersection() { lp_hooks(); ghost_all(); }
+else if (part == "lentes_led") lentes_led();
+else if (part == "lentes_montadas") lentes_montadas();
+else if (part == "check_lentes_vs_pared") intersection() { lentes_montadas(); pared(leds = true); }
+else if (part == "check_lentes_flush") intersection() { lentes_montadas(); translate([-5, 0, 0]) cube([4.99, D, H]); }
+else if (part == "check_lp_bores_open") intersection() {     // each bore's core, wall to tube end: nothing of the face
+    pared(leds = true);
+    for (i = [0 : len(pico_leds) - 1]) lp_at(i) translate([0, 0, lp_lens_t + lp_stem_l + 0.1]) cylinder(d = lp_tip_bore - 0.2, h = lp_tip_x() + 1, $fn = 24);
+}
+else if (part == "check_lp_tubes_vs_pcb") intersection() { pared(leds = true); ghost_pico_pcb(); }
 else if (part == "echo_lp_tips") {
     for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], lp_tip_x());
     echo("column_end", pico_x() - 0.05);          // pico_columns() stop 0.05 short of the board's face
-    echo("hook_air", lp_hook_air);
-    dot();
-}
-else if (part == "echo_lp_hooks") let(L = lp_ear[2] + lp_hook_air + lp_hook_lip_h - wall) {
-    echo("air", lp_hook_air); echo("lip", lp_hook_lip); echo("post_len", L);
-    echo("strain_pct", 100 * 3 * lp_hook_t * lp_hook_lip / (2 * L * L));
     dot();
 }
 else if (part == "check_pared_led_vs_ghosts") intersection() { pared(leds = true); ghost_all(); }
@@ -165,7 +159,7 @@ else if (part == "check_led_ghost_at") let(i = search([led], pico_leds)[0], w = 
     intersection() { ghost_leds(); translate([w[0] - 0.6, w[1] - 0.2, w[2] - 0.2]) cube([0.4, 0.4, 0.4]); }
 else if (part == "check_vl_dupont_vs_vl_leds") intersection() {
     ghost_pico();
-    for (i = [0 : 3]) let(w = led_world(i)) translate([w[0] - pico_gap + 1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_d, h = pico_gap - 1 - led_h - 0.01, $fn = 24);
+    for (i = [0 : 3]) let(w = led_world(i)) translate([w[0] - pico_gap + 1, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = lp_tip_od, h = pico_gap - 1 - led_h - 0.01, $fn = 24);
 }
 else if (part == "echo_leds") {
     for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], led_world(i));
@@ -174,7 +168,7 @@ else if (part == "echo_leds") {
 }
 // --- hardware ---
 else if (part == "echo_bom") {
-    for (k = ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "nut_m3", "m25x6", "m4x12"]) echo(k, count_kind(k));
+    for (k = ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_flat", "m3x10_pan", "nut_m3", "m25x6", "m4x12"]) echo(k, count_kind(k));
     echo("inserts_without_screw", inserts_without_screw());
     dot();
 }

@@ -24,7 +24,7 @@ oled_thick = 6;
 oled_win = [40, 26];                 // inner opening (along Y x Z); the side by the push rod is cut back
 oled_win_dz = 1;
 sw1 = [38, 79];  sw1_h = 5;
-rod_d = 4.6;  rod_bore = 5.2;  guide_od = 7.2;  guide_len = 8;  rod_flange = [7, 1.5];  rod_proud = 1;  rod_gap = 0.3;
+rod_d = 4.6;  rod_bore = 5.2;  guide_od = 7.2;  guide_len = 8;  rod_flange = [7, 1.5];  rod_proud = 3;  rod_gap = 0.3;
 pico_y_hi = 90;                      // y of the board's bx = 0 edge (bx grows towards -Y: reads left to right from outside)
 
 // --- central divider: holds the Pi and the converter -----------------------------------------
@@ -58,10 +58,14 @@ conv_holes = [[26.3, 4.85], [26.3, 58.85]];  // ear holes on one line: (Y from i
 conv_ear_t = 1.6;
 conv_wires = 15;
 
-// --- main face, low (under the Pico board): XT60E-F turned 90 deg and the KCD1 switch ------------------
-xt60_flange = [15.8, 34];  xt60_body = [9.5, 17];  xt60_depth = 20.2;  xt60_hole_pitch = 25.4;
-xt60_flange_t = 3;
-xt60_c = [35, 8];                    // centre on the main face (Y, Z); flange 34 along Y, body 17 along Y x 9.5 along Z
+// --- main face, low (under the Pico board): male XT60 panel connector turned 90 deg and the KCD1 switch ------
+// male XT60 panel plug (drawing in cajaROS2/conector xt60 macho.PNG): its front lip goes through the wall, the
+// flange sits inside against the wall, 2 M3 screws from outside into the nuts in its flange. No inserts.
+xt60_lip = [8.3, 15.5];  xt60_lip_l = 3;     // front lip (Z x Y) through the wall, length in front of the flange
+xt60_flange = [12.1, 27.1];  xt60_flange_t = 4.1;   // flange inside (Z x Y), thickness
+xt60_depth = 16.7;                   // front of the lip to the end of the pins
+xt60_hole_pitch = 20.5;  xt60_hole_d = m3_clear;  xt60_cut_fit = 0.3;
+xt60_c = [35, 9];                    // centre on the main face (Y, Z); flange 27.1 along Y, 12.1 along Z (clear of the floor)
 sw_cut = [19.2, 13];  sw_panel_t = 2;  sw_depth = 20;  sw_wires = 12;
 sw_c = [75, 9];                      // centre on the main face (Y, Z)
 sensor_slot = [58, 10];  sensor_slot_c = [49, 113 + zs];     // on the main face (Y, Z), clear of the top columns
@@ -74,33 +78,23 @@ logo_colours = ["marino", "azul", "gris"];
 LOGO_DIR = "../caja_ros2/logo/";
 LOGO_SVG_W = 92;                     // the SVGs are drawn 92 mm wide for the first box: scaled to logo_w here
 
-// --- light pipes (LED face, optional translucent piece) ---------------------------------------
+// --- light pipes (LED face: tubes + lenses) ---------------------------------------
 // the Pico board's LEDs (bx, by on the board, from r2_pico_carrier.kicad_pcb): one per sensor connector + power
 pico_leds = [["VL1", 72.6, 12], ["VL2", 72.6, 24], ["VL3", 72.6, 39], ["VL4", 72.6, 51],
              ["US1", 21, 12], ["US2", 21, 22], ["US3", 21, 32], ["US4", 21, 42], ["US5", 21, 52],
              ["PWR", 40.8, 59.5]];
 led_h = 0.8;                         // 0603 LED height, the datasheet's highest
-led_air = 0.7;                       // air between a pipe's tip and its LED (nominal): pushed in by the hooks' air,
-                                     // on a board resting on the columns' ends (0.05 short), 0.3 still stays
-lp_d = 3;                            // light pipe diameter
-lp_hole = lp_d + 0.4;                // its hole in the LED face: 0.2 per side, goes in without forcing, no play
+led_air = 0.7;                       // air between a tube's end and its LED (nominal), board resting on the columns' ends
+// the light: a dark tube printed with the face from each hole to its LED, a thin translucent lens outside
+lp_bore = 3.4;  lp_tube_od = 5;      // tube: bore, outer d (2 perimeters)
+lp_tip_bore = 2.6;  lp_tip_od = 3.8; // its last 5 mm, among the board's low parts (nothing but the LED within led_well_d)
+lp_lens_d = 5.4;  lp_lens_t = 0.8;  lp_lens_fit = 0.15;   // lens disc: flush with the face in its recess
+lp_stem_d = 3.3;  lp_stem_l = 1.5;   // its stem, pressed into the tube's bore
+lp_lens_n = 12;                      // 10 + 2 spares on the plate
+lp_hole = lp_lens_d + 2 * lp_lens_fit;   // the lens recess on the outside: the dot seen from outside
 logo_zc_led = 27.5;                  // the LED face's logo: centred between the XT60/switch (Z 16) and the window's chamfer (Z 39)
 lp_label_h = 3.5;  lp_label_gap = 1; // connector names beside their dots
 lp_label_font = "Liberation Sans:style=Bold";
-// the translucent piece: a flat frame against the wall's inside face holds the 10 rods; hooks on the wall
-// snap over two ears on each side. The VL side sits towards the front (its Dupont housings start at Y 21)
-lp_frame_t = 2;  lp_frame_gap = 0.05;            // frame thickness; air to the wall (it rests on it)
-lp_vl_strip = [13.4, 19.4];  lp_us_strip = [66.5, 72];   // Y of the two columns of the frame
-lp_strip_z = [69.5, 115.5];                       // Z of both columns (under the board's column at Z 117)
-lp_bar_z = [68.85, 70.4];  lp_bar_t = 4;          // the cross bar: between the OLED tunnel (top Z 68.7) and the VL
-                                                  // Dupont plugs (from Z 70.5); thicker in X to stay stiff
-lp_pwr_arm = [48.3, 51.7];                        // Y of the arm down to the PWR rod (the tunnel ends at Y 48)
-lp_hole_x = 7;                                    // the holes go this deep: through the tunnel's wall by PWR
-lp_ear = [1.6, 6, 13.5];                          // ear: Y width, Z length, X of its top (a long post bends easily)
-lp_hook_t = 1.4;  lp_hook_gap = 0.2;  lp_hook_lip = 0.6;  lp_hook_lip_h = 1;
-lp_hook_air = 0.35;                               // ear top to lip: a sagging bridge face and 0.2 mm layers still click
-lp_hook_root = 1.2;                               // chamfer at the post's root (it bends across the layers)
-lp_hooks_z = [[79.5, 106.5], [77.5, 107.5]];      // VL side, US side
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
 
 // --- derived ------------------------------------------------------------------------------------

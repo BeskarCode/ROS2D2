@@ -1,6 +1,6 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-"""Light pipes (rack box): the Pico's LEDs in box coordinates, the light test rod, the LED face
-(holes, logo moved down, names) with today's face unchanged, and the optional translucent piece."""
+"""Light pipes (rack box): the Pico's LEDs in box coordinates, the LED face (a dark tube from each hole
+to its LED, logo moved down, names), today's face, and the translucent lenses flush with the face."""
 import pytest
 
 from scad import echo_values, is_empty, run_scad, stl_bbox, stl_volume
@@ -20,11 +20,6 @@ def test_leds_where_the_spec_says():
     assert v["lp_tip_x"] == pytest.approx(31.0, abs=0.01)
 
 
-def test_light_test_rod_prints_standing():
-    lo, hi = stl_bbox(run_scad("prueba_luz"))
-    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.0, abs=0.05)
-
-
 # --- ghosts around the LEDs ------------------------------------------------------------------------
 def test_led_ghosts_sit_on_the_board_under_each_led():
     lo, hi = stl_bbox(run_scad("ghost_leds_only"))
@@ -42,8 +37,8 @@ def test_vl_dupont_ghost_leaves_the_vl_leds_free():
 
 
 # --- the LED face, today's face unchanged ------------------------------------------------------------
-TODAY = {"pared": 39695.404, "pared_monocolor": 39545.04, "logo_marino": 81.994, "logo_azul": 121.116,
-         "logo_gris": 22.435}                       # measured before the LED face existed
+TODAY = {"pared": 39449.816, "pared_monocolor": 39299.452, "logo_marino": 81.994, "logo_azul": 121.116,
+         "logo_gris": 22.435}                       # male XT60 (2026-11-14); the LED face must not change them
 
 
 @pytest.mark.parametrize("part", list(TODAY))
@@ -88,46 +83,31 @@ def test_led_face_prints_flat(p):
     assert lo[2] == pytest.approx(0, abs=0.01)
 
 
-# --- the translucent piece and its hooks -------------------------------------------------------------
-def test_piece_clear_of_the_face():
-    assert is_empty("check_guias_vs_pared")         # assembled: neither rods nor frame touch the LED face
+# --- the tubes and the lenses -------------------------------------------------------------------------
+def test_tubes_never_touch_the_board():
+    assert is_empty("check_lp_tubes_vs_pcb")        # (the face against ghost_all(), LEDs too: test above)
 
 
-@pytest.mark.parametrize("what", ["check_guias_vs_ghosts", "check_guias_vs_pcb"])
-def test_piece_never_touches_the_board(what):
-    assert is_empty(what)                           # ghost_all() has the LEDs, D2, J3, Dupont, cables
+def test_tube_bores_open_to_the_led():
+    assert is_empty("check_lp_bores_open")
 
 
-def test_tips_leave_air_over_the_leds():
-    # the board rests on the columns' ends (X 32.45), the LED is up to 0.8 tall, and the hooks let the piece
-    # move inwards by their air: even pushed in, 0.3 mm stays between every tip and its LED
-    v = echo_values("echo_lp_tips")                 # name -> X of its rod's tip; plus column end and hook air
+def test_tubes_end_just_over_the_leds():
+    # the board rests on the columns' ends (X 32.45), the LED is up to 0.8 tall: 0.3..1.2 mm of air
+    v = echo_values("echo_lp_tips")                 # name -> X of its tube's end; plus column end
     led_top = v["column_end"] - 0.8
     for name in SPEC:
-        assert 0.3 <= led_top - (v[name] + v["hook_air"]), name
-        assert led_top - v[name] <= 1.2, name       # and not so far that the light is lost
+        assert 0.3 <= led_top - v[name] <= 1.2, name
 
 
-def test_hooks_have_room_for_fdm():
-    v = echo_values("echo_lp_hooks")
-    assert v["air"] >= 0.3                          # ear top to lip: survives a sagging bridge and 0.2 mm layers
-    assert v["lip"] >= 0.6                          # still catches with that air
-    assert v["post_len"] >= 12                      # long enough to bend 0.6 mm without breaking between layers
-    assert v["strain_pct"] <= 1.0                  # root strain bending the lip clear
+def test_lenses_fit_their_recesses():
+    assert is_empty("check_lentes_vs_pared")        # disc in its recess, stem in its bore, with play
 
 
-def test_piece_is_held():
-    assert not is_empty("check_guias_held")         # pushed 0.5 inwards, the hooks stop it
+def test_lenses_flush_with_the_face():
+    assert is_empty("check_lentes_flush")           # nothing stands out of the face
 
 
-def test_piece_rests_on_the_wall_only():
-    assert not is_empty("check_guias_stops_at_the_wall")   # pushed 0.1 outwards, it meets the wall
-
-
-def test_hooks_clear_of_ghosts():
-    assert is_empty("check_hooks_vs_ghosts")        # without the piece, the hooks are in nobody's way
-
-
-def test_piece_prints_standing():
-    lo, hi = stl_bbox(run_scad("guias_luz"))
-    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(31.0, abs=0.1)
+def test_lenses_print_flat():
+    lo, hi = stl_bbox(run_scad("lentes_led"))
+    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(2.3, abs=0.05)

@@ -18,10 +18,10 @@ base.SCAD = HERE / "caja_rack.scad"
 LOGO_PARTS = ["logo_marino", "logo_azul", "logo_gris"]
 LOGO_LED_PARTS = ["logo_marino_led", "logo_azul_led", "logo_gris_led"]
 PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa", "marco_pi4", "marco_pi5",
-               "pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "guias_luz", "prueba_luz"]
+               "pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "lentes_led"]
 # the LED version's parts live in their own folder, stl/con_leds/
 LED_DIR = "con_leds"
-LED_PARTS = {"pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "guias_luz", "prueba_luz"}
+LED_PARTS = {"pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "lentes_led"}
 
 
 def stl_path(out_dir, part):

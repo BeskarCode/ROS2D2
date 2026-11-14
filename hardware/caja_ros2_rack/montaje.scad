@@ -13,7 +13,7 @@ include <guias.scad>
 
 scene = "montada";
 step = 1;
-leds = false;                    // true: the LED face with the light-pipe piece
+leds = false;                    // true: the LED face with its lenses
 
 WHITE = [0.96, 0.96, 0.94];  GREY = [0.80, 0.80, 0.82];  ROD = [1, 0.55, 0.1];
 
@@ -49,7 +49,7 @@ module logos() {
 
 module pared_assembly(board = true, rod = true, front = true, e_board = 0, e_rod = 0, e_screw = 0) {
     color(WHITE) pared(leds = leds); logos();
-    if (leds) color([1, 0.35, 0.25, 0.85]) guias_luz();
+    if (leds) color([1, 0.35, 0.25, 0.85]) lentes_montadas();
     hw_group("pared");
     if (front) { model_xt60(); model_switch(); hw_group("xt60"); }
     if (rod) translate([e_rod, 0, 0]) color(ROD) pulsador();
