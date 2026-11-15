@@ -63,6 +63,13 @@ The Raspberry Pi, the Pico sensor board and the 24 → 5 V converter go in a 3D-
 
 <a href="hardware/caja_ros2_rack"><img src="hardware/caja_ros2_rack/montaje/img/montada_led.png" alt="The ROS2D2 rack box, LED wall" width="480"></a>
 
+### Sensor mounts
+
+Tilting mounts for the HC-SR04 and the VL53L0X, adjustable in 10° steps from −30° to +90°:
+[`hardware/soportes_sensores`](hardware/soportes_sensores).
+
+<a href="hardware/soportes_sensores"><img src="hardware/soportes_sensores/renders/montado_hc.png" alt="HC-SR04 tilting mount" width="300"></a>
+
 ## Packages (`ros2_ws/src`)
 
 | Package | Node | What it does |

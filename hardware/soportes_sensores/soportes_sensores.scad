@@ -7,7 +7,7 @@
 // Axes: X along the axle, Y across, Z up from the base's bottom.
 
 sensor = "hc";            // "hc" | "vl"
-part = "montado";         // base | cuna | montado | check_sweep | check_mesh
+part = "montado";         // base | cuna | montado | check_sweep | check_mesh; pictures: foto | angulos | piezas
 tilt = 0;
 
 // --- sensors: board X x Y x t, holes (X, Y), front height, back clearance, insert hole d x depth ------
@@ -99,7 +99,21 @@ module ghost_sensor() {
     translate([-board[0] / 2, -board[1] / 2, so_h]) cube([board[0], board[1], board[2] + front]);
 }
 
+// a nicer sensor for the pictures only (the checks use ghost_sensor(), its envelope)
+module look_sensor() {
+    translate([-board[0] / 2, -board[1] / 2, so_h]) color([0.1, 0.35, 0.65]) cube(board);
+    translate([0, 0, so_h + board[2]]) if (sensor == "hc") {
+        for (x = [-13, 13]) translate([x, 0, 0]) color("silver") cylinder(d = 16, h = front, $fn = 48);
+        translate([-3, -2, 0]) color("silver") cube([6, 4, 3]);
+    } else color("black") translate([-1.5, -1.25, 0]) cube([3, 2.5, 1]);
+}
+module piece_colours() { color("white") base(); placed(tilt) { color("orange") cuna(); look_sensor(); } }
+
 if (part == "base") base();
+else if (part == "foto") piece_colours();
+else if (part == "angulos") for (k = [0 : 3]) let(t = [-30, 0, 45, 90][k])
+    translate([0, k * (sensor == "hc" ? 46 : 36), 0]) { color("white") base(); placed(t) { color("orange") cuna(); look_sensor(); } }
+else if (part == "piezas") { color("white") base(); translate([0, (sensor == "hc" ? 40 : 32), 0]) color("orange") translate([0, 0, tp]) cuna(); }
 else if (part == "cuna") translate([0, 0, tp]) cuna();
 else if (part == "montado") { color("white") base(); placed(tilt) { color("orange") cuna(); color("blue") ghost_sensor(); } }
 else if (part == "check_sweep") intersection() { base(); union() for (t = [-30 : 10 : 90]) placed(t) { cuna(); ghost_sensor(); } }
