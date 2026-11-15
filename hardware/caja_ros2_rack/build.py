@@ -19,6 +19,10 @@ LOGO_PARTS = ["logo_marino", "logo_azul", "logo_gris"]
 LOGO_LED_PARTS = ["logo_marino_led", "logo_azul_led", "logo_gris_led"]
 PRINT_PARTS = ["pared", *LOGO_PARTS, "pared_monocolor", "pulsador", "base", "tapa", "marco_pi4", "marco_pi5",
                "pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "lentes_led"]
+# the LED face without AMS: deep pockets, the fillings printed apart (stl/sin_ams/; same lenses as con_leds/)
+NOAMS_DIR = "sin_ams"
+NOAMS_PARTS = ["pared_led_sin_ams", "relleno_marino", "relleno_azul", "relleno_gris"]
+PRINT_PARTS += NOAMS_PARTS
 # the LED version's parts live in their own folder, stl/con_leds/
 LED_DIR = "con_leds"
 LED_PARTS = {"pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "lentes_led"}
@@ -26,6 +30,8 @@ LED_PARTS = {"pared_led", *LOGO_LED_PARTS, "pared_led_monocolor", "lentes_led"}
 
 def stl_path(out_dir, part):
     out_dir = pathlib.Path(out_dir) / "stl"
+    if part in NOAMS_PARTS:
+        return out_dir / NOAMS_DIR / f"{part}.stl"
     return (out_dir / LED_DIR if part in LED_PARTS else out_dir) / f"{part}.stl"
 
 
@@ -42,6 +48,7 @@ write_3mf = base.write_3mf
 def build(out_dir=HERE):
     out_dir = pathlib.Path(out_dir)
     (out_dir / "stl" / LED_DIR).mkdir(parents=True, exist_ok=True)
+    (out_dir / "stl" / NOAMS_DIR).mkdir(parents=True, exist_ok=True)
     written = []
     for p in PRINT_PARTS:
         f = stl_path(out_dir, p)

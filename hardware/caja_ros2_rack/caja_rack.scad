@@ -4,7 +4,8 @@
 // Parts (print orientation): pared, logo_marino, logo_azul, logo_gris, pared_monocolor, pulsador, base, tapa,
 // marco_pi4, marco_pi5; the LED face: pared_led, pared_led_monocolor, logo_marino_led,
 // logo_azul_led, logo_gris_led; its translucent lenses: lentes_led; HDMI on the back: soporte_hdmi
-// (FPC kit holder) or tapa_hdmi (blank cover).
+// (FPC kit holder) or tapa_hdmi (blank cover); the LED face without AMS: pared_led_sin_ams and its fillings
+// relleno_marino, relleno_azul, relleno_gris.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -15,10 +16,11 @@ include <marco.scad>
 include <fasteners.scad>
 include <guias.scad>
 include <hdmi_fpc.scad>
+include <sin_ams.scad>
 
 part = "pared";
 ga = "pico";  gb = "pi";  led = "VL1";
-dz = 0;  press = 0;  kind = "all";  gap = 0;  model = "pi4";
+dz = 0;  press = 0;  colour = "marino";  kind = "all";  gap = 0;  model = "pi4";
 
 module dot() { cube(0.01); }
 module printed() { pared(); base(); tapa(); marco(model); }
@@ -165,6 +167,29 @@ else if (part == "echo_leds") {
     for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], led_world(i));
     echo("lp_tip_x", lp_tip_x());
     dot();
+}
+// --- LED face without AMS ---
+else if (part == "pared_led_sin_ams") print_pared() pared_sin_ams();
+else if (part == "relleno_marino") print_pared() relleno("marino");
+else if (part == "relleno_azul") print_pared() relleno("azul");
+else if (part == "relleno_gris") print_pared() relleno("gris");
+else if (part == "relleno_montado") relleno(colour);
+else if (part == "na_pockets_montados") na_pockets();
+else if (part == "check_rellenos_vs_pared") intersection() { pared_sin_ams(); union() for (c = logo_colours) relleno(c); }
+else if (part == "check_rellenos_flush") intersection() { union() for (c = logo_colours) relleno(c); translate([-5, 0, 0]) cube([4.99, D, H]); }
+else if (part == "check_rellenos_overlap") intersection() { relleno(colour); union() for (c = logo_colours) if (c != colour) relleno(c); }
+else if (part == "check_rellenos_fill") difference() { na_pockets(na_depth - 0.01, -na_fit - 0.01); union() for (c = logo_colours) relleno(c); }
+else if (part == "check_na_vs_holes") intersection() { na_pockets(wall, 0.3); lp_holes(); }
+else if (part == "check_na_vs_window") intersection() { na_pockets(wall, 0.3); scale([20, 1, 1]) oled_window(); }
+else if (part == "check_na_vs_cuts") intersection() { na_pockets(wall, 0.3); union() { xt60_cut(); switch_cut(); rod_hole(); sensor_slot_cut(); } }
+else if (part == "check_pared_sin_ams_vs_ghosts") intersection() { pared_sin_ams(); ghost_all(); }
+else if (part == "check_pared_sin_ams_same_inside") let(o = na_depth + 0.01) difference() {   // behind the pockets: the LED face, unchanged
+    intersection() { pared(leds = true); translate([o, -1, -1]) cube([60, D + 2, H + 2]); }
+    pared_sin_ams();
+}
+else if (part == "check_pared_led_same_inside") let(o = na_depth + 0.01) difference() {
+    intersection() { pared_sin_ams(); translate([o, -1, -1]) cube([60, D + 2, H + 2]); }
+    pared(leds = true);
 }
 // --- hardware ---
 else if (part == "echo_bom") {

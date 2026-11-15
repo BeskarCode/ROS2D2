@@ -115,3 +115,8 @@ function marco_screws() = let(w = marco_win(), xc = (w[0] + w[2]) / 2) [[xc, w[1
 // --- HDMI panel jack on the back, Pico side, under the Pico board (cable from the Pi's HDMI 0) - MEASURE
 hdmi_body = [16, 7];  hdmi_depth = 13;  hdmi_flange = [36, 12];  hdmi_pitch = 29;  hdmi_flange_t = 1;
 hdmi_c = [20, 25];                   // centre on the back (X, Z)
+
+// --- LED face without AMS: deeper pockets, the logo and the names printed apart and pressed in -----------
+na_depth = 1.5;                      // pocket and inlay thickness (the wall is 2.5: 1 mm stays behind)
+na_fit = 0.1;                        // the pockets grow this much per side, the inlays keep their size
+na_bold = 0.15;                      // the names grow this much per side: strokes ~0.8 mm, printable alone

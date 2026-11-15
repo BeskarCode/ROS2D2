@@ -15,6 +15,8 @@ Every screw goes into a **heat-set insert**, the boards' too (M2.5 for the Pi, M
 **Step-by-step assembly instructions, with an exploded view, the list of screws and the wiring:**
 [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf) — En castellano: [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf)
 
+**Print guide** (Spanish; which wall, frame and parts to print for each case, with a picture of each): [GUIA_IMPRESION.md](guia_impresion/GUIA_IMPRESION.md) · [PDF](guia_impresion/GUIA_IMPRESION.pdf)
+
 ## What goes where inside
 
 - **Main wall** (the large side): the OLED window, the logo in 4 colours, the DISPLAY button rod, a
@@ -74,6 +76,24 @@ ends 0.7 mm above its LED. Before printing the piece, try your filament with `pr
 lit LED (translucent PLA works well; if yours does not, try clear PETG). When assembling, rest the
 board on its 4 columns without screws: it must sit without rocking; if it rocks, a rod touches its
 LED: sand the tip. To take the piece out, open the hooks two at a time with a small screwdriver.
+
+## Main wall with LEDs without AMS (optional)
+
+The same LED wall (same tubes, lenses and inserts) for printers without AMS: the logo and the connector
+names are 1.5 mm deep pockets, and what fills them prints apart, one piece per colour. Its parts are in
+`stl/sin_ams/`; the lenses are `stl/con_leds/lentes_led.stl`.
+
+| STL | What it is | How to print |
+|---|---|---|
+| `stl/sin_ams/pared_led_sin_ams.stl` | LED wall, logo and names as 1.5 mm pockets | white, logo face on the bed |
+| `stl/sin_ams/relleno_marino.stl` | "ROS" and the connector names | navy, visible face on the bed |
+| `stl/sin_ams/relleno_azul.stl` | "2D2" and the 12 dots | blue, visible face on the bed |
+| `stl/sin_ams/relleno_gris.stl` | the dots' frame | grey, visible face on the bed |
+
+The fillings come out in place, as seen from outside but mirrored (visible face down): turn them over
+and press them into their pockets. They have 0.1 mm of play per side and end flush with the wall; fix
+them with a drop of cyanoacrylate glue. The names are a little bolder than in the AMS version so they
+can print on their own. Print the fillings at 0.1–0.15 mm layers, no brim.
 
 ## Before printing: check these measurements
 
