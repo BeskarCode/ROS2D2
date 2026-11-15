@@ -44,6 +44,10 @@ g.PRINTED = [
      "board, logo lower down and the connector names (AMS: white, navy, blue, grey)"),
     ("con_leds/pared_led_monocolor.stl", "o bien: la pared con LEDs de un color, logo y nombres grabados",
      "or: the LED face in one colour, logo and names engraved"),
+    ("sin_ams/pared_led_sin_ams.stl", "o bien: la pared con LEDs sin AMS, logo y nombres en hueco de 1,5 mm, con "
+     "sus 3 rellenos (sin_ams/relleno_marino.stl, relleno_azul.stl, relleno_gris.stl) impresos aparte y pegados",
+     "or: the LED face without AMS, logo and names as 1.5 mm pockets, with its 3 fillings "
+     "(sin_ams/relleno_marino.stl, relleno_azul.stl, relleno_gris.stl) printed apart and glued in"),
     ("con_leds/lentes_led.stl", "Lentillas de los LEDs (solo con la pared con LEDs): 12 discos de PLA translúcido (o PETG "
      "transparente), 10 y 2 de repuesto, planos sobre la cama", "LED lenses (only with the LED face): 12 discs in "
      "translucent PLA (or clear PETG), 10 and 2 spares, flat on the bed"),

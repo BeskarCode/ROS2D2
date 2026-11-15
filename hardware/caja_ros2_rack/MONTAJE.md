@@ -34,8 +34,8 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 | `stl/pared_monocolor.stl` | o bien: pared principal de un color, logo grabado |
 | `stl/con_leds/pared_led_multicolor_bambu.3mf` | o bien: pared con un agujero sobre cada LED de la placa de la Pico, logo abajo y nombres de los conectores (AMS: blanco, marino, azul, gris) |
 | `stl/con_leds/pared_led_monocolor.stl` | o bien: la pared con LEDs de un color, logo y nombres grabados |
-| `stl/con_leds/guias_luz.stl` | Guías de luz (opcional, solo con la pared con LEDs): una pieza de PLA translúcido (o PETG transparente), extremos exteriores sobre la cama, relleno 100 % |
-| `stl/con_leds/prueba_luz.stl` | Barra de prueba de luz: imprímela antes y ponla sobre un LED encendido para ver si tu filamento deja pasar bastante luz |
+| `stl/sin_ams/pared_led_sin_ams.stl` | o bien: la pared con LEDs sin AMS, logo y nombres en hueco de 1,5 mm, con sus 3 rellenos (sin_ams/relleno_marino.stl, relleno_azul.stl, relleno_gris.stl) impresos aparte y pegados |
+| `stl/con_leds/lentes_led.stl` | Lentillas de los LEDs (solo con la pared con LEDs): 12 discos de PLA translúcido (o PETG transparente), 10 y 2 de repuesto, planos sobre la cama |
 | `stl/base.stl` | Base: suelo, trasera, tabique central |
 | `stl/tapa.stl` | Tapa (techo + lateral + frontal estrecho) |
 | `stl/marco_pi4.stl` | Marco trasero para la Pi 4 (Ethernet arriba) |
@@ -44,10 +44,12 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 
 | Cant. | Pieza | Paso |
 |---|---|---|
-| 19× | Inserto térmico M3 (5,7 mm de largo, agujero de 4,0 mm) | 1 |
-| 9× | Tornillo M3 × 8 de cabeza avellanada (ISO 10642) | 4, 6, 7 |
+| 17× | Inserto térmico M3 (5,7 mm de largo, agujero de 4,0 mm) | 1 |
+| 7× | Tornillo M3 × 8 de cabeza avellanada (ISO 10642) | 6, 7 |
 | 8× | Tornillo M3 × 6 de cabeza alomada (ISO 7380) | 3, 5 |
 | 2× | Tornillo M3 × 6 de cabeza cilíndrica (DIN 912) | 2 |
+| 2× | Tornillo M3 × 10 de cabeza alomada (ISO 7380) | 4 |
+| 2× | Tuerca M3 (DIN 934) | 4 |
 | 4× | Tornillo M2.5 × 6 | 3 |
 | 4× | Tornillo M4 × 12 (o el que pida el soporte del R2) | 8 |
 | 4× | Inserto térmico M2,5 (5 mm de largo, agujero de 3,6 mm) | 1 |
@@ -78,12 +80,11 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 
 ![](montaje/img/paso1_pi.png)
 
-**Necesitas:** 19× inserto M3, 4× inserto M2,5
+**Necesitas:** 17× inserto M3, 4× inserto M2,5
 
-Con el soldador a unos 220 °C mete los insertos rectos y a ras. Hay dos tamaños y no se cambian entre sí: 19 M3 (5,7 mm de largo, agujero de 4,0 mm) y 4 M2,5 (5 mm de largo, agujero de 3,6 mm), que son los pequeños. En el dibujo, los M3 en dorado y los M2,5 en rojo.
+Con el soldador a unos 220 °C mete los insertos rectos y a ras. Hay dos tamaños y no se cambian entre sí: 17 M3 (5,7 mm de largo, agujero de 4,0 mm) y 4 M2,5 (5 mm de largo, agujero de 3,6 mm), que son los pequeños. En el dibujo, los M3 en dorado y los M2,5 en rojo.
 
 - **M3** · pared principal, por dentro (7): 4 en las columnas de la placa de la Pico, 2 en las pestañas de abajo y 1 en la pestaña de arriba.
-- **M3** · pared principal, por fuera (2): los 2 agujeros del XT60.
 - **M3** · base, por dentro (6): 2 en lo alto del tabique, 2 en el tabique para el convertidor y 2 en los bloques del suelo.
 - **M3** · trasera de la base, por fuera (4): 2 del marco de la Pi y 2 del HDMI.
 - **M2,5** · base (4): las 4 columnas de la Pi. Son los únicos M2,5 de la caja.
@@ -108,9 +109,9 @@ Pi 4 o Pi 5 sobre sus 4 columnas, abajo, con los USB y el Ethernet en la ventana
 
 ![](montaje/img/paso4.png)
 
-**Necesitas:** 2× M3 × 8 avellanado
+**Necesitas:** 2× M3 × 10, 2× tuerca M3
 
-Desde fuera, abajo: el XT60E-F girado, con 2 tornillos a los insertos, y el interruptor a presión.
+Abajo: el XT60 macho girado, desde dentro, con su frontal asomando por el hueco y la brida contra la pared. Pon los 2 tornillos M3 desde fuera, por los agujeros pasantes y la brida, hasta las tuercas de detrás. El interruptor entra a presión desde fuera.
 
 ## 5 · Varilla y placa de la Pico
 
@@ -118,7 +119,7 @@ Desde fuera, abajo: el XT60E-F girado, con 2 tornillos a los insertos, y el inte
 
 **Necesitas:** 4× M3 × 6
 
-Con la pared con LEDs, las guías de luz son opcionales (sin ellas los LEDs se ven por los agujeros). Si las pones, van antes de colgar la placa: desde dentro, mete las 10 barras por sus agujeros y empuja el marco contra la pared hasta que los 4 ganchos encajen. Mete la varilla desde dentro por su guía. Antes de atornillar, presenta la placa sin tornillos sobre las 4 columnas, componentes hacia la pared: debe asentar en las cuatro sin balancearse; si se balancea, alguna barra toca su LED: lija la punta. Luego atorníllala. Para sacarla, abre los ganchos de dos en dos con un destornillador pequeño. Si algún día usas J4 (EXP), su cable rodea la barra PWR. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en la Pico y conecta los sensores: sus cables salen por la ranura de arriba.
+Con la pared con LEDs, mete desde fuera una lentilla en cada agujero, el tetón dentro del tubo, hasta que quede a ras; si alguna baila, una gota de pegamento. Mete la varilla desde dentro por su guía. Antes de atornillar, presenta la placa sin tornillos sobre las 4 columnas, componentes hacia la pared: debe asentar en las cuatro sin balancearse; si se balancea, algún tubo toca su LED: lija la punta. Luego atorníllala. Si algún día usas J4 (EXP), su cable rodea el tubo PWR. Aprieta los 5 V en el borne J1, pincha el micro-USB acodado en la Pico y conecta los sensores: sus cables salen por la ranura de arriba.
 
 ## 6 · Pared principal a la base
 

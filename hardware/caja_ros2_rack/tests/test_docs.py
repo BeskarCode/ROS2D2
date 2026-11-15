@@ -50,11 +50,13 @@ def test_guide_has_the_led_face_and_the_light_pipes(tmp_path, table, lang, name)
         assert words in md, words
 
 
-def test_readme_has_the_led_face():
-    md = (pathlib.Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf8")
-    for words in ["pared_led_multicolor_bambu.3mf", "lentes_led.stl", "translúcido", "tubo",
-                  "montaje/img/montada_led.png"]:
-        assert words in md, words
+@pytest.mark.parametrize("name,words", [("README_es.md", ["translúcido", "tubo", "sin_ams/pared_led_sin_ams.stl", "PRINT_GUIDE.md"]),
+                                        ("README.md", ["translucent", "tube", "sin_ams/pared_led_sin_ams.stl", "PRINT_GUIDE.md"])])
+def test_readme_has_the_led_face(name, words):
+    md = (pathlib.Path(__file__).resolve().parent.parent / name).read_text(encoding="utf8")
+    for w in ["pared_led_multicolor_bambu.3mf", "lentes_led.stl", "montaje/img/montada_led.png", *words]:
+        assert w in md, w
+    assert "guias_luz" not in md and "prueba_luz" not in md      # the old light-pipe piece is gone
 
 
 def test_led_version_parts_go_in_their_own_folder(tmp_path):
