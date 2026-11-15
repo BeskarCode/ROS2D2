@@ -2,6 +2,8 @@
 
 # Caja ROS2 rack · Guía de impresión
 
+*In English: [PRINT_GUIDE.md](PRINT_GUIDE.md)*
+
 Qué ficheros imprimir y cuándo elegir uno u otro. Solo para la caja rack (`hardware/caja_ros2_rack`). Todos los ficheros están en su carpeta `stl/`.
 
 **Versión al día:** <https://github.com/BeskarCode/ROS2D2/tree/main/hardware/caja_ros2_rack>

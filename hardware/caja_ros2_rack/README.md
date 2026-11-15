@@ -15,7 +15,7 @@ Every screw goes into a **heat-set insert**, the boards' too (M2.5 for the Pi, M
 **Step-by-step assembly instructions, with an exploded view, the list of screws and the wiring:**
 [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf) — En castellano: [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf)
 
-**Print guide** (Spanish; which wall, frame and parts to print for each case, with a picture of each): [GUIA_IMPRESION.md](guia_impresion/GUIA_IMPRESION.md) · [PDF](guia_impresion/GUIA_IMPRESION.pdf)
+**Print guide** (which wall, frame and parts to print for each case, with a picture of each): [PRINT_GUIDE.md](guia_impresion/PRINT_GUIDE.md) · [PDF](guia_impresion/PRINT_GUIDE.pdf) — En castellano: [GUIA_IMPRESION.md](guia_impresion/GUIA_IMPRESION.md) · [PDF](guia_impresion/GUIA_IMPRESION.pdf)
 
 ## What goes where inside
 
@@ -67,15 +67,13 @@ one. The other parts are the same.
 | `stl/con_leds/pared_led_multicolor_bambu.3mf` | wall with LEDs + logo and names in navy, blue and grey | logo face on the bed; AMS: 1 white, 2 navy, 3 blue, 4 grey |
 | `stl/con_leds/pared_led_multicolor.3mf` | the same, generic 3MF | |
 | `stl/con_leds/pared_led_monocolor.stl` | single-colour wall with LEDs, logo and names engraved 1 mm | logo face on the bed |
-| `stl/con_leds/guias_luz.stl` | light pipes: a frame with the 10 rods of 3 mm (optional) | **translucent PLA**, outer ends on the bed, 100 % infill |
-| `stl/con_leds/prueba_luz.stl` | a single rod to try the filament | translucent PLA, standing, 100 % infill |
+| `stl/con_leds/lentes_led.stl` | 12 lenses (10 and 2 spares) | **translucent PLA** (or clear PETG), discs flat on the bed |
 
-The light pipes are **optional**: without them the LEDs show through the holes. If you fit them, they
-clip onto the wall (4 hooks) **before the board is hung**, and they never touch the board: each rod
-ends 0.7 mm above its LED. Before printing the piece, try your filament with `prueba_luz.stl` over a
-lit LED (translucent PLA works well; if yours does not, try clear PETG). When assembling, rest the
-board on its 4 columns without screws: it must sit without rocking; if it rocks, a rod touches its
-LED: sand the tip. To take the piece out, open the hooks two at a time with a small screwdriver.
+Behind each hole a dark tube, printed with the wall, carries its LED's light outside without losing it;
+it ends 0.7 mm above the LED and never touches the board. A translucent PLA lens is pressed into the
+mouth of each tube, flush with the wall (if one is loose, a drop of glue). When assembling, rest the
+board on its 4 columns without screws: it must sit without rocking; if it rocks, a tube touches its
+LED: sand its tip.
 
 ## Main wall with LEDs without AMS (optional)
 

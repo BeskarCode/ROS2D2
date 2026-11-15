@@ -15,7 +15,7 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 **Instrucciones de montaje paso a paso, con despiece, lista de tornillería y plano de conexiones:**
 [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf) — English: [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf)
 
-**Guía de impresión** (qué pared, marco y piezas imprimir según tu caso, con una imagen de cada una): [GUIA_IMPRESION.md](guia_impresion/GUIA_IMPRESION.md) · [PDF](guia_impresion/GUIA_IMPRESION.pdf)
+**Guía de impresión** (qué pared, marco y piezas imprimir según tu caso, con una imagen de cada una): [GUIA_IMPRESION.md](guia_impresion/GUIA_IMPRESION.md) · [PDF](guia_impresion/GUIA_IMPRESION.pdf) — English: [PRINT_GUIDE.md](guia_impresion/PRINT_GUIDE.md) · [PDF](guia_impresion/PRINT_GUIDE.pdf)
 
 ## Cómo va por dentro
 
@@ -67,16 +67,13 @@ El resto de piezas es el mismo.
 | `stl/con_leds/pared_led_multicolor_bambu.3mf` | pared con LEDs + logo y nombres en marino, azul y gris | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
 | `stl/con_leds/pared_led_multicolor.3mf` | lo mismo, 3MF genérico | |
 | `stl/con_leds/pared_led_monocolor.stl` | pared con LEDs de un color, logo y nombres grabados 1 mm | cara del logo sobre la cama |
-| `stl/con_leds/guias_luz.stl` | guías de luz: un marco con las 10 barras de 3 mm (opcional) | **PLA translúcido**, extremos exteriores sobre la cama, relleno 100 % |
-| `stl/con_leds/prueba_luz.stl` | una barra suelta para probar el filamento | PLA translúcido, de pie, relleno 100 % |
+| `stl/con_leds/lentes_led.stl` | 12 lentillas (10 y 2 de repuesto) | **PLA translúcido** (o PETG transparente), discos planos sobre la cama |
 
-Las guías de luz son **opcionales**: sin ellas los LEDs se ven por los agujeros. Si las pones, se
-enganchan en la pared (4 ganchos) **antes de colgar la placa**, y nunca tocan la placa: cada barra
-acaba 0,7 mm por encima de su LED. Antes de imprimir la pieza, prueba tu filamento con
-`prueba_luz.stl` sobre un LED encendido (el PLA translúcido se ve bien; si el tuyo no, prueba PETG
-transparente). Al montar, presenta la placa sin tornillos sobre sus 4 columnas: debe asentar sin
-balancearse; si se balancea, alguna barra toca su LED: lija la punta. Para sacar la pieza, abre los
-ganchos de dos en dos con un destornillador pequeño.
+Cada agujero tiene por dentro un tubo oscuro, impreso con la pared, que lleva la luz de su LED hasta
+fuera sin que se pierda; acaba 0,7 mm por encima del LED y nunca toca la placa. En la boca de cada
+tubo va una lentilla de PLA translúcido, a presión y a ras de la pared (si alguna baila, una gota de
+pegamento). Al montar, presenta la placa sin tornillos sobre sus 4 columnas: debe asentar sin
+balancearse; si se balancea, algún tubo toca su LED: lija la punta.
 
 ## Pared con LEDs sin AMS (opcional)
 

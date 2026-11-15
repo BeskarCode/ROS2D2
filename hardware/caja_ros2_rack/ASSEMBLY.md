@@ -34,8 +34,8 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 | `stl/pared_monocolor.stl` | or: single-colour main face, engraved logo |
 | `stl/con_leds/pared_led_multicolor_bambu.3mf` | or: main face with a hole over each LED of the Pico board, logo lower down and the connector names (AMS: white, navy, blue, grey) |
 | `stl/con_leds/pared_led_monocolor.stl` | or: the LED face in one colour, logo and names engraved |
-| `stl/con_leds/guias_luz.stl` | Light pipes (optional, only with the LED face): one piece in translucent PLA (or clear PETG), outer ends on the bed, 100 % infill |
-| `stl/con_leds/prueba_luz.stl` | Light test rod: print it first and hold it on a lit LED to see whether your filament lets enough light through |
+| `stl/sin_ams/pared_led_sin_ams.stl` | or: the LED face without AMS, logo and names as 1.5 mm pockets, with its 3 fillings (sin_ams/relleno_marino.stl, relleno_azul.stl, relleno_gris.stl) printed apart and glued in |
+| `stl/con_leds/lentes_led.stl` | LED lenses (only with the LED face): 12 discs in translucent PLA (or clear PETG), 10 and 2 spares, flat on the bed |
 | `stl/base.stl` | Base: floor, back, central divider |
 | `stl/tapa.stl` | Shell (roof + side + narrow front) |
 | `stl/marco_pi4.stl` | Back frame for the Pi 4 (Ethernet at the top) |
@@ -44,10 +44,12 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 
 | Qty | Part | Step |
 |---|---|---|
-| 19× | M3 heat-set insert (5.7 mm long, 4.0 mm hole) | 1 |
-| 9× | M3 × 8 countersunk screw (ISO 10642) | 4, 6, 7 |
+| 17× | M3 heat-set insert (5.7 mm long, 4.0 mm hole) | 1 |
+| 7× | M3 × 8 countersunk screw (ISO 10642) | 6, 7 |
 | 8× | M3 × 6 button head screw (ISO 7380) | 3, 5 |
 | 2× | M3 × 6 socket head cap screw (DIN 912) | 2 |
+| 2× | M3 × 10 button head screw (ISO 7380) | 4 |
+| 2× | M3 nut (DIN 934) | 4 |
 | 4× | M2.5 × 6 screw | 3 |
 | 4× | M4 × 12 screw (or what the R2's mount needs) | 8 |
 | 4× | M2.5 heat-set insert (5 mm long, 3.6 mm hole) | 1 |
@@ -78,12 +80,11 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 
 ![](montaje/img/paso1_pi.png)
 
-**You need:** 19× M3 insert, 4× M2.5 insert
+**You need:** 17× M3 insert, 4× M2.5 insert
 
-With the iron at about 220 °C press the inserts in straight and flush. There are two sizes and they don't swap: 19 M3 (5.7 mm long, 4.0 mm hole) and 4 M2.5 (5 mm long, 3.6 mm hole), the small ones. In the picture, M3 in gold and M2.5 in red.
+With the iron at about 220 °C press the inserts in straight and flush. There are two sizes and they don't swap: 17 M3 (5.7 mm long, 4.0 mm hole) and 4 M2.5 (5 mm long, 3.6 mm hole), the small ones. In the picture, M3 in gold and M2.5 in red.
 
 - **M3** · main face, inside (7): 4 in the Pico board's columns, 2 in the bottom tabs and 1 in the top tab.
-- **M3** · main face, outside (2): the XT60's 2 holes.
 - **M3** · base, inside (6): 2 on top of the divider, 2 in the divider for the converter and 2 in the floor blocks.
 - **M3** · back of the base, outside (4): 2 for the Pi's frame and 2 for the HDMI.
 - **M2.5** · base (4): the Pi's 4 standoffs. They are the box's only M2.5.
@@ -108,9 +109,9 @@ Pi 4 or Pi 5 on its 4 standoffs, low down, USB and Ethernet in the back window, 
 
 ![](montaje/img/paso4.png)
 
-**You need:** 2× M3 × 8 countersunk
+**You need:** 2× M3 × 10, 2× M3 nut
 
-From outside, low down: the XT60E-F turned on its side with 2 screws into the inserts, and the switch snapped in.
+Low down: the male XT60 turned on its side, from inside, its front showing through the opening and its flange against the wall. Fit the 2 M3 screws from outside, through the holes and the flange, into the nuts behind. The switch snaps in from outside.
 
 ## 5 · Push rod and Pico board
 
@@ -118,7 +119,7 @@ From outside, low down: the XT60E-F turned on its side with 2 screws into the in
 
 **You need:** 4× M3 × 6
 
-With the LED face, the light pipes are optional (without them the LEDs show through the holes). If you fit them, they go in before hanging the board: from inside, slide the 10 rods into their holes and push the frame against the wall until the 4 hooks click. Slide the rod into its guide from inside. Before screwing, offer the board up without screws onto the 4 columns, parts towards the wall: it must sit on all four without rocking; if it rocks, a rod touches its LED: sand its tip. Then screw it on. To take it out, open the hooks two at a time with a small screwdriver. If you ever use J4 (EXP), its cable goes round the PWR rod. Tighten the 5 V in terminal J1, plug the angled micro-USB into the Pico and connect the sensors: their cables leave through the slot at the top.
+With the LED face, press a lens into each hole from outside, its stem in the tube, until it sits flush; if one is loose, a drop of glue. Slide the rod into its guide from inside. Before screwing, offer the board up without screws onto the 4 columns, parts towards the wall: it must sit on all four without rocking; if it rocks, a tube touches its LED: sand its tip. Then screw it on. If you ever use J4 (EXP), its cable goes round the PWR tube. Tighten the 5 V in terminal J1, plug the angled micro-USB into the Pico and connect the sensors: their cables leave through the slot at the top.
 
 ## 6 · Main face onto the base
 
