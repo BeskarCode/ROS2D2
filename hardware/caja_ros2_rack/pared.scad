@@ -123,7 +123,8 @@ module wall_tabs() {
 }
 
 // leds: the LED face (a tube from each of the Pico board's LEDs, lens recesses, logo moved down, connector names)
-module pared(depth = logo_depth, leds = false) {
+// noams: logo and names as deep pockets for fillings printed apart (sin_ams.scad)
+module pared(depth = logo_depth, leds = false, noams = false) {
     difference() {
         union() {
             cube([wall, D, H]);
@@ -138,8 +139,8 @@ module pared(depth = logo_depth, leds = false) {
         switch_cut();
         xt60_cut();
         sensor_slot_cut();
-        logo_svg("todo", depth, leds);
-        if (leds) { lp_holes(); lp_labels(depth); }
+        if (noams) na_pockets(); else logo_svg("todo", depth, leds);
+        if (leds) { lp_holes(); if (!noams) lp_labels(depth); }
     }
 }
 

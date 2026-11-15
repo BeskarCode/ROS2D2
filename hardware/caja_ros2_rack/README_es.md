@@ -15,6 +15,8 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 **Instrucciones de montaje paso a paso, con despiece, lista de tornillería y plano de conexiones:**
 [MONTAJE.md](MONTAJE.md) · [PDF](montaje/MONTAJE.pdf) — English: [ASSEMBLY.md](ASSEMBLY.md) · [PDF](montaje/ASSEMBLY.pdf)
 
+**Guía de impresión** (qué pared, marco y piezas imprimir según tu caso, con una imagen de cada una): [GUIA_IMPRESION.md](guia_impresion/GUIA_IMPRESION.md) · [PDF](guia_impresion/GUIA_IMPRESION.pdf)
+
 ## Cómo va por dentro
 
 - **Pared principal** (el lateral grande): ventana de la OLED, logo en 4 colores, varilla del
@@ -75,6 +77,24 @@ acaba 0,7 mm por encima de su LED. Antes de imprimir la pieza, prueba tu filamen
 transparente). Al montar, presenta la placa sin tornillos sobre sus 4 columnas: debe asentar sin
 balancearse; si se balancea, alguna barra toca su LED: lija la punta. Para sacar la pieza, abre los
 ganchos de dos en dos con un destornillador pequeño.
+
+## Pared con LEDs sin AMS (opcional)
+
+La misma pared con LEDs (tubos, lentillas e insertos iguales) para impresoras sin AMS: el logo y los
+nombres de los conectores son huecos de 1,5 mm de fondo, y lo que los rellena se imprime aparte, una
+pieza por color. Sus piezas están en `stl/sin_ams/`; las lentillas son las de `stl/con_leds/lentes_led.stl`.
+
+| STL | Qué es | Cómo imprimir |
+|---|---|---|
+| `stl/sin_ams/pared_led_sin_ams.stl` | pared con LEDs, logo y nombres en hueco de 1,5 mm | blanco, cara del logo sobre la cama |
+| `stl/sin_ams/relleno_marino.stl` | "ROS" y los nombres de los conectores | marino, cara vista sobre la cama |
+| `stl/sin_ams/relleno_azul.stl` | "2D2" y los 12 puntos | azul, cara vista sobre la cama |
+| `stl/sin_ams/relleno_gris.stl` | el marco de los puntos | gris, cara vista sobre la cama |
+
+Los rellenos salen en su sitio, como se ven desde fuera pero en espejo (la cara vista abajo): dales
+la vuelta y mételos en su hueco. Tienen 0,1 mm de holgura por lado y quedan a ras de la pared; fíjalos
+con una gota de pegamento de cianoacrilato. Los nombres son algo más gruesos que en la versión con AMS
+para que se puedan imprimir sueltos. Imprime los rellenos con capas de 0,1–0,15 mm y sin borde.
 
 ## Antes de imprimir: comprueba estas medidas
 
