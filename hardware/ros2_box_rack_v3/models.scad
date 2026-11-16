@@ -72,8 +72,8 @@ module model_conv() {
 }
 
 // --- male XT60 (turned 90 deg, lip out, flange inside) and KCD1 on the main face ------------------------
-module model_xt60() {
-    c = xt60_c; x0 = wall - xt60_lip_l;                  // front of the lip (0.5 proud of the face)
+module model_xt60() on_front() {
+    c = fm(xt60_c); x0 = wall - xt60_lip_l;                  // front of the lip (0.5 proud of the face)
     color([0.95, 0.8, 0.1]) {
         translate([x0, c[0] - xt60_lip[1] / 2, c[1] - xt60_lip[0] / 2]) cube([xt60_lip_l, xt60_lip[1], xt60_lip[0]]);
         difference() {
@@ -87,8 +87,8 @@ module model_xt60() {
         translate([wall + xt60_flange_t + 4.7, c[0] + dy, c[1]]) rotate([0, 90, 0]) cylinder(d = 3.5, h = 5, $fn = 16);
     }
 }
-module model_switch() {
-    c = sw_c;
+module model_switch() on_front() {
+    c = fm(sw_c);
     color(BLACK) {
         translate([-2, c[0] - 21 / 2, c[1] - 15 / 2]) cube([2, 21, 15]);
         translate([sw_panel_t, c[0] - sw_cut[0] / 2 + 0.2, c[1] - sw_cut[1] / 2 + 0.2]) cube([sw_depth, sw_cut[0] - 0.4, sw_cut[1] - 0.4]);

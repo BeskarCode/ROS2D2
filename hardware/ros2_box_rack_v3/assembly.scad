@@ -57,7 +57,7 @@ module pared_assembly(board = true, rod = true, front = true, e_board = 0, e_rod
 }
 
 // the HDMI panel jack on the back (flange outside, body in)
-module model_hdmi() {
+module model_hdmi() hdmi_turned() {
     color(BLACK) {
         translate([hdmi_c[0] - hdmi_flange[0] / 2, D, hdmi_c[1] - hdmi_flange[1] / 2]) cube([hdmi_flange[0], hdmi_flange_t, hdmi_flange[1]]);
         translate([hdmi_c[0] - hdmi_body[0] / 2, D - wall - hdmi_depth + 3, hdmi_c[1] - hdmi_body[1] / 2]) cube([hdmi_body[0], hdmi_depth - 3 + wall, hdmi_body[1]]);

@@ -55,21 +55,27 @@ marco_t = 2;  marco_lip = 3.5;  marco_fit = 0.25;  marco_rim = 1.5;     // flang
 
 // --- converter (RCNUN 63.7 x 57.6 x 22) on edge under the Pi -----------------------------------
 conv = [22, 57.6, 63.7];             // X (thickness) x Y x Z (ears top and bottom)
-conv_y = 20;                         // its front face (cable gland): the wires bend into the pass in front of it
+conv_y = 27.5;                       // its front face (cable gland): 25 mm to the front for the XT60, the switch and their wires (max 27.9: the frame's top screw boss behind it)
 conv_holes = [[26.3, 4.85], [26.3, 58.85]];  // ear holes on one line: (Y from its front face = cable side, Z from its bottom) - RCNUN drawing, checked by the user
 conv_ear_t = 1.6;
 conv_wires = 15;
 
-// --- main face, low (under the Pico board): male XT60 panel connector turned 90 deg and the KCD1 switch ------
+// --- the narrow front (y = 0), fixed to the base, Pi side over the Pi: male XT60 and the KCD1 switch -----------
+// Their modules are written on the main face's frame (depth along +X, c = (Y, Z)) and placed with on_front(),
+// which turns main (x, y, z) into front (X = z, Y = x, Z = y): c on the front is (X, Z).
 // male XT60 panel plug (drawing in cajaROS2/conector xt60 macho.PNG): its front lip goes through the wall, the
 // flange sits inside against the wall, 2 M3 screws from outside into the nuts in its flange. No inserts.
 xt60_lip = [8.3, 15.5];  xt60_lip_l = 3;     // front lip (Z x Y) through the wall, length in front of the flange
 xt60_flange = [12.1, 27.1];  xt60_flange_t = 4.1;   // flange inside (Z x Y), thickness
 xt60_depth = 16.7;                   // front of the lip to the end of the pins
 xt60_hole_pitch = 20.5;  xt60_hole_d = m3_clear;  xt60_cut_fit = 0.3;
-xt60_c = [35, 9];                    // centre on the main face (Y, Z); flange 27.1 along Y, 12.1 along Z (clear of the floor)
-sw_cut = [19.2, 13];  sw_panel_t = 2;  sw_depth = 20;  sw_wires = 12;
-sw_c = [75, 9];                      // centre on the main face (Y, Z)
+xt60_c = [38, 88];                   // centre on the front (X, Z): flange 12.1 along X, 27.1 along Z, over the Pi (top 73.5), under the converter's wires (Z 102.5)
+xt60_wires = 11;                     // behind its pins, before the wires turn (the converter is 25 mm behind the front)
+sw_cut = [19.2, 13];  sw_panel_t = 2;  sw_depth = 20;  sw_wires = 4.8;      // cut (along Z, along X on the front); wires bend right behind it
+sw_c = [38.5, 128];                  // centre on the front (X, Z): over the converter's wires (Z 117.5)
+function fm(c) = [c[1], c[0]];       // a front (X, Z) centre in the main face's frame (Y, Z)
+module on_front() multmatrix([[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]]) children();
+front_vent = [[div_x[1] + 4, 46], [pi_z0(), pi_z0() + pi_w - 2]];      // x range, z range: in front of the Pi, clear of the ear sites by x = W
 usb_notch = [8, 14];  usb_notch_c = [17, pico_ztop() + pico_usb_clear - 7];          // micro-USB out the back (X, Z), between the top tabs (x <= 12.5) and the divider (21.6)
 
 // --- logo (main face) -------------------------------------------------------------------------
@@ -125,7 +131,11 @@ function marco_screws() = let(w = marco_win(), xc = (w[0] + w[2]) / 2) [[xc, w[1
 
 // --- HDMI panel jack on the back, Pico side, under the Pico board (cable from the Pi's HDMI 0) - MEASURE
 hdmi_body = [16, 7];  hdmi_depth = 13;  hdmi_flange = [36, 12];  hdmi_pitch = 29;  hdmi_flange_t = 1;
-hdmi_c = [20, 25];                   // centre on the back (X, Z)
+hdmi_c = [54.5, 110];                // centre on the back (X, Z): beside the converter, between the frame and the roof
+hdmi_turn = true;                    // turned 90 deg: its 16 mm along Z, the screws one over the other
+// a point given unturned around hdmi_c, where it ends up; and the module that turns geometry the same way
+function hdmi_rot(p) = hdmi_turn ? [hdmi_c[0] + (p[1] - hdmi_c[1]), hdmi_c[1] - (p[0] - hdmi_c[0])] : p;
+module hdmi_turned() if (hdmi_turn) translate([hdmi_c[0], 0, hdmi_c[1]]) rotate([0, 90, 0]) translate([-hdmi_c[0], 0, -hdmi_c[1]]) children(); else children();
 
 // --- LED face without AMS: deeper pockets, the logo and the names printed apart and pressed in -----------
 na_depth = 1.5;                      // pocket and inlay thickness (the wall is 2.5: 1 mm stays behind)

@@ -30,8 +30,6 @@ def test_ghosts_fit_inside(lay):
                                  ("leds", "cables"), ("leds", "xt60"), ("leds", "switch"), ("leds", "conv"),
                                  ("usb", "pico"), ("usb", "conv"), ("usb", "leds"), ("usb", "pi")])
 def test_ghost_pairs_do_not_collide(a, b):
-    if (a, b) == ("hdmi", "pico"):
-        pytest.xfail("the HDMI jack hits the lowered board; it moves in Task 4")
     assert is_empty("check_ghost_pair", {"ga": a, "gb": b}), (a, b)
 
 
@@ -40,7 +38,6 @@ def test_pi_ports_flush_with_the_back(lay):
 
 
 # --- main face ----------------------------------------------------------------------------------
-@pytest.mark.xfail(reason="the HDMI jack and its back bosses hit the lowered board; they move in Task 4", strict=False)
 def test_main_wall_clear_of_ghosts():
     assert is_empty("check_pared_vs_ghosts")
 
@@ -106,12 +103,10 @@ def test_rod_presses_the_button_only_when_pushed():
 
 
 # --- base -------------------------------------------------------------------------------------------
-@pytest.mark.xfail(reason="HDMI jack moves in Task 4", strict=False)
 def test_base_clear_of_ghosts():
     assert is_empty("check_base_vs_ghosts")
 
 
-@pytest.mark.xfail(reason="HDMI jack moves in Task 4", strict=False)
 def test_pi_ports_pass_through_the_back():
     assert is_empty("check_ports_clear")
 
@@ -122,7 +117,6 @@ def test_pi_low_converter_high_with_a_gap():
     assert v["pi_z0"] - v["wall"] >= 14.5                     # room for the angled USB-C / micro-HDMI plugs
 
 
-@pytest.mark.xfail(reason="HDMI jack moves in Task 4", strict=False)
 def test_hdmi_jack_passes_through_the_back():
     assert is_empty("check_hdmi_cut")
 
@@ -148,19 +142,34 @@ def test_frame_fills_the_window(model):
     assert is_empty("check_marco_fills_window", {"model": model})
 
 
-def test_xt60_passes_through_the_main_face():
+def test_xt60_passes_through_the_front():
     assert is_empty("check_xt60_cut")
 
 
-def test_switch_passes_through_the_main_face():
+def test_switch_passes_through_the_front():
     assert is_empty("check_switch_cut")
+
+
+def test_front_clear_of_ghosts():
+    assert is_empty("check_front_vs_ghosts")
+
+
+@pytest.mark.parametrize("dz", [1, 40, 150])
+def test_shell_lifts_off_without_the_front(dz):
+    # the shell (roof + right side) goes straight up: the fixed front, the XT60 and the switch stay
+    assert is_empty("check_shell_lift", {"dz": dz})
+
+
+def test_power_on_the_front_above_the_pi(lay):
+    # XT60 and switch on the narrow front (y = 0), Pi side, over the Pi; the converter far enough behind
+    assert lay["xt60_x"] > lay["div_x1"] and lay["sw_x"] > lay["div_x1"]
+    assert lay["xt60_z0"] >= lay["pi_top"] and lay["conv_y"] >= 27.5
 
 
 def test_pi_standoffs_reach_the_pi():
     assert not is_empty("check_pi_standoffs_touch")
 
 
-@pytest.mark.xfail(reason="the HDMI jack and its back bosses hit the lowered board; they move in Task 4", strict=False)
 def test_base_and_main_wall_do_not_overlap():
     assert is_empty("check_base_vs_pared")
 
@@ -208,7 +217,6 @@ def test_bom_counts():
     assert {k: v[k] for k in EXPECTED} == EXPECTED and v["inserts_without_screw"] == 0
 
 
-@pytest.mark.xfail(reason="HDMI jack and its back bosses move in Task 4", strict=False)
 @pytest.mark.parametrize("model", ["pi4", "pi5"])
 @pytest.mark.parametrize("kind", ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_pan", "m25x6"])
 def test_hardware_only_goes_through_holes(kind, model):
