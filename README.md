@@ -5,20 +5,46 @@
   <img src="media/ros2d2-logo.png" alt="ROS2D2: R2-D2 come to life" width="600">
 </picture>
 
-> **Work in progress: everything here is still being tested.** Parts run in the simulator and on
-> the bench; testing on the droid is under way. Not yet a recipe to follow on your own droid.
+**Autonomy for an R2-D2 that runs ShadowMD.** A Raspberry Pi with ROS 2 adds the senses (camera,
+lidar, distance sensors) and decides where to go; the droid's Arduino Mega keeps driving the
+motors, sounds and lights. **The controller always wins.**
 
-A ROS 2 brain for an R2-D2 that runs ShadowMD. It works with [ShadowMD Lite](https://github.com/BeskarCode/ShadowMDLite) or with the classic Shadow MD ([SHADOW_MD_EEBEL](https://github.com/BeskarCode/SHADOW_MD_EEBEL)); in both it is enabled with `ENABLE_ROS2D2`, off by default. A Raspberry Pi 4 sits on top of the
-droid's Arduino Mega: the Pi handles the senses (cameras, voice, later a lidar) and
-decides what to do, and the Mega keeps driving the motors, sounds and lights.
+<img src="media/r2d2-nandomadrid.jpg" alt="NandoMadrid's R2-D2, the droid ROS2D2 is built for" width="420">
 
-The controller always wins: touch the stick and control is back with you at once.
-The Mega also stops the dome if the Pi goes quiet for 300 ms.
+![The web console: R2 navigating with the lidar and its sensors](media/console-navigation-modes.gif)
+
+[Video](https://youtu.be/Smfn6zQICm0) · [Build thread on astromech.net](https://astromech.net/forums/showthread.php?47099) · [User manual](MANUAL.md) ([castellano](MANUAL_es.md)) · [Hardware](HARDWARE.md) · [The box](hardware/ros2_box_rack)
+
+## What it does
+
+- **The dome follows your face**: a camera and the OpenCV YuNet face detector.
+- **Four automatic modes**, each started from the controller: go to a point, go forward, patrol,
+  follow a colour.
+- **Sees around itself**: an RPLIDAR C1, VL53L0X and HC-SR04 distance sensors read by a
+  Raspberry Pi Pico, and an MPU6050 IMU.
+- **Web console** in any browser: the floor around R2 with the lidar's points, R2 in 3D, cameras,
+  sensor setup, Pico firmware updates.
+- **Safe by design**: touch the stick and control is back with you at once; the Mega stops the
+  dome if the Pi goes quiet for 300 ms.
+- **Plugs into your droid with one USB cable**: works with
+  [ShadowMD Lite](https://github.com/BeskarCode/ShadowMDLite) (a fork of the original Shadow MD)
+  or the classic Shadow MD ([SHADOW_MD_EEBEL](https://github.com/BeskarCode/SHADOW_MD_EEBEL));
+  in both it is enabled with `ENABLE_ROS2D2`, off by default.
+- **Printable hardware**: a rack box for the Pi, the Pico board and the 24 → 5 V converter, and
+  tilting sensor mounts.
+- **Try it without a droid**: a simulator with rooms, and a Docker test bench on a PC.
+
+> **Status: work in progress.** It runs in the simulator and on the bench; testing on the droid is
+> under way. Not yet a recipe to follow on your own droid, but questions and ideas are very
+> welcome: open an issue or reply in the [build thread](https://astromech.net/forums/showthread.php?47099).
 
 ![ROS2D2 joins your droid through a single USB cable](media/usb-link.png)
 
-First demo: the dome turns to look at you. It is the [DomeTracker](https://github.com/BeskarCode/DomeTracker)
-proof of concept, split into ROS 2 nodes.
+## How it works
+
+A Raspberry Pi 4 sits on top of the droid's Arduino Mega and talks to it over USB serial. The first
+demo, the dome turning to look at you, is the [DomeTracker](https://github.com/BeskarCode/DomeTracker)
+proof of concept split into ROS 2 nodes:
 
 ```
  camera ──image_raw──> face detector ──faces──> dome tracker ──/dome/speed_cmd──> Mega bridge ──DM:<speed>──> Mega
@@ -81,6 +107,8 @@ Tilting mounts for the HC-SR04 and the VL53L0X, adjustable in 10° steps from �
 | `r2_imu` | `imu_node` | MPU6050 gyro and accelerometer over I2C, plus a Madgwick filter |
 | `r2_sensors` | `sensor_tf`, `fake_lidar`, `scan_crop`, `lidar_motor` | Where the lidar and the distance sensors (VL53L0X, HC-SR04 on a Pico) sit, from `sensors.yaml` (edited in the web console: Setup → Sensors), on `/tf_static`; the lidar's `/scan` cut to what the droid does not hide; a pretend lidar with `lidar:=sim` |
 | `r2_pico_bridge` | `pico_bridge`, `fake_pico` | Talks to the Raspberry Pi Pico that reads the distance sensors (`firmware/r2_pico_sensors`, on `/dev/r2-pico`): sends it the sensors and pins from `sensors.yaml` (again on every save), publishes `/range/<name>` for each sensor that answers and `/pico/state` (JSON) for the console. Not started with `sim:=true` (the simulator has its own `/range`) or `pico:=false`. Flash the Pico from the PC with `firmware/r2_pico_sensors/flash.sh` |
+| `r2_nav` | `navigator`, `follow` | The automatic modes: go to a point, go forward and patrol (`navigator`), follow a colour (`follow`); they stop for anything the lidar or the distance sensors see in their way |
+| `r2_sim` | `sim_world`, `fake_mega` | Simulator: rooms, a pretend R2 and a pretend Mega, to try the modes and the console without a droid (`sim:=true`) |
 | `r2_web` | `web_console` | Web console on port 8080: cameras, faces, 3D dome, camera and sensor setup |
 | `r2_bringup` | | Launch files: `ros2 launch r2_bringup dome_tracker.launch.py` |
 
@@ -182,6 +210,15 @@ With a webcam on Windows, `python docker/webcam_mjpeg.py 1` serves it as an MJPE
 stream (the same format as an ESP32-CAM) and opens a test page at
 <http://localhost:8081/> with Start and Stop buttons. See the top of `docker/bench.sh`.
 
-## Credits
+## Credits and contact
+
+Questions, ideas and build reports: the [ROS2D2 thread on astromech.net](https://astromech.net/forums/showthread.php?47099)
+or a GitHub issue.
 
 ROS2D2 is created by **NandoMadrid** ([R2-D2 by NandoMadrid](https://www.astromechspain.com/droides/r2-d2-nandomadrid/)), member of [Astromech Spain](https://www.astromechspain.com).
+
+## License
+
+[MIT](LICENSE). Bundled third-party files keep their own licenses: three.js and Font Awesome
+(`ros2_ws/src/r2_web/www/vendor`), and the YuNet face detection model from the
+[OpenCV Zoo](https://github.com/opencv/opencv_zoo) (`ros2_ws/src/r2_vision/models`).
