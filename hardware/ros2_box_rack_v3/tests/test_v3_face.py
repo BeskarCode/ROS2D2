@@ -42,3 +42,25 @@ def test_no_sensor_slot_and_no_labels():
 
 def test_two_top_tabs(lay):
     assert lay["top_tab_y"] == [75, 20]
+
+
+# --- Task 3: the board lower, a straight micro-USB ------------------------------------------------
+def test_usb_room_is_a_parameter_at_30(lay):
+    assert lay["pico_usb_clear"] == pytest.approx(30, abs=0.01)
+
+
+def test_board_above_the_bottom_tabs(lay):
+    assert lay["pico_zbot"] >= lay["wall"] + 8 + 1      # tab height 8 + 1 air
+
+
+def test_straight_usb_clears_roof(lay):
+    assert is_empty("check_usb_vs_shell")
+
+
+@pytest.mark.parametrize("leds", [0, 1])
+def test_straight_usb_clears_the_face(leds):
+    assert is_empty("check_usb_vs_pared", {"leds": leds})
+
+
+def test_logo_clear_of_the_usb_recess():
+    assert is_empty("check_logo_vs_usb_recess")

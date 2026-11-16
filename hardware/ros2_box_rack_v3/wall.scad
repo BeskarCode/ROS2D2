@@ -137,6 +137,13 @@ module wall_tabs() {
 
 // leds: the LED face (a tube from each of the Pico board's LEDs, lens recesses, logo moved down, connector names)
 // noams: logo and names as deep pockets for fillings printed apart (no_ams.scad)
+// the straight micro-USB's overmould passes 1 mm into the face: thin it there, from inside
+module usb_recess_cut() {
+    u = pico2world(40, 0);
+    translate([wall - usb_recess, u[1] - usb_plug[1] / 2 - 0.5, u[2] - 0.5])
+        cube([usb_recess + 0.01, usb_plug[1] + 1, H - wall - u[2] + 0.5 + 0.01]);
+}
+
 module pared(depth = logo_depth, leds = false, noams = false) {
     difference() {
         union() {
@@ -152,6 +159,7 @@ module pared(depth = logo_depth, leds = false, noams = false) {
         switch_cut();
         xt60_cut();
         bays_cut();
+        usb_recess_cut();
         if (noams) na_pockets(); else logo_svg("todo", depth, leds);
         if (leds) lp_holes();
     }

@@ -15,7 +15,9 @@ insert_d = 4.0;  insert_h = 6;  ins25_d = 3.6;  ins25_h = 5.5;      // M3 and M2
 // --- Pico carrier board: vertical blade, parts towards the main face (-X) ------------------
 pico_w = 80;  pico_h = 90;  pcb_t = 1.6;
 pico_gap = 14;                       // main face (inside) -> board: the Pico on its sockets (13) + 1; the Duponts come out through the bays
-pico_usb_clear = 18;                 // over its top edge: angled micro-USB
+pico_usb_clear = 30;                 // over its top edge: a straight micro-USB, rigid plug + its bend (set it to your cable's)
+usb_plug = [6.5, 11, 11.7];          // straight plug's overmould: thick (X), wide (Y), its centre over the carrier (the Pico's receptacle)
+usb_recess = 1;                      // the main face thinned inside over the plug (skin 1.5)
 pico_holes = [[3.5, 3.5], [76.5, 3.5], [3.5, 86.5], [76.5, 86.5]];
 oled_rect = [44.85, 60, 72.15, 87.8];
 oled_view = [58.5, 71];
@@ -68,10 +70,10 @@ xt60_hole_pitch = 20.5;  xt60_hole_d = m3_clear;  xt60_cut_fit = 0.3;
 xt60_c = [35, 9];                    // centre on the main face (Y, Z); flange 27.1 along Y, 12.1 along Z (clear of the floor)
 sw_cut = [19.2, 13];  sw_panel_t = 2;  sw_depth = 20;  sw_wires = 12;
 sw_c = [75, 9];                      // centre on the main face (Y, Z)
-usb_notch = [8, 14];  usb_notch_c = [17, 114 + zs];          // micro-USB out the back (X, Z), between the top tabs (x <= 12.5) and the divider (21.6)
+usb_notch = [8, 14];  usb_notch_c = [17, pico_ztop() + pico_usb_clear - 7];          // micro-USB out the back (X, Z), between the top tabs (x <= 12.5) and the divider (21.6)
 
 // --- logo (main face) -------------------------------------------------------------------------
-logo_w = 80;  logo_h = 13.4;  logo_zc = 90 + zs;
+logo_w = 80;  logo_h = 13.4;  logo_zc = pico_ztop() + pico_usb_clear / 2;      // in the band over the board, under the roof
 logo_depth = 0.6;  logo_depth_mono = 1.0;
 logo_colours = ["navy", "blue", "grey"];
 LOGO_DIR = "logo/";
@@ -91,7 +93,7 @@ lp_lens_d = 5.4;  lp_lens_t = 0.8;  lp_lens_fit = 0.15;   // lens disc: flush wi
 lp_stem_d = 3.3;  lp_stem_l = 1.5;   // its stem, pressed into the tube's bore
 lp_lens_n = 12;                      // 10 + 2 spares on the plate
 lp_hole = lp_lens_d + 2 * lp_lens_fit;   // the lens recess on the outside: the dot seen from outside
-logo_zc_led = 27.5;                  // the LED face's logo: centred between the XT60/switch (Z 16) and the window's chamfer (Z 39)
+logo_zc_led = logo_zc;               // the same place on the LED face
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
 
 // --- bays: an opening in the main face over each group of connectors (Dupont plugged in from outside) --------
@@ -108,6 +110,7 @@ bay_keep = 0.4;  bay_r = 1.5;
 // --- derived ------------------------------------------------------------------------------------
 function pico_x() = wall + pico_gap;                       // board's component face
 function pico_ztop() = H - wall - pico_usb_clear;
+function pico_zbot() = pico_ztop() - pico_h;
 function pico2world(bx, by) = [pico_x(), pico_y_hi - bx, pico_ztop() - by];
 function oled_view_center() = [pico_y_hi - oled_view[0], pico_ztop() - oled_view[1]];   // (Y, Z) on the main face
 function pi_x_pcb() = div_x[1] + standoff_pi;              // the Pi's solder face

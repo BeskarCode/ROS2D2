@@ -38,6 +38,7 @@ else if (part == "echo_layout") {
     echo("pi_port_face", pi_y0() + pi_l + pi_port_out);
     echo("pi_z0", pi_z0()); echo("pi_top", pi_z0() + pi_w); echo("conv_z0", conv_p0()[2]);
     echo("pico_gap", pico_gap); echo("top_tab_y", top_tab_y);
+    echo("pico_zbot", pico_zbot()); echo("pico_usb_clear", pico_usb_clear);
     dot();
 }
 // --- v3: diagnostics: one printed piece against one ghost ---
@@ -137,6 +138,9 @@ else if (part == "shell") print_tapa() tapa();
 else if (part == "check_tapa_assembled") intersection() { tapa(); union() { base(); pared(); } }
 else if (part == "check_tapa_slide") intersection() { translate([0, 0, dz]) tapa(); union() { base(); pared(); } }
 else if (part == "check_tapa_vs_ghosts") intersection() { tapa(); ghost_all(); }
+else if (part == "check_usb_vs_shell") intersection() { tapa(); ghost("usb"); }
+else if (part == "check_usb_vs_pared") intersection() { pared(leds = leds == 1); ghost("usb"); }
+else if (part == "check_logo_vs_usb_recess") intersection() { logo_svg("todo", 1.4, false); usb_recess_cut(); }
 else if (part == "check_tapa_vs_ghost") intersection() { tapa(); ghost(ga); }   // one ghost at a time: light enough for OpenSCAD 2021
 else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
