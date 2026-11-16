@@ -21,7 +21,8 @@ function fkind(k) =
 function _ears() = [for (x = [15, 47]) for (y = [-6, D + 6]) [x, y]];
 function _div_cx() = (div_x[0] + div_x[1]) / 2;
 function _back_screws() = let(w = marco_win(), xc = (w[0] + w[2]) / 2) [[xc, w[1] - 6], [xc, w[3] + 5]];
-function _hdmi_screws() = [for (s = [-1, 1]) [hdmi_c[0] + s * hdmi_pitch / 2, hdmi_c[1]]];
+function _hdmi_screws() = [for (s = [-1, 1]) hdmi_rot([hdmi_c[0] + s * hdmi_pitch / 2, hdmi_c[1]])];
+function _f(p) = [p[2], p[0], p[1]];                 // main-face frame -> front (on_front())
 
 function fasteners() = concat(
     // step 1: inserts
@@ -39,9 +40,9 @@ function fasteners() = concat(
     [for (h = pi_holes) ["m25x6", 3, [pi_x_pcb() + pcb_t, pi_y0() + h[0], pi_z0() + h[1]], [-1, 0, 0]]],
     [for (p = _back_screws()) ["m3x6_pan", 3, [p[0], D + marco_t, p[1]], [0, -1, 0]]],
     [for (p = _hdmi_screws()) ["m3x6_pan", 3, [p[0], D + hdmi_flange_t, p[1]], [0, -1, 0]]],
-    // step 4: male XT60 from inside, 2 M3 from outside through the wall and its flange into nuts behind it
-    [for (s = [-1, 1]) ["m3x10_pan", 4, [0, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
-    [for (s = [-1, 1]) ["nut_m3", 4, [wall + xt60_flange_t + 2.4, xt60_c[0] + s * xt60_hole_pitch / 2, xt60_c[1]], [1, 0, 0]]],
+    // step 4: male XT60 from inside the front, 2 M3 from outside through the front and its flange into nuts behind it
+    [for (s = [-1, 1]) ["m3x10_pan", 4, _f([0, fm(xt60_c)[0] + s * xt60_hole_pitch / 2, fm(xt60_c)[1]]), [0, 1, 0]]],
+    [for (s = [-1, 1]) ["nut_m3", 4, _f([wall + xt60_flange_t + 2.4, fm(xt60_c)[0] + s * xt60_hole_pitch / 2, fm(xt60_c)[1]]), [0, 1, 0]]],
     // step 5: Pico board onto the main face's columns
     [for (h = pico_holes) ["m3x6_pan", 5, pico2world(h[0], h[1]) + [pcb_t, 0, 0], [-1, 0, 0]]],
     // step 6: main face onto the base, from under the floor

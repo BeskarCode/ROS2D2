@@ -34,7 +34,6 @@ def test_pockets_clear_of_the_other_holes(what):
     assert is_empty(what)                             # 0.3 mm of wall at least round every pocket
 
 
-@pytest.mark.xfail(reason="the HDMI jack and its back bosses hit the lowered board; they move in Task 4", strict=False)
 def test_face_clear_of_ghosts():
     assert is_empty("check_pared_no_ams_vs_ghosts")
 

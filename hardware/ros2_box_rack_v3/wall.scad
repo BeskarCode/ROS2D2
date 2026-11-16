@@ -90,20 +90,6 @@ module pulsador(press = 0) {
 }
 module print_rod() { p = sw1_world(); translate([0, 0, rod_end_x()]) rotate([0, 90, 0]) translate([0, -p[1], -p[2]]) children(); }
 
-module switch_cut() {
-    c = sw_c;
-    translate([-1, c[0] - sw_cut[0] / 2, c[1] - sw_cut[1] / 2]) cube([wall + 2, sw_cut[0], sw_cut[1]]);
-    translate([sw_panel_t, c[0] - sw_cut[0] / 2 - 3, max(c[1] - sw_cut[1] / 2 - 3, -1)])
-        cube([wall, sw_cut[0] + 6, sw_cut[1] + 6]);
-}
-
-// the male XT60's lip goes through, its flange stays inside: only the lip's opening and 2 M3 through holes
-module xt60_cut() {
-    c = xt60_c; f = xt60_cut_fit;
-    translate([-1, c[0] - xt60_lip[1] / 2 - f, c[1] - xt60_lip[0] / 2 - f]) cube([wall + 2, xt60_lip[1] + 2 * f, xt60_lip[0] + 2 * f]);
-    for (s = [-1, 1]) translate([-1, c[0] + s * xt60_hole_pitch / 2, c[1]]) rotate([0, 90, 0]) cylinder(d = xt60_hole_d, h = wall + 2, $fn = 24);
-}
-
 // --- bays: an opening over each group of connectors, every Dupont plugs in from outside ------------------
 function bay_yz(b) = let(a = pico2world(b[3], b[4]), c = pico2world(b[1], b[2])) [a[1], a[2], c[1], c[2]];   // y0, z0, y1, z1
 module yz_to_face(x0, h) translate([x0, 0, 0]) rotate([90, 0, 90]) linear_extrude(h) children();   // 2D (Y, Z) -> slab along +X
@@ -156,8 +142,6 @@ module pared(depth = logo_depth, leds = false, noams = false) {
         }
         oled_window();
         rod_hole();
-        switch_cut();
-        xt60_cut();
         bays_cut();
         usb_recess_cut();
         if (noams) na_pockets(); else logo_svg("todo", depth, leds);

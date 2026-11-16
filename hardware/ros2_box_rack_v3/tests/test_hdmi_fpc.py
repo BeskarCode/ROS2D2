@@ -12,7 +12,6 @@ def test_prints_flat(p):
     assert lo[2] == pytest.approx(0, abs=0.01)
 
 
-@pytest.mark.xfail(reason="HDMI jack moves in Task 4", strict=False)
 @pytest.mark.parametrize("p", ["hdmi_holder", "hdmi_cover"])
 @pytest.mark.parametrize("other", ["base", "marco", "screws"])
 def test_clear(p, other):

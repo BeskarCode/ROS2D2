@@ -34,7 +34,8 @@ module hdmi_plate(h) {
     }
 }
 
-module hdmi_holder() {
+module hdmi_holder() hdmi_turned() _hdmi_holder();
+module _hdmi_holder() {
     o = hood_outer();
     difference() {
         union() {
@@ -50,7 +51,8 @@ module hdmi_holder() {
     }
 }
 
-module hdmi_cover() {
+module hdmi_cover() hdmi_turned() _hdmi_cover();
+module _hdmi_cover() {
     hdmi_plate(hdmi_plate_h);
     translate([hdmi_c[0] - hdmi_body[0] / 2, D - cover_plug, hdmi_c[1] - hdmi_body[1] / 2])   // window minus 0.3 per side
         cube([hdmi_body[0], cover_plug + 0.01, hdmi_body[1]]);
@@ -61,7 +63,8 @@ module print_hdmi_holder() { translate([0, 0, -D]) rotate([90, 0, 0]) children()
 module print_hdmi_cover() { translate([0, 0, D + hdmi_plate_t]) rotate([-90, 0, 0]) children(); }   // outer face down, plug up
 
 // for the tests: the screw shanks (M3, 0.1 under the clearance) and the room the key needs in front of them
-module hdmi_screw_axes() {
+module hdmi_screw_axes() hdmi_turned() _hdmi_screw_axes();
+module _hdmi_screw_axes() {
     for (x = hdmi_screw_x()) translate([x, D - 1, hdmi_c[1]]) rotate([-90, 0, 0]) {
         cylinder(d = m3_clear - 0.2, h = 20, $fn = 24);
         translate([0, 0, 1 + hdmi_plate_t + 0.05]) cylinder(d = 3, h = 40, $fn = 24);   // 2.5 mm hex key, in front of the head

@@ -84,7 +84,7 @@ module ghost_pi() {
     box_from([xp, y0 + pi_hdmi0 - 7, z0 - pi_under + 0.5], [xp + pcb_t + 12, y0 + pi_hdmi0 + 7, z0]);
 }
 
-module ghost_hdmi() {        // the panel jack's body inside the back, Pico side
+module ghost_hdmi() hdmi_turned() {        // the panel jack's body inside the back, Pico side
     box_from([hdmi_c[0] - hdmi_body[0] / 2, D - wall - hdmi_depth, hdmi_c[1] - hdmi_body[1] / 2],
              [hdmi_c[0] + hdmi_body[0] / 2, D - wall, hdmi_c[1] + hdmi_body[1] / 2]);
 }
@@ -95,18 +95,18 @@ module ghost_conv() {
     box_from([p[0] + 2, p[1] - conv_wires, p[2] + 24], [p[0] + 18, p[1], p[2] + 39]);   // wires out the front face
 }
 
-module ghost_xt60() {        // behind the main face: flange, body, pins + wires towards +X (under the Pico board)
-    c = xt60_c;
+module ghost_xt60() on_front() {   // behind the front: flange, body, pins + wires towards +Y
+    c = fm(xt60_c);
     box_from([wall + 0.01, c[0] - xt60_flange[1] / 2, c[1] - xt60_flange[0] / 2],
-             [wall + xt60_depth - xt60_lip_l + 14, c[0] + xt60_flange[1] / 2, c[1] + xt60_flange[0] / 2]);
+             [wall + xt60_depth - xt60_lip_l + xt60_wires, c[0] + xt60_flange[1] / 2, c[1] + xt60_flange[0] / 2]);
 }
-module ghost_xt60_lip() {    // the lip, through the wall
-    c = xt60_c;
+module ghost_xt60_lip() on_front() {    // the lip, through the wall
+    c = fm(xt60_c);
     box_from([-1, c[0] - xt60_lip[1] / 2, c[1] - xt60_lip[0] / 2], [wall + 0.01, c[0] + xt60_lip[1] / 2, c[1] + xt60_lip[0] / 2]);
 }
 
-module ghost_switch() {      // behind the main face, its wires towards +X
-    c = sw_c;
+module ghost_switch() on_front() {      // behind the front, its wires bent right behind it
+    c = fm(sw_c);
     box_from([wall, c[0] - sw_cut[0] / 2 + 0.1, c[1] - sw_cut[1] / 2 + 0.1],
              [wall + sw_depth + sw_wires, c[0] + sw_cut[0] / 2 - 0.1, c[1] + sw_cut[1] / 2 - 0.1]);
 }

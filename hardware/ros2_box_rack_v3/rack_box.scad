@@ -39,6 +39,8 @@ else if (part == "echo_layout") {
     echo("pi_z0", pi_z0()); echo("pi_top", pi_z0() + pi_w); echo("conv_z0", conv_p0()[2]);
     echo("pico_gap", pico_gap); echo("top_tab_y", top_tab_y);
     echo("pico_zbot", pico_zbot()); echo("pico_usb_clear", pico_usb_clear);
+    echo("xt60_x", xt60_c[0]); echo("sw_x", sw_c[0]); echo("div_x1", div_x[1]); echo("conv_y", conv_y);
+    echo("xt60_z0", xt60_c[1] - xt60_flange[1] / 2);
     dot();
 }
 // --- v3: diagnostics: one printed piece against one ghost ---
@@ -120,17 +122,19 @@ else if (part == "check_hdmi_cover_vs_marco") intersection() { hdmi_cover(); uni
 else if (part == "check_hdmi_holder_screws") intersection() { hdmi_holder(); hdmi_screw_axes(); }
 else if (part == "check_hdmi_cover_screws") intersection() { hdmi_cover(); hdmi_screw_axes(); }
 else if (part == "check_hdmi_cover_fills_window") difference() {
-    translate([hdmi_c[0] - hdmi_body[0] / 2 - 0.3, D - wall, hdmi_c[1] - hdmi_body[1] / 2 - 0.3]) cube([hdmi_body[0] + 0.6, wall, hdmi_body[1] + 0.6]);
+    hdmi_turned() translate([hdmi_c[0] - hdmi_body[0] / 2 - 0.3, D - wall, hdmi_c[1] - hdmi_body[1] / 2 - 0.3]) cube([hdmi_body[0] + 0.6, wall, hdmi_body[1] + 0.6]);
     base(); hdmi_cover();
-    translate([hdmi_c[0] - hdmi_body[0] / 2 - 0.3, D - wall - 1, hdmi_c[1] - hdmi_body[1] / 2 - 0.3]) difference() {   // the 0.3 fit gap
+    hdmi_turned() translate([hdmi_c[0] - hdmi_body[0] / 2 - 0.3, D - wall - 1, hdmi_c[1] - hdmi_body[1] / 2 - 0.3]) difference() {   // the 0.3 fit gap
         cube([hdmi_body[0] + 0.6, wall + 2, hdmi_body[1] + 0.6]);
         translate([0.3, -1, 0.3]) cube([hdmi_body[0], wall + 4, hdmi_body[1]]);
     }
     translate([0, D - wall - 1, 0]) cube([W, wall - cover_plug + 1, H]);   // the plug is shorter than the wall
 }
-else if (part == "check_xt60_flange_seat") intersection() { pared(); ghost_xt60(); }
-else if (part == "check_xt60_cut") intersection() { pared(); ghost_xt60_lip(); }
-else if (part == "check_switch_cut") intersection() { pared(); translate([-sw_depth - sw_wires, 0, 0]) ghost_switch(); }
+else if (part == "check_xt60_flange_seat") intersection() { front_panel(); ghost_xt60(); }
+else if (part == "check_xt60_cut") intersection() { front_panel(); ghost_xt60_lip(); }
+else if (part == "check_switch_cut") intersection() { front_panel(); translate([0, -sw_depth - sw_wires, 0]) ghost_switch(); }
+else if (part == "check_front_vs_ghosts") intersection() { front_panel(); ghost_all(); }
+else if (part == "check_shell_lift") intersection() { translate([0, 0, dz]) tapa(); union() { front_panel(); ghost_xt60(); ghost_switch(); } }
 else if (part == "check_pi_standoffs_touch") intersection() { pi_standoffs(0.2); ghost_pi_pcb(); }
 else if (part == "check_base_vs_pared") intersection() { base(); pared(); }
 // --- shell ---
@@ -199,7 +203,7 @@ else if (part == "check_rellenos_overlap") intersection() { relleno(colour); uni
 else if (part == "check_rellenos_fill") difference() { na_pockets(na_depth - 0.01, -na_fit - 0.01); union() for (c = logo_colours) relleno(c); }
 else if (part == "check_na_vs_holes") intersection() { na_pockets(wall, 0.3); lp_holes(); }
 else if (part == "check_na_vs_window") intersection() { na_pockets(wall, 0.3); scale([20, 1, 1]) oled_window(); }
-else if (part == "check_na_vs_cuts") intersection() { na_pockets(wall, 0.3); union() { xt60_cut(); switch_cut(); rod_hole(); bays_cut(); } }
+else if (part == "check_na_vs_cuts") intersection() { na_pockets(wall, 0.3); union() { rod_hole(); bays_cut(); } }
 else if (part == "check_pared_no_ams_vs_ghosts") intersection() { pared_no_ams(); ghost_all(); }
 else if (part == "check_pared_no_ams_same_inside") let(o = na_depth + 0.01) difference() {   // behind the pockets: the LED face, unchanged
     intersection() { pared(leds = true); translate([o, -1, -1]) cube([60, D + 2, H + 2]); }
