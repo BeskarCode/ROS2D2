@@ -38,9 +38,14 @@ module ghost_pico() {
     // J1's wires come in over the board's bx = 0 edge
     a = pico2world(0, 66); b = pico2world(0, 52);
     box_from([pico_x() - 11, a[1], a[2]], [pico_x(), min(a[1] + 2.5, D - wall - 0.01), b[2]]);
-    // the Pico's micro-USB, angled plug, over the top edge
-    u = pico2world(40, 0);
-    box_from([pico_x() - 13.5, u[1] - 8, u[2]], [pico_x(), u[1] + 8, u[2] + pico_usb_clear - 0.5]);
+}
+
+// the Pico's straight micro-USB: the plug up from the top edge, its bend towards the notch in the back
+module ghost_usb() {
+    u = pico2world(40, 0) + [0, 0, 0.01];
+    x0 = pico_x() - usb_plug[2] - usb_plug[0] / 2;  bend = u[2] + pico_usb_clear - 8;
+    box_from([x0, u[1] - usb_plug[1] / 2, u[2]], [x0 + usb_plug[0], u[1] + usb_plug[1] / 2, bend]);
+    box_from([x0, u[1] - usb_plug[1] / 2, bend], [usb_notch_c[0] + usb_notch[0] / 2, u[1] + usb_plug[1] / 2, H - wall - 0.01]);
 }
 
 // the Pico board's LEDs (0603, 1.6 x 0.8, LED1-4 turned 90 deg), D2 (SMA) and the QWIIC plug J3 with its
@@ -121,7 +126,8 @@ module ghost(name) {
     else if (name == "cables") ghost_cables();
     else if (name == "hdmi") ghost_hdmi();
     else if (name == "leds") ghost_leds();
+    else if (name == "usb") ghost_usb();
     else assert(false, str("unknown ghost ", name));
 }
 
-module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables", "hdmi", "leds"]) ghost(g); }
+module ghost_all() { for (g = ["pico", "pi", "conv", "xt60", "switch", "cables", "hdmi", "leds", "usb"]) ghost(g); }
