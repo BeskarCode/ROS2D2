@@ -9,8 +9,9 @@ LENS = [0.80, 0.90, 1.00];   ROD = [1, 0.55, 0.1];
 module s(f, c) color(c) import(str("../stl/", f, ".stl"), convexity = 6);
 module logo(sfx = "", dir = "") { s(str(dir, "logo_navy", sfx), NAVY); s(str(dir, "logo_blue", sfx), BLUE); s(str(dir, "logo_grey", sfx), GREY); }
 
-H = 145;   // the box's height (params.scad): undoes print_pared(), the walls stand as mounted, face to -X
-module montada() rotate([0, 90, 0]) translate([-H, 0, 0]) children();
+H = 145;  D = 95;   // the box's height and depth (params.scad): undoes print_pared(), the walls stand as mounted, face to -X
+// a dark plate behind the wall (inside, past the columns), so its bays and holes read as openings, not white patches
+module montada() rotate([0, 90, 0]) translate([-H, 0, 0]) { children(); color([0.18, 0.2, 0.23]) translate([4, 4, 20]) cube([H - 8, D - 8, 0.5]); }
 
 if (pieza == "wall_multicolor") montada() { s("wall", WHITE); logo(); }
 else if (pieza == "wall_monocolor") montada() s("wall_monocolor", WHITE);
