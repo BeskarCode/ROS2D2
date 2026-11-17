@@ -14,7 +14,7 @@
 <line x1="51.5" y1="1160" x2="91.5" y2="1160" stroke="#1d1d1f" stroke-width="3"/>
 <line x1="51.5" y1="70" x2="91.5" y2="70" stroke="#1d1d1f" stroke-width="3"/>
 <text x="56.5" y="615" transform="rotate(-90 56.5 615)" text-anchor="middle">R2 ≈ 1,09 m</text>
-<rect x="900" y="1015" width="78" height="145" fill="#2a6fdb" stroke="#1d1d1f" stroke-width="4"/>
+<rect x="900" y="1015" width="62" height="145" fill="#2a6fdb" stroke="#1d1d1f" stroke-width="4"/>
 <text x="900" y="945" font-weight="700">Caja</text>
-<text x="900" y="993">78 × 95 × 145 mm</text>
+<text x="900" y="993">62 × 95 × 145 mm</text>
 </svg>

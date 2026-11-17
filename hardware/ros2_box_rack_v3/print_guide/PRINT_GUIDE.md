@@ -15,6 +15,7 @@ Which files to print and when to pick one or another. Only for the rack box (`ha
 - **Lenses** `leds/led_lenses.stl`, only if the wall you pick has LEDs.
 - **One back frame:** `frame_pi4.stl` or `frame_pi5.stl`, for your Raspberry Pi.
 - **HDMI on the back (optional):** `hdmi_holder.stl` or `hdmi_cover.stl`, or neither (see its section).
+- **Ears and blanks:** 5 × `ear.stl` (4 and 1 spare) and 4 × `ear_blank.stl`.
 
 ### Which wall?
 
@@ -30,7 +31,7 @@ PETG, 0.2 mm layers, 0.4 nozzle, no supports, unless said otherwise. The heat-se
 
 ## 1 · Main wall (pick one)
 
-The large wall with the OLED window, the DISPLAY button, the XT60, the switch and the sensor cable slot. All five have the same inserts and fit the base and the shell the same way: only the logo and the LEDs change.
+The large wall with the OLED window, the DISPLAY button and the bays where the sensors plug in from outside. All five have the same inserts and fit the base and the shell the same way: only the logo and the LEDs change.
 
 ### A · Wall with the logo in 4 colours
 
@@ -62,7 +63,7 @@ The large wall with the OLED window, the DISPLAY button, the XT60, the switch an
 
 **Files:** `stl/leds/wall_led_multicolor_bambu.3mf` · `stl/leds/wall_led_multicolor.3mf`
 
-**What it is:** A hole over each of the Pico board's 10 LEDs (VL1–VL4, US1–US5, PWR), with a tube inside down to the LED and its name beside it. The logo moves down, between the OLED window and the XT60.
+**What it is:** A hole over each of the Pico board's 10 LEDs (VL1–VL4, US1–US5, PWR), with a tube inside down to the LED, and one over the Pico's own LED. Each mouth has a 0.4 mm chamfer.
 
 **When:** You want to see from outside which sensors are active, and you have an AMS.
 
@@ -74,23 +75,23 @@ The large wall with the OLED window, the DISPLAY button, the XT60, the switch an
 
 **Files:** `stl/no_ams/wall_led_no_ams.stl`
 
-**What it is:** Wall C with the logo and the names as 1.5 mm pockets, filled with parts printed apart. Same tubes, lenses and inserts as C.
+**What it is:** Wall C with the logo as 1.4 mm pockets, filled with parts printed apart. Same tubes, lenses and inserts as C.
 
 **When:** You want the LEDs and the logo in colour, but your printer has no AMS.
 
 **How to print:** White, logo face on the bed. Needs the 3 fillings and the lenses.
 
-### D · Fillings for the logo and the names
+### D · Fillings for the logo
 
-<img src="img/inlays.png" alt="D · Fillings for the logo and the names" width="480">
+<img src="img/inlays.png" alt="D · Fillings for the logo" width="480">
 
 **Files:** `stl/no_ams/inlay_navy.stl` · `stl/no_ams/inlay_blue.stl` · `stl/no_ams/inlay_grey.stl`
 
-**What it is:** Navy: "ROS" and the connector names. Blue: "2D2" and the 12 dots. Grey: the dots' frame. 0.1 mm of play per side, flush with the wall.
+**What it is:** Navy: "ROS". Blue: "2D2" and the 12 dots. Grey: the dots' frame, widened inwards to 1.7 mm (1.2 under the bottom row) so it prints and handles. 1.4 mm thick (7 layers), 0.1 mm of play per side, flush with the wall.
 
 **When:** Only with wall D.
 
-**How to print:** One plate per colour, visible face on the bed, 0.1–0.15 mm layers, no brim. They come out in place and mirrored: turn them over, press them into their pockets and fix them with a drop of cyanoacrylate.
+**How to print:** One plate per colour, visible face on the bed, 0.2 mm layers, no brim. They come out in place and mirrored: turn them over, press them into their pockets and fix them with a drop of cyanoacrylate.
 
 ### E · Single-colour LED wall
 
@@ -98,7 +99,7 @@ The large wall with the OLED window, the DISPLAY button, the XT60, the switch an
 
 **Files:** `stl/leds/wall_led_monocolor.stl`
 
-**What it is:** Wall C with the logo and the names engraved 1 mm.
+**What it is:** Wall C with the logo engraved 1 mm.
 
 **When:** You want the LEDs, no AMS, one colour is fine.
 
@@ -110,7 +111,7 @@ The large wall with the OLED window, the DISPLAY button, the XT60, the switch an
 
 **Files:** `stl/leds/led_lenses.stl`
 
-**What it is:** 12 discs (10 and 2 spares) pressed into the mouth of each tube, flush with the wall.
+**What it is:** 13 discs (11 and 2 spares) that drop into the mouth of each hole, flush with the wall, with 0.25 mm of play; if one is loose, a drop of glue.
 
 **When:** With any LED wall: C, D or E.
 
@@ -126,7 +127,7 @@ The same with any wall.
 
 **Files:** `stl/base.stl`
 
-**What it is:** Floor, back, central divider (Pi and converter) and mounting ears.
+**What it is:** Floor, narrow front (XT60, switch and vent), back, central divider (Pi and converter) and the ear pockets.
 
 **When:** Always.
 
@@ -138,7 +139,7 @@ The same with any wall.
 
 **Files:** `stl/shell.stl`
 
-**What it is:** Roof, side and narrow front in one piece that slides down from above.
+**What it is:** Roof and side in one piece that slides down from above; the front stays with the base.
 
 **When:** Always.
 
@@ -155,6 +156,30 @@ The same with any wall.
 **When:** Always.
 
 **How to print:** Standing.
+
+### Mounting ear
+
+<img src="img/ear.png" alt="Mounting ear" width="480">
+
+**Files:** `stl/ear.stl`
+
+**What it is:** An L piece flush in a pocket of the front or the back with 2 M3 × 8 countersunk; its lug (4.3 mm hole) screws to the R2. Works with the box standing (4 ears in the pockets by the floor) or lying on the shell's side (4 in the pockets by that side).
+
+**When:** Always: 5 (4 and 1 spare).
+
+**How to print:** On edge, the L's profile on the bed: every layer holds the whole L, so it does not split at the bend.
+
+### Ear blank
+
+<img src="img/ear_blank.png" alt="Ear blank" width="480">
+
+**Files:** `stl/ear_blank.stl`
+
+**What it is:** The ear's plate without the lug: closes the 4 pockets you don't use flush, with its 2 screws.
+
+**When:** Always: 4.
+
+**How to print:** Flat, visible face on the bed.
 
 ## 3 · Back frame (pick one)
 

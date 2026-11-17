@@ -15,6 +15,7 @@ Qué ficheros imprimir y cuándo elegir uno u otro. Solo para la caja rack (`har
 - **Lentillas** `leds/led_lenses.stl`, solo si la pared que eliges es con LEDs.
 - **Un marco trasero:** `frame_pi4.stl` o `frame_pi5.stl`, según tu Raspberry Pi.
 - **HDMI trasero (opcional):** `hdmi_holder.stl` o `hdmi_cover.stl`, o ninguno (ver su apartado).
+- **Orejas y tapas ciegas:** 5 × `ear.stl` (4 y 1 de repuesto) y 4 × `ear_blank.stl`.
 
 ### ¿Qué pared?
 
@@ -30,7 +31,7 @@ PETG, capa de 0,2 mm, boquilla de 0,4, sin soportes, salvo donde se indica otra 
 
 ## 1 · Pared principal (elige una)
 
-La pared grande con la ventana de la OLED, el pulsador DISPLAY, el XT60, el interruptor y la ranura de los cables de los sensores. Las cinco tienen los mismos insertos y encajan igual con la base y la tapa: solo cambian el logo y los LEDs.
+La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por donde se conectan los sensores desde fuera. Las cinco tienen los mismos insertos y encajan igual con la base y la tapa: solo cambian el logo y los LEDs.
 
 ### A · Pared con logo en 4 colores
 
@@ -62,7 +63,7 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY, el XT60, el inte
 
 **Ficheros:** `stl/leds/wall_led_multicolor_bambu.3mf` · `stl/leds/wall_led_multicolor.3mf`
 
-**Qué es:** Un agujero sobre cada uno de los 10 LEDs de la placa de la Pico (VL1–VL4, US1–US5, PWR), con un tubo por dentro hasta el LED y su nombre al lado. El logo baja, entre la ventana de la OLED y el XT60.
+**Qué es:** Un agujero sobre cada uno de los 10 LEDs de la placa de la Pico (VL1–VL4, US1–US5, PWR), con un tubo por dentro hasta el LED, y otro sobre el LED de la propia Pico. Cada boca lleva un chaflán de 0,4 mm.
 
 **Cuándo:** Quieres ver desde fuera qué sensores están activos y tienes AMS.
 
@@ -74,23 +75,23 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY, el XT60, el inte
 
 **Ficheros:** `stl/no_ams/wall_led_no_ams.stl`
 
-**Qué es:** La pared C con el logo y los nombres en hueco de 1,5 mm, para rellenarlos con piezas impresas aparte. Tubos, lentillas e insertos iguales que en C.
+**Qué es:** La pared C con el logo en hueco de 1,4 mm, para rellenarlo con piezas impresas aparte. Tubos, lentillas e insertos iguales que en C.
 
 **Cuándo:** Quieres los LEDs y el logo en colores, pero tu impresora no tiene AMS.
 
 **Cómo imprimir:** Blanco, cara del logo sobre la cama. Necesita los 3 rellenos y las lentillas.
 
-### D · Rellenos del logo y los nombres
+### D · Rellenos del logo
 
-<img src="img/inlays.png" alt="D · Rellenos del logo y los nombres" width="480">
+<img src="img/inlays.png" alt="D · Rellenos del logo" width="480">
 
 **Ficheros:** `stl/no_ams/inlay_navy.stl` · `stl/no_ams/inlay_blue.stl` · `stl/no_ams/inlay_grey.stl`
 
-**Qué es:** Marino: «ROS» y los nombres de los conectores. Azul: «2D2» y los 12 puntos. Gris: el marco de los puntos. Tienen 0,1 mm de holgura por lado y quedan a ras de la pared.
+**Qué es:** Marino: «ROS». Azul: «2D2» y los 12 puntos. Gris: el marco de los puntos, ensanchado hacia dentro a 1,7 mm (1,2 bajo la fila de abajo) para que se pueda imprimir y manejar. 1,4 mm de grueso (7 capas), 0,1 mm de holgura por lado, a ras de la pared.
 
 **Cuándo:** Solo con la pared D.
 
-**Cómo imprimir:** Una placa por color, cara vista sobre la cama, capas de 0,1–0,15 mm, sin borde. Salen en su sitio y en espejo: dales la vuelta, mételos en su hueco y fíjalos con una gota de cianoacrilato.
+**Cómo imprimir:** Una placa por color, cara vista sobre la cama, capas de 0,2 mm, sin borde. Salen en su sitio y en espejo: dales la vuelta, mételos en su hueco y fíjalos con una gota de cianoacrilato.
 
 ### E · Pared con LEDs de un color
 
@@ -98,7 +99,7 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY, el XT60, el inte
 
 **Ficheros:** `stl/leds/wall_led_monocolor.stl`
 
-**Qué es:** La pared C con el logo y los nombres grabados 1 mm.
+**Qué es:** La pared C con el logo grabado 1 mm.
 
 **Cuándo:** Quieres los LEDs, no tienes AMS y un solo color te vale.
 
@@ -110,7 +111,7 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY, el XT60, el inte
 
 **Ficheros:** `stl/leds/led_lenses.stl`
 
-**Qué es:** 12 discos (10 y 2 de repuesto) que se meten a presión en la boca de cada tubo, a ras de la pared.
+**Qué es:** 13 discos (11 y 2 de repuesto) que se meten en la boca de cada agujero, a ras de la pared, con 0,25 mm de holgura; si alguno baila, una gota de pegamento.
 
 **Cuándo:** Con cualquier pared con LEDs: C, D o E.
 
@@ -126,7 +127,7 @@ Las mismas con cualquier pared.
 
 **Ficheros:** `stl/base.stl`
 
-**Qué es:** Suelo, trasera, tabique central (Pi y convertidor) y orejetas de fijación.
+**Qué es:** Suelo, frontal estrecha (XT60, interruptor y rejilla), trasera, tabique central (Pi y convertidor) y los rebajes de las orejas.
 
 **Cuándo:** Siempre.
 
@@ -138,7 +139,7 @@ Las mismas con cualquier pared.
 
 **Ficheros:** `stl/shell.stl`
 
-**Qué es:** Techo, lateral y frontal estrecho en una pieza que baja desde arriba.
+**Qué es:** Techo y lateral en una pieza que baja desde arriba; la frontal se queda con la base.
 
 **Cuándo:** Siempre.
 
@@ -155,6 +156,30 @@ Las mismas con cualquier pared.
 **Cuándo:** Siempre.
 
 **Cómo imprimir:** De pie.
+
+### Oreja de fijación
+
+<img src="img/ear.png" alt="Oreja de fijación" width="480">
+
+**Ficheros:** `stl/ear.stl`
+
+**Qué es:** Pieza en L que va a ras en un rebaje de la frontal o de la trasera con 2 M3 × 8 avellanados; su lengüeta (agujero de 4,3 mm) se atornilla al R2. Sirve para la caja de pie (4 orejas en los rebajes junto al suelo) o tumbada sobre el lateral de la tapa (4 en los rebajes junto a ese lateral).
+
+**Cuándo:** Siempre: 5 (4 y 1 de repuesto).
+
+**Cómo imprimir:** De canto, con el perfil de la L sobre la cama: cada capa lleva la L entera y no se parte por el codo.
+
+### Tapa ciega de oreja
+
+<img src="img/ear_blank.png" alt="Tapa ciega de oreja" width="480">
+
+**Ficheros:** `stl/ear_blank.stl`
+
+**Qué es:** La placa de la oreja sin lengüeta: cierra a ras los 4 rebajes que no usas, con sus 2 tornillos.
+
+**Cuándo:** Siempre: 4.
+
+**Cómo imprimir:** Plana, cara vista sobre la cama.
 
 ## 3 · Marco trasero (elige uno)
 

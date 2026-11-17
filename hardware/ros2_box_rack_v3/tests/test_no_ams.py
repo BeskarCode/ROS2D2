@@ -16,7 +16,6 @@ import gen_na_grey as gg  # noqa: E402
 
 
 # --- the LED face for AMS stays as it was (its STLs in stl/leds/) ----------------------------------
-@pytest.mark.xfail(reason="stl/ and the guides are regenerated in Task 8", strict=False)
 @pytest.mark.parametrize("part", ["wall_led", "wall_led_monocolor", "logo_navy_led", "logo_blue_led", "logo_grey_led"])
 def test_led_face_unchanged(part):
     assert stl_volume(run_scad(part)) == pytest.approx(stl_volume(HERE / "stl" / "leds" / f"{part}.stl"), abs=0.01)
