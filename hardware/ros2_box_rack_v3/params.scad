@@ -12,6 +12,15 @@ wall = 2.5;  fit = 0.25;
 insert_d = 4.0;  insert_h = 6;  ins25_d = 3.6;  ins25_h = 5.5;      // M3 and M2.5 heat-set inserts (hole d, depth)
   m3_clear = 3.4;  m3_head_d = 6.2;  m25_hole = 2.2;  mount_d = 4.3;  boss_d = 8;
 
+// --- removable ears (ears.scad) ------------------------------------------------------------
+ear_pocket_t = 2.0;                  // plate and pocket: 10 layers
+ear_lug_t = 3.0;                     // the lug's thickness past the plate's edge (it also fills ear_e)
+ear_fit = 0.15;                      // pocket round the plate, per side
+ear_plate = [12, 16];                // across from the edge x along it
+ear_screw_pitch = 8.6;  ear_screw_a = 6.5;   // its 2 countersunk M3 (heads 0.6 from the plate's ends, 3.4 from the edge)
+ear_lug = 12;  ear_lug_hole = 7;     // the lug sticks out this far; its M4 hole (mount_d) this far out
+ear_e = wall + fit + ear_fit;        // plate's edge to the box's edge: the front stops wall + fit short of the shell's side
+
 // --- Pico carrier board: vertical blade, parts towards the main face (-X) ------------------
 pico_w = 80;  pico_h = 90;  pcb_t = 1.6;
 pico_gap = 14;                       // main face (inside) -> board: the Pico on its sockets (13) + 1; the Duponts come out through the bays
@@ -86,18 +95,24 @@ LOGO_DIR = "logo/";
 LOGO_SVG_W = 92;                     // the SVGs are drawn 92 mm wide for the first box: scaled to logo_w here
 
 // --- light pipes (LED face: tubes + lenses) ---------------------------------------
-// the Pico board's LEDs (bx, by on the board, from r2_pico_carrier.kicad_pcb): one per sensor connector + power
+// the Pico board's LEDs (bx, by on the board, from r2_pico_carrier.kicad_pcb): one per sensor connector + power;
+// then the Pico's own LED (from the user's drawing cajaROS2/pico2.PNG, +-0.5): on the Pico, 12 mm over the board's
+// face (socket 8.5 + header 2.5 + PCB 1), so close to the face that it needs no tube, only the lens and its bore
+// [name, bx, by, base over the board's face (0 if left out)]
 pico_leds = [["VL1", 72.6, 12], ["VL2", 72.6, 24], ["VL3", 72.6, 39], ["VL4", 72.6, 51],
              ["US1", 21, 12], ["US2", 21, 22], ["US3", 21, 32], ["US4", 21, 42], ["US5", 21, 52],
-             ["PWR", 40.8, 59.5]];
+             ["PWR", 40.8, 59.5], ["PICO", 34.5, 6.8, 12]];
+function led_base(l) = len(l) > 3 ? l[3] : 0;
+function led_tube(l) = led_base(l) == 0;          // a tube only for the LEDs on the board itself
 led_h = 0.8;                         // 0603 LED height, the datasheet's highest
 led_air = 0.7;                       // air between a tube's end and its LED (nominal), board resting on the columns' ends
 // the light: a dark tube printed with the face from each hole to its LED, a thin translucent lens outside
 lp_bore = 3.4;  lp_tube_od = 5;      // tube: bore, outer d (2 perimeters)
 lp_tip_bore = 2.6;  lp_tip_od = 3.8; // its last 5 mm, among the board's low parts (nothing but the LED within led_well_d)
-lp_lens_d = 5.4;  lp_lens_t = 0.8;  lp_lens_fit = 0.15;   // lens disc: flush with the face in its recess
-lp_stem_d = 3.3;  lp_stem_l = 1.5;   // its stem, pressed into the tube's bore
-lp_lens_n = 12;                      // 10 + 2 spares on the plate
+lp_lens_d = 5.4;  lp_lens_t = 0.8;  lp_lens_fit = 0.25;   // lens disc: flush with the face in its recess
+lp_stem_d = 3.1;  lp_stem_l = 1.5;   // its stem, in the tube's bore with 0.15 of play (glue a drop if loose)
+lp_lens_n = len(pico_leds) + 2;     // 11 + 2 spares on the plate
+lp_chamfer = 0.4;                    // 45 deg chamfer round each recess's mouth: no elephant's foot, the lens drops in
 lp_hole = lp_lens_d + 2 * lp_lens_fit;   // the lens recess on the outside: the dot seen from outside
 logo_zc_led = logo_zc;               // the same place on the LED face
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
@@ -138,6 +153,6 @@ function hdmi_rot(p) = hdmi_turn ? [hdmi_c[0] + (p[1] - hdmi_c[1]), hdmi_c[1] - 
 module hdmi_turned() if (hdmi_turn) translate([hdmi_c[0], 0, hdmi_c[1]]) rotate([0, 90, 0]) translate([-hdmi_c[0], 0, -hdmi_c[1]]) children(); else children();
 
 // --- LED face without AMS: deeper pockets, the logo and the names printed apart and pressed in -----------
-na_depth = 1.5;                      // pocket and inlay thickness (the wall is 2.5: 1 mm stays behind)
+na_depth = 1.4;                      // pocket and inlay thickness, 7 layers (the wall is 2.5: 1.1 mm stays behind)
 na_fit = 0.1;                        // the pockets grow this much per side, the inlays keep their size
 na_bold = 0.15;                      // the names grow this much per side: strokes ~0.8 mm, printable alone

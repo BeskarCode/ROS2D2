@@ -13,10 +13,9 @@ def table():
     return fastener_table()
 
 
-@pytest.mark.xfail(reason="stl/ and the guides are regenerated in Task 8", strict=False)
 def test_bom_matches_the_table(table):
     rows = {r["kind"]: r["qty"] for r in bom(table)}
-    assert rows == dict(collections.Counter(f[0] for f in table)) and rows["ins_m3"] == 17 and rows["ins_m25"] == 4
+    assert rows == dict(collections.Counter(f[0] for f in table)) and rows["ins_m3"] == 34 and rows["ins_m25"] == 4
 
 
 def test_eight_steps_both_languages():
@@ -25,7 +24,6 @@ def test_eight_steps_both_languages():
         assert s["es"]["text"] and s["en"]["text"]
 
 
-@pytest.mark.xfail(reason="stl/ and the guides are regenerated in Task 8", strict=False)
 @pytest.mark.parametrize("lang,name", [("es", "MONTAJE.md"), ("en", "ASSEMBLY.md")])
 def test_guide(tmp_path, table, lang, name):
     write_guide(lang, table, tmp_path / name)
@@ -33,7 +31,7 @@ def test_guide(tmp_path, table, lang, name):
     for n in range(1, 9):
         assert f"assembly/img/step{n}.png" in md
     assert f"wiring_{lang}.svg" in md and f"connectors_{lang}.svg" in md
-    assert "wall_multicolor_bambu.3mf" in md and "17× " in md and "frame_pi5.stl" in md
+    assert "wall_multicolor_bambu.3mf" in md and "34× " in md and "frame_pi5.stl" in md
     assert f"scale_{lang}.svg" in md and "github.com/BeskarCode/ROS2D2/tree/main/hardware/ros2_box_rack_v3" in md
 
 
@@ -69,3 +67,12 @@ def test_led_version_parts_go_in_their_own_folder(tmp_path):
     assert build.stl_path(tmp_path, "wall") == tmp_path / "stl" / "wall.stl"
     assert build.face_path(tmp_path, "wall_led_multicolor_bambu.3mf") == tmp_path / "stl" / "leds" / "wall_led_multicolor_bambu.3mf"
     assert build.face_path(tmp_path, "wall_multicolor.3mf") == tmp_path / "stl" / "wall_multicolor.3mf"
+
+
+@pytest.mark.parametrize("name,words", [("README_es.md", ["62 × 95 × 145 mm", "ear.stl", "ear_blank.stl", "13 lentillas", "1,4 mm"]),
+                                        ("README.md", ["62 × 95 × 145 mm", "ear.stl", "ear_blank.stl", "13 lenses", "1.4 mm"])])
+def test_readme_is_the_v3_box(name, words):
+    md = (pathlib.Path(__file__).resolve().parent.parent / name).read_text(encoding="utf8")
+    for w in words:
+        assert w in md, w
+    assert "78 ×" not in md and "orejetas." not in md and "acodado lateral" not in md

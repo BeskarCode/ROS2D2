@@ -5,7 +5,7 @@
 La caja del sistema ROS 2 del R2 (Raspberry Pi 4 o Pi 5, placa de la Pico, convertidor
 24 → 5 V, XT60E-F e interruptor): las placas van **de pie, en paralelo, como cuchillas de un rack**.
 
-**78 × 95 × 145 mm · 1,07 L**, más 4 orejetas.
+**62 × 95 × 145 mm · 0,85 L**, más las orejas desmontables (de pie o tumbada).
 
 Todos los tornillos van a **insertos térmicos**, también los de las placas (M2,5 en la Pi, M3 en el resto).
 
@@ -18,24 +18,31 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 
 ## Cómo va por dentro
 
-- **Pared principal** (el lateral grande): ventana de la OLED, logo en 4 colores, varilla del
-  pulsador DISPLAY, ranura única para los cables de los sensores (arriba) y, abajo, el XT60E-F
-  (girado) y el interruptor.
+- **Pared principal** (el lateral grande, plana): ventana de la OLED, logo en 4 colores arriba, varilla
+  del pulsador DISPLAY y una **bahía** sobre cada grupo de conectores: los sensores se enchufan desde
+  fuera, sin abrir la caja. Sin nombres de conectores.
 - **Placa de la Pico**: de pie, colgada de 4 columnas de la pared principal, con los componentes
-  hacia ella (30 mm para los Dupont).
+  hacia ella (14 mm: la Pico en sus zócalos). Encima, 30 mm libres para un **micro-USB recto**, que
+  sube y se dobla bajo el techo hacia la muesca de la trasera.
 - **Tabique central**: sujeta la Pi (columnas con insertos M2,5) y el convertidor (insertos M3).
-  Tiene dos pasos de cables: arriba y delante, donde salen los cables del convertidor hacia el lado
-  de la Pico; y abajo, bajo la Pi, para el HDMI (y el USB-C si se quiere llevar por ahí).
+  Tiene dos pasos de cables: arriba, donde salen los 5 V del convertidor hacia el lado de la Pico; y
+  abajo, bajo la Pi, para el HDMI (y el USB-C si se quiere llevar por ahí).
 - **Raspberry Pi 4 o Pi 5**: de pie, **abajo**, con los USB y el Ethernet en la ventana de la
   trasera y el USB-C hacia abajo (15 mm libres para las clavijas acodadas USB-C y micro-HDMI).
 - **Convertidor**: de pie, **arriba**, con 5 mm de aire sobre la Pi y los cables hacia delante.
   Su calor sube y sale por el techo y la rejilla alta del lateral sin pasar por la Pi; la Pi
-  toma aire fresco por las rejillas bajas del frontal y del lateral.
+  toma aire fresco por las rejillas bajas de la frontal y del lateral.
+- **Frontal estrecha**: fija, parte de la base. En el lado de la Pi lleva el **XT60E-F** (justo encima
+  de la Pi) y el **interruptor** (arriba del todo), y delante de la Pi la rejilla de entrada de aire.
 - **Trasera**: una sola ventana para los conectores de las dos Pi, cerrada con un **marco
-  intercambiable** (`frame_pi4` o `frame_pi5`: la Pi 5 tiene el Ethernet y los USB al revés). Los
-  huecos de los USB tienen 0,5 mm más por cada lado para las pestañas de la carcasa del conector.
-  Al lado, un **HDMI hembra de panel** conectado al HDMI 0 de la Pi, para enchufar un monitor.
-- **Tapa**: techo, lateral derecho y frontal estrecho en una pieza que baja desde arriba.
+  intercambiable** (`frame_pi4` o `frame_pi5`: la Pi 5 tiene el Ethernet y los USB al revés). Junto
+  al convertidor, girado, un **HDMI hembra de panel** conectado al HDMI 0 de la Pi.
+- **Tapa**: techo y lateral derecho en una pieza que baja desde arriba; la frontal no se mueve, así
+  que se abre con el XT60 y el interruptor conectados.
+- **Orejas desmontables**: 8 rebajes, 4 en la frontal y 4 en la trasera. Para la caja **de pie**,
+  4 orejas en los rebajes junto al suelo (lengüetas en el plano del suelo); **tumbada** sobre el
+  lateral de la tapa, 4 en los rebajes junto a ese lateral. Los otros 4 rebajes llevan una tapa
+  ciega. Cada oreja o tapa va a ras con 2 M3 avellanados a insertos.
 
 ## Piezas
 
@@ -44,11 +51,13 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 | `stl/wall_multicolor_bambu.3mf` | pared principal + logo marino, azul y gris (4 partes con su filamento) | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
 | `stl/wall_multicolor.3mf` | lo mismo, 3MF genérico para otros laminadores | |
 | `stl/wall_monocolor.stl` | pared principal de un color, logo grabado 1 mm | cara del logo sobre la cama |
-| `stl/base.stl` | suelo, trasera, tabique y orejetas | suelo sobre la cama |
-| `stl/shell.stl` | techo, lateral y frontal estrecho | techo sobre la cama |
+| `stl/base.stl` | suelo, frontal (XT60, interruptor, rejilla), trasera, tabique y rebajes de las orejas | suelo sobre la cama |
+| `stl/shell.stl` | techo y lateral | techo sobre la cama |
 | `stl/push_rod.stl` | varilla del pulsador DISPLAY | de pie |
 | `stl/frame_pi4.stl` | marco trasero para la Pi 4 | cara exterior sobre la cama |
 | `stl/frame_pi5.stl` | marco trasero para la Pi 5 | cara exterior sobre la cama |
+| `stl/ear.stl` | oreja de fijación: imprime 5 (4 y 1 de repuesto) | de canto, el perfil de la L sobre la cama |
+| `stl/ear_blank.stl` | tapa ciega para los rebajes sin oreja: imprime 4 | plana, cara vista sobre la cama |
 
 PETG, 0,2 mm, boquilla 0,4, sin soportes.
 
@@ -56,41 +65,42 @@ PETG, 0,2 mm, boquilla 0,4, sin soportes.
 
 ![Pared con LEDs](assembly/img/assembled_led.png)
 
-Otra versión de la pared principal, para ver desde fuera los 10 LEDs de la placa de la Pico: un
-agujero sobre cada uno (VL1–VL4, US1–US5 y PWR) con su nombre al lado, y el logo más abajo, entre
-la ventana de la OLED y el XT60. Sus piezas están en `stl/leds/`. Imprime **una** de las dos paredes: la de arriba o esta.
-El resto de piezas es el mismo.
+Otra versión de la pared principal, para ver desde fuera los LEDs de la placa: un agujero sobre cada
+uno de sus 10 LEDs (VL1–VL4, US1–US5 y PWR) y otro sobre el LED de la propia Pico. Sus piezas están en
+`stl/leds/`. Imprime **una** de las dos paredes: la de arriba o esta. El resto de piezas es el mismo.
 
 | STL | Qué es | Cómo imprimir |
 |---|---|---|
-| `stl/leds/wall_led_multicolor_bambu.3mf` | pared con LEDs + logo y nombres en marino, azul y gris | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
+| `stl/leds/wall_led_multicolor_bambu.3mf` | pared con LEDs + logo en marino, azul y gris | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
 | `stl/leds/wall_led_multicolor.3mf` | lo mismo, 3MF genérico | |
-| `stl/leds/wall_led_monocolor.stl` | pared con LEDs de un color, logo y nombres grabados 1 mm | cara del logo sobre la cama |
-| `stl/leds/led_lenses.stl` | 12 lentillas (10 y 2 de repuesto) | **PLA translúcido** (o PETG transparente), discos planos sobre la cama |
+| `stl/leds/wall_led_monocolor.stl` | pared con LEDs de un color, logo grabado 1 mm | cara del logo sobre la cama |
+| `stl/leds/led_lenses.stl` | 13 lentillas (11 y 2 de repuesto) | **PLA translúcido** (o PETG transparente), discos planos sobre la cama |
 
-Cada agujero tiene por dentro un tubo oscuro, impreso con la pared, que lleva la luz de su LED hasta
-fuera sin que se pierda; acaba 0,7 mm por encima del LED y nunca toca la placa. En la boca de cada
-tubo va una lentilla de PLA translúcido, a presión y a ras de la pared (si alguna baila, una gota de
-pegamento). Al montar, presenta la placa sin tornillos sobre sus 4 columnas: debe asentar sin
-balancearse; si se balancea, algún tubo toca su LED: lija la punta.
+Cada agujero de la placa tiene por dentro un tubo oscuro, impreso con la pared, que lleva la luz de su
+LED hasta fuera sin que se pierda; acaba 0,7 mm por encima del LED y nunca toca la placa. El LED de la
+Pico queda a poco más de 1 mm de la pared y no lleva tubo, solo el agujero. En la boca de cada agujero,
+con un chaflán de 0,4 mm, va una lentilla de PLA translúcido a ras de la pared, con 0,25 mm de holgura
+(si alguna baila, una gota de pegamento). Al montar, presenta la placa sin tornillos sobre sus 4
+columnas: debe asentar sin balancearse; si se balancea, algún tubo toca su LED: lija la punta.
 
 ## Pared con LEDs sin AMS (opcional)
 
-La misma pared con LEDs (tubos, lentillas e insertos iguales) para impresoras sin AMS: el logo y los
-nombres de los conectores son huecos de 1,5 mm de fondo, y lo que los rellena se imprime aparte, una
-pieza por color. Sus piezas están en `stl/no_ams/`; las lentillas son las de `stl/leds/led_lenses.stl`.
+La misma pared con LEDs (tubos, lentillas e insertos iguales) para impresoras sin AMS: el logo es un
+hueco de 1,4 mm de fondo, y lo que lo rellena se imprime aparte, una pieza por color. Sus piezas están
+en `stl/no_ams/`; las lentillas son las de `stl/leds/led_lenses.stl`.
 
 | STL | Qué es | Cómo imprimir |
 |---|---|---|
-| `stl/no_ams/wall_led_no_ams.stl` | pared con LEDs, logo y nombres en hueco de 1,5 mm | blanco, cara del logo sobre la cama |
-| `stl/no_ams/inlay_navy.stl` | "ROS" y los nombres de los conectores | marino, cara vista sobre la cama |
+| `stl/no_ams/wall_led_no_ams.stl` | pared con LEDs, logo en hueco de 1,4 mm | blanco, cara del logo sobre la cama |
+| `stl/no_ams/inlay_navy.stl` | "ROS" | marino, cara vista sobre la cama |
 | `stl/no_ams/inlay_blue.stl` | "2D2" y los 12 puntos | azul, cara vista sobre la cama |
 | `stl/no_ams/inlay_grey.stl` | el marco de los puntos | gris, cara vista sobre la cama |
 
 Los rellenos salen en su sitio, como se ven desde fuera pero en espejo (la cara vista abajo): dales
 la vuelta y mételos en su hueco. Tienen 0,1 mm de holgura por lado y quedan a ras de la pared; fíjalos
-con una gota de pegamento de cianoacrilato. Los nombres son algo más gruesos que en la versión con AMS
-para que se puedan imprimir sueltos. Imprime los rellenos con capas de 0,1–0,15 mm y sin borde.
+con una gota de pegamento de cianoacrilato. El marco gris es más ancho que en la versión con AMS
+(1,7 mm hacia dentro, 1,2 bajo la fila de puntos de abajo) para que se pueda imprimir y manejar suelto.
+Capas de 0,2 mm (7 capas) y sin borde.
 
 ## Antes de imprimir: comprueba estas medidas
 
@@ -102,11 +112,13 @@ En `params.scad` (cambia el valor y vuelve a generar):
 - `sw_cut`: agujero de panel del interruptor (19,2 × 13 para un KCD1).
 - `sw1_h`: altura del pulsador DISPLAY.
 - `pi_fan_clear`: altura del ventilador de la Pi.
+- `pico_usb_clear` y `usb_plug`: la clavija recta de tu cable micro-USB (30 mm libres sobre la placa).
 - `hdmi_body`, `hdmi_flange`, `hdmi_pitch`: el HDMI hembra de panel que compres (cuerpo, brida y
   distancia entre sus 2 tornillos M3).
 
-Cables: el **micro-USB acodado lateral de 30 cm** y el **USB-C acodado con hilos** (3 A para la Pi 4; **5 A para la Pi 5**); mira «Conectores acodados» en el
-manual. Para el monitor, un cable **micro-HDMI macho acodado → HDMI hembra de panel**, de unos 30 cm.
+Cables: un **micro-USB de clavija recta, de unos 30 cm** y el **USB-C acodado con hilos** (3 A para la
+Pi 4; **5 A para la Pi 5**). Para el monitor, un cable **micro-HDMI macho acodado → HDMI hembra de
+panel**, de unos 30 cm.
 
 ## Generar los ficheros
 
@@ -116,4 +128,5 @@ python -I hardware/ros2_box_rack_v3/build_docs.py    # imágenes, MONTAJE.md, AS
 python -m pytest hardware/ros2_box_rack_v3/tests     # choques, encajes, tornillería, impresión
 ```
 
-El logo y sus SVG están en `logo/`, escalados a 80 mm.
+El logo y sus SVG están en `logo/`, escalados a 80 mm; el marco gris ancho de la versión sin AMS lo
+genera `logo/gen_na_grey.py`.

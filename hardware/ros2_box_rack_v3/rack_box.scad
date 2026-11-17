@@ -41,6 +41,8 @@ else if (part == "echo_layout") {
     echo("pico_zbot", pico_zbot()); echo("pico_usb_clear", pico_usb_clear);
     echo("xt60_x", xt60_c[0]); echo("sw_x", sw_c[0]); echo("div_x1", div_x[1]); echo("conv_y", conv_y);
     echo("xt60_z0", xt60_c[1] - xt60_flange[1] / 2);
+    echo("n_leds", len(pico_leds)); echo("n_tubes", len([for (l = pico_leds) if (led_tube(l)) 1])); echo("lp_lens_n", lp_lens_n);
+    echo("lp_bore", lp_bore); echo("lp_stem_d", lp_stem_d); echo("lp_hole", lp_hole); echo("lp_lens_d", lp_lens_d);
     dot();
 }
 // --- v3: diagnostics: one printed piece against one ghost ---
@@ -147,7 +149,25 @@ else if (part == "check_usb_vs_pared") intersection() { pared(leds = leds == 1);
 else if (part == "check_logo_vs_usb_recess") intersection() { logo_svg("todo", 1.4, false); usb_recess_cut(); }
 else if (part == "check_tapa_vs_ghost") intersection() { tapa(); ghost(ga); }   // one ghost at a time: light enough for OpenSCAD 2021
 else if (part == "echo_vents") echo_vents();
-else if (part == "montaje_sin_orejetas") { pared(); base(ears = false); tapa(); }
+else if (part == "montaje_sin_orejetas") { pared(); base(); tapa(); }
+// --- v3: removable ears ---
+else if (part == "ear") ear();
+else if (part == "ear_blank") ear_blank();
+else if (part == "ears_mounted") ears_mounted();
+else if (part == "echo_ears") {
+    echo("sites", [for (s = ear_sites) [s[0], s[1]]]);
+    echo("vertical_lug_planes", [for (s = ear_sites) if (s[1] == "vertical") ear_pt(s, [-ear_e, 0, -1])[2]]);
+    echo("horizontal_lug_planes", [for (s = ear_sites) if (s[1] == "horizontal") ear_pt(s, [-ear_e, 0, -1])[0]]);
+    echo("W", W); echo("lug_out", ear_lug);
+    dot();
+}
+else if (part == "check_pads_vs_ghosts") intersection() { ear_pads(); ghost_all(); }
+else if (part == "check_ears_vs_power") intersection() { ear_pockets(1); union() { on_front() { switch_cut(); xt60_cut(); } front_vents(); } }
+else if (part == "check_ears_vs_back") intersection() { ear_pockets(1); union() { back_cuts(); insert_holes(); } }
+else if (part == "check_ear_flush") union() {
+    intersection() { ears_mounted(); union() { base(); pared(); tapa(); } }
+    intersection() { blanks_mounted(); union() { translate([-1, -5, -1]) cube([W + 2, 5 - 0.01, H + 2]); translate([-1, D + 0.01, -1]) cube([W + 2, 5, H + 2]); } }
+}
 // --- light pipes ---
 else if (part == "wall_led") print_pared() pared(leds = true);
 else if (part == "wall_led_monocolor") print_pared() pared(logo_depth_mono, true);
@@ -169,13 +189,25 @@ else if (part == "check_lentes_vs_pared") intersection() { lentes_montadas(); pa
 else if (part == "check_lentes_flush") intersection() { lentes_montadas(); translate([-5, 0, 0]) cube([4.99, D, H]); }
 else if (part == "check_lp_bores_open") intersection() {     // each bore's core, wall to tube end: nothing of the face
     pared(leds = true);
-    for (i = [0 : len(pico_leds) - 1]) lp_at(i) translate([0, 0, lp_lens_t + lp_stem_l + 0.1]) cylinder(d = lp_tip_bore - 0.2, h = lp_tip_x() + 1, $fn = 24);
+    for (i = [0 : len(pico_leds) - 1]) if (led_tube(pico_leds[i])) lp_at(i) translate([0, 0, lp_lens_t + lp_stem_l + 0.1]) cylinder(d = lp_tip_bore - 0.2, h = lp_tip_x() + 1, $fn = 24);
 }
 else if (part == "check_lp_tubes_vs_pcb") intersection() { pared(leds = true); ghost_pico_pcb(); }
 else if (part == "echo_lp_tips") {
-    for (i = [0 : len(pico_leds) - 1]) echo(pico_leds[i][0], lp_tip_x());
+    for (i = [0 : len(pico_leds) - 1]) if (led_tube(pico_leds[i])) echo(pico_leds[i][0], lp_tip_x());
     echo("column_end", pico_x() - 0.05);          // pico_columns() stop 0.05 short of the board's face
+    i = search(["PICO"], pico_leds)[0];
+    echo("pico_led_top", led_world(i)[0] - led_h); echo("stem_end", lp_lens_t + lp_stem_l); echo("wall", wall);
     dot();
+}
+else if (part == "check_lens_chamfer") intersection() {      // a ring at each mouth, 0.1 deep, out to 0.25 (the 45 deg chamfer is 0.3 there)
+    pared(leds = true);
+    for (i = [0 : len(pico_leds) - 1]) lp_at(i) translate([0, 0, -0.01]) difference() {
+        cylinder(d = lp_hole + 2 * 0.25, h = 0.11, $fn = 48); translate([0, 0, -1]) cylinder(d = lp_hole - 0.2, h = 3, $fn = 48);
+    }
+}
+else if (part == "check_pico_lens_vs_cuts") intersection() {  // 1 mm of face round the Pico LED's recess and chamfer
+    let(i = search(["PICO"], pico_leds)[0]) lp_at(i) translate([0, 0, -1]) cylinder(d = lp_hole + 2 * lp_chamfer + 2, h = wall + 2, $fn = 48);
+    union() { oled_window(); usb_recess_cut(); rod_hole(); bays_cut(); na_pockets(); }
 }
 else if (part == "check_wall_led_vs_ghosts") intersection() { pared(leds = true); ghost_all(); }
 else if (part == "ghost_leds_only") ghost_leds();

@@ -2,13 +2,17 @@
 """LED face without AMS: the same LED face with the logo and the names as deep pockets, and their fillings
 printed apart (navy, blue, grey). The LED face with AMS must not change."""
 import pathlib
+import sys
 
+import numpy as np
 import pytest
 
 from scad import is_empty, run_scad, stl_bbox, stl_volume
 
 HERE = pathlib.Path(__file__).resolve().parents[1]
 COLOURS = ["navy", "blue", "grey"]
+sys.path.insert(0, str(HERE / "logo"))
+import gen_na_grey as gg  # noqa: E402
 
 
 # --- the LED face for AMS stays as it was (its STLs in stl/leds/) ----------------------------------
@@ -26,7 +30,7 @@ def test_same_face_behind_the_pockets():
 
 def test_pockets_deeper_and_closed_behind():
     lo, hi = stl_bbox(run_scad("na_pockets_montados"))
-    assert lo[0] == pytest.approx(0, abs=0.01) and hi[0] == pytest.approx(1.5, abs=0.01)   # 1 mm of wall stays
+    assert lo[0] == pytest.approx(0, abs=0.01) and hi[0] == pytest.approx(1.4, abs=0.01)   # 1.1 mm of wall stays
 
 
 @pytest.mark.parametrize("what", ["check_na_vs_holes", "check_na_vs_window", "check_na_vs_cuts"])
@@ -64,4 +68,47 @@ def test_fillings_apart(c):
 @pytest.mark.parametrize("c", COLOURS)
 def test_filling_prints_flat(c):
     lo, hi = stl_bbox(run_scad(f"inlay_{c}"))
-    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(1.5, abs=0.01)
+    assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(1.4, abs=0.01)    # 7 layers of 0.2
+
+
+# --- the grey frame: thick enough to print alone, off the blue dots (logo/gen_na_grey.py) ----------------
+def _runs_from_edge(a, axis, rev):
+    """for each line across a side of the frame: how many grey pixels in a row from the outer edge."""
+    b = a if axis == 0 else a.T
+    b = b[::-1] if rev else b
+    first = b.argmax(axis=0)                                       # the outer edge in each line
+    out = []
+    for j in range(b.shape[1]):
+        k = first[j]
+        n = 0
+        while k + n < b.shape[0] and b[k + n, j]:
+            n += 1
+        out.append(n)
+    return np.array(out)
+
+
+def test_grey_frame_wide_enough():
+    g = gg.load("logo_grey_na.svg")
+    ys, xs = np.where(g)
+    end = int(gg.px(2.5))                                          # the rounded corners left out
+    sides = [_runs_from_edge(g[:, xs.min() + end:xs.max() - end], 0, False),   # top
+             _runs_from_edge(g[:, xs.min() + end:xs.max() - end], 0, True),    # bottom
+             _runs_from_edge(g[ys.min() + end:ys.max() - end, :xs.max() + 1], 1, False),   # left
+             _runs_from_edge(g[ys.min() + end:ys.max() - end, :xs.max() + 1], 1, True)]    # right
+    mm = [s * gg.PX * gg.MM_PER_UNIT for s in sides]
+    assert min(m.min() for m in mm) >= gg.MIN_MM                   # 3 lines of a 0.4 nozzle (a little narrower under the dots)
+    assert max(m.max() for m in mm) <= gg.FRAME_MM + 0.1
+
+
+def test_grey_frame_clear_of_the_dots():                         # Review Focus 5
+    assert not (gg.load("logo_grey_na.svg") & gg.dilate(gg.load("logo_blue.svg"), gg.px(0.15))).any()
+
+
+def test_grey_frame_svg_up_to_date():
+    assert (gg.frame(gg.load("logo_grey.svg"), gg.load("logo_blue.svg")) == gg.load("logo_grey_na.svg")).all()
+
+
+def test_fillings_on_layers():
+    import re
+    d = float(re.search(r"^na_depth = ([\d.]+);", (HERE / "params.scad").read_text(), re.M).group(1))
+    assert d == pytest.approx(1.4) and round(d / 0.2, 6) == int(round(d / 0.2))

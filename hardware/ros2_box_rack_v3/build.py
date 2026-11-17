@@ -23,6 +23,8 @@ PRINT_PARTS = ["wall", *LOGO_PARTS, "wall_monocolor", "push_rod", "base", "shell
 NOAMS_DIR = "no_ams"
 NOAMS_PARTS = ["wall_led_no_ams", "inlay_navy", "inlay_blue", "inlay_grey"]
 PRINT_PARTS += NOAMS_PARTS
+# the removable ears (4 + 1 spare) and the blanks for the unused sites (4)
+PRINT_PARTS += ["ear", "ear_blank"]
 # the LED version's parts live in their own folder, stl/leds/
 LED_DIR = "leds"
 LED_PARTS = {"wall_led", *LOGO_LED_PARTS, "wall_led_monocolor", "led_lenses"}

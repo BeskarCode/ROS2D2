@@ -7,8 +7,11 @@ from scad import echo_values, is_empty, run_scad, stl_bbox, stl_volume
 
 # each LED on the Pico board (bx, by), from r2_pico_carrier.kicad_pcb: on the main face at (90 - bx, ztop - by)
 BOARD = {"VL1": (72.6, 12), "VL2": (72.6, 24), "VL3": (72.6, 39), "VL4": (72.6, 51),
-         "US1": (21, 12), "US2": (21, 22), "US3": (21, 32), "US4": (21, 42), "US5": (21, 52), "PWR": (40.8, 59.5)}
+         "US1": (21, 12), "US2": (21, 22), "US3": (21, 32), "US4": (21, 42), "US5": (21, 52), "PWR": (40.8, 59.5),
+         "PICO": (34.5, 6.8)}
+BASE = {"PICO": 12.0}       # the Pico's own LED, on the Pico (on its sockets): 12 mm over the board's face
 SPEC = BOARD
+TUBES = [n for n in BOARD if n not in BASE]     # the Pico LED is close to the face: lens + bore, no tube
 
 
 # --- the LEDs and the light test rod -------------------------------------------------------------
@@ -16,7 +19,8 @@ def test_leds_where_the_spec_says():
     v = echo_values("echo_leds")
     for name, (bx, by) in BOARD.items():
         x, wy, wz = v[name]
-        assert (wy, wz) == pytest.approx((90 - bx, v["pico_ztop"] - by), abs=0.05) and x == pytest.approx(v["pico_x"], abs=0.01)
+        assert (wy, wz) == pytest.approx((90 - bx, v["pico_ztop"] - by), abs=0.05)
+        assert x == pytest.approx(v["pico_x"] - BASE.get(name, 0), abs=0.01), name
     assert v["lp_tip_x"] == pytest.approx(v["pico_x"] - 1.5, abs=0.01)     # LED 0.8 + air 0.7
 
 
@@ -55,8 +59,34 @@ def test_tubes_end_just_over_the_leds():
     # the board rests on the columns' ends (X 32.45), the LED is up to 0.8 tall: 0.3..1.2 mm of air
     v = echo_values("echo_lp_tips")                 # name -> X of its tube's end; plus column end
     led_top = v["column_end"] - 0.8
-    for name in SPEC:
+    for name in TUBES:
         assert 0.3 <= led_top - v[name] <= 1.2, name
+    assert "PICO" not in v                          # no tube for the Pico LED
+
+
+def test_eleven_leds_ten_tubes():
+    v = echo_values("echo_layout")
+    assert v["n_leds"] == 11 and v["n_tubes"] == 10 and v["lp_lens_n"] == 13     # 11 lenses + 2 spares
+
+
+def test_pico_led_seen_through_the_wall():
+    v = echo_values("echo_lp_tips")
+    assert v["pico_led_top"] - v["wall"] >= 0.3     # air between the face's inside and the LED
+    assert v["stem_end"] <= v["wall"]               # the lens stem stays in the wall's bore
+
+
+def test_lens_recess_has_its_chamfer():
+    assert is_empty("check_lens_chamfer")           # a ring 0.4 wide at each mouth: no wall left in it
+
+
+def test_lens_fits_have_play():
+    v = echo_values("echo_layout")
+    assert (v["lp_bore"] - v["lp_stem_d"]) / 2 >= 0.15 - 1e-9
+    assert (v["lp_hole"] - v["lp_lens_d"]) / 2 >= 0.25 - 1e-9
+
+
+def test_pico_lens_clear_of_the_other_cuts():
+    assert is_empty("check_pico_lens_vs_cuts")      # 1 mm of face round it: OLED window, USB recess, rod, bays, logo pockets
 
 
 def test_lenses_fit_their_recesses():
