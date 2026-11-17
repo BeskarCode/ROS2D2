@@ -4,6 +4,7 @@
 1. PS + L2 on the fake Mega -> autonomous mode on, and its sound reaches the Mega
 2. a goal across the room -> R2 gets there
 3. a goal it cannot reach (behind a wall) -> it gives up, plays its sound and stays still
+4. a sensor unplugged on the way -> "sensor lost", it stops at once; plugged back -> it carries on
 Prints PASS/FAIL per step and ALL PASS at the end (exit 1 on the first failure).
 """
 import json
@@ -86,6 +87,24 @@ p0 = seen["pose"]
 wait(lambda: False, 10)
 p1 = seen["pose"]
 step("stays still after giving up", abs(p1[0] - p0[0]) < 0.02 and abs(p1[1] - p0[1]) < 0.02)
+
+# a sensor that goes silent on the way (the Pico unplugged) is not "nothing there": R2 stops
+cmd.publish(String(data=json.dumps({"op": "reset"})))
+cmd.publish(String(data=json.dumps({"op": "remove", "id": 4})))
+wait(lambda: False, 1.0)
+send_goal(2.2, 1.2)
+wait(lambda: seen["state"].get("state") in ("going", "avoiding"), 10)
+wait(lambda: False, 2.0)
+cmd.publish(String(data=json.dumps({"op": "sensor", "name": "tof_floor", "on": False})))
+step("floor sensor unplugged: sensor lost", wait(lambda: seen["state"].get("state") == "sensor lost"
+                                               and "tof_floor" in seen["state"].get("lost", []), 5))
+step("it says so at once (v = 0)", wait(lambda: seen["state"].get("v", 1) == 0, 1))
+p0 = seen["pose"]
+wait(lambda: False, 3)
+p1 = seen["pose"]
+step("stays still without it", abs(p1[0] - p0[0]) < 0.03 and abs(p1[1] - p0[1]) < 0.03)
+cmd.publish(String(data=json.dumps({"op": "sensor", "name": "tof_floor", "on": True})))
+step("plugged back: it carries on", wait(lambda: seen["state"].get("state") in ("going", "avoiding", "arrived"), 10))
 cmd.publish(String(data=json.dumps({"op": "press", "what": "stick"})))
 wait(lambda: False, 1)
 print("ALL PASS", flush=True)
