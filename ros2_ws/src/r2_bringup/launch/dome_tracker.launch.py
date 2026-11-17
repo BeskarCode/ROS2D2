@@ -60,7 +60,10 @@ def generate_launch_description():
             # in the simulation the room provides the lidar (/scan_raw)
             launch_arguments={"lidar": PythonExpression(["'off' if '", LaunchConfiguration("sim"),
                                                          "'.lower() == 'true' else '", LaunchConfiguration("lidar"), "'"])}.items()),
-        IncludeLaunchDescription(PythonLaunchDescriptionSource(share("r2_nav", "launch", "nav.launch.py"))),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(share("r2_nav", "launch", "nav.launch.py")),
+                                 # the simulated room publishes /odom itself; the droid needs the dead reckoning
+                                 launch_arguments={"dead_reckoning": PythonExpression(
+                                     ["'false' if '", LaunchConfiguration("sim"), "'.lower() == 'true' else 'true'"])}.items()),
         IncludeLaunchDescription(PythonLaunchDescriptionSource(share("r2_sim", "launch", "sim.launch.py")),
                                  condition=IfCondition(LaunchConfiguration("sim"))),
         Node(

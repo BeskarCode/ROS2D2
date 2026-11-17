@@ -1,10 +1,12 @@
 # R2 navigation: how it moves on its own. Edit it in the web console (Navigation page) or by
 # hand (~/.config/ros2d2/nav.yaml once saved from the console wins over this one).
-safety_radius: 0.55     # m from the body centre: the droid keeps everything outside it
+safety_radius: 0.55     # m from the body centre: the droid keeps everything outside it (>= 0.40)
 slow_from: 0.80         # m beyond the circle where it starts slowing down
 max_speed: 0.35         # m/s (the Mega bridge caps at 0.4)
 max_turn_deg: 15        # deg/s (the bridge caps at 0.6 rad/s = 34)
 accel: 0.25             # m/s²: gentle for a 40 kg droid
+decel: 0.25             # m/s²: gentle slow-downs (a stop for something in the way cuts at once)
+brake_decel: 0.25       # m/s² R2 really stops with: sensors and lidar stop it earlier by v²/(2·brake_decel)
 turn_accel_deg: 20      # deg/s²
 max_drive_power: 40     # Sabertooth units, like ShadowMD drivespeed (caps max_speed)
 max_turn_power: 30      # Sabertooth units, like ShadowMD turnspeed
@@ -20,6 +22,10 @@ search_free: 0.3        # m beyond the circle that must be free ahead to leave t
 search_wide_deg: 60     # deg: a way out further off to a side than this is searched for slowly
 search_near: 0.1        # m beyond the circle: closer than this ahead counts as boxed in
 forward_stuck_s: 8      # s without moving 0.15 m in Go forward: search for a way out
+wait_max_s: 4.0         # s it waits for the way to clear (on_blocked: wait)
+reverse_max: 0.30       # m it backs up (on_blocked: reverse)
+stuck_after_s: 12       # s without getting 0.15 m closer to the goal counts as a try
+free_s: 0.8             # s with the front clear before heading for the goal again
 sounds:                 # MarcDuino command, or "" for none (examples: match your sound banks)
   auto_on: "S1:$11"
   obstacle: "S1:$21"

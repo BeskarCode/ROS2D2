@@ -13,7 +13,7 @@ import { freeText, nearestPoint } from './sensormath.js';
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const STATE_CLASS = { going: 'ok', arrived: 'ok', forward: 'ok', avoiding: 'warn', turning: 'warn', reversing: 'warn', waiting: 'warn',
-                      searching: 'warn', stop: 'bad', 'gave up': 'bad', 'no data': 'bad' };
+                      searching: 'warn', stop: 'bad', 'gave up': 'bad', 'no data': 'bad', 'sensor lost': 'bad', 'no odom': 'bad' };
 const ROOM_LABELS = { default: 'Test room', living: 'Living room', corridor: 'Narrow corridor', rooms: 'Several rooms', event: 'Event with people' };
 
 export const page = {
@@ -230,6 +230,7 @@ function buildReadings() {
 }
 function telemetry() {
   const st = P.state, filtered = st.filtered || {}, raw = st.raw || {}, stops = st.stops || {};
+  const sources = st.sources || {}, lost = st.lost || [];
   for (const el of document.querySelectorAll('#readings .rd')) {
     const n = el.dataset.n, s = P.sensors[n];
     if (!s) continue;
@@ -240,8 +241,14 @@ function telemetry() {
     const reporting = lidar ? d !== undefined : n in filtered;
     const ignored = (st.ignored || []).includes(n);
     el.style.opacity = ignored ? 0.45 : '';
-    el.querySelector('b').textContent = (ignored ? 'ignored · ' : '') + (!reporting ? 'no data' : s.pitch_deg > 30 ? 'floor ok'
+    // a sensor that reported and went silent stops R2: say so, in red, with how long ago it last spoke
+    const gone = lost.includes(n), age = sources[n];
+    const b = el.querySelector('b');
+    b.textContent = (ignored ? 'ignored · ' : '') + (gone ? `LOST · ${age == null ? '?' : age.toFixed(1)} s`
+      : !reporting ? 'no data' : s.pitch_deg > 30 ? 'floor ok'
       : d == null || !Number.isFinite(d) ? 'clear' : `${d.toFixed(2)} m`);
+    b.style.color = gone ? 'var(--red)' : '';
+    b.title = age == null ? 'never heard' : `last reading ${age.toFixed(2)} s ago`;
     const stop = stops[n] || 0, fill = el.querySelector('.fill');
     fill.style.width = `${Math.round(frac(d) * 100)}%`;
     fill.style.background = stop && d != null && d < stop ? '#f85149' : stop && d != null && d < stop * 2 ? '#d29922' : COL[s.type];
@@ -258,7 +265,11 @@ function telemetry() {
   const col = { ok: 'var(--green)', warn: 'var(--amber)', bad: 'var(--red)' }[STATE_CLASS[state]] || 'var(--muted)';
   $('navstate').innerHTML = `<div class="big" style="color:${col}"></div><div class="why"></div>
     <div style="color:var(--muted);margin-top:4px">/foot/cmd_vel: ${(st.v ?? 0).toFixed(2)} m/s, ${Math.round((st.w ?? 0) * 180 / Math.PI)}°/s
-    · tries ${st.tries ?? 0} · lidar ${P.scan.length} points${lidarFree() ? ` · ${freeText(lidarFree())}` : ''}</div>`;
+    · tries ${st.tries ?? 0} · lidar ${P.scan.length} points${lidarFree() ? ` · ${freeText(lidarFree())}` : ''}
+    · <span class="odomage"></span></div>`;
+  const oa = sources.odom, odomOk = oa != null && oa < 0.5, oe = $('navstate').querySelector('.odomage');
+  oe.textContent = oa == null ? 'odom: none' : `odom ${oa.toFixed(2)} s`;
+  oe.style.color = odomOk ? '' : 'var(--red)';
   $('navstate').querySelector('.big').textContent = state;
   $('navstate').querySelector('.why').textContent = st.why || '';
   $('hz').textContent = `${P.stateTimes.length / 2} Hz`;

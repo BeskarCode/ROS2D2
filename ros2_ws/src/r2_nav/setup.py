@@ -26,6 +26,7 @@ setup(
         "console_scripts": [
             "navigator = r2_nav.navigator_node:main",
             "follow = r2_nav.follow_node:main",
+            "dead_reckoning = r2_nav.dead_reckoning_node:main",
         ],
     },
 )
