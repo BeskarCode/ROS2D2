@@ -22,7 +22,7 @@ OPENSCAD = os.environ.get("OPENSCAD", r"C:\Program Files\OpenSCAD\openscad.com")
 BROWSERS = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
             r"C:\Program Files\Google\Chrome\Application\chrome.exe"]
 LOGO_ROS2D2 = REPO / "media" / "ros2d2-logo.png"
-LOGO_ASTROMECH = REPO / "ros2_ws" / "src" / "r2_web" / "www" / "astromech-spain-logo.png"
+LOGO_ASTROMECH = REPO / "media" / "astromech-spain-logo-circular.png"   # the web one is white: lost on paper
 REPO_URL = "https://github.com/BeskarCode/ROS2D2/tree/main/hardware/ros2_box_rack_v3"
 NAMES = {"es": "GUIA_IMPRESION", "en": "PRINT_GUIDE"}
 
@@ -261,7 +261,7 @@ def files_md(files):
 def write_md(lang, path):
     i, t = lang_texts(lang)
     L = ['<img src="../../../media/ros2d2-logo.png" alt="ROS2D2" width="360"> '
-         '<img src="../../../ros2_ws/src/r2_web/www/astromech-spain-logo.png" alt="Astromech Spain" width="90">', "",
+         '<img src="../../../media/astromech-spain-logo-circular.png" alt="Astromech Spain" width="70">', "",
          f"# {t['title']}", "", t["other"], "", t["intro"], "", f"**{t['latest']}:** <{REPO_URL}>", "",
          f"## {t['what']}", ""]
     L += [f"- {c[i]}" for c in CHECKLIST]
