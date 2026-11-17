@@ -1,4 +1,4 @@
-<img src="../../../media/ros2d2-logo.png" alt="ROS2D2" width="360"> <img src="../../../ros2_ws/src/r2_web/www/astromech-spain-logo.png" alt="Astromech Spain" width="90">
+<img src="../../../media/ros2d2-logo.png" alt="ROS2D2" width="360"> <img src="../../../media/astromech-spain-logo-circular.png" alt="Astromech Spain" width="70">
 
 # Caja ROS2 rack · Guía de impresión
 
