@@ -4,6 +4,8 @@ plus the IMU's heading. The simulator publishes its own /odom: this node runs on
 
   in   /mega/tx    std_msgs/String     every line the Mega bridge wrote (ROS:FOOT:<drive>,<turn>)
   in   /imu/data   sensor_msgs/Imu     Madgwick orientation (r2_imu imu.launch.py), optional
+  in   /odom_rf2o  nav_msgs/Odometry   laser odometry from /scan (rf2o_laser_odometry), optional:
+                                       the movement from the lidar, so the feet's slips do not add up
   out  /odom       nav_msgs/Odometry   20 Hz, frame odom -> base_link
   out  /tf         odom -> base_link
 
@@ -37,6 +39,7 @@ class DeadReckoningNode(Node):
         self.pub_tf = self.create_publisher(TFMessage, "/tf", 10)
         self.create_subscription(String, "/mega/tx", self._on_tx, 50)
         self.create_subscription(Imu, "/imu/data", self._on_imu, qos_profile_sensor_data)
+        self.create_subscription(Odometry, "/odom_rf2o", self._on_laser, 10)
         self.bridge_params = None
         try:
             from rclpy.parameter_client import AsyncParameterClient
@@ -45,7 +48,7 @@ class DeadReckoningNode(Node):
             pass
         self.create_timer(10.0, self._read_calibration)
         self.create_timer(0.05, self._tick)
-        self.get_logger().info("dead reckoning ready: /mega/tx + /imu/data -> /odom")
+        self.get_logger().info("dead reckoning ready: /mega/tx + /imu/data + /odom_rf2o -> /odom")
 
     def _now(self):
         return self.get_clock().now().nanoseconds * 1e-9
@@ -60,6 +63,10 @@ class DeadReckoningNode(Node):
         if q.x == q.y == q.z == q.w == 0:
             return                                    # raw IMU without an orientation
         self.dr.on_imu(self._now(), yaw_of(q.x, q.y, q.z, q.w))
+
+    def _on_laser(self, m):
+        q, p = m.pose.pose.orientation, m.pose.pose.position
+        self.dr.on_laser(self._now(), p.x, p.y, yaw_of(q.x, q.y, q.z, q.w))
 
     def _read_calibration(self):
         """The bridge's own calibration (foot_calibrate sets it there)."""
