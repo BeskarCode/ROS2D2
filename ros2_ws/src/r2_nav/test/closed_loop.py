@@ -1,6 +1,6 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 """The whole loop without ROS, for tests and debugging: the simulated room and sensors (r2_sim),
-the navigator (nav_core), the node's filter and ramps, and the bridge's unit conversion and limits.
+the navigator (nav_core), the nodes' own inputs and ramps (shaping), and the bridge's unit conversion and limits.
 Deterministic with a seed. drive(...) returns the trace:
 (t, state, tries, x, y, heading deg, why, bump, v, w) per step; bump = it drove into something,
 v and w = what reached the feet."""
@@ -8,7 +8,8 @@ import math
 
 from r2_nav.follow_core import Follower
 from r2_nav.modes import parse_modes
-from r2_nav.nav_core import Navigator, RangeFilter, parse_nav, ramp
+from r2_nav.nav_core import Navigator, parse_nav
+from r2_nav.shaping import SensorInputs, shape
 from r2_sim.world import SensorSim, World, blocked_move, sensor_pose, step_pose
 from r2_shadow_bridge.protocol import twist_to_units, units_to_twist
 
@@ -36,26 +37,19 @@ def drive(world, sensors, goal, cfg=None, seconds=120.0, seed=1, dt=0.1):
     else:
         nav.set_goal(*goal)
     sim = SensorSim(seed)
-    filters = {}
+    inputs = SensorInputs()
     v_out = w_out = 0.0
     trace = []
     lidar = next(s for s in sensors.values() if s["type"] == "rplidar_c1")
     t = 0.0
     while t < seconds:
         pose = tuple(world.pose)
-        ranges = {}
         for n, s in sensors.items():
-            if s["type"] == "rplidar_c1":
-                continue
-            r = sim.range_of(world, pose, s)
-            ranges[n] = filters.setdefault(n, RangeFilter()).update(r) if cfg["filter"] else r
-        d = nav.step(t, pose, lidar_points(sim, world, pose, lidar), ranges, True, speed=v_out)
-        v_out = ramp(v_out, d.v, cfg["accel"] * dt)
-        w_out = ramp(w_out, d.w, math.radians(cfg["turn_accel_deg"]) * dt)
-        if d.state == "stop" and d.v == 0:
-            v_out = min(v_out, 0.0)
-        if not cfg["allow_reverse"]:
-            v_out = max(0.0, v_out)
+            if s["type"] != "rplidar_c1":
+                inputs.on_range(n, t, sim.range_of(world, pose, s), cfg["filter"])
+        snap = inputs.snapshot(t)
+        d = nav.step(t, pose, lidar_points(sim, world, pose, lidar), snap.ranges, True, speed=v_out, lost=snap.lost)
+        v_out, w_out = shape((v_out, w_out), d.v, d.w, d.hard_stop, cfg, dt)
         drive_u, turn_u = twist_to_units(v_out, w_out, DRIVE, TURN, MAX_LIN, MAX_ANG)
         v, w = units_to_twist(drive_u, turn_u, DRIVE, TURN)
         nxt = step_pose(world.pose, v, w, dt)

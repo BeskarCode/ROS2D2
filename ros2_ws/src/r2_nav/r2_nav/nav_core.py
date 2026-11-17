@@ -13,6 +13,9 @@ nav.yaml (the web console's Navigation page edits it):
     max_speed: 0.35           # m/s (the Mega bridge caps at 0.4)
     max_turn_deg: 15          # deg/s (the bridge caps at 0.6 rad/s = 34)
     accel: 0.25               # m/s²: ramps applied by the node to what goes to the feet (40 kg)
+    decel: 0.25               # m/s²: the same when slowing down (a hard stop cuts at once)
+    brake_decel: 0.25         # m/s² R2 really stops with: sensors and lidar stop it earlier by
+                              # v²/(2·brake_decel); measure it on the droid (docs: pruebas en el droide)
     turn_accel_deg: 20        # deg/s²: the same for turning
     max_drive_power: 40       # Sabertooth units, like ShadowMD's drivespeed: a cap on top of max_speed
     max_turn_power: 30        # Sabertooth units, like ShadowMD's turnspeed
@@ -28,6 +31,10 @@ nav.yaml (the web console's Navigation page edits it):
     search_wide_deg: 60       # a way out further off to a side than this is searched for slowly
     search_near: 0.1          # m beyond the circle: closer than this ahead counts as boxed in
     forward_stuck_s: 8        # s without moving 0.15 m in Go forward: search for a way out
+    wait_max_s: 4             # blocked with on_blocked: wait: seconds it waits for the way to clear
+    reverse_max: 0.30         # m it backs up with on_blocked: reverse
+    stuck_after_s: 12         # s without getting 0.15 m closer to the goal counts as a try
+    free_s: 0.8               # s with the front clear before heading for the goal again
     sounds: {auto_on: "S1:$11", obstacle: "S1:$21", blocked: "S1:$31", give_up: "S1:$41", arrived: "S1:$W"}
 """
 
@@ -44,27 +51,26 @@ USER_CONFIG = os.path.expanduser("~/.config/ros2d2/nav.yaml")
 EVENTS = ("auto_on", "obstacle", "blocked", "give_up", "arrived")
 DEFAULTS = {
     "safety_radius": 0.55, "slow_from": 0.80, "max_speed": 0.35, "max_turn_deg": 15, "accel": 0.25,
-    "turn_accel_deg": 20, "max_drive_power": 40, "max_turn_power": 30,
+    "decel": 0.25, "brake_decel": 0.25, "turn_accel_deg": 20, "max_drive_power": 40, "max_turn_power": 30,
     "goal_tolerance": 0.25, "sensors_may_stop_earlier": True, "filter": True, "on_blocked": "turn",
     "allow_reverse": True, "give_up_after": 3,
     "safety_cone_deg": 60, "search_turn": 0.5, "search_free": 0.3, "search_wide_deg": 60, "search_near": 0.1,
-    "forward_stuck_s": 8,
+    "forward_stuck_s": 8, "wait_max_s": 4.0, "reverse_max": 0.30, "stuck_after_s": 12.0, "free_s": 0.8,
     "sounds": {"auto_on": "S1:$11", "obstacle": "S1:$21", "blocked": "S1:$31", "give_up": "S1:$41", "arrived": "S1:$W"},
 }
-RANGES = {"safety_radius": (0.25, 1.5), "slow_from": (0.1, 3.0), "max_speed": (0.05, 0.4), "max_turn_deg": (5, 34),
-          "accel": (0.05, 2.0), "turn_accel_deg": (5, 180), "max_drive_power": (5, 127), "max_turn_power": (5, 127),
+# safety_radius stays above half the body (HALF_WIDTH): a smaller circle would let things touch a leg
+RANGES = {"safety_radius": (0.40, 1.5), "slow_from": (0.3, 3.0), "max_speed": (0.05, 0.4), "max_turn_deg": (5, 34),
+          "accel": (0.05, 2.0), "decel": (0.1, 2.0), "brake_decel": (0.05, 2.0), "turn_accel_deg": (5, 180), "max_drive_power": (5, 127), "max_turn_power": (5, 127),
           "goal_tolerance": (0.05, 1.0), "give_up_after": (1, 20),
           "safety_cone_deg": (20, 90), "search_turn": (0.2, 1.0), "search_free": (0.1, 1.0), "search_wide_deg": (20, 90),
-          "search_near": (0.0, 0.5), "forward_stuck_s": (3, 30)}
+          "search_near": (0.0, 0.5), "forward_stuck_s": (3, 30),
+          "wait_max_s": (0.5, 30), "reverse_max": (0.05, 1.0), "stuck_after_s": (3, 60), "free_s": (0.2, 5.0)}
 BLOCKED_MODES = ("turn", "reverse", "wait")
 SOUND = re.compile(r"^(S1|S3|MD):[ -~]{1,20}$")
 
 REVERSE_SPEED = 0.15     # m/s
-REVERSE_MAX = 0.30       # m
-WAIT_MAX = 4.0           # s
 OBSTACLE_QUIET = 3.0     # s between two "obstacle" sounds
-STUCK_AFTER = 12.0       # s without getting 0.15 m closer counts as a try
-FREE_STEPS = 8           # steps with the front clear before heading for the goal again
+HALF_WIDTH = 0.36        # m: half the droid's width (feet), for the corridor it needs
 PROGRESS_RESETS = 0.5    # m closer to the goal since the last failed try: the count starts again
 DRIFT_AWAY = 0.5         # m further from the goal than the closest it got: counts as a try
 DRIVE_UNITS_PER_MPS = 50   # the Mega bridge's conversion (r2_shadow_bridge): units = m/s * 50
@@ -139,8 +145,9 @@ def ramp(current, wanted, max_step):
     return current + max(-max_step, min(max_step, wanted - current))
 
 
-def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", route=(), route_i=None):
-    """What /nav/state carries for the web page (one JSON object)."""
+def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", route=(), route_i=None, sources=None):
+    """What /nav/state carries for the web page (one JSON object). sources: {name: s since its
+    last message} for odom, the lidar and each distance sensor (None: never heard)."""
     r = lambda v: None if v is None else round(v, 3)   # noqa: E731
     return json.dumps({
         "state": d.state, "why": d.why, "v": round(d.v, 3), "w": round(d.w, 3),
@@ -148,6 +155,7 @@ def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", ro
         "stops": {k: r(v) for k, v in d.stops.items()},
         "filtered": {k: r(v) for k, v in filtered.items()}, "raw": {k: r(v) for k, v in raw.items()},
         "ignored": list(ignored), "mode": mode, "route": [list(p) for p in route], "route_i": route_i,
+        "lost": list(d.lost), "sources": {k: (None if v is None else round(v, 2)) for k, v in (sources or {}).items()},
     })
 
 
@@ -187,8 +195,8 @@ def to_circle(s, radius):
 
 
 def braking(speed, cfg):
-    """Metres it takes to stop from `speed` with the configured deceleration."""
-    return speed * speed / (2 * cfg["accel"])
+    """Metres it takes to stop from `speed` with the deceleration R2 really stops with."""
+    return speed * speed / (2 * cfg["brake_decel"])
 
 
 def nearest_ahead(points):
@@ -215,11 +223,17 @@ def stop_distances(sensors, cfg):
 
 
 class RangeFilter:
-    """Median of the last n readings (one ghost echo or one lost echo changes nothing), then
-    exponential smoothing. None (nothing seen) when fewer than 3 of the last n saw something."""
+    """Fed with every reading as it arrives (not at the node's tick). Median of the last n
+    readings (one ghost echo or one lost echo changes nothing), then exponential smoothing. None
+    (nothing seen) when fewer than 3 of the last n saw something: something is believed after 3
+    readings and let go after 3 empty ones, so one clean reading never clears a stop."""
 
     def __init__(self, n=5, alpha=0.5):
         self.n, self.alpha, self.hist, self.value = n, alpha, [], None
+
+    def reset(self):
+        """After a silence: no old readings mixed with the new ones."""
+        self.hist, self.value = [], None
 
     def update(self, reading):
         self.hist = (self.hist + [reading])[-self.n:]
@@ -245,12 +259,16 @@ def points_from(scan_xy, ranges, sensors):
                 a = math.radians(s["yaw_deg"])
                 pts.append((s["x"] + h * math.cos(a), s["y"] + h * math.sin(a)))
             continue
+        # it could be anywhere in its cone: the centre and both edges (what it sees at the edge is
+        # not put on the axis, outside the corridor)
         a = math.radians(s["yaw_deg"])
-        pts.append((s["x"] + d * math.cos(a), s["y"] + d * math.sin(a)))
+        half = math.radians(s.get("fov_deg", 0.0)) / 2
+        for k in ((0.0, -half, half) if half > 0 else (0.0,)):
+            pts.append((s["x"] + d * math.cos(a + k), s["y"] + d * math.sin(a + k)))
     return pts
 
 
-def clearance(points, heading, half_width=0.36):
+def clearance(points, heading, half_width=HALF_WIDTH):
     """Free distance from the body centre along a heading, for a body ~0.7 m wide."""
     c, s = math.cos(heading), math.sin(heading)
     best = 3.0
@@ -300,6 +318,8 @@ class Decision:
     tries: int = 0
     events: list = field(default_factory=list)
     stops: dict = field(default_factory=dict)
+    hard_stop: bool = False           # stop now: the node cuts the forward speed without a ramp
+    lost: list = field(default_factory=list)   # sensors that went silent and stop it
 
 
 class Navigator:
@@ -314,11 +334,12 @@ class Navigator:
         self.last_obstacle = -1e9
         self.floor_seen = set()        # floor sensors that have given a reading since start-up
         self.forward_th = None         # Go forward: the heading it travels along (odom), or None
+        self.brake = 0.0               # m it needs to stop at the speed it goes now
 
     def _reset_try_state(self):
         self.phase = None
         self.turn_dir = 0
-        self.free_steps = 0
+        self.free_t = 0.0              # s with the front clear while turning away
         self.backed = 0.0
         self.waited = 0.0
         self.was_blocked = False
@@ -392,17 +413,18 @@ class Navigator:
         """Go forward: one decision (see start_forward)."""
         cfg = self.cfg
         if scan_xy is None and not any(n in ranges for n in self._front()):
-            d.state, d.why = "no data", "no lidar and no front sensor reporting: not moving blind"
+            d.state, d.why, d.hard_stop = "no data", "no lidar and no front sensor reporting: not moving blind", True
             return d
         th = pose[2]
         pts, too_close, floor_why = self._sense(now, scan_xy, ranges, stops, d)
         R = cfg["safety_radius"]
         wm, vmax = self._limits()
         if self.searching:
+            d.hard_stop = True                     # turning on the spot: no rolling on meanwhile
             if self.last_th is not None:
                 self.turned += abs(wrap(th - self.last_th))
             self.last_th = th
-            if (too_close is None and inside_ahead(pts, R, cfg["safety_cone_deg"]) is None
+            if (too_close is None and inside_ahead(pts, R + self.brake, cfg["safety_cone_deg"]) is None
                     and clearance(pts, 0.0) >= R + cfg["search_free"]):
                 # a way out straight ahead: carry on along it
                 self.searching, self.turned, self.last_th, self.search_dir = False, 0.0, None, 0
@@ -429,9 +451,10 @@ class Navigator:
         if self.moved_at is None or math.hypot(x - self.moved_at[1], y - self.moved_at[2]) >= 0.15:
             self.moved_at = (now, x, y)
         stuck = now - self.moved_at[0] > cfg["forward_stuck_s"]
-        intruder = inside_ahead(pts, R, cfg["safety_cone_deg"])
+        intruder = inside_ahead(pts, R + self.brake, cfg["safety_cone_deg"])
         if (too_close is not None or clear < R + cfg["search_near"] or abs(heading) > math.radians(cfg["search_wide_deg"]) or stuck
                 or intruder is not None):
+            d.hard_stop = True
             self.moved_at = None
             self.searching, self.turned, self.last_th = True, 0.0, th
             if intruder is not None:               # away from what is inside the circle
@@ -451,16 +474,18 @@ class Navigator:
         d.why = "going forward" if abs(wrap(heading - want)) <= math.radians(12) else "going forward, steering round an obstacle"
         return d
 
-    def step(self, now, pose, scan_xy, ranges, auto_on, speed=0.0):
-        """One decision. scan_xy: lidar points in base_link, or None when the lidar is silent.
-        ranges: {name: metres | None (sees nothing)} for the sensors that are reporting; a
-        sensor that stopped reporting is missing from the dict. speed: what the feet are doing
-        now (m/s): the front sensors stop it earlier by the distance it needs to brake."""
+    def step(self, now, pose, scan_xy, ranges, auto_on, speed=0.0, lost=()):
+        """One decision. pose: (x, y, th) in odom, or None with no odometry. scan_xy: lidar points
+        in base_link, or None when the lidar is silent. ranges: {name: metres | None (sees
+        nothing)} for the sensors that are reporting. lost: sensors that reported and went silent:
+        a front or floor sensor or the lidar among them stops it. speed: what the feet are doing
+        now (m/s): sensors and lidar stop it earlier by the distance it needs to brake."""
         dt = 0.1 if self.last_t is None else max(0.0, min(0.5, now - self.last_t))
         self.last_t = now
         cfg = self.cfg
         stops = stop_distances(self.sensors, cfg)
         brake = braking(max(0.0, speed), cfg)
+        self.brake = brake
         for n in self._front():
             if stops.get(n):
                 stops[n] += brake
@@ -471,15 +496,27 @@ class Navigator:
         if not auto_on:
             d.state, d.why = "manual", "autonomous mode off: the controller drives"
             return d
+        moving = self.forward_th is not None or self.goal is not None
+        front = self._front()
+        gone = [n for n in lost if n in self.sensors
+                and (is_lidar(self.sensors[n]) or is_floor(self.sensors[n]) or n in front)]
+        if moving and gone:
+            d.state, d.hard_stop, d.lost = "sensor lost", True, gone
+            d.why = f"STOP: {', '.join(gone)} stopped reporting: not moving without {'it' if len(gone) == 1 else 'them'}"
+            return d
+        if moving and pose is None:
+            d.state, d.hard_stop = "no odom", True
+            d.why = "no odometry (/odom): it would not know where it goes"
+            return d
         if self.forward_th is not None:
             return self._step_forward(now, pose, scan_xy, ranges, stops, d)
         if self.goal is None:
             d.state = "gave up" if self.gave_up else "idle"
             d.why = self.gave_up or "no goal"
+            d.hard_stop = bool(self.gave_up)
             return d
-        front = self._front()
         if scan_xy is None and not any(n in ranges for n in front):
-            d.state, d.why = "no data", "no lidar and no front sensor reporting: not moving blind"
+            d.state, d.why, d.hard_stop = "no data", "no lidar and no front sensor reporting: not moving blind", True
             return d
 
         x, y, th = pose
@@ -503,15 +540,15 @@ class Navigator:
         v = vmax * min(slow(clear), max(SIDE_SLOW_MIN, slow(nearest_ahead(pts)))) * max(0.0, math.cos(heading))
         state = "avoiding" if abs(wrap(heading - want)) > math.radians(12) else "going"
         why = ("steering round an obstacle" if state == "avoiding" else "heading for the goal") + f", {gd:.2f} m to go"
-        intruder = inside_ahead(pts, R, cfg["safety_cone_deg"])
-        blocked = too_close is not None or clear < R or intruder is not None
+        intruder = inside_ahead(pts, R + brake, cfg["safety_cone_deg"])
+        blocked = too_close is not None or clear < R + brake or intruder is not None
 
         self.closest = min(self.closest, gd)
         # progress watchdog: going round in circles, stuck in a corner or wandering away from the
         # goal while steering round things counts as a try too
         if self.best_t is None or gd < self.best_d - 0.15:
             self.best_d, self.best_t = gd, now
-        stuck = now - self.best_t > STUCK_AFTER or gd > self.best_d + DRIFT_AWAY
+        stuck = now - self.best_t > cfg["stuck_after_s"] or gd > self.best_d + DRIFT_AWAY
         if stuck:
             self.best_d, self.best_t = gd, now
         if (blocked and not self.was_blocked) or stuck:
@@ -525,7 +562,7 @@ class Navigator:
                 self.gave_up = f"could not get past after {n} {'tries' if n > 1 else 'try'}: stopped until a new goal"
                 self.goal = None
                 self._reset_try_state()
-                d.state, d.why, d.tries = "gave up", self.gave_up, self.tries
+                d.state, d.why, d.tries, d.hard_stop = "gave up", self.gave_up, self.tries, True
                 d.events.append("give_up")
                 self.tries = 0
                 return d
@@ -541,26 +578,28 @@ class Navigator:
             mode = cfg["on_blocked"]
             self.phase = "reverse" if mode == "reverse" and cfg["allow_reverse"] else ("wait" if mode == "wait" else "turn")
         if self.phase == "wait":
-            if blocked and self.waited < WAIT_MAX:
+            if blocked and self.waited < cfg["wait_max_s"]:
                 self.waited += dt
-                d.state, d.why, d.heading = "waiting", f"blocked: waiting {WAIT_MAX - self.waited:.1f} s for the way to clear", heading
+                d.state, d.heading, d.hard_stop = "waiting", heading, True
+                d.why = f"blocked: waiting {cfg['wait_max_s'] - self.waited:.1f} s for the way to clear"
                 return d
             self.phase, self.waited = ("turn" if blocked else None), 0.0
         if self.phase == "reverse":
-            if self.backed < REVERSE_MAX and rear_free and cfg["allow_reverse"]:
+            if self.backed < cfg["reverse_max"] and rear_free and cfg["allow_reverse"]:
                 self.backed += REVERSE_SPEED * dt
-                d.v, d.state, d.heading = -REVERSE_SPEED, "reversing", math.pi
-                d.why = f"backing up {self.backed * 100:.0f} of {REVERSE_MAX * 100:.0f} cm"
+                d.v, d.state, d.heading, d.hard_stop = -REVERSE_SPEED, "reversing", math.pi, True
+                d.why = f"backing up {self.backed * 100:.0f} of {cfg['reverse_max'] * 100:.0f} cm"
                 return d
-            self.phase, self.backed, self.free_steps = "turn", 0.0, 0
+            self.phase, self.backed, self.free_t = "turn", 0.0, 0.0
         if self.phase == "turn":
             if not self.turn_dir:
                 if intruder is not None:           # away from what is inside the circle
                     self.turn_dir = -1 if intruder[1] > 0 else 1
                 else:
                     self.turn_dir = 1 if clearance(pts, math.radians(60)) >= clearance(pts, math.radians(-60)) else -1
-            if blocked or self.free_steps < FREE_STEPS:
-                self.free_steps = 0 if blocked else self.free_steps + 1
+            if blocked or self.free_t < cfg["free_s"]:
+                self.free_t = 0.0 if blocked else self.free_t + dt
+                d.hard_stop = blocked
                 side = "left" if self.turn_dir > 0 else "right"
                 v = 0.0 if blocked else min(v, vmax * 0.5)
                 w = 0.7 * wm * self.turn_dir
@@ -574,6 +613,6 @@ class Navigator:
                 else:
                     why = f"turning {side} until the way is clear"
             else:
-                self.phase, self.turn_dir, self.free_steps = None, 0, 0
+                self.phase, self.turn_dir, self.free_t = None, 0, 0.0
         d.v, d.w, d.state, d.why, d.heading = v, w, state, why, heading
         return d

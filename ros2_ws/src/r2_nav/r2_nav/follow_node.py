@@ -32,11 +32,11 @@ from std_msgs.msg import Bool, Empty, Int16, String
 from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.follow_core import Follower
 from r2_nav.modes import drives_in, load_modes, modes_path
-from r2_nav.nav_core import NavConfigError, RangeFilter, config_path, is_lidar, load_nav
+from r2_nav.nav_core import NavConfigError, config_path, is_lidar, load_nav
+from r2_nav.shaping import SensorInputs
 from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
 
-STALE = 0.5          # s: a sensor older than this is not reporting
 
 
 class FollowNode(Node):
@@ -59,9 +59,7 @@ class FollowNode(Node):
         self.mode = None
         self.active = False
         self.marker = None
-        self.scan = None            # (time, points in base_link)
-        self.ranges = {}            # name -> (time, metres | None)
-        self.filters = {}
+        self.inputs = SensorInputs()  # the same inputs as the navigator: filtered as they arrive, lost when silent
         self.range_subs = {}
         self.last_state = 0.0
 
@@ -131,7 +129,12 @@ class FollowNode(Node):
         return self.get_clock().now().nanoseconds * 1e-9
 
     def _on_mode(self, m):
+        was = drives_in(self.mode, "follow")
         self.mode = m.data
+        if was and not drives_in(self.mode, "follow") and self.active:
+            # leaving follow: the zeros now, before the next mode's first command (not at our next tick)
+            self.active = False
+            self._stop_outputs()
 
     def _on_marker(self, m):
         try:
@@ -144,7 +147,7 @@ class FollowNode(Node):
     def _on_scan(self, m):
         lidar = next((s for s in self.sensors.values() if is_lidar(s)), None)
         if lidar is not None and not lidar.get("enabled", True):
-            self.scan = None              # the lidar is ignored: as if there were none
+            self.inputs.scan = None       # the lidar is ignored: as if there were none
             return
         lx, ly, yaw = (lidar["x"], lidar["y"], math.radians(lidar["yaw_deg"])) if lidar else (0.0, 0.0, 0.0)
         pts = []
@@ -153,13 +156,14 @@ class FollowNode(Node):
                 continue
             a = m.angle_min + i * m.angle_increment + yaw
             pts.append((lx + r * math.cos(a), ly + r * math.sin(a)))
-        self.scan = (self._now(), pts)
-        self.gate.on_scan(self.scan[0])
+        now = self._now()
+        self.inputs.on_scan(now, pts)
+        self.gate.on_scan(now)
 
     def _on_range(self, name, m):
         r = m.range
         seen = math.isfinite(r) and m.min_range <= r <= m.max_range
-        self.ranges[name] = (self._now(), r if seen else None)
+        self.inputs.on_range(name, self._now(), r if seen else None, self.nav_cfg["filter"])
 
     # ---------- the 10 Hz loop ----------
     def _stop_outputs(self):
@@ -172,12 +176,14 @@ class FollowNode(Node):
             if self.active:                       # leaving follow: one zero of each, then silence
                 self.active = False
                 self._stop_outputs()
+            self.inputs.disarm()
             return
         if not self.active:                       # entering: start from rest, with nothing stale
             self.active = True
             self.marker = None
             self.follower = Follower(self.follow_cfg, self.nav_cfg, in_use(self.sensors))
             self.follower.start(self._now())
+            self.inputs.arm(self._now())
 
         # armed when follow is on AND auto is on (follow can be chosen long before PS+L2)
         self.gate.update(self._now(), self.auto_on)
@@ -185,15 +191,8 @@ class FollowNode(Node):
             return
 
         now = self._now()
-        scan_xy = self.scan[1] if self.scan and now - self.scan[0] < STALE else None
-        ranges = {}
-        for name, (t, r) in self.ranges.items():
-            if now - t >= STALE:
-                continue
-            if self.nav_cfg["filter"]:
-                r = self.filters.setdefault(name, RangeFilter()).update(r)
-            ranges[name] = r
-        d = self.follower.step(now, self.marker, scan_xy, ranges)
+        snap = self.inputs.snapshot(now, next((n for n, s in self.sensors.items() if is_lidar(s)), None))
+        d = self.follower.step(now, self.marker, snap.scan_xy, snap.ranges, lost=snap.lost)
 
         t = Twist()
         t.linear.x, t.angular.z = max(0.0, d.v), d.w         # never backwards

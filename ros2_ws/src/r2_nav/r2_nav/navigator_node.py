@@ -37,12 +37,13 @@ from std_msgs.msg import Bool, Empty, String
 from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.modes import nav_mode
 from r2_nav.patrol import Patrol, parse_route
-from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, RangeFilter, clamp_param,
-                             config_path, is_lidar, load_nav, ramp, state_json)
+from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, clamp_param,
+                             config_path, is_lidar, load_nav, state_json)
+from r2_nav.shaping import SensorInputs, shape
 from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
 
-STALE = 0.5          # s: a sensor older than this is not reporting
+ODOM_STALE = 0.5     # s: odometry older than this is no odometry
 
 
 class NavigatorNode(Node):
@@ -71,11 +72,10 @@ class NavigatorNode(Node):
         self.gate = LidarGate(motor_policy(in_use(self.sensors)))   # with_modes: wait for the lidar to spin up
 
         self.pose = (0.0, 0.0, 0.0)
+        self.odom_t = None          # when /odom last arrived
         self.auto_on = False
         self.mode = None            # /r2/mode; None until it arrives (an old bridge never sends it)
-        self.scan = None            # (time, points in base_link)
-        self.ranges = {}            # name -> (time, metres | None)
-        self.filters = {}
+        self.inputs = SensorInputs()  # every reading filtered as it arrives; which went silent
         self.range_subs = {}
         self.out = (0.0, 0.0)
         self.last = None
@@ -125,9 +125,15 @@ class NavigatorNode(Node):
         q = m.pose.pose.orientation
         th = math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z))
         self.pose = (m.pose.pose.position.x, m.pose.pose.position.y, th)
+        self.odom_t = self._now()
 
     def _on_mode(self, m):
+        before = nav_mode(self.mode)
         self.mode = m.data
+        if before is not None and nav_mode(self.mode) is None and self.out != (0.0, 0.0):
+            # leaving to another mode: the zero now, before that mode's first command (not at our next tick)
+            self.out = (0.0, 0.0)
+            self.pub_cmd.publish(Twist())
 
     def _on_patrol(self, m):
         route = parse_route(m.data)
@@ -154,7 +160,9 @@ class NavigatorNode(Node):
         if before is not None and before[0] in ("forward", "patrol") and before[1]:
             self.nav.cancel()
         if not auto:
+            self.inputs.disarm()
             return
+        self.inputs.arm(self._now())                # from now on a lidar that stops scanning is lost
         if mine == "forward":
             self.nav.start_forward(self.pose[2])
         elif mine == "patrol":
@@ -167,7 +175,7 @@ class NavigatorNode(Node):
     def _on_scan(self, m):
         lidar = next((s for s in self.sensors.values() if is_lidar(s)), None)
         if lidar is not None and not lidar.get("enabled", True):
-            self.scan = None              # the lidar is ignored: as if there were none
+            self.inputs.scan = None       # the lidar is ignored: as if there were none
             return
         lx, ly, ly_aw = (lidar["x"], lidar["y"], math.radians(lidar["yaw_deg"])) if lidar else (0.0, 0.0, 0.0)
         pts = []
@@ -176,13 +184,14 @@ class NavigatorNode(Node):
                 continue
             a = m.angle_min + i * m.angle_increment + ly_aw
             pts.append((lx + r * math.cos(a), ly + r * math.sin(a)))
-        self.scan = (self._now(), pts)
-        self.gate.on_scan(self.scan[0])
+        now = self._now()
+        self.inputs.on_scan(now, pts)
+        self.gate.on_scan(now)
 
     def _on_range(self, name, m):
         r = m.range
         seen = math.isfinite(r) and m.min_range <= r <= m.max_range
-        self.ranges[name] = (self._now(), r if seen else None)
+        self.inputs.on_range(name, self._now(), r if seen else None, self.cfg["filter"])
 
     def _on_params(self, params):
         cfg = dict(self.cfg)
@@ -224,23 +233,17 @@ class NavigatorNode(Node):
         now = self._now()
         dt = 0.1 if self.last is None else max(0.01, min(0.5, now - self.last))
         self.last = now
-        scan_xy = self.scan[1] if self.scan and now - self.scan[0] < STALE else None
-        ranges, raw, filtered = {}, {}, {}
-        for name, (t, r) in self.ranges.items():
-            if now - t >= STALE:
-                continue
-            raw[name] = r
-            if self.cfg["filter"]:
-                r = self.filters.setdefault(name, RangeFilter()).update(r)
-            ranges[name] = r
-            filtered[name] = r
+        lidar_name = next((n for n, s in self.sensors.items() if is_lidar(s)), None)
+        snap = self.inputs.snapshot(now, lidar_name)
+        scan_xy, ranges, raw, filtered = snap.scan_xy, snap.ranges, snap.raw, snap.ranges
+        odom_ok = self.odom_t is not None and now - self.odom_t < ODOM_STALE
         auto = self.auto_on
         if (mine, auto) != self.running:
             self._mode_changed(mine, auto)
         self.gate.update(now, auto)
         if auto and not self.gate.ready(now):
             auto = False                             # the lidar is spinning up: hold still (<= 5 s)
-        d = self.nav.step(now, self.pose, scan_xy, ranges, auto, speed=self.out[0])
+        d = self.nav.step(now, self.pose if odom_ok else None, scan_xy, ranges, auto, speed=self.out[0], lost=snap.lost)
         if mine == "patrol" and auto:
             if d.state in ("arrived", "gave up"):
                 nxt = self.patrol.after(d.state)
@@ -253,16 +256,7 @@ class NavigatorNode(Node):
             elif d.state == "idle" and not self.patrol.points:
                 d.why = "patrol: no route yet (click points on the Navigation page)"
 
-        v, w = self.out
-        if not auto:
-            v, w = 0.0, 0.0
-        else:
-            v = ramp(v, d.v, self.cfg["accel"] * dt)
-            w = ramp(w, d.w, math.radians(self.cfg["turn_accel_deg"]) * dt)
-            if d.state == "stop" and d.v == 0:
-                v = min(v, 0.0)                      # a stop is a stop: no ramp down
-            if not self.cfg["allow_reverse"]:
-                v = max(0.0, v)
+        v, w = (0.0, 0.0) if not auto else shape(self.out, d.v, d.w, d.hard_stop, self.cfg, dt)
         self.out = (v, w)
         t = Twist()
         t.linear.x, t.angular.z = v, w
@@ -276,8 +270,12 @@ class NavigatorNode(Node):
         heading = None if d.heading is None else self.pose[2] + d.heading
         ignored = [n for n, s in self.sensors.items() if not s.get("enabled", True)]
         route = {"route": [list(p) for p in self.patrol.points], "route_i": self.patrol.i} if mine == "patrol" else {}
+        sources = {"odom": None if self.odom_t is None else now - self.odom_t}
+        for n, s in self.sensors.items():
+            if s.get("enabled", True):
+                sources[n] = snap.ages.get(n)
         self.pub_state.publish(String(data=state_json(d, self.nav.goal, heading, filtered, raw, ignored,
-                                                      mode=mine, **route)))
+                                                      mode=mine, sources=sources, **route)))
 
 
 def main():
