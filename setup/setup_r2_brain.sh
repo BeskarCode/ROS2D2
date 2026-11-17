@@ -229,9 +229,15 @@ if [[ ! -d "$RF2O/.git" ]]; then
   sudo -u "$R2_USER" git clone -b ros2 "$RF2O_REPO" "$RF2O"
 fi
 sudo -u "$R2_USER" git -C "$RF2O" fetch -q origin
+sudo -u "$R2_USER" git -C "$RF2O" checkout -q -- .
 sudo -u "$R2_USER" git -C "$RF2O" checkout -q "$RF2O_COMMIT"
+# Its 2023 code needs two changes for newer ROS (Lyrical has no ament_target_dependencies and no
+# tf2 .h headers); both build on Jazzy too: link the dependencies' CMake targets, include the .hpp
+sudo -u "$R2_USER" sed -i 's|^ament_target_dependencies(\(${[A-Z_]*}\) ${DEPENDENCIES})|target_link_libraries(\1 rclcpp::rclcpp ${std_msgs_TARGETS} ${geometry_msgs_TARGETS} tf2_geometry_msgs::tf2_geometry_msgs tf2::tf2 tf2_ros::tf2_ros ${sensor_msgs_TARGETS} ${nav_msgs_TARGETS} Eigen3::Eigen)|' "$RF2O/CMakeLists.txt"
+sudo -u "$R2_USER" sed -i -E 's|#include <(tf2(_ros)?/[a-z_/]+)\.h>|#include <\1.hpp>|' "$RF2O"/include/rf2o_laser_odometry/*.hpp
 rm -f "$RF2O/COLCON_IGNORE"
-if ! sudo -u "$R2_USER" bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${R2_HOME}/r2_ws && colcon build --packages-select rf2o_laser_odometry"; then
+# one compiler at a time: Eigen compiled in parallel runs a 4 GB Pi out of memory (it hangs)
+if ! sudo -u "$R2_USER" bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${R2_HOME}/r2_ws && MAKEFLAGS=-j1 colcon build --executor sequential --packages-select rf2o_laser_odometry"; then
   sudo -u "$R2_USER" touch "$RF2O/COLCON_IGNORE"
   echo "WARNING: rf2o_laser_odometry did not build on ${ROS_DISTRO}: left out; the dead reckoning runs without it"
 fi
