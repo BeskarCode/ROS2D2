@@ -29,7 +29,7 @@ BLOCKED_REPEAT = 15.0        # s between two "blocked" while it lasts
 TURN_ROOM = 0.4              # m: something closer than this to the centre and it does not even turn
 WIGGLE = 2.0                 # s of dome side to side each time it says it is blocked
 GRACE = 1.0                  # s after start(): no marker yet is not "lost" (the camera needs a moment)
-STATES = ("following", "waiting", "blocked", "searching", "lost", "recentring", "no data")
+STATES = ("following", "waiting", "blocked", "searching", "lost", "recentring", "no data", "sensor lost")
 
 
 def sweep(e, length):
@@ -101,12 +101,18 @@ class Follower:
         d.dome = int(max(-DOME_SEARCH, min(DOME_SEARCH, round(-self.offset / self.dt))))
         return True
 
-    def step(self, now, marker, scan_xy, ranges):
+    def step(self, now, marker, scan_xy, ranges, lost=()):
         """One decision. marker: the /marker dict or None; scan_xy: lidar points in base_link or
-        None when the lidar is silent; ranges: {name: metres | None} of the sensors reporting."""
+        None when the lidar is silent; ranges: {name: metres | None} of the sensors reporting;
+        lost: sensors that reported and went silent (a front or floor one, or the lidar, stops it)."""
         dt = 0.1 if self.last_t is None else max(0.0, min(0.5, now - self.last_t))
         self.last_t, self.dt = now, dt
         self.offset += self.dome * dt
+        front = self._front()
+        if any(n in self.sensors and (is_lidar(self.sensors[n]) or is_floor(self.sensors[n]) or n in front) for n in lost):
+            d = self._stop(FollowDecision(), "sensor lost")
+            self.dome = 0
+            return d
         d = self._step(now, marker, scan_xy, ranges, dt)
         self.dome = d.dome
         return d
