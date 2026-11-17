@@ -21,7 +21,7 @@ mkdir -p "$OUT"
 # SIGTERM, because background jobs of a non-interactive shell ignore SIGINT
 setsid ros2 launch r2_sim sim.launch.py > "$OUT/sim.log" 2>&1 &
 SIM=$!
-setsid ros2 launch r2_nav nav.launch.py > "$OUT/nav.log" 2>&1 &
+setsid ros2 launch r2_nav nav.launch.py dead_reckoning:=false > "$OUT/nav.log" 2>&1 &   # the sim gives /odom
 NAV=$!
 setsid ros2 launch r2_sensors sensors.launch.py lidar:=off > "$OUT/sensors.log" 2>&1 &
 SENS=$!

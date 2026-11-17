@@ -159,7 +159,7 @@ export function createNavView3d(container) {
       }
       dirty = true;
     }
-    const moving = st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data'].includes(st.state);
+    const moving = st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data', 'sensor lost', 'no odom'].includes(st.state);
     const ak = moving ? [st.state, st.heading.toFixed(3), (st.v || 0).toFixed(3), x.toFixed(3), y.toFixed(3)].join() : '';
     if (ak !== keys.arrow) {
       keys.arrow = ak;

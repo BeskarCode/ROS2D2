@@ -79,11 +79,23 @@ sigue por él; si da una vuelta entera sin encontrar salida, se para y suena el 
 **Círculo de seguridad**: el círculo rojo discontinuo alrededor de R2 (*safety circle* en Settings).
 R2 no avanza mientras haya algo dentro de él por delante (dentro de *circle watched ahead*, 60° a
 cada lado por defecto): gira hacia el otro lado hasta que queda libre. Lo que tiene al lado o detrás
-(una pared por la que va pegado) no lo para.
+(una pared por la que va pegado) no lo para. Cuanto más rápido va, más crece el círculo por delante,
+lo que necesita para frenar (*real braking*). Cuando tiene que parar por algo en el camino corta la
+velocidad al momento, sin rampa.
+
+**Sensores perdidos y odometría**: un sensor que estaba dando datos y se calla (la Pico
+desenchufada, el lidar parado) no se toma como "no hay nada": R2 se para (estado *sensor lost*) y su
+lectura sale **LOST** en rojo con los segundos desde su último dato (pasa el ratón por una lectura
+para ver su edad). Sin odometría (*/odom*) tampoco se mueve (estado *no odom*); la línea bajo el
+estado dice la edad de */odom*, en rojo si falta. En el droide la odometría sale de lo que se manda a
+la Mega más la IMU (el nodo *dead_reckoning*); en el simulador, de la sala simulada.
 
 **Settings**: todos los ajustes de cómo se mueve R2 solo (nav.yaml), por grupos: círculo de
-seguridad, velocidad, qué hacer cuando se bloquea (Go to a point, Patrol), la búsqueda lenta de Go
-forward y los sensores de distancia. Un cambio se aplica al momento (pruébalo en el simulador);
+seguridad, velocidad (con *slowing down* para las frenadas suaves y *real braking*, la deceleración con
+la que R2 frena de verdad: mídela en el droide), qué hacer cuando se bloquea (Go to a point, Patrol:
+cuánto espera, cuánto retrocede, cuándo cuenta un intento y cuánto tiempo debe quedar libre el
+camino), la búsqueda lenta de Go forward y los sensores de distancia. El círculo de seguridad no puede
+ser menor de 0,40 m (medio cuerpo son 0,36). Un cambio se aplica al momento (pruébalo en el simulador);
 **Save** lo guarda en `~/.config/ros2d2/nav.yaml` y **Defaults** vuelve a los valores del paquete.
 Hasta que guardes, R2 usa los de por defecto; un ajuste cambiado respecto al de por defecto sale en
 ámbar.

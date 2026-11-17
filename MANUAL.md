@@ -75,9 +75,21 @@ way and carries on along it; after a full turn with no way out it stops and play
 **Safety circle**: the red dashed circle round R2 (*safety circle* in Settings). R2 does not drive on
 while something is inside it ahead (within *circle watched ahead*, 60° each side by default): it
 turns away until it is clear. Something beside or behind (a wall it runs along) does not stop it.
+The faster R2 goes, the bigger the circle ahead grows, by the distance it needs to stop (*real
+braking*). When it has to stop for something in the way it cuts its speed at once, without a ramp.
 
-**Settings**: every setting of how R2 moves on its own (nav.yaml), in groups: safety circle, speed,
-what to do when blocked (Go to a point, Patrol), Go forward's slow search, and the distance sensors.
+**Lost sensors and odometry**: a sensor that was reporting and goes silent (the Pico unplugged, the
+lidar stopped) is not taken as "nothing there": R2 stops (state *sensor lost*) and its reading shows
+**LOST** in red with the seconds since it last spoke (hover a reading for its age). Without odometry
+(*/odom*) R2 does not move either (state *no odom*); the line under the state says how old */odom* is,
+in red when it is missing. On the droid the odometry comes from what went to the Mega plus the IMU
+(the *dead_reckoning* node); in the simulator, from the simulated room.
+
+**Settings**: every setting of how R2 moves on its own (nav.yaml), in groups: safety circle, speed
+(with *slowing down* for gentle slow-downs and *real braking*, the deceleration R2 really stops with:
+measure it on the droid), what to do when blocked (Go to a point, Patrol: how long it waits, how far it
+backs up, when a try counts and how long the way must be clear), Go forward's slow search, and the
+distance sensors. The safety circle cannot be smaller than 0.40 m (half the body is 0.36).
 A change applies at once (try it in the simulator); **Save** keeps it in `~/.config/ros2d2/nav.yaml`,
 **Defaults** brings back the package's values. Until you save, R2 uses the defaults; a setting you
 changed from its default shows in amber.

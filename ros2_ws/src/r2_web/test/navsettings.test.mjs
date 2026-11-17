@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { FIELDS, changedKeys, toNavYaml } from '../www/navsettings.js';
 
 const CFG = { safety_radius: 0.55, safety_cone_deg: 60, slow_from: 0.8, max_speed: 0.35, max_turn_deg: 15, accel: 0.25,
-  turn_accel_deg: 20, max_drive_power: 40, max_turn_power: 30, goal_tolerance: 0.25, sensors_may_stop_earlier: true,
+  decel: 0.25, brake_decel: 0.25, wait_max_s: 4, reverse_max: 0.3, stuck_after_s: 12, free_s: 0.8, turn_accel_deg: 20, max_drive_power: 40, max_turn_power: 30, goal_tolerance: 0.25, sensors_may_stop_earlier: true,
   filter: true, on_blocked: 'turn', allow_reverse: true, give_up_after: 3, search_turn: 0.5, search_free: 0.3,
   search_wide_deg: 60, search_near: 0.1, forward_stuck_s: 8,
   sounds: { auto_on: 'S1:$11', obstacle: 'S1:$21', blocked: 'S1:$31', give_up: 'S1:$41', arrived: 'S1:$W' } };

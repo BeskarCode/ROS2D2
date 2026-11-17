@@ -119,7 +119,7 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
       g.beginPath(); g.moveTo(cx, cy); g.lineTo(...P(px, py)); g.stroke();
       g.fillStyle = '#ffa657'; g.beginPath(); g.arc(...P(px, py), 4.5, 0, 7); g.fill();
     }
-    if (st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data', 'searching'].includes(st.state)) {
+    if (st.heading != null && st.state && !['idle', 'manual', 'gave up', 'arrived', 'no data', 'sensor lost', 'no odom', 'searching'].includes(st.state)) {
       const [x0, y0] = P(pose.x, pose.y), L = 30 + 160 * Math.abs(st.v || 0);
       g.strokeStyle = { stop: '#f85149', avoiding: '#d29922', turning: '#d29922', reversing: '#d29922', waiting: '#d29922' }[st.state] || '#3fb950';
       g.lineWidth = 4; g.beginPath(); g.moveTo(x0, y0);

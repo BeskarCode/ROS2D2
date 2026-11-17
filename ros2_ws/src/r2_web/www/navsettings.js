@@ -5,15 +5,17 @@
 
 export const GROUPS = [
   ['Safety circle', 'fa-circle-exclamation', [
-    { key: 'safety_radius', label: 'safety circle', min: 0.25, max: 1.5, step: 0.01, unit: 'm', help: 'm from the body centre: R2 keeps things ahead outside it' },
+    { key: 'safety_radius', label: 'safety circle', min: 0.4, max: 1.5, step: 0.01, unit: 'm', help: 'm from the body centre: R2 keeps things ahead outside it (at least 0.40: half the body is 0.36)' },
     { key: 'safety_cone_deg', label: 'circle watched ahead', min: 20, max: 90, step: 1, unit: '°', help: 'something inside the circle within this angle of ahead stops it (each side)' },
-    { key: 'slow_from', label: 'slow down from', min: 0.1, max: 3, step: 0.05, unit: 'm', help: 'm beyond the circle where it starts slowing down' },
+    { key: 'slow_from', label: 'slow down from', min: 0.3, max: 3, step: 0.05, unit: 'm', help: 'm beyond the circle where it starts slowing down' },
     { key: 'goal_tolerance', label: 'arrived within', min: 0.05, max: 1, step: 0.05, unit: 'm' },
   ]],
   ['Speed', 'fa-gauge', [
     { key: 'max_speed', label: 'top speed', min: 0.05, max: 0.4, step: 0.01, unit: 'm/s' },
     { key: 'max_turn_deg', label: 'top turn', min: 5, max: 34, step: 1, unit: '°/s' },
     { key: 'accel', label: 'acceleration', min: 0.05, max: 2, step: 0.05, unit: 'm/s²' },
+    { key: 'decel', label: 'slowing down', min: 0.1, max: 2, step: 0.05, unit: 'm/s²', help: 'gentle slow-downs; a stop for something in the way cuts at once' },
+    { key: 'brake_decel', label: 'real braking', min: 0.05, max: 2, step: 0.05, unit: 'm/s²', help: 'what R2 really stops with (measure it on the droid): sensors and lidar stop it earlier by v²/(2·this)' },
     { key: 'turn_accel_deg', label: 'turn acceleration', min: 5, max: 180, step: 1, unit: '°/s²' },
     { key: 'max_drive_power', label: 'drive power cap', min: 5, max: 127, step: 1, unit: '', help: 'Sabertooth units, like ShadowMD drivespeed' },
     { key: 'max_turn_power', label: 'turn power cap', min: 5, max: 127, step: 1, unit: '', help: 'Sabertooth units, like ShadowMD turnspeed' },
@@ -22,6 +24,10 @@ export const GROUPS = [
     { key: 'on_blocked', label: 'when blocked', options: ['turn', 'reverse', 'wait'] },
     { key: 'allow_reverse', label: 'may back up', bool: true },
     { key: 'give_up_after', label: 'give up after', min: 1, max: 20, step: 1, unit: 'tries' },
+    { key: 'wait_max_s', label: 'wait for the way', min: 0.5, max: 30, step: 0.5, unit: 's', help: 'with "when blocked: wait"' },
+    { key: 'reverse_max', label: 'back up', min: 0.05, max: 1, step: 0.05, unit: 'm', help: 'with "when blocked: reverse"' },
+    { key: 'stuck_after_s', label: 'a try after', min: 3, max: 60, step: 1, unit: 's', help: 'without getting 15 cm closer to the goal' },
+    { key: 'free_s', label: 'clear for', min: 0.2, max: 5, step: 0.1, unit: 's', help: 'with the front clear before heading for the goal again' },
   ]],
   ['Go forward', 'fa-arrow-up', [
     { key: 'search_turn', label: 'search turn speed', min: 0.2, max: 1, step: 0.05, unit: '× top turn', help: 'boxed in, it turns on the spot this slowly' },
@@ -37,9 +43,10 @@ export const GROUPS = [
 ];
 
 export const FIELDS = GROUPS.flatMap(([, , f]) => f);
-const ORDER = ['safety_radius', 'safety_cone_deg', 'slow_from', 'max_speed', 'max_turn_deg', 'accel', 'turn_accel_deg',
-  'max_drive_power', 'max_turn_power', 'goal_tolerance', 'sensors_may_stop_earlier', 'filter', 'on_blocked', 'allow_reverse',
-  'give_up_after', 'search_turn', 'search_free', 'search_wide_deg', 'search_near', 'forward_stuck_s'];
+const ORDER = ['safety_radius', 'safety_cone_deg', 'slow_from', 'max_speed', 'max_turn_deg', 'accel', 'decel', 'brake_decel',
+  'turn_accel_deg', 'max_drive_power', 'max_turn_power', 'goal_tolerance', 'sensors_may_stop_earlier', 'filter', 'on_blocked',
+  'allow_reverse', 'give_up_after', 'wait_max_s', 'reverse_max', 'stuck_after_s', 'free_s', 'search_turn', 'search_free',
+  'search_wide_deg', 'search_near', 'forward_stuck_s'];
 
 // a decimal setting is written with its decimals (1.0, not 1): ROS fixes a parameter's type at start-up
 const val = (k, v) => {
