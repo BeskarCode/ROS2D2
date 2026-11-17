@@ -174,9 +174,41 @@ def test_base_and_main_wall_do_not_overlap():
     assert is_empty("check_base_vs_pared")
 
 
-def test_mount_ears_stick_out(lay):
+# --- removable ears: 8 sites (front and back; vertical by the floor edge, horizontal by the shell's side) ----
+def test_ear_sites():
+    sites = echo_values("echo_ears")["sites"]
+    assert len(sites) == 8
+    for f in ["front", "back"]:
+        for m in ["vertical", "horizontal"]:
+            assert sum(1 for s in sites if s[0] == f and s[1] == m) == 2
+
+
+def test_lugs_coplanar_per_mode():
+    v = echo_values("echo_ears")
+    assert len(v["vertical_lug_planes"]) == 4 and len(v["horizontal_lug_planes"]) == 4
+    assert all(abs(z) < 0.01 for z in v["vertical_lug_planes"])                # standing: lugs on the floor's plane
+    assert all(abs(x - v["W"]) < 0.01 for x in v["horizontal_lug_planes"])     # lying on the shell's side
+    assert v["lug_out"] >= 12                                                  # the lug sticks out this far
+
+
+def test_base_has_no_fixed_ears(lay):
     lo, hi = stl_bbox(run_scad("base"))
-    assert lo[1] < 0 and hi[1] > lay["D"]
+    assert lo[1] >= -0.01 and hi[1] <= lay["D"] + 0.01
+
+
+@pytest.mark.parametrize("c", ["check_pads_vs_ghosts", "check_ears_vs_power", "check_ears_vs_back"])
+def test_ear_sites_clear(c):
+    assert is_empty(c)
+
+
+def test_ear_and_blank_flush_in_their_pocket():
+    assert is_empty("check_ear_flush")             # ears in every site: nothing of base, face or shell; blanks flush
+
+
+@pytest.mark.parametrize("p", ["ear", "ear_blank"])
+def test_ear_prints_flat(p):
+    lo, hi = stl_bbox(run_scad(p))
+    assert lo[2] == pytest.approx(0, abs=0.01)
 
 
 # --- shell ------------------------------------------------------------------------------------------
@@ -207,7 +239,7 @@ def test_overall_size_and_volume():
 
 
 # --- hardware ---------------------------------------------------------------------------------------
-EXPECTED = {"ins_m3": 18, "ins_m25": 4, "m3x8_flat": 8, "m3x6_pan": 8, "m3x6_cyl": 2, "m3x10_flat": 0, "m3x10_pan": 2,
+EXPECTED = {"ins_m3": 34, "ins_m25": 4, "m3x8_flat": 24, "m3x6_pan": 8, "m3x6_cyl": 2, "m3x10_flat": 0, "m3x10_pan": 2,
             "nut_m3": 2,
             "m25x6": 4, "m4x12": 4}
 

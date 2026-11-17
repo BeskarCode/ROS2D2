@@ -3,6 +3,7 @@
 // head bears or the insert's mouth is; direction = where the shaft points). Draws the hardware in the
 // guide, counts the BOM, and is checked against the printed parts (screws only through holes).
 include <params.scad>
+include <ears.scad>
 
 // kind -> [length, shaft d (for drawing/checks), head type, head d, head h]
 function fkind(k) =
@@ -18,7 +19,8 @@ function fkind(k) =
     k == "m4x12"      ? [12, 3.9, "pan", 7, 2.8] : undef;
 
 
-function _ears() = [for (x = [15, 47]) for (y = [-6, D + 6]) [x, y]];
+// an ear site's direction n (into the box) in the box's frame
+function _ear_n(s) = s[0] == "front" ? [0, 1, 0] : [0, -1, 0];
 function _div_cx() = (div_x[0] + div_x[1]) / 2;
 function _back_screws() = let(w = marco_win(), xc = (w[0] + w[2]) / 2) [[xc, w[1] - 6], [xc, w[3] + 5]];
 function _hdmi_screws() = [for (s = [-1, 1]) hdmi_rot([hdmi_c[0] + s * hdmi_pitch / 2, hdmi_c[1]])];
@@ -34,6 +36,7 @@ function fasteners() = concat(
     [for (h = conv_holes) ["ins_m3", 1, [div_x[1], conv_y + h[0], conv_p0()[2] + h[1]], [-1, 0, 0]]],
     [for (h = pi_holes) ["ins_m25", 1, [pi_x_pcb(), pi_y0() + h[0], pi_z0() + h[1]], [-1, 0, 0]]],
     [for (p = concat(_back_screws(), _hdmi_screws())) ["ins_m3", 1, [p[0], D, p[1]], [0, -1, 0]]],
+    [for (s = ear_sites) for (p = ear_screws()) ["ins_m3", 1, ear_pt(s, [p[0], p[1], ear_pocket_t]), _ear_n(s)]],
     // step 2: converter onto the divider
     [for (h = conv_holes) ["m3x6_cyl", 2, [div_x[1] + conv_ear_t, conv_y + h[0], conv_p0()[2] + h[1]], [-1, 0, 0]]],
     // step 3: Pi onto the divider's standoffs, then the back frame for that Pi and the HDMI panel jack
@@ -51,8 +54,9 @@ function fasteners() = concat(
     [for (y = [75, 20]) ["m3x8_flat", 7, [wall + 5, y, H], [0, 0, -1]]],
     [for (y = [20, 75]) ["m3x8_flat", 7, [_div_cx(), y, H], [0, 0, -1]]],
     [for (y = [15, 86]) ["m3x8_flat", 7, [W, y, wall + 9.5 / 2], [-1, 0, 0]]],
-    // step 8: onto the R2
-    [for (e = _ears()) ["m4x12", 8, [e[0], e[1], wall], [0, 0, -1]]]
+    // step 8: an ear or a blank in every site, then onto the R2 (standing: the 4 ears by the floor)
+    [for (s = ear_sites) for (p = ear_screws()) ["m3x8_flat", 8, ear_pt(s, [p[0], p[1], 0]), _ear_n(s)]],
+    [for (s = ear_sites) if (s[1] == "vertical") ["m4x12", 8, ear_pt(s, [ear_lug_t, ear_plate[1] / 2, -ear_lug_hole]), [0, 0, -1]]]
 );
 
 function count_kind(k) = len([for (f = fasteners()) if (f[0] == k) 1]);

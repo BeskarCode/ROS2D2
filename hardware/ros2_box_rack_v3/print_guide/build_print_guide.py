@@ -32,7 +32,8 @@ PART = "55,0,25"         # the rest in print orientation
 VIEWS = {"wall_multicolor": WALL, "wall_monocolor": WALL, "wall_led_multicolor": WALL,
          "wall_led_monocolor": WALL, "wall_led_no_ams": WALL, "inlays": WALL,
          "led_lenses": "35,0,25", "base": PART, "shell": "235,0,25", "push_rod": PART,
-         "frame_pi4": PART, "frame_pi5": PART, "hdmi_holder": PART, "hdmi_cover": PART}
+         "frame_pi4": PART, "frame_pi5": PART, "hdmi_holder": PART, "hdmi_cover": PART,
+         "ear": "55,0,35", "ear_blank": PART}
 
 # --- the guide: every text as (Spanish, English) -----------------------------------------------------------
 T = {
@@ -65,6 +66,8 @@ CHECKLIST = [
      "**One back frame:** `frame_pi4.stl` or `frame_pi5.stl`, for your Raspberry Pi."),
     ("**HDMI trasero (opcional):** `hdmi_holder.stl` o `hdmi_cover.stl`, o ninguno (ver su apartado).",
      "**HDMI on the back (optional):** `hdmi_holder.stl` or `hdmi_cover.stl`, or neither (see its section)."),
+    ("**Orejas y tapas ciegas:** 5 × `ear.stl` (4 y 1 de repuesto) y 4 × `ear_blank.stl`.",
+     "**Ears and blanks:** 5 × `ear.stl` (4 and 1 spare) and 4 × `ear_blank.stl`."),
 ]
 
 DECIDE_HEAD = (["¿Ver los LEDs de la placa de la Pico?", "¿Tienes AMS?", "Imprime"],
@@ -83,12 +86,12 @@ DECIDE = ([["No", "Sí", "A · `wall_multicolor_bambu.3mf`"],
 # section: (title, intro, pieces); piece: (image, files, name, what it is, when, how to print)
 SECTIONS = [
     (("1 · Pared principal (elige una)", "1 · Main wall (pick one)"),
-     ("La pared grande con la ventana de la OLED, el pulsador DISPLAY, el XT60, el interruptor y la ranura de "
-      "los cables de los sensores. Las cinco tienen los mismos insertos y encajan igual con la base y la tapa: "
-      "solo cambian el logo y los LEDs.",
-      "The large wall with the OLED window, the DISPLAY button, the XT60, the switch and the sensor cable slot. "
-      "All five have the same inserts and fit the base and the shell the same way: only the logo and the LEDs "
-      "change."),
+     ("La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por donde se conectan los "
+      "sensores desde fuera. Las cinco tienen los mismos insertos y encajan igual con la base y la tapa: solo "
+      "cambian el logo y los LEDs.",
+      "The large wall with the OLED window, the DISPLAY button and the bays where the sensors plug in from "
+      "outside. All five have the same inserts and fit the base and the shell the same way: only the logo and "
+      "the LEDs change."),
      [("wall_multicolor", ["wall_multicolor_bambu.3mf", "wall_multicolor.3mf"],
        ("A · Pared con logo en 4 colores", "A · Wall with the logo in 4 colours"),
        ("Pared sin agujeros de LEDs, logo marino, azul y gris incrustado a ras.",
@@ -108,43 +111,47 @@ SECTIONS = [
       ("wall_led_multicolor", ["leds/wall_led_multicolor_bambu.3mf", "leds/wall_led_multicolor.3mf"],
        ("C · Pared con LEDs, logo en 4 colores", "C · LED wall, logo in 4 colours"),
        ("Un agujero sobre cada uno de los 10 LEDs de la placa de la Pico (VL1–VL4, US1–US5, PWR), con un tubo "
-        "por dentro hasta el LED y su nombre al lado. El logo baja, entre la ventana de la OLED y el XT60.",
+        "por dentro hasta el LED, y otro sobre el LED de la propia Pico. Cada boca lleva un chaflán de 0,4 mm.",
         "A hole over each of the Pico board's 10 LEDs (VL1–VL4, US1–US5, PWR), with a tube inside down to the "
-        "LED and its name beside it. The logo moves down, between the OLED window and the XT60."),
+        "LED, and one over the Pico's own LED. Each mouth has a 0.4 mm chamfer."),
        ("Quieres ver desde fuera qué sensores están activos y tienes AMS.",
         "You want to see from outside which sensors are active, and you have an AMS."),
        ("Cara del logo sobre la cama. AMS: 1 blanco, 2 marino, 3 azul, 4 gris. Necesita las lentillas.",
         "Logo face on the bed. AMS: 1 white, 2 navy, 3 blue, 4 grey. Needs the lenses.")),
       ("wall_led_no_ams", ["no_ams/wall_led_no_ams.stl"],
        ("D · Pared con LEDs sin AMS", "D · LED wall without AMS"),
-       ("La pared C con el logo y los nombres en hueco de 1,5 mm, para rellenarlos con piezas impresas aparte. "
+       ("La pared C con el logo en hueco de 1,4 mm, para rellenarlo con piezas impresas aparte. "
         "Tubos, lentillas e insertos iguales que en C.",
-        "Wall C with the logo and the names as 1.5 mm pockets, filled with parts printed apart. "
+        "Wall C with the logo as 1.4 mm pockets, filled with parts printed apart. "
         "Same tubes, lenses and inserts as C."),
        ("Quieres los LEDs y el logo en colores, pero tu impresora no tiene AMS.",
         "You want the LEDs and the logo in colour, but your printer has no AMS."),
        ("Blanco, cara del logo sobre la cama. Necesita los 3 rellenos y las lentillas.",
         "White, logo face on the bed. Needs the 3 fillings and the lenses.")),
       ("inlays", ["no_ams/inlay_navy.stl", "no_ams/inlay_blue.stl", "no_ams/inlay_grey.stl"],
-       ("D · Rellenos del logo y los nombres", "D · Fillings for the logo and the names"),
-       ("Marino: «ROS» y los nombres de los conectores. Azul: «2D2» y los 12 puntos. Gris: el marco de los "
-        "puntos. Tienen 0,1 mm de holgura por lado y quedan a ras de la pared.",
-        "Navy: \"ROS\" and the connector names. Blue: \"2D2\" and the 12 dots. Grey: the dots' frame. "
-        "0.1 mm of play per side, flush with the wall."),
+       ("D · Rellenos del logo", "D · Fillings for the logo"),
+       ("Marino: «ROS». Azul: «2D2» y los 12 puntos. Gris: el marco de los puntos, ensanchado hacia dentro "
+        "a 1,7 mm (1,2 bajo la fila de abajo) para que se pueda imprimir y manejar. 1,4 mm de grueso (7 capas), "
+        "0,1 mm de holgura por lado, a ras de la pared.",
+        "Navy: \"ROS\". Blue: \"2D2\" and the 12 dots. Grey: the dots' frame, widened inwards to 1.7 mm "
+        "(1.2 under the bottom row) so it prints and handles. 1.4 mm thick (7 layers), 0.1 mm of play per side, "
+        "flush with the wall."),
        ("Solo con la pared D.", "Only with wall D."),
-       ("Una placa por color, cara vista sobre la cama, capas de 0,1–0,15 mm, sin borde. Salen en su sitio y en "
+       ("Una placa por color, cara vista sobre la cama, capas de 0,2 mm, sin borde. Salen en su sitio y en "
         "espejo: dales la vuelta, mételos en su hueco y fíjalos con una gota de cianoacrilato.",
-        "One plate per colour, visible face on the bed, 0.1–0.15 mm layers, no brim. They come out in place and "
+        "One plate per colour, visible face on the bed, 0.2 mm layers, no brim. They come out in place and "
         "mirrored: turn them over, press them into their pockets and fix them with a drop of cyanoacrylate.")),
       ("wall_led_monocolor", ["leds/wall_led_monocolor.stl"],
        ("E · Pared con LEDs de un color", "E · Single-colour LED wall"),
-       ("La pared C con el logo y los nombres grabados 1 mm.", "Wall C with the logo and the names engraved 1 mm."),
+       ("La pared C con el logo grabado 1 mm.", "Wall C with the logo engraved 1 mm."),
        ("Quieres los LEDs, no tienes AMS y un solo color te vale.", "You want the LEDs, no AMS, one colour is fine."),
        ("Cara del logo sobre la cama, un solo filamento. Necesita las lentillas.",
         "Logo face on the bed, one filament. Needs the lenses.")),
       ("led_lenses", ["leds/led_lenses.stl"], ("Lentillas de los LEDs", "LED lenses"),
-       ("12 discos (10 y 2 de repuesto) que se meten a presión en la boca de cada tubo, a ras de la pared.",
-        "12 discs (10 and 2 spares) pressed into the mouth of each tube, flush with the wall."),
+       ("13 discos (11 y 2 de repuesto) que se meten en la boca de cada agujero, a ras de la pared, con 0,25 mm "
+        "de holgura; si alguno baila, una gota de pegamento.",
+        "13 discs (11 and 2 spares) that drop into the mouth of each hole, flush with the wall, with 0.25 mm of "
+        "play; if one is loose, a drop of glue."),
        ("Con cualquier pared con LEDs: C, D o E.", "With any LED wall: C, D or E."),
        ("PLA translúcido (o PETG transparente), discos planos sobre la cama.",
         "Translucent PLA (or clear PETG), discs flat on the bed.")),
@@ -152,17 +159,33 @@ SECTIONS = [
     (("2 · Piezas comunes (siempre)", "2 · Common parts (always)"),
      ("Las mismas con cualquier pared.", "The same with any wall."),
      [("base", ["base.stl"], ("Base", "Base"),
-       ("Suelo, trasera, tabique central (Pi y convertidor) y orejetas de fijación.",
-        "Floor, back, central divider (Pi and converter) and mounting ears."),
+       ("Suelo, frontal estrecha (XT60, interruptor y rejilla), trasera, tabique central (Pi y convertidor) y los "
+        "rebajes de las orejas.",
+        "Floor, narrow front (XT60, switch and vent), back, central divider (Pi and converter) and the ear "
+        "pockets."),
        ("Siempre.", "Always."), ("Suelo sobre la cama.", "Floor on the bed.")),
       ("shell", ["shell.stl"], ("Tapa", "Shell"),
-       ("Techo, lateral y frontal estrecho en una pieza que baja desde arriba.",
-        "Roof, side and narrow front in one piece that slides down from above."),
+       ("Techo y lateral en una pieza que baja desde arriba; la frontal se queda con la base.",
+        "Roof and side in one piece that slides down from above; the front stays with the base."),
        ("Siempre.", "Always."), ("Techo sobre la cama.", "Roof on the bed.")),
       ("push_rod", ["push_rod.stl"], ("Varilla del pulsador DISPLAY", "DISPLAY push rod"),
        ("Atraviesa la pared y pulsa el botón DISPLAY de la placa de la Pico.",
         "Goes through the wall and presses the Pico board's DISPLAY button."),
        ("Siempre.", "Always."), ("De pie.", "Standing.")),
+      ("ear", ["ear.stl"], ("Oreja de fijación", "Mounting ear"),
+       ("Pieza en L que va a ras en un rebaje de la frontal o de la trasera con 2 M3 × 8 avellanados; su lengüeta "
+        "(agujero de 4,3 mm) se atornilla al R2. Sirve para la caja de pie (4 orejas en los rebajes junto al suelo) "
+        "o tumbada sobre el lateral de la tapa (4 en los rebajes junto a ese lateral).",
+        "An L piece flush in a pocket of the front or the back with 2 M3 × 8 countersunk; its lug (4.3 mm hole) "
+        "screws to the R2. Works with the box standing (4 ears in the pockets by the floor) or lying on the shell's "
+        "side (4 in the pockets by that side)."),
+       ("Siempre: 5 (4 y 1 de repuesto).", "Always: 5 (4 and 1 spare)."),
+       ("De canto, con el perfil de la L sobre la cama: cada capa lleva la L entera y no se parte por el codo.",
+        "On edge, the L's profile on the bed: every layer holds the whole L, so it does not split at the bend.")),
+      ("ear_blank", ["ear_blank.stl"], ("Tapa ciega de oreja", "Ear blank"),
+       ("La placa de la oreja sin lengüeta: cierra a ras los 4 rebajes que no usas, con sus 2 tornillos.",
+        "The ear's plate without the lug: closes the 4 pockets you don't use flush, with its 2 screws."),
+       ("Siempre: 4.", "Always: 4."), ("Plana, cara vista sobre la cama.", "Flat, visible face on the bed.")),
       ]),
     (("3 · Marco trasero (elige uno)", "3 · Back frame (pick one)"),
      ("Cierra la ventana de la trasera alrededor de los USB y el Ethernet de la Pi. La Pi 4 y la Pi 5 tienen "

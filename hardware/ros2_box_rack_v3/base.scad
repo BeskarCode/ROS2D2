@@ -1,15 +1,14 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The base: floor + back + the central divider (the Pi low on standoffs with M2.5 inserts, the converter high
-// on M3 inserts) + floor bosses for the shell + ears for the R2. The main face screws to it from under the floor.
+// on M3 inserts) + floor bosses for the shell + the pockets for the removable ears (ears.scad). The main face screws to it from under the floor.
 // The back has one window for the Pi's jacks, closed by a swappable frame (frame.scad), and the HDMI panel jack.
 include <params.scad>
 include <front.scad>
+include <ears.scad>
 
 port_margin = 0.5;
 standoff_d = 6.5;
 back_boss_d = 7.5;  back_boss_l = 7;             // inside the back, for the frame's and the HDMI jack's inserts
-ear = [14, 12];                                   // along X x out from the box (Y)
-ear_x = [15, 47];
 boss = [8, 10, 9.5];
 boss_y = [15, 86];
 div_top_y = [20, 75];
@@ -57,16 +56,6 @@ module insert_holes() {
     for (p = concat(marco_screws(), hdmi_screws())) translate([p[0], D + 0.01, p[1]]) rotate([90, 0, 0]) cylinder(d = insert_d, h = insert_h, $fn = 24);
 }
 
-module mount_ears() {
-    for (x = ear_x) for (s = [-1, 1]) translate([x, s < 0 ? -ear[1] : D, 0]) difference() {
-        hull() {
-            translate([-ear[0] / 2, s < 0 ? ear[1] - 1 : 0, 0]) cube([ear[0], 1, wall]);
-            translate([0, ear[1] / 2, 0]) cylinder(d = ear[0], h = wall, $fn = 40);
-        }
-        translate([0, ear[1] / 2, -0.01]) cylinder(d = mount_d, h = wall + 1, $fn = 24);
-    }
-}
-
 module back_cuts() {
     yb = D - wall;
     w = marco_win();                                                     // the frame's window
@@ -76,7 +65,7 @@ module back_cuts() {
     n = usb_notch_c;                                                     // the Pico's micro-USB goes out here
     translate([n[0], yb - 1, n[1]]) rotate([-90, 0, 0]) hull() for (k = [-1, 1])
         translate([k * (usb_notch[0] - usb_notch[1]) / 2, 0, 0]) cylinder(d = usb_notch[1], h = wall + 2, $fn = 32);
-    for (i = [0 : 3]) translate([div_x[1] + 6 + i * 4, yb - 1, marco_screws()[1][1] + 6]) cube([2, wall + 2, H - wall - 6 - marco_screws()[1][1] - 6]);   // vent behind the converter
+    for (i = [0 : 2]) translate([div_x[1] + 6 + i * 4, yb - 1, marco_screws()[1][1] + 6]) cube([2, wall + 2, H - wall - 6 - marco_screws()[1][1] - 6]);   // vent behind the converter
 }
 
 module wall_tab_holes() {           // the main face's bottom tabs, screws from below
@@ -86,7 +75,7 @@ module wall_tab_holes() {           // the main face's bottom tabs, screws from 
     }
 }
 
-module base(ears = true) {
+module base() {
     difference() {
         union() {
             floor_plate();
@@ -96,10 +85,12 @@ module base(ears = true) {
             pi_standoffs();
             back_bosses();
             shell_bosses();
-            if (ears) mount_ears();
+            ear_pads();
         }
         back_cuts();
         insert_holes();
+        ear_pockets();
+        ear_insert_holes();
         pi_standoff_holes();
         wall_tab_holes();
     }

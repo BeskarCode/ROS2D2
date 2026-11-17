@@ -6,7 +6,7 @@
 </defs>
 
 <!-- ============ 1. micro-USB on the Pico ============ -->
-<text x="20" y="34" font-size="20" font-weight="700" fill="#222">1 · micro-USB acodado (Pico → Pi)</text>
+<text x="20" y="34" font-size="20" font-weight="700" fill="#222">1 · micro-USB recto (Pico → Pi)</text>
 <text x="20" y="58" font-size="14" fill="#555">Mirando la Pico por su cara de componentes, con su USB arriba (como está en la placa de sensores):</text>
 
 <!-- carrier board + Pico -->
@@ -14,37 +14,21 @@
 <text x="260" y="470" font-size="13" fill="#d8f0dd" text-anchor="middle">placa de sensores (cara de componentes)</text>
 <rect x="190" y="150" width="140" height="250" rx="4" fill="#0d4d2a" stroke="#0a2" stroke-width="1.5"/>
 <text x="260" y="300" font-size="16" fill="#cfe" text-anchor="middle" font-weight="700">Pico 2</text>
-<!-- micro-USB receptacle at the top edge, wide side towards the viewer -->
 <rect x="243" y="138" width="34" height="18" rx="3" fill="#b9bec4" stroke="#333" stroke-width="1.5"/>
-<!-- angled plug (inserted from above) + cable to the left -->
-<rect x="236" y="104" width="48" height="36" rx="6" fill="#2b2b2b"/>
-<path d="M236,122 C190,122 150,122 70,122" stroke="#2b2b2b" stroke-width="10" fill="none" stroke-linecap="round"/>
-<text x="292" y="128" font-size="12" fill="#333">← clavija acodada, metida desde arriba</text>
+<!-- straight plug up, the cable bending at the roof towards the back -->
+<rect x="236" y="96" width="48" height="44" rx="6" fill="#2b2b2b"/>
+<path d="M260,96 L260,80 C260,72 268,68 280,68 L470,68" stroke="#2b2b2b" stroke-width="10" fill="none" stroke-linecap="round"/>
+<line x1="60" y1="62" x2="500" y2="62" stroke="#8a8a8a" stroke-width="3" stroke-dasharray="8,6"/>
+<text x="292" y="126" font-size="12" fill="#333">← clavija recta, metida desde arriba</text>
+<text x="300" y="98" font-size="12" fill="#1f9d55" font-weight="700">↑ sube recto 30 mm hasta el techo</text>
+<text x="300" y="84" font-size="12" fill="#1f9d55" font-weight="700">→ se dobla bajo el techo hacia la trasera</text>
+<text x="480" y="74" font-size="12" fill="#555">muesca de la trasera</text>
 
-<!-- arrows -->
-<line x1="230" y1="86" x2="90" y2="86" stroke="#1f9d55" stroke-width="5" marker-end="url(#ok)"/>
-<text x="58" y="93" font-size="22" fill="#1f9d55" font-weight="700">✓</text>
-<text x="96" y="76" font-size="13" fill="#1f9d55" font-weight="700">IZQUIERDA (la buena)</text>
-
-<line x1="300" y1="86" x2="420" y2="86" stroke="#e0a000" stroke-width="5" marker-end="url(#ok)"/>
-<text x="430" y="84" font-size="13" fill="#b07a00" font-weight="700">derecha: cabe,</text>
-<text x="430" y="100" font-size="13" fill="#b07a00">pero el cable da la vuelta</text>
-
-<circle cx="560" cy="250" r="26" fill="none" stroke="#d62828" stroke-width="4"/>
-<line x1="542" y1="232" x2="578" y2="268" stroke="#d62828" stroke-width="4"/>
-<line x1="578" y1="232" x2="542" y2="268" stroke="#d62828" stroke-width="4"/>
-<text x="600" y="238" font-size="14" fill="#d62828" font-weight="700">✗ hacia ti (hacia los componentes):</text>
-<text x="600" y="256" font-size="13" fill="#d62828">choca con los Dupont de los sensores</text>
-<text x="600" y="292" font-size="14" fill="#d62828" font-weight="700">✗ hacia atrás (detrás de la placa):</text>
-<text x="600" y="310" font-size="13" fill="#d62828">choca con el tabique</text>
-
-<text x="560" y="370" font-size="14" fill="#222" font-weight="700">Al comprar:</text>
-<text x="560" y="392" font-size="13" fill="#222">· micro-USB 2.0 (no 3.0), de 30 cm.</text>
-<text x="560" y="412" font-size="13" fill="#222">· Codo LATERAL: el cable sale de lado, paralelo al lado</text>
-<text x="560" y="430" font-size="13" fill="#222">  largo del conector (no hacia arriba ni hacia abajo).</text>
-<text x="560" y="450" font-size="13" fill="#222">· El micro-USB solo entra de una forma: compara la foto con</text>
-<text x="560" y="468" font-size="13" fill="#222">  tu Pico y comprueba que el cable quedará a la IZQUIERDA.</text>
-<text x="560" y="488" font-size="13" fill="#666">  ("left"/"right" no significa lo mismo en todas las marcas)</text>
+<text x="560" y="150" font-size="15" fill="#222" font-weight="700">Al comprar:</text>
+<text x="560" y="172" font-size="13" fill="#222">· micro-USB 2.0 (no 3.0), de unos 30 cm, clavija RECTA.</text>
+<text x="560" y="194" font-size="13" fill="#222">· La parte rígida de la clavija (con su funda) no debe pasar de 22 mm</text>
+<text x="560" y="216" font-size="13" fill="#222">  ni de 11 mm de ancho; si la tuya es mayor, ajusta `pico_usb_clear`</text>
+<text x="560" y="238" font-size="13" fill="#222">  y `usb_plug` en params.scad antes de imprimir.</text>
 
 <!-- ============ 2. USB-C on the Pi, rack box ============ -->
 <line x1="20" y1="530" x2="980" y2="530" stroke="#ddd" stroke-width="2"/>

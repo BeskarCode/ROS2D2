@@ -32,7 +32,7 @@ module ghost_pico() {
             cylinder(d = 9, h = pico_gap, $fn = 32);
         // a well over each LED: within 2 mm of it there is nothing (its 0603 resistor is 2.9 mm away,
         // 0.5 mm tall); the LED itself is ghost_leds()
-        for (i = [0 : len(pico_leds) - 1]) translate(pico2world(pico_leds[i][1], pico_leds[i][2]) + [0.01, 0, 0])
+        for (i = [0 : len(pico_leds) - 1]) if (led_tube(pico_leds[i])) translate(pico2world(pico_leds[i][1], pico_leds[i][2]) + [0.01, 0, 0])
             rotate([0, -90, 0]) cylinder(d = led_well_d, h = pico_gap, $fn = 32);
     }
     // J1's wires come in over the board's bx = 0 edge
@@ -52,7 +52,7 @@ module ghost_usb() {
 // cable straight towards the wall: what is near the light pipes
 module ghost_leds() {
     for (i = [0 : len(pico_leds) - 1]) let(l = pico_leds[i], a = l[1] > 70 ? [0.4, 0.8] : [0.8, 0.4])
-        on_board(l[1] - a[0], l[2] - a[1], l[1] + a[0], l[2] + a[1], led_h);
+        translate([-led_base(l), 0, 0]) on_board(l[1] - a[0], l[2] - a[1], l[1] + a[0], l[2] + a[1], led_h);
     on_board(35 - 2.2, 59.5 - 1.4, 35 + 2.2, 59.5 + 1.4, 2.3);           // D2
     on_board(37 - 3, 64.5 - 2.15, 37 + 3, 64.5 + 2.15, 4.3);             // J3
     on_board(37 - 3, 64.5 - 1.5, 37 + 3, 64.5 + 1.5, pico_gap - 1);      // its cable, to wall + 1
