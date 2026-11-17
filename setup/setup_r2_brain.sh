@@ -217,6 +217,25 @@ fi
 sudo -u "$R2_USER" git -C "$SLLIDAR" fetch -q origin
 sudo -u "$R2_USER" git -C "$SLLIDAR" checkout -q "$SLLIDAR_COMMIT"
 
+log "Laser odometry: rf2o_laser_odometry (MAPIRlab, GPL-3), from source"
+# /scan -> /odom_rf2o: the dead reckoning (r2_nav) takes R2's movement from it instead of from the
+# commands, so the feet's slips do not add up. Pinned to the ros2 branch's last commit. If it does
+# not build on this ROS, it is left out (COLCON_IGNORE) and the dead reckoning runs without it.
+apt-get install -y libeigen3-dev libboost-dev "ros-${ROS_DISTRO}-tf2-geometry-msgs"
+RF2O="${R2_HOME}/r2_ws/src/rf2o_laser_odometry"
+RF2O_REPO="https://github.com/MAPIRlab/rf2o_laser_odometry.git"
+RF2O_COMMIT="b38c68e46387b98845ecbfeb6660292f967a00d3"     # ros2 branch, "improving doc" (2023-04-28)
+if [[ ! -d "$RF2O/.git" ]]; then
+  sudo -u "$R2_USER" git clone -b ros2 "$RF2O_REPO" "$RF2O"
+fi
+sudo -u "$R2_USER" git -C "$RF2O" fetch -q origin
+sudo -u "$R2_USER" git -C "$RF2O" checkout -q "$RF2O_COMMIT"
+rm -f "$RF2O/COLCON_IGNORE"
+if ! sudo -u "$R2_USER" bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${R2_HOME}/r2_ws && colcon build --packages-select rf2o_laser_odometry"; then
+  sudo -u "$R2_USER" touch "$RF2O/COLCON_IGNORE"
+  echo "WARNING: rf2o_laser_odometry did not build on ${ROS_DISTRO}: left out; the dead reckoning runs without it"
+fi
+
 log "Shell environment"
 BASHRC="${R2_HOME}/.bashrc"
 if ! grep -q '# >>> r2-brain >>>' "$BASHRC"; then
