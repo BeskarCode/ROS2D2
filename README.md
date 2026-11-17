@@ -13,7 +13,7 @@ motors, sounds and lights. **The controller always wins.**
 
 ![The web console: R2 navigating with the lidar and its sensors](media/console-navigation-modes.gif)
 
-[Video](https://youtu.be/Smfn6zQICm0) · [Build thread on astromech.net](https://astromech.net/forums/showthread.php?47099) · [User manual](MANUAL.md) ([castellano](MANUAL_es.md)) · [Hardware](HARDWARE.md) · [The box](hardware/ros2_box_rack)
+[Video](https://youtu.be/Smfn6zQICm0) · [Build thread on astromech.net](https://astromech.net/forums/showthread.php?47099) · [User manual](MANUAL.md) ([castellano](MANUAL_es.md)) · [Hardware](HARDWARE.md) · [The box](hardware/ros2_box_rack_v3)
 
 ## What it does
 
@@ -84,10 +84,14 @@ What ROS2D2 adds to a ShadowMD droid, how it connects and the bill of materials:
 ### The box
 
 The Raspberry Pi, the Pico sensor board and the 24 → 5 V converter go in a 3D-printed rack box
-(78 × 95 × 145 mm): STL, print guide and step-by-step assembly in
+(62 × 95 × 145 mm): the sensors plug in from outside through bays in its face, the XT60 and the switch sit
+on a fixed front, and removable ears mount it standing or lying down. STL, print guide
+([ES](hardware/ros2_box_rack_v3/print_guide/GUIA_IMPRESION.md) · [EN](hardware/ros2_box_rack_v3/print_guide/PRINT_GUIDE.md))
+and step-by-step assembly ([ES](hardware/ros2_box_rack_v3/MONTAJE.md) · [EN](hardware/ros2_box_rack_v3/ASSEMBLY.md)) in
+[`hardware/ros2_box_rack_v3`](hardware/ros2_box_rack_v3). The previous version stays in
 [`hardware/ros2_box_rack`](hardware/ros2_box_rack).
 
-<a href="hardware/ros2_box_rack"><img src="hardware/ros2_box_rack/assembly/img/assembled_led.png" alt="The ROS2D2 rack box, LED wall" width="480"></a>
+<a href="hardware/ros2_box_rack_v3"><img src="hardware/ros2_box_rack_v3/assembly/img/assembled_led.png" alt="The ROS2D2 rack box, LED face" width="480"></a>
 
 ### Sensor mounts
 
