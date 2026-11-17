@@ -13,6 +13,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = pathlib.Path(__file__).resolve().parent
 IMG = HERE / "img"
@@ -341,8 +342,17 @@ def print_pdf(html_path, pdf_path):
     if not browser:
         print("no Edge/Chrome: skipping", pdf_path.name)
         return
-    subprocess.run([browser, "--headless", "--disable-gpu", "--no-pdf-header-footer",
-                    f"--print-to-pdf={pdf_path}", html_path.as_uri()], capture_output=True, timeout=300)
+    # its own throw-away profile: with the browser already open, a headless run on the user's profile prints nothing
+    before = pdf_path.stat().st_mtime if pdf_path.exists() else 0
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as prof:   # the browser may still hold a file in it
+        r = subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", f"--user-data-dir={prof}",
+                            f"--print-to-pdf={pdf_path}", html_path.as_uri()], capture_output=True, text=True, timeout=300)
+        for _ in range(20):                                                       # it can finish writing just after it returns
+            if pdf_path.exists() and pdf_path.stat().st_mtime > before:
+                break
+            time.sleep(0.5)
+    if not pdf_path.exists() or pdf_path.stat().st_mtime <= before:
+        raise RuntimeError(f"{pdf_path.name} not written: {(r.stdout + r.stderr)[-800:]}")
     print("ok", pdf_path.name, flush=True)
 
 

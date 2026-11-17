@@ -9,15 +9,16 @@ LENS = [0.80, 0.90, 1.00];   ROD = [1, 0.55, 0.1];
 module s(f, c) color(c) import(str("../stl/", f, ".stl"), convexity = 6);
 module logo(sfx = "", dir = "") { s(str(dir, "logo_navy", sfx), NAVY); s(str(dir, "logo_blue", sfx), BLUE); s(str(dir, "logo_grey", sfx), GREY); }
 
-H = 145;   // the box's height (params.scad): undoes print_pared(), the walls stand as mounted, face to -X
-module montada() rotate([0, 90, 0]) translate([-H, 0, 0]) children();
+H = 145;  D = 95;   // the box's height and depth (params.scad): undoes print_pared(), the walls stand as mounted, face to -X
+// a dark plate behind the wall (inside, past the columns), so its bays and holes read as openings, not white patches
+module montada(back = true) rotate([0, 90, 0]) translate([-H, 0, 0]) { children(); if (back) color([0.18, 0.2, 0.23]) translate([4, 4, 20]) cube([H - 8, D - 8, 0.5]); }
 
 if (pieza == "wall_multicolor") montada() { s("wall", WHITE); logo(); }
 else if (pieza == "wall_monocolor") montada() s("wall_monocolor", WHITE);
 else if (pieza == "wall_led_multicolor") montada() { s("leds/wall_led", WHITE); logo("_led", "leds/"); }
 else if (pieza == "wall_led_monocolor") montada() s("leds/wall_led_monocolor", WHITE);
 else if (pieza == "wall_led_no_ams") montada() s("no_ams/wall_led_no_ams", WHITE);
-else if (pieza == "inlays") montada() { s("no_ams/inlay_navy", NAVY); s("no_ams/inlay_blue", BLUE); s("no_ams/inlay_grey", GREY); }
+else if (pieza == "inlays") montada(back = false) { s("no_ams/inlay_navy", NAVY); s("no_ams/inlay_blue", BLUE); s("no_ams/inlay_grey", GREY); }
 else if (pieza == "led_lenses") s("leds/led_lenses", LENS);
 else if (pieza == "push_rod") s("push_rod", ROD);
 else s(pieza, WHITE);       // base, tapa, frame_pi4, frame_pi5, hdmi_holder, hdmi_cover
