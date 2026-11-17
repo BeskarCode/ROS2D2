@@ -25,7 +25,7 @@ BROWSERS = [r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
 IMG = HERE / "assembly" / "img"
 REPO = HERE.parents[1]
 LOGO_ROS2D2 = REPO / "media" / "ros2d2-logo.png"
-LOGO_ASTROMECH = REPO / "hardware" / "r2_pico_carrier" / "gen" / "astromech-spain-logo-circular.png"   # dark on white
+LOGO_ASTROMECH = REPO / "media" / "astromech-spain-logo-circular.png"   # dark on a white disc: reads on paper and on GitHub
 REPO_URL = "https://github.com/BeskarCode/ROS2D2"
 BOX_DIMS = (107, 133, 125)          # W x D x H, mm (the rack box sets its own)
 
