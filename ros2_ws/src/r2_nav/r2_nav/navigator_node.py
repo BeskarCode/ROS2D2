@@ -40,6 +40,7 @@ from r2_nav.patrol import Patrol, parse_route
 from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, clamp_param,
                              config_path, is_lidar, load_nav, state_json)
 from r2_nav.shaping import SensorInputs, shape
+from r2_nav.spin import spin
 from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
 
@@ -282,7 +283,7 @@ def main():
     rclpy.init()
     node = NavigatorNode()
     try:
-        rclpy.spin(node)
+        spin(node)
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
     finally:

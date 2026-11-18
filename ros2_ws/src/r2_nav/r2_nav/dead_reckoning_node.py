@@ -25,6 +25,7 @@ from std_msgs.msg import String
 from tf2_msgs.msg import TFMessage
 
 from r2_nav.odometry import DeadReckoning, parse_foot, yaw_of
+from r2_nav.spin import spin
 
 import math
 
@@ -104,7 +105,7 @@ def main():
     rclpy.init()
     node = DeadReckoningNode()
     try:
-        rclpy.spin(node)
+        spin(node)
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
     finally:

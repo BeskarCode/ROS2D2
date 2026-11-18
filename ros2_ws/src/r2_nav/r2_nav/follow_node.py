@@ -34,6 +34,7 @@ from r2_nav.follow_core import Follower
 from r2_nav.modes import drives_in, load_modes, modes_path
 from r2_nav.nav_core import NavConfigError, config_path, is_lidar, load_nav
 from r2_nav.shaping import SensorInputs
+from r2_nav.spin import spin
 from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
 
@@ -218,7 +219,7 @@ def main():
     rclpy.init()
     node = FollowNode()
     try:
-        rclpy.spin(node)
+        spin(node)
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
     finally:
