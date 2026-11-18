@@ -27,6 +27,10 @@ PRINT_PARTS += NOAMS_PARTS
 PRINT_PARTS += ["ear", "ear_blank"]
 # the HDMI jack's optional pieces on the back: FPC kit holder or blank cover
 PRINT_PARTS += ["hdmi_holder", "hdmi_cover"]
+# blanks for the unused connectors (stl/blanks/): one per connector, and all ten on one plate
+BLANK_NAMES = ["US1", "US2", "US3", "US4", "US5", "VL1", "VL2", "VL3", "VL4", "EXP"]
+BLANKS_DIR = "blanks"
+BLANK_PARTS = [f"blank_{n}" for n in BLANK_NAMES] + ["blanks_all"]
 # the LED version's parts live in their own folder, stl/leds/
 LED_DIR = "leds"
 LED_PARTS = {"wall_led", *LOGO_LED_PARTS, "wall_led_monocolor", "led_lenses"}
@@ -36,6 +40,8 @@ def stl_path(out_dir, part):
     out_dir = pathlib.Path(out_dir) / "stl"
     if part in NOAMS_PARTS:
         return out_dir / NOAMS_DIR / f"{part}.stl"
+    if part in BLANK_PARTS:
+        return out_dir / BLANKS_DIR / f"{part}.stl"
     return (out_dir / LED_DIR if part in LED_PARTS else out_dir) / f"{part}.stl"
 
 
@@ -59,7 +65,25 @@ def build(out_dir=HERE):
         base.openscad(f, p)
         written.append(f)
         print("ok", f.name, flush=True)
+    written += build_blanks(out_dir)
     written += write_faces(out_dir)
+    return written
+
+
+def build_blanks(out_dir=HERE):
+    """stl/blanks/: blank_US1.stl ... blank_EXP.stl and blanks_all.stl, outer face on the bed."""
+    out_dir = pathlib.Path(out_dir)
+    (out_dir / "stl" / BLANKS_DIR).mkdir(parents=True, exist_ok=True)
+    written = []
+    for i, n in enumerate(BLANK_NAMES):
+        f = stl_path(out_dir, f"blank_{n}")
+        base.openscad(f, "blank", ("-D", f"bi={i}"))
+        written.append(f)
+        print("ok", f.name, flush=True)
+    f = stl_path(out_dir, "blanks_all")
+    base.openscad(f, "blanks_all")
+    written.append(f)
+    print("ok", f.name, flush=True)
     return written
 
 

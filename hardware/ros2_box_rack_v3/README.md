@@ -58,6 +58,7 @@ Every screw goes into a **heat-set insert**, the boards' too (M2.5 for the Pi, M
 | `stl/frame_pi5.stl` | back frame for the Pi 5 | outer face on the bed |
 | `stl/ear.stl` | mounting ear: print 5 (4 and 1 spare) | on edge, the L's profile on the bed |
 | `stl/ear_blank.stl` | blank for the pockets without an ear: print 4 | flat, visible face on the bed |
+| `stl/blanks/blank_US1.stl` … `blank_EXP.stl` | optional, looks only: a blank for each sensor connector you don't use (US1–US5, VL1–VL4, EXP); it plugs onto the connector's pins and closes its strip of the opening flush. `blanks_all.stl` has the ten on one plate | visible face on the bed, wall's colour |
 
 PETG, 0.2 mm, 0.4 nozzle, no supports.
 

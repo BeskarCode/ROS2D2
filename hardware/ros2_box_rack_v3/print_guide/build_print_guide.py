@@ -34,7 +34,7 @@ VIEWS = {"wall_multicolor": WALL, "wall_monocolor": WALL, "wall_led_multicolor":
          "wall_led_monocolor": WALL, "wall_led_no_ams": WALL, "inlays": WALL,
          "led_lenses": "35,0,25", "base": PART, "shell": "235,0,25", "push_rod": PART,
          "frame_pi4": PART, "frame_pi5": PART, "hdmi_holder": PART, "hdmi_cover": PART,
-         "ear": "55,0,35", "ear_blank": PART}
+         "ear": "55,0,35", "ear_blank": PART, "blanks_all": PART}
 
 # --- the guide: every text as (Spanish, English) -----------------------------------------------------------
 T = {
@@ -69,6 +69,8 @@ CHECKLIST = [
      "**HDMI on the back (optional):** `hdmi_holder.stl` or `hdmi_cover.stl`, or neither (see its section)."),
     ("**Orejas y tapas ciegas:** 5 × `ear.stl` (4 y 1 de repuesto) y 4 × `ear_blank.stl`.",
      "**Ears and blanks:** 5 × `ear.stl` (4 and 1 spare) and 4 × `ear_blank.stl`."),
+    ("**Tapas de conectores (opcional):** las de `blanks/` de los conectores que no uses.",
+     "**Connector blanks (optional):** those in `blanks/` for the connectors you don't use."),
 ]
 
 DECIDE_HEAD = (["¿Ver los LEDs de la placa de la Pico?", "¿Tienes AMS?", "Imprime"],
@@ -187,6 +189,19 @@ SECTIONS = [
        ("La placa de la oreja sin lengüeta: cierra a ras los 4 rebajes que no usas, con sus 2 tornillos.",
         "The ear's plate without the lug: closes the 4 pockets you don't use flush, with its 2 screws."),
        ("Siempre: 4.", "Always: 4."), ("Plana, cara vista sobre la cama.", "Flat, visible face on the bed.")),
+      ("blanks_all", ["blanks/blank_US1.stl … blank_EXP.stl", "blanks/blanks_all.stl"],
+       ("Tapas de los conectores sin usar", "Blanks for the unused connectors"),
+       ("Solo estética: una por conector de sensor (US1–US5, VL1–VL4, EXP). Se clava en los pines del conector "
+        "como un Dupont y cierra a ras su franja de la abertura; los conectores con sensor quedan abiertos. Para "
+        "quitarla, mete la uña en el chaflán de un borde. Si se cae o entra muy dura, ajusta `blank_pin_d` "
+        "(1,0 mm) en `params.scad`.",
+        "Looks only: one per sensor connector (US1–US5, VL1–VL4, EXP). It plugs onto the connector's pins like a "
+        "Dupont and closes its strip of the opening flush; the connectors with a sensor stay open. To take it "
+        "out, put a nail in the chamfer on one edge. If it falls out or goes in too hard, change `blank_pin_d` "
+        "(1.0 mm) in `params.scad`."),
+       ("Opcional: las de los conectores que no uses (o `blanks_all.stl`, las diez).",
+        "Optional: those of the connectors you don't use (or `blanks_all.stl`, all ten)."),
+       ("Cara vista sobre la cama, del color de la pared.", "Visible face on the bed, in the wall's colour.")),
       ]),
     (("3 · Marco trasero (elige uno)", "3 · Back frame (pick one)"),
      ("Cierra la ventana de la trasera alrededor de los USB y el Ethernet de la Pi. La Pi 4 y la Pi 5 tienen "

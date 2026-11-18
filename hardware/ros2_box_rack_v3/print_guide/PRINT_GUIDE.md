@@ -16,6 +16,7 @@ Which files to print and when to pick one or another. Only for the rack box (`ha
 - **One back frame:** `frame_pi4.stl` or `frame_pi5.stl`, for your Raspberry Pi.
 - **HDMI on the back (optional):** `hdmi_holder.stl` or `hdmi_cover.stl`, or neither (see its section).
 - **Ears and blanks:** 5 × `ear.stl` (4 and 1 spare) and 4 × `ear_blank.stl`.
+- **Connector blanks (optional):** those in `blanks/` for the connectors you don't use.
 
 ### Which wall?
 
@@ -180,6 +181,18 @@ The same with any wall.
 **When:** Always: 4.
 
 **How to print:** Flat, visible face on the bed.
+
+### Blanks for the unused connectors
+
+<img src="img/blanks_all.png" alt="Blanks for the unused connectors" width="480">
+
+**Files:** `stl/blanks/blank_US1.stl … blank_EXP.stl` · `stl/blanks/blanks_all.stl`
+
+**What it is:** Looks only: one per sensor connector (US1–US5, VL1–VL4, EXP). It plugs onto the connector's pins like a Dupont and closes its strip of the opening flush; the connectors with a sensor stay open. To take it out, put a nail in the chamfer on one edge. If it falls out or goes in too hard, change `blank_pin_d` (1.0 mm) in `params.scad`.
+
+**When:** Optional: those of the connectors you don't use (or `blanks_all.stl`, all ten).
+
+**How to print:** Visible face on the bed, in the wall's colour.
 
 ## 3 · Back frame (pick one)
 

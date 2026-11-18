@@ -21,4 +21,5 @@ else if (pieza == "wall_led_no_ams") montada() s("no_ams/wall_led_no_ams", WHITE
 else if (pieza == "inlays") montada(back = false) { s("no_ams/inlay_navy", NAVY); s("no_ams/inlay_blue", BLUE); s("no_ams/inlay_grey", GREY); }
 else if (pieza == "led_lenses") s("leds/led_lenses", LENS);
 else if (pieza == "push_rod") s("push_rod", ROD);
+else if (pieza == "blanks_all") s("blanks/blanks_all", WHITE);
 else s(pieza, WHITE);       // base, tapa, frame_pi4, frame_pi5, hdmi_holder, hdmi_cover
