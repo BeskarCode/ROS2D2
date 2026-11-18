@@ -32,7 +32,10 @@ def generate_launch_description():
                  parameters=[{"laser_scan_topic": "/scan", "odom_topic": "/odom_rf2o",
                               "publish_tf": False,           # odom -> base_link comes from the dead reckoning
                               "base_frame_id": "base_link", "odom_frame_id": "odom",
-                              "init_pose_from_topic": "", "freq": 10.0}])] if _has("rf2o_laser_odometry") else []
+                              "init_pose_from_topic": "", "freq": 10.0}],
+                 # rf2o logs every scan at INFO (and "Waiting for laser_scans" at WARN, 10 a second,
+                 # with the lidar unplugged): that filled the journal and cost CPU on the Pi
+                 arguments=["--ros-args", "--log-level", "rf2o_laser_odometry:=error"])] if _has("rf2o_laser_odometry") else []
     return LaunchDescription([
         # nav_config, not config: a parent launch's own "config" argument would leak into it
         DeclareLaunchArgument("nav_config", default_value=default,
