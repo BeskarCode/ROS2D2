@@ -156,10 +156,16 @@ static bool startCamera() {
   sensor_t *s = esp_camera_sensor_get();
   s->set_vflip(s, CAM_VFLIP);
   s->set_hmirror(s, CAM_HMIRROR);
-  if (CAM_LOW_LIGHT) {                      // indoors: let the sensor expose and amplify more
-    s->set_aec2(s, 1);
+  Serial.printf("Camera sensor PID 0x%04x\n", s->id.PID);
+  if (CAM_LOW_LIGHT && s->id.PID == OV2640_PID) {   // indoors: let the OV2640 expose and amplify more
+    s->set_aec2(s, 1);                              // (on an OV5640 the same settings turn the picture purple)
     s->set_ae_level(s, 2);
     s->set_gainceiling(s, GAINCEILING_64X);
+  } else if (s->id.PID == OV5640_PID) {
+    s->set_whitebal(s, 1);                          // the OV5640's own automatic white balance and exposure
+    s->set_awb_gain(s, 1);
+    s->set_exposure_ctrl(s, 1);
+    s->set_gain_ctrl(s, 1);
   }
   return true;
 }
