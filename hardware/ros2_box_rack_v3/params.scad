@@ -127,6 +127,13 @@ pinch = 2.5;                         // free on both long sides of each housing,
 // the bays on the board (name, bx0, by0, bx1, by1), minus the keep-outs (columns, lenses, rod guide, OLED window + tunnel)
 pico_bays = [["US", -2, 8, 19, 56.5], ["VL", 52, 6, 72, 55], ["EXP", 24.5, 62.6, 43, 74]];
 bay_keep = 0.4;  bay_r = 1.5;
+// blanks for the unused connectors (blanks.scad): one per Dupont row above, same order
+blank_names = ["US1", "US2", "US3", "US4", "US5", "VL1", "VL2", "VL3", "VL4", "EXP"];
+blank_bays = [0, 0, 0, 0, 0, 1, 1, 1, 1, 2];   // which of pico_bays each one sits in
+blank_fit = 0.2;                     // round the plate, per side (0.4 seam between two blanks)
+blank_pin_d = 1.0;  blank_pin_depth = 7;   // holes for the 0.64 square pins: tighter if they fall out, wider if too hard
+blank_air = 0.3;                     // stem's end to the header's plastic
+blank_notch = 0.8;                   // 45 deg chamfer on one edge, outside: room for a nail to pull it out
 
 // --- derived ------------------------------------------------------------------------------------
 function pico_x() = wall + pico_gap;                       // board's component face

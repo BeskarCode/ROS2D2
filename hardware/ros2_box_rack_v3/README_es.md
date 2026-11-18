@@ -58,6 +58,7 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 | `stl/frame_pi5.stl` | marco trasero para la Pi 5 | cara exterior sobre la cama |
 | `stl/ear.stl` | oreja de fijación: imprime 5 (4 y 1 de repuesto) | de canto, el perfil de la L sobre la cama |
 | `stl/ear_blank.stl` | tapa ciega para los rebajes sin oreja: imprime 4 | plana, cara vista sobre la cama |
+| `stl/blanks/blank_US1.stl` … `blank_EXP.stl` | opcional, solo estética: una tapa por cada conector de sensor que no uses (US1–US5, VL1–VL4, EXP); se clava en los pines del conector y cierra a ras su franja de la abertura. `blanks_all.stl` lleva las diez en una placa | cara vista sobre la cama, color de la pared |
 
 PETG, 0,2 mm, boquilla 0,4, sin soportes.
 

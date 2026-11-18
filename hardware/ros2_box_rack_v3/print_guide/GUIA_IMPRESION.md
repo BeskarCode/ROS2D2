@@ -16,6 +16,7 @@ Qué ficheros imprimir y cuándo elegir uno u otro. Solo para la caja rack (`har
 - **Un marco trasero:** `frame_pi4.stl` o `frame_pi5.stl`, según tu Raspberry Pi.
 - **HDMI trasero (opcional):** `hdmi_holder.stl` o `hdmi_cover.stl`, o ninguno (ver su apartado).
 - **Orejas y tapas ciegas:** 5 × `ear.stl` (4 y 1 de repuesto) y 4 × `ear_blank.stl`.
+- **Tapas de conectores (opcional):** las de `blanks/` de los conectores que no uses.
 
 ### ¿Qué pared?
 
@@ -180,6 +181,18 @@ Las mismas con cualquier pared.
 **Cuándo:** Siempre: 4.
 
 **Cómo imprimir:** Plana, cara vista sobre la cama.
+
+### Tapas de los conectores sin usar
+
+<img src="img/blanks_all.png" alt="Tapas de los conectores sin usar" width="480">
+
+**Ficheros:** `stl/blanks/blank_US1.stl … blank_EXP.stl` · `stl/blanks/blanks_all.stl`
+
+**Qué es:** Solo estética: una por conector de sensor (US1–US5, VL1–VL4, EXP). Se clava en los pines del conector como un Dupont y cierra a ras su franja de la abertura; los conectores con sensor quedan abiertos. Para quitarla, mete la uña en el chaflán de un borde. Si se cae o entra muy dura, ajusta `blank_pin_d` (1,0 mm) en `params.scad`.
+
+**Cuándo:** Opcional: las de los conectores que no uses (o `blanks_all.stl`, las diez).
+
+**Cómo imprimir:** Cara vista sobre la cama, del color de la pared.
 
 ## 3 · Marco trasero (elige uno)
 

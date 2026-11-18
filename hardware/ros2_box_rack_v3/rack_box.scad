@@ -5,7 +5,7 @@
 // frame_pi4, frame_pi5; the LED face: wall_led, wall_led_monocolor, logo_navy_led,
 // logo_blue_led, logo_grey_led; its translucent lenses: led_lenses; HDMI on the back: hdmi_holder
 // (FPC kit holder) or hdmi_cover (blank cover); the LED face without AMS: wall_led_no_ams and its fillings
-// inlay_navy, inlay_blue, inlay_grey.
+// inlay_navy, inlay_blue, inlay_grey; blanks for the unused connectors: blank (-D bi=0..9) or blanks_all.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -17,10 +17,11 @@ include <fasteners.scad>
 include <light_pipes.scad>
 include <hdmi_fpc.scad>
 include <no_ams.scad>
+include <blanks.scad>
 
 part = "wall";
 ga = "pico";  gb = "pi";  led = "VL1";
-dz = 0;  press = 0;  colour = "navy";  kind = "all";  gap = 0;  model = "pi4";  leds = 0;  pp = "pared";
+dz = 0;  press = 0;  colour = "navy";  kind = "all";  gap = 0;  model = "pi4";  leds = 0;  pp = "pared";  bi = 0;
 
 module dot() { cube(0.01); }
 module printed() { pared(); base(); tapa(); marco(model); }
@@ -62,6 +63,20 @@ else if (part == "check_bay_vs_keepouts") intersection() {
     union() { pico_columns(); rod_guide(); oled_tunnel(); scale([20, 1, 1]) oled_window(); }
 }
 // --- main face ---
+// --- connector blanks ---
+else if (part == "blank") print_blank(bi);
+else if (part == "blanks_all") blanks_all();
+else if (part == "blank_montado") blank(bi);
+else if (part == "echo_blanks") { echo("blank_names", blank_names); echo("pico_x", pico_x()); echo("blank_air", blank_air); dot(); }
+else if (part == "check_blank_vs_wall") intersection() { blank(bi); pared(leds = leds == 1); }
+else if (part == "check_blank_pinch") intersection() {
+    blank(bi);
+    for (j = [0 : len(dupont_rows) - 1]) if (j != bi) let(r = dupont_rows[j], a = pico2world(r[2], r[3] + pinch), c = pico2world(r[0], r[1] - pinch))
+        translate([-20, a[1], a[2]]) cube([wall + 3 + 20, c[1] - a[1], c[2] - a[2]]);
+}
+else if (part == "check_blank_pins") intersection() { blank(bi); blank_pins(bi); }
+else if (part == "bays_slab") yz_to_face(0, wall) bays_2d();
+else if (part == "check_bays_open_with_blanks") difference() { yz_to_face(0, wall) bays_2d(); for (i = [0 : len(dupont_rows) - 1]) blank(i); }
 else if (part == "wall") print_pared() pared();
 else if (part == "wall_monocolor") print_pared() pared(logo_depth_mono);
 else if (part == "logo_navy") print_pared() logo_svg("navy");
