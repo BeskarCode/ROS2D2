@@ -14,7 +14,7 @@ import math
 from dataclasses import dataclass, field
 
 from r2_nav.nav_core import (DRIVE_UNITS_PER_MPS, SIDE_SLOW_MIN, TURN_UNITS_PER_RADPS, braking, choose_heading,
-                             clearance, floor_problem, is_floor, is_lidar, nearest_ahead, points_from, ramp, wrap,
+                             clearance, floor_problem, is_floor, is_lidar, nearest_ahead, points_from, ramp, sees, wrap,
                              stop_distances)
 
 STALE = 0.3                  # s: an older marker counts as lost
@@ -121,7 +121,8 @@ class Follower:
         cfg, f = self.cfg, self.fcfg
         d = FollowDecision()
         front = self._front()
-        if scan_xy is None and not any(n in ranges for n in front):
+        look = lambda b: sees(self.sensors, b, scan_xy is not None, ranges)   # noqa: E731
+        if not look(0.0):                      # nothing looks ahead: it does not move blind
             self.blocked_since = self.wiggle_since = None
             return self._stop(d, "no data")
 
@@ -171,7 +172,7 @@ class Follower:
         heading = bearing
         # something in the way (not the person) before slow_from: steer round it like the navigator
         if R <= direct < R + cfg["slow_from"] and not (dist is not None and direct >= dist - 0.1):
-            heading, clear = choose_heading(pts, bearing, cfg)
+            heading, clear = choose_heading(pts, bearing, cfg, look)
         stops = stop_distances(self.sensors, cfg)
         brake = braking(self.v, cfg)
         too_close = any(ranges.get(n) is not None and stops[n] > 0 and ranges[n] < stops[n] + brake for n in front)
@@ -180,6 +181,8 @@ class Follower:
                 self.floor_seen.add(n)
             if is_floor(s) and n in self.floor_seen and n in ranges and floor_problem(s, ranges[n]):
                 too_close = True
+        if not look(heading):                  # only towards where a sensor looks: else turn first
+            v_want = 0.0
         slow = lambda x: max(0.0, min(1.0, (x - R) / cfg["slow_from"]))   # noqa: E731
         v_want = min(v_want, vmax * min(slow(clear), max(SIDE_SLOW_MIN, slow(nearest_ahead(pts))))
                      * max(0.0, math.cos(heading)))

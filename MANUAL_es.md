@@ -100,6 +100,14 @@ ser menor de 0,40 m (medio cuerpo son 0,36). Un cambio se aplica al momento (pru
 Hasta que guardes, R2 usa los de por defecto; un ajuste cambiado respecto al de por defecto sale en
 ámbar.
 
+**Solo donde ve**: en todos los modos automáticos R2 solo avanza hacia direcciones que cubre algún
+sensor en uso y enviando datos, según dónde lo hayas colocado en Setup -> Sensors (la dirección y el
+campo de visión de cada uno; no cuentan los sectores ciegos del lidar ni los sensores de suelo). Para
+ir hacia delante necesita algo que mire al frente; para ir hacia donde no ve ningún sensor primero
+gira y avanza cuando un sensor ya mira hacia allí. Para ir marcha atrás necesita un sensor trasero o
+un lidar que vea detrás, con el camino libre: sin eso no retrocede, se para y gira (el estado dice
+*no sensor looks behind*). Si nada mira al frente, se queda parado.
+
 **Solo en simulación**:
 - **Sala**: carga un salón (sofá, patas de mesa y sillas, una caja baja), un pasillo estrecho con
   puerta, varias salas unidas por puertas o un evento con gente (una con la camiseta del color) y

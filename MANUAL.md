@@ -94,6 +94,14 @@ A change applies at once (try it in the simulator); **Save** keeps it in `~/.con
 **Defaults** brings back the package's values. Until you save, R2 uses the defaults; a setting you
 changed from its default shows in amber.
 
+**Only where it can see**: in every automatic mode R2 only drives towards directions that a sensor
+in use and reporting covers, as placed in Setup -> Sensors (each one's direction and field of view;
+the lidar's blind sectors and floor sensors do not count). Forward needs something looking ahead; to
+head somewhere no sensor sees it turns first and drives once a sensor looks there. Backing up needs a
+rear sensor or a lidar that sees behind, with the way free: without it R2 does not back up, it stops
+and turns instead (the status says *no sensor looks behind*). With nothing looking ahead it stays
+stopped.
+
 **Only in simulation**:
 - **Room**: load a living room (sofa, table and chair legs, a low box), a narrow corridor with a
   door, several rooms joined by doors, or an event with people (one wearing the colour) and
