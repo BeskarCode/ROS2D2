@@ -78,6 +78,9 @@ TURN_UNITS_PER_RADPS = 30  # and rad/s * 30
 SIDE_SLOW_MIN = 0.3        # things beside the path slow R2 down to this fraction at most
 FLOOR_NEAR = 0.8         # floor sensor reading below 80% of the floor: something low in the way
 FLOOR_FAR = 1.4          # above 140% of the floor (or no echo): a step down or a hole
+REAR_ROOM = 0.15         # m behind the body that must be free (and seen) to back up
+NO_VIEW_AHEAD = "no sensor looks ahead (lidar or front sensor reporting): not moving where it cannot see"
+NO_VIEW_BEHIND = "no sensor looks behind: not backing up where it cannot see"
 
 
 class NavConfigError(ValueError):
@@ -184,6 +187,25 @@ def floor_problem(s, d):
 
 def is_lidar(s):
     return s["type"] == "rplidar_c1"
+
+
+TYPE_FOV = {"rplidar_c1": 200.0, "vl53l0x": 25.0, "hcsr04": 30.0}   # deg, as r2_sensors.config
+
+
+def sees(sensors, bearing, scan_on, ranges):
+    """True when a sensor that is reporting (the lidar while it scans, a distance sensor in
+    `ranges`) looks along this bearing (base_link, rad, 0 = ahead, + = left). Floor sensors and the
+    lidar's blind sectors do not count. R2 only drives where something can see."""
+    for n, s in sensors.items():
+        if is_floor(s) or (is_lidar(s) and not scan_on) or (not is_lidar(s) and n not in ranges):
+            continue
+        rel = math.degrees(wrap(bearing - math.radians(s.get("yaw_deg", 0.0))))
+        if abs(rel) > (s.get("fov_deg") or TYPE_FOV.get(s["type"], 25.0)) / 2 + 1e-6:
+            continue
+        if is_lidar(s) and any((rel - a) % 360 <= (b - a) % 360 for a, b in s.get("blind_sectors", [])):
+            continue
+        return True
+    return False
 
 
 def to_circle(s, radius):
@@ -293,17 +315,20 @@ def inside_ahead(points, radius, cone_deg=60):
     return best
 
 
-def choose_heading(points, goal_bearing, cfg):
-    """The heading (-90..+90 deg, 10 deg steps) that best mixes 'towards the goal' and 'free'."""
+def choose_heading(points, goal_bearing, cfg, allowed=None):
+    """The heading (-90..+90 deg, 10 deg steps) that best mixes 'towards the goal' and 'free'.
+    allowed(heading) -> bool leaves out the headings no sensor looks along (0.0, 0.0 if none is)."""
     margin = cfg["safety_radius"] + cfg["slow_from"]
     best = None
     for o in range(-90, 91, 10):
         h = math.radians(o)
+        if allowed is not None and not allowed(h):
+            continue
         c = clearance(points, h)
         cost = abs(wrap(h - goal_bearing)) / math.pi + (max(0.0, margin - c) * 2.5) + abs(o) / 900
         if best is None or cost < best[2]:
             best = (h, c, cost)
-    return best[0], best[1]
+    return (0.0, 0.0) if best is None else (best[0], best[1])
 
 
 # ---------- the navigator ----------
@@ -335,6 +360,7 @@ class Navigator:
         self.floor_seen = set()        # floor sensors that have given a reading since start-up
         self.forward_th = None         # Go forward: the heading it travels along (odom), or None
         self.brake = 0.0               # m it needs to stop at the speed it goes now
+        self._sees = lambda b: False   # set every step: does a reporting sensor look along bearing b
 
     def _reset_try_state(self):
         self.phase = None
@@ -412,8 +438,8 @@ class Navigator:
     def _step_forward(self, now, pose, scan_xy, ranges, stops, d):
         """Go forward: one decision (see start_forward)."""
         cfg = self.cfg
-        if scan_xy is None and not any(n in ranges for n in self._front()):
-            d.state, d.why, d.hard_stop = "no data", "no lidar and no front sensor reporting: not moving blind", True
+        if not self._sees(0.0):
+            d.state, d.why, d.hard_stop = "no data", NO_VIEW_AHEAD, True
             return d
         th = pose[2]
         pts, too_close, floor_why = self._sense(now, scan_xy, ranges, stops, d)
@@ -445,7 +471,7 @@ class Navigator:
                     d.why = f"STOP: {too_close}{': ' + floor_why if floor_why else ''}; " + d.why
                 return d
         want = wrap(self.forward_th - th)
-        heading, clear = choose_heading(pts, want, cfg)
+        heading, clear = choose_heading(pts, want, cfg, self._sees)
         # boxed in, the only way is well off to a side, or not getting anywhere: search slowly
         x, y = pose[0], pose[1]
         if self.moved_at is None or math.hypot(x - self.moved_at[1], y - self.moved_at[2]) >= 0.15:
@@ -475,6 +501,16 @@ class Navigator:
         return d
 
     def step(self, now, pose, scan_xy, ranges, auto_on, speed=0.0, lost=()):
+        """See _step. Whatever it decides, it never drives forward with nothing looking ahead nor
+        backwards with nothing looking behind: it stops."""
+        self._sees = lambda b: sees(self.sensors, b, scan_xy is not None, ranges)   # noqa: E731
+        d = self._step(now, pose, scan_xy, ranges, auto_on, speed, lost)
+        for blind, why in ((d.v > 0 and not self._sees(0.0), NO_VIEW_AHEAD), (d.v < 0 and not self._sees(math.pi), NO_VIEW_BEHIND)):
+            if blind:
+                d.v, d.hard_stop, d.why = 0.0, True, why
+        return d
+
+    def _step(self, now, pose, scan_xy, ranges, auto_on, speed=0.0, lost=()):
         """One decision. pose: (x, y, th) in odom, or None with no odometry. scan_xy: lidar points
         in base_link, or None when the lidar is silent. ranges: {name: metres | None (sees
         nothing)} for the sensors that are reporting. lost: sensors that reported and went silent:
@@ -515,8 +551,8 @@ class Navigator:
             d.why = self.gave_up or "no goal"
             d.hard_stop = bool(self.gave_up)
             return d
-        if scan_xy is None and not any(n in ranges for n in front):
-            d.state, d.why, d.hard_stop = "no data", "no lidar and no front sensor reporting: not moving blind", True
+        if not self._sees(0.0):
+            d.state, d.why, d.hard_stop = "no data", NO_VIEW_AHEAD, True
             return d
 
         x, y, th = pose
@@ -530,7 +566,7 @@ class Navigator:
             return d
         want = wrap(math.atan2(gy - y, gx - x) - th)
         pts, too_close, floor_why = self._sense(now, scan_xy, ranges, stops, d)
-        heading, clear = choose_heading(pts, want, cfg)
+        heading, clear = choose_heading(pts, want, cfg, self._sees)
 
         R = cfg["safety_radius"]
         wm, vmax = self._limits()
@@ -573,7 +609,11 @@ class Navigator:
         # when blocked: a sequence that runs to its end before heading for the goal again
         rear = self._rear()
         rear_d = ranges.get(rear) if rear else None
-        rear_free = rear is not None and rear in ranges and (rear_d is None or rear_d > max(stops.get(rear, 0), 0.2))
+        # backing up needs something looking behind (a rear sensor or a lidar that sees there) and
+        # nothing there: without a view behind it does not back up, it stops and turns instead
+        see_back = self._sees(math.pi)
+        rear_free = (see_back and clearance(pts, math.pi) > HALF_WIDTH + REAR_ROOM
+                     and (rear is None or rear not in ranges or rear_d is None or rear_d > max(stops.get(rear, 0), 0.2)))
         if blocked and self.phase is None:
             mode = cfg["on_blocked"]
             self.phase = "reverse" if mode == "reverse" and cfg["allow_reverse"] else ("wait" if mode == "wait" else "turn")
@@ -612,6 +652,8 @@ class Navigator:
                     why = f"keeping the safety circle clear: something {intruder[2]:.2f} m away ahead, turning {side}"
                 else:
                     why = f"turning {side} until the way is clear"
+                if cfg["on_blocked"] == "reverse" and cfg["allow_reverse"] and not see_back:
+                    why += " (no sensor looks behind: not backing up)"
             else:
                 self.phase, self.turn_dir, self.free_t = None, 0, 0.0
         d.v, d.w, d.state, d.why, d.heading = v, w, state, why, heading
