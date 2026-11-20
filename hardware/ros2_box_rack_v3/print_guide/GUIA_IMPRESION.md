@@ -32,6 +32,15 @@ Qué ficheros imprimir y cuándo elegir uno u otro. Solo para la caja rack (`har
 
 PETG, capa de 0,2 mm, boquilla de 0,4, sin soportes, salvo donde se indica otra cosa. Los insertos térmicos y los tornillos son los mismos con cualquier pared: mira la guía de montaje.
 
+## Cambios del 20-11-2026 (si ya imprimiste la caja)
+
+- **Lentillas:** `leds/led_lenses.stl` y `leds/led_lenses_cone.stl` son nuevas: Ø 4,4, el borde lleva el chaflán de la boca y entran con 0,15 mm de holgura. Las antiguas quedaban sueltas: reimprímelas junto con la pared.
+- **Paredes con LEDs (C, D, E, F, G):** el hueco de cada lentilla es más pequeño y tiene 0,6 mm de pared entera alrededor del chaflán (antes las bahías y la ventana de la OLED lo abrían). No valen con las lentillas nuevas: reimprime la tuya.
+- **Paredes sin LEDs (A, B):** solo cambia el borde de la ventana de la OLED junto al pulsador (1 mm más corto). La que ya tengas sirve: no hace falta reimprimirla.
+- **Sin AMS (D):** el hueco del logo tiene 0,3 mm de holgura por lado y cada relleno es 0,1 mm más pequeño por lado; los antiguos no entraban. Reimprime `no_ams/wall_led_no_ams.stl` y los 3 rellenos.
+- **Tapas de conectores (`blanks/`):** agujeros de los pines de 1,3 mm con chaflán de entrada (los de 1,0 no entraban); la de EXP es algo más grande. Reimprime las que uses.
+- **Sin cambios:** base, carcasa, pulsador, marcos, HDMI, orejas y tapas ciegas.
+
 ## 1 · Pared principal (elige una)
 
 La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por donde se conectan los sensores desde fuera. Las siete tienen los mismos insertos y encajan igual con la base y la tapa: solo cambian el logo y los LEDs.
