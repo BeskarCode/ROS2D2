@@ -11,8 +11,8 @@ Qué ficheros imprimir y cuándo elegir uno u otro. Solo para la caja rack (`har
 ## Qué imprimir
 
 - **Siempre:** `base.stl`, `shell.stl` y `push_rod.stl`.
-- **Una pared principal** de las cinco opciones (tabla de abajo).
-- **Lentillas** `leds/led_lenses.stl`, solo si la pared que eliges es con LEDs.
+- **Una pared principal** de las siete opciones (tabla de abajo).
+- **Lentillas**, solo si la pared que eliges es con LEDs: `leds/led_lenses.stl` para C, D y E; `leds/led_lenses_cone.stl` para F y G (las de cono).
 - **Un marco trasero:** `frame_pi4.stl` o `frame_pi5.stl`, según tu Raspberry Pi.
 - **HDMI trasero (opcional):** `hdmi_holder.stl` o `hdmi_cover.stl`, o ninguno (ver su apartado).
 - **Orejas y tapas ciegas:** 5 × `ear.stl` (4 y 1 de repuesto) y 4 × `ear_blank.stl`.
@@ -27,12 +27,14 @@ Qué ficheros imprimir y cuándo elegir uno u otro. Solo para la caja rack (`har
 | Sí | Sí | C · `leds/wall_led_multicolor_bambu.3mf` + lentillas |
 | Sí | No, pero quiero el logo en colores | D · `no_ams/wall_led_no_ams.stl` + 3 rellenos + lentillas |
 | Sí | No, un solo color me vale | E · `leds/wall_led_monocolor.stl` + lentillas |
+| Sí, y sin soportes (cono) | Sí | F · `leds/wall_led_cone_multicolor_bambu.3mf` + lentillas de cono |
+| Sí, y sin soportes (cono) | No, un solo color me vale | G · `leds/wall_led_cone_monocolor.stl` + lentillas de cono |
 
 PETG, capa de 0,2 mm, boquilla de 0,4, sin soportes, salvo donde se indica otra cosa. Los insertos térmicos y los tornillos son los mismos con cualquier pared: mira la guía de montaje.
 
 ## 1 · Pared principal (elige una)
 
-La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por donde se conectan los sensores desde fuera. Las cinco tienen los mismos insertos y encajan igual con la base y la tapa: solo cambian el logo y los LEDs.
+La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por donde se conectan los sensores desde fuera. Las siete tienen los mismos insertos y encajan igual con la base y la tapa: solo cambian el logo y los LEDs.
 
 ### A · Pared con logo en 4 colores
 
@@ -117,6 +119,42 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por
 **Cuándo:** Con cualquier pared con LEDs: C, D o E.
 
 **Cómo imprimir:** PLA translúcido (o PETG transparente), discos planos sobre la cama.
+
+### F · Pared con LEDs con cono, logo en 4 colores
+
+<img src="img/wall_led_cone_multicolor.png" alt="F · Pared con LEDs con cono, logo en 4 colores" width="480">
+
+**Ficheros:** `stl/leds/wall_led_cone_multicolor_bambu.3mf` · `stl/leds/wall_led_cone_multicolor.3mf`
+
+**Qué es:** La pared C, pero el fondo del hueco de cada lentilla es un cono a 45° que baja de Ø 5,9 hasta el tubo (Ø 3,4), en vez de un techo plano de 1,25 mm que queda en el aire al imprimir. Por fuera se ve igual.
+
+**Cuándo:** Quieres los LEDs con AMS y que los agujeros salgan limpios sin soportes. Es una propuesta: aún sin imprimir.
+
+**Cómo imprimir:** Como C. Necesita las lentillas de cono, no las planas.
+
+### G · Pared con LEDs con cono de un color
+
+<img src="img/wall_led_cone_monocolor.png" alt="G · Pared con LEDs con cono de un color" width="480">
+
+**Ficheros:** `stl/leds/wall_led_cone_monocolor.stl`
+
+**Qué es:** La pared F con el logo grabado 1 mm.
+
+**Cuándo:** Quieres los LEDs sin soportes, no tienes AMS y un solo color te vale. Propuesta: aún sin imprimir.
+
+**Cómo imprimir:** Cara del logo sobre la cama, un solo filamento. Necesita las lentillas de cono.
+
+### Lentillas de cono
+
+<img src="img/led_lenses_cone.png" alt="Lentillas de cono" width="480">
+
+**Ficheros:** `stl/leds/led_lenses_cone.stl`
+
+**Qué es:** 13 lentillas (11 y 2 de repuesto): el disco a ras de la pared y debajo el mismo cono que el hueco, con 0,1 mm de holgura en el diámetro; se centran solas y llevan la luz del tubo a la cara.
+
+**Cuándo:** Solo con las paredes F y G (no valen para C, D ni E).
+
+**Cómo imprimir:** PLA translúcido, disco sobre la cama y cono hacia arriba.
 
 ## 2 · Piezas comunes (siempre)
 
@@ -258,3 +296,4 @@ Si usas un **HDMI hembra de panel con brida y 2 tornillos M3**, no hace falta im
 |---|---|
 | `wall.stl`, `logo_navy.stl`, `logo_blue.stl`, `logo_grey.stl` | Son las 4 partes que van dentro de `wall_multicolor*.3mf`. Úsalas solo para montar tu propio proyecto multicolor en un laminador que no lea el 3MF. |
 | `leds/wall_led.stl`, `leds/logo_*_led.stl` | Lo mismo para `wall_led_multicolor*.3mf`. |
+| `leds/wall_led_cone.stl` | Lo mismo para `wall_led_cone_multicolor*.3mf` (con los mismos `logo_*_led.stl`). |

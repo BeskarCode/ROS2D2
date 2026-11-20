@@ -84,6 +84,26 @@ con un chaflán de 0,4 mm, va una lentilla de PLA translúcido a ras de la pared
 (si alguna baila, una gota de pegamento). Al montar, presenta la placa sin tornillos sobre sus 4
 columnas: debe asentar sin balancearse; si se balancea, algún tubo toca su LED: lija la punta.
 
+### Propuesta: pared con LEDs con cono (sin soportes)
+
+La pared se imprime con la cara exterior sobre la cama, y en la versión de arriba el fondo de cada
+hueco de lentilla es un techo plano de 1,25 mm alrededor del tubo, que queda en el aire. En esta
+propuesta ese fondo es un **cono a 45°** que baja desde el hueco de la lentilla (Ø 5,9) hasta el tubo
+(Ø 3,4): se imprime sin soportes ni puentes. Las lentillas llevan el mismo cono (0,1 mm de holgura en el
+diámetro), así que se centran solas y guían la luz hacia la cara. Todo lo demás es igual que la pared
+con LEDs de arriba (tubos, insertos y los mismos logos `logo_*_led.stl`).
+
+| STL | Qué es | Cómo imprimir |
+|---|---|---|
+| `stl/leds/wall_led_cone_multicolor_bambu.3mf` | pared con LEDs con cono + logo en marino, azul y gris | cara del logo sobre la cama; AMS: 1 blanco, 2 marino, 3 azul, 4 gris |
+| `stl/leds/wall_led_cone_multicolor.3mf` | lo mismo, 3MF genérico | |
+| `stl/leds/wall_led_cone_monocolor.stl` | pared con LEDs con cono, un color, logo grabado 1 mm | cara del logo sobre la cama |
+| `stl/leds/led_lenses_cone.stl` | 13 lentillas con cono (11 y 2 de repuesto) | **PLA translúcido**, disco sobre la cama, cono hacia arriba |
+
+Las lentillas planas (`led_lenses.stl`) no valen para esta pared ni las de cono para la otra.
+
+![Corte: techo plano frente a cono](stl/leds/cone_vs_flat.svg)
+
 ## Pared con LEDs sin AMS (opcional)
 
 La misma pared con LEDs (tubos, lentillas e insertos iguales) para impresoras sin AMS: el logo es un

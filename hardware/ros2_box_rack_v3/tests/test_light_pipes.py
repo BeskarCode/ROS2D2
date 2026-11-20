@@ -100,3 +100,28 @@ def test_lenses_flush_with_the_face():
 def test_lenses_print_flat():
     lo, hi = stl_bbox(run_scad("led_lenses"))
     assert lo[2] == pytest.approx(0, abs=0.01) and hi[2] == pytest.approx(2.3, abs=0.05)
+
+
+# --- the cone version (a 45 deg cone under each lens recess: the face prints face down without supports) ----
+def test_cone_lenses_clear_the_face():
+    assert is_empty("check_lentes_cone_vs_pared")
+
+
+def test_cone_lenses_flush_with_the_face():
+    assert is_empty("check_lentes_cone_flush")
+
+
+def test_cone_bores_open_to_the_led():
+    assert is_empty("check_lp_cone_bores_open")
+
+
+def test_cone_stays_inside_the_wall_and_the_lens_cone_follows_it():
+    v = echo_values("echo_lp_cone")
+    assert v["recess_cone_end"] < v["wall"]                  # the cone ends inside the face, before the tube
+    assert v["lens_cone_end"] == pytest.approx(v["recess_cone_end"] + 0.1, abs=0.01)
+
+
+@pytest.mark.parametrize("p", ["wall_led_cone", "wall_led_cone_monocolor", "led_lenses_cone"])
+def test_cone_parts_print_flat(p):
+    lo, hi = stl_bbox(run_scad(p))
+    assert lo[2] == pytest.approx(0, abs=0.01)

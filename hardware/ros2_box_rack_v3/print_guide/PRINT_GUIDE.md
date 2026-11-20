@@ -11,8 +11,8 @@ Which files to print and when to pick one or another. Only for the rack box (`ha
 ## What to print
 
 - **Always:** `base.stl`, `shell.stl` and `push_rod.stl`.
-- **One main wall** out of the five options (table below).
-- **Lenses** `leds/led_lenses.stl`, only if the wall you pick has LEDs.
+- **One main wall** out of the seven options (table below).
+- **Lenses**, only if the wall you pick has LEDs: `leds/led_lenses.stl` for C, D and E; `leds/led_lenses_cone.stl` for F and G (the cone ones).
 - **One back frame:** `frame_pi4.stl` or `frame_pi5.stl`, for your Raspberry Pi.
 - **HDMI on the back (optional):** `hdmi_holder.stl` or `hdmi_cover.stl`, or neither (see its section).
 - **Ears and blanks:** 5 × `ear.stl` (4 and 1 spare) and 4 × `ear_blank.stl`.
@@ -27,12 +27,14 @@ Which files to print and when to pick one or another. Only for the rack box (`ha
 | Yes | Yes | C · `leds/wall_led_multicolor_bambu.3mf` + lenses |
 | Yes | No, but I want the logo in colour | D · `no_ams/wall_led_no_ams.stl` + 3 fillings + lenses |
 | Yes | No, one colour is fine | E · `leds/wall_led_monocolor.stl` + lenses |
+| Yes, and no supports (cone) | Yes | F · `leds/wall_led_cone_multicolor_bambu.3mf` + cone lenses |
+| Yes, and no supports (cone) | No, one colour is fine | G · `leds/wall_led_cone_monocolor.stl` + cone lenses |
 
 PETG, 0.2 mm layers, 0.4 nozzle, no supports, unless said otherwise. The heat-set inserts and the screws are the same with any wall: see the assembly guide.
 
 ## 1 · Main wall (pick one)
 
-The large wall with the OLED window, the DISPLAY button and the bays where the sensors plug in from outside. All five have the same inserts and fit the base and the shell the same way: only the logo and the LEDs change.
+The large wall with the OLED window, the DISPLAY button and the bays where the sensors plug in from outside. All seven have the same inserts and fit the base and the shell the same way: only the logo and the LEDs change.
 
 ### A · Wall with the logo in 4 colours
 
@@ -117,6 +119,42 @@ The large wall with the OLED window, the DISPLAY button and the bays where the s
 **When:** With any LED wall: C, D or E.
 
 **How to print:** Translucent PLA (or clear PETG), discs flat on the bed.
+
+### F · Cone LED wall, logo in 4 colours
+
+<img src="img/wall_led_cone_multicolor.png" alt="F · Cone LED wall, logo in 4 colours" width="480">
+
+**Files:** `stl/leds/wall_led_cone_multicolor_bambu.3mf` · `stl/leds/wall_led_cone_multicolor.3mf`
+
+**What it is:** Wall C, but each lens recess ends in a 45° cone from Ø 5.9 down to the tube (Ø 3.4) instead of a flat 1.25 mm ceiling printed in mid-air. From outside it looks the same.
+
+**When:** You want the LEDs with an AMS and clean holes with no supports. A proposal: not printed yet.
+
+**How to print:** As C. Needs the cone lenses, not the flat ones.
+
+### G · Single-colour cone LED wall
+
+<img src="img/wall_led_cone_monocolor.png" alt="G · Single-colour cone LED wall" width="480">
+
+**Files:** `stl/leds/wall_led_cone_monocolor.stl`
+
+**What it is:** Wall F with the logo engraved 1 mm.
+
+**When:** You want the LEDs with no supports, no AMS, one colour is fine. A proposal: not printed yet.
+
+**How to print:** Logo face on the bed, one filament. Needs the cone lenses.
+
+### Cone lenses
+
+<img src="img/led_lenses_cone.png" alt="Cone lenses" width="480">
+
+**Files:** `stl/leds/led_lenses_cone.stl`
+
+**What it is:** 13 lenses (11 and 2 spares): the disc flush with the wall and under it the same cone as the recess, with 0.1 mm of play on the diameter; they centre themselves and lead the tube's light to the face.
+
+**When:** Only with walls F and G (they don't fit C, D or E).
+
+**How to print:** Translucent PLA, disc on the bed, cone up.
 
 ## 2 · Common parts (always)
 
@@ -258,3 +296,4 @@ With a **panel HDMI female jack with a flange and 2 M3 screws** nothing needs pr
 |---|---|
 | `wall.stl`, `logo_navy.stl`, `logo_blue.stl`, `logo_grey.stl` | The 4 bodies inside `wall_multicolor*.3mf`. Use them only to build your own multicolour project in a slicer that can't read the 3MF. |
 | `leds/wall_led.stl`, `leds/logo_*_led.stl` | The same for `wall_led_multicolor*.3mf`. |
+| `leds/wall_led_cone.stl` | The same for `wall_led_cone_multicolor*.3mf` (with the same `logo_*_led.stl`). |

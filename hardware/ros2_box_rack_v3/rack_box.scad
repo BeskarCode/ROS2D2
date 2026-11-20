@@ -186,6 +186,20 @@ else if (part == "check_ear_flush") union() {
 // --- light pipes ---
 else if (part == "wall_led") print_pared() pared(leds = true);
 else if (part == "wall_led_monocolor") print_pared() pared(logo_depth_mono, true);
+// the cone version of the LED face and its lenses (same logos as wall_led)
+else if (part == "wall_led_cone") let($lp_cone = true) print_pared() pared(leds = true);
+else if (part == "wall_led_cone_monocolor") let($lp_cone = true) print_pared() pared(logo_depth_mono, true);
+else if (part == "led_lenses_cone") let($lp_cone = true) led_lenses();
+else if (part == "check_lentes_cone_vs_pared") let($lp_cone = true) intersection() { lentes_montadas(); pared(leds = true); }
+else if (part == "check_lentes_cone_flush") let($lp_cone = true) intersection() { lentes_montadas(); translate([-5, 0, 0]) cube([4.99, D, H]); }
+else if (part == "check_lp_cone_bores_open") let($lp_cone = true) intersection() {
+    pared(leds = true);
+    for (i = [0 : len(pico_leds) - 1]) if (led_tube(pico_leds[i])) lp_at(i) translate([0, 0, lp_lens_t + lp_stem_l + 0.1]) cylinder(d = lp_tip_bore - 0.2, h = lp_tip_x() + 1, $fn = 24);
+}
+else if (part == "echo_lp_cone") {
+    echo("lc_z", lc_z); echo("lens_cone_end", lc_z + (lp_lens_d - lp_stem_d) / 2);
+    echo("recess_cone_end", lp_lens_t + 0.05 + (lp_hole - lp_bore) / 2); echo("wall", wall); dot();
+}
 else if (part == "logo_navy_led") print_pared() logo_svg("navy", leds = true);
 else if (part == "logo_blue_led") print_pared() logo_svg("blue", leds = true);
 else if (part == "logo_grey_led") print_pared() logo_svg("grey", leds = true);
