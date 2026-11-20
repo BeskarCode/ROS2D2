@@ -114,6 +114,10 @@ lp_stem_d = 3.1;  lp_stem_l = 1.5;   // its stem, in the tube's bore with 0.15 o
 lp_lens_n = len(pico_leds) + 2;     // 11 + 2 spares on the plate
 lp_chamfer = 0.4;                    // 45 deg chamfer round each recess's mouth: no elephant's foot, the lens drops in
 lp_hole = lp_lens_d + 2 * lp_lens_fit;   // the lens recess on the outside: the dot seen from outside
+// cone version ($lp_cone = true): the recess floor is a 45 deg cone down to the bore, so the face prints
+// face down with no flat overhang round each bore; its lenses carry the same cone (lp_cone_fit of play on the diameter)
+$lp_cone = false;
+lp_cone_fit = 0.1;
 logo_zc_led = logo_zc;               // the same place on the LED face
 led_well_d = 4;                      // nothing but the LED within this circle round it (board ghost)
 
