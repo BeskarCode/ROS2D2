@@ -19,6 +19,9 @@ LOGO_PARTS = ["logo_navy", "logo_blue", "logo_grey"]
 LOGO_LED_PARTS = ["logo_navy_led", "logo_blue_led", "logo_grey_led"]
 PRINT_PARTS = ["wall", *LOGO_PARTS, "wall_monocolor", "push_rod", "base", "shell", "frame_pi4", "frame_pi5",
                "wall_led", *LOGO_LED_PARTS, "wall_led_monocolor", "led_lenses"]
+# the LED face, cone version: a 45 deg cone under each lens recess (prints face down without supports)
+CONE_PARTS = ["wall_led_cone", "wall_led_cone_monocolor", "led_lenses_cone"]
+PRINT_PARTS += CONE_PARTS
 # the LED face without AMS: deep pockets, the fillings printed apart (stl/no_ams/; same lenses as leds/)
 NOAMS_DIR = "no_ams"
 NOAMS_PARTS = ["wall_led_no_ams", "inlay_navy", "inlay_blue", "inlay_grey"]
@@ -33,7 +36,7 @@ BLANKS_DIR = "blanks"
 BLANK_PARTS = [f"blank_{n}" for n in BLANK_NAMES] + ["blanks_all"]
 # the LED version's parts live in their own folder, stl/leds/
 LED_DIR = "leds"
-LED_PARTS = {"wall_led", *LOGO_LED_PARTS, "wall_led_monocolor", "led_lenses"}
+LED_PARTS = {"wall_led", *LOGO_LED_PARTS, "wall_led_monocolor", "led_lenses", *CONE_PARTS}
 
 
 def stl_path(out_dir, part):
@@ -51,7 +54,8 @@ def face_path(out_dir, name):
 
 
 # the multicolour main faces: today's, and the LED face (same colour bodies, other STLs)
-FACES = {"wall_multicolor": ("wall", *LOGO_PARTS), "wall_led_multicolor": ("wall_led", *LOGO_LED_PARTS)}
+FACES = {"wall_multicolor": ("wall", *LOGO_PARTS), "wall_led_multicolor": ("wall_led", *LOGO_LED_PARTS),
+         "wall_led_cone_multicolor": ("wall_led_cone", *LOGO_LED_PARTS)}
 write_3mf = base.write_3mf
 
 

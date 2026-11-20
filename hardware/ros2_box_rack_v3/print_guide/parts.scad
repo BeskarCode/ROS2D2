@@ -20,6 +20,9 @@ else if (pieza == "wall_led_monocolor") montada() s("leds/wall_led_monocolor", W
 else if (pieza == "wall_led_no_ams") montada() s("no_ams/wall_led_no_ams", WHITE);
 else if (pieza == "inlays") montada(back = false) { s("no_ams/inlay_navy", NAVY); s("no_ams/inlay_blue", BLUE); s("no_ams/inlay_grey", GREY); }
 else if (pieza == "led_lenses") s("leds/led_lenses", LENS);
+else if (pieza == "wall_led_cone_multicolor") montada() { s("leds/wall_led_cone", WHITE); logo("_led", "leds/"); }
+else if (pieza == "wall_led_cone_monocolor") montada() s("leds/wall_led_cone_monocolor", WHITE);
+else if (pieza == "led_lenses_cone") s("leds/led_lenses_cone", LENS);
 else if (pieza == "push_rod") s("push_rod", ROD);
 else if (pieza == "blanks_all") s("blanks/blanks_all", WHITE);
 else s(pieza, WHITE);       // base, tapa, frame_pi4, frame_pi5, hdmi_holder, hdmi_cover
