@@ -76,6 +76,33 @@ CHECKLIST = [
      "**Connector blanks (optional):** those in `blanks/` for the connectors you don't use."),
 ]
 
+# what changed since the last published version, for people who already printed it
+CHANGES_TITLE = ("Cambios del 20-11-2026 (si ya imprimiste la caja)", "Changes of 2026-11-20 (if you already printed the box)")
+CHANGES = [
+    ("**Lentillas:** `leds/led_lenses.stl` y `leds/led_lenses_cone.stl` son nuevas: Ø 4,4, el borde lleva el chaflán "
+     "de la boca y entran con 0,15 mm de holgura. Las antiguas quedaban sueltas: reimprímelas junto con la pared.",
+     "**Lenses:** `leds/led_lenses.stl` and `leds/led_lenses_cone.stl` are new: Ø 4.4, the rim carries the mouth's "
+     "chamfer and they go in with 0.15 mm of play. The old ones were loose: reprint them with the wall."),
+    ("**Paredes con LEDs (C, D, E, F, G):** el hueco de cada lentilla es más pequeño y tiene 0,6 mm de pared entera "
+     "alrededor del chaflán (antes las bahías y la ventana de la OLED lo abrían). No valen con las lentillas nuevas: reimprime la tuya.",
+     "**LED walls (C, D, E, F, G):** each lens recess is smaller and has 0.6 mm of whole face round its chamfer "
+     "(the bays and the OLED window used to open it). They do not take the new lenses: reprint yours."),
+    ("**Paredes sin LEDs (A, B):** solo cambia el borde de la ventana de la OLED junto al pulsador (1 mm más corto). "
+     "La que ya tengas sirve: no hace falta reimprimirla.",
+     "**Walls without LEDs (A, B):** only the OLED window's edge by the push rod changes (1 mm shorter). "
+     "The one you have is fine: no need to reprint it."),
+    ("**Sin AMS (D):** el hueco del logo tiene 0,3 mm de holgura por lado y cada relleno es 0,1 mm más pequeño por "
+     "lado; los antiguos no entraban. Reimprime `no_ams/wall_led_no_ams.stl` y los 3 rellenos.",
+     "**No AMS (D):** the logo pocket has 0.3 mm of play per side and each filling is 0.1 mm smaller per side; the "
+     "old ones did not go in. Reprint `no_ams/wall_led_no_ams.stl` and the 3 fillings."),
+    ("**Tapas de conectores (`blanks/`):** agujeros de los pines de 1,3 mm con chaflán de entrada (los de 1,0 no "
+     "entraban); la de EXP es algo más grande. Reimprime las que uses.",
+     "**Connector blanks (`blanks/`):** pin holes 1.3 mm with a lead-in (the 1.0 ones did not go in); the EXP one "
+     "is a little bigger. Reprint the ones you use."),
+    ("**Sin cambios:** base, carcasa, pulsador, marcos, HDMI, orejas y tapas ciegas.",
+     "**Unchanged:** base, shell, push rod, frames, HDMI, ears and ear blanks."),
+]
+
 DECIDE_HEAD = (["¿Ver los LEDs de la placa de la Pico?", "¿Tienes AMS?", "Imprime"],
                ["See the Pico board's LEDs?", "Do you have an AMS?", "Print"])
 DECIDE = ([["No", "Sí", "A · `wall_multicolor_bambu.3mf`"],
@@ -318,6 +345,7 @@ def write_md(lang, path):
     L += ["", f"### {t['which']}", "", "| " + " | ".join(DECIDE_HEAD[i]) + " |", "|---|---|---|"]
     L += ["| " + " | ".join(r) + " |" for r in DECIDE[i]]
     L += ["", t["general"]]
+    L += ["", f"## {CHANGES_TITLE[i]}", ""] + [f"- {c[i]}" for c in CHANGES]
     for k, (title, intro, pieces) in enumerate(SECTIONS):
         L += ["", f"## {title[i]}", "", intro[i]]
         for img, files, name, what, when, how in pieces:
@@ -354,6 +382,7 @@ def write_html(lang, path):
     skip = "".join(f"<tr><td>{e(f)}</td><td>{e(w[i])}</td></tr>" for f, w in NOT_TO_PRINT)
     heads = "".join(f"<th>{html.escape(h)}</th>" for h in DECIDE_HEAD[i])
     checklist = "".join(f"<li>{e(c[i])}</li>" for c in CHECKLIST)
+    changes = "".join(f"<li>{e(c[i])}</li>" for c in CHANGES)
     skip_head = "".join(f"<th>{h}</th>" for h in t["skip_head"])
     doc = f"""<!doctype html><html lang={lang}><meta charset=utf-8><title>{html.escape(t['title'])}</title>
 <style>
@@ -381,6 +410,7 @@ th {{ background: #f0f2f5; }}
 <h2>{t['what']}</h2><ul>{checklist}</ul>
 <h3>{t['which']}</h3><table><tr>{heads}</tr>{rows}</table>
 <p>{e(t['general'])}</p>
+<h2>{e(CHANGES_TITLE[i])}</h2><ul>{changes}</ul>
 {body}
 <h2>{t['skip']}</h2><table><tr>{skip_head}</tr>{skip}</table>
 </html>"""

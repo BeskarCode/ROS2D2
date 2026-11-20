@@ -32,6 +32,15 @@ Which files to print and when to pick one or another. Only for the rack box (`ha
 
 PETG, 0.2 mm layers, 0.4 nozzle, no supports, unless said otherwise. The heat-set inserts and the screws are the same with any wall: see the assembly guide.
 
+## Changes of 2026-11-20 (if you already printed the box)
+
+- **Lenses:** `leds/led_lenses.stl` and `leds/led_lenses_cone.stl` are new: Ø 4.4, the rim carries the mouth's chamfer and they go in with 0.15 mm of play. The old ones were loose: reprint them with the wall.
+- **LED walls (C, D, E, F, G):** each lens recess is smaller and has 0.6 mm of whole face round its chamfer (the bays and the OLED window used to open it). They do not take the new lenses: reprint yours.
+- **Walls without LEDs (A, B):** only the OLED window's edge by the push rod changes (1 mm shorter). The one you have is fine: no need to reprint it.
+- **No AMS (D):** the logo pocket has 0.3 mm of play per side and each filling is 0.1 mm smaller per side; the old ones did not go in. Reprint `no_ams/wall_led_no_ams.stl` and the 3 fillings.
+- **Connector blanks (`blanks/`):** pin holes 1.3 mm with a lead-in (the 1.0 ones did not go in); the EXP one is a little bigger. Reprint the ones you use.
+- **Unchanged:** base, shell, push rod, frames, HDMI, ears and ear blanks.
+
 ## 1 · Main wall (pick one)
 
 The large wall with the OLED window, the DISPLAY button and the bays where the sensors plug in from outside. All seven have the same inserts and fit the base and the shell the same way: only the logo and the LEDs change.
