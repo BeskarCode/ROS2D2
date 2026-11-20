@@ -11,8 +11,9 @@ tab_y = [8, 58];
 top_tab = [10, 10, 7];  top_tab_y = [75, 20];     // under the roof, insert from above
 
 function sw1_world() = pico2world(sw1[0], sw1[1]);
-// window (Y, Z) inner opening; its +Y edge stops short of the push rod's guide
-function oled_win_inner() = let(c = oled_view_center(), r = sw1_world()[1] - guide_od / 2 - 1.6)
+// window (Y, Z) inner opening; its +Y edge stops short of the push rod's guide and of the PWR lens's whole ring
+function pwr_ring_edge() = let(i = search(["PWR"], pico_leds)[0]) pico2world(pico_leds[i][1], pico_leds[i][2])[1] - lp_ring_d() / 2;
+function oled_win_inner() = let(c = oled_view_center(), r = min(sw1_world()[1] - guide_od / 2 - 1.6, pwr_ring_edge()))
     [c[0] - oled_win[0] / 2, c[1] + oled_win_dz - oled_win[1] / 2, min(r, c[0] + oled_win[0] / 2), c[1] + oled_win_dz + oled_win[1] / 2];
 
 // --- logo: SVG x runs towards -Y (to the right seen from outside), SVG y up ------------------------
@@ -95,7 +96,7 @@ function bay_yz(b) = let(a = pico2world(b[3], b[4]), c = pico2world(b[1], b[2]))
 module yz_to_face(x0, h) translate([x0, 0, 0]) rotate([90, 0, 90]) linear_extrude(h) children();   // 2D (Y, Z) -> slab along +X
 module bay_keepouts_2d() {
     for (h = pico_holes) let(p = pico2world(h[0], h[1])) translate([p[1], p[2]]) circle(d = col_d + 2 * bay_keep, $fn = 40);
-    for (l = pico_leds) let(p = pico2world(l[1], l[2])) translate([p[1], p[2]]) circle(d = lp_hole + 2 * bay_keep, $fn = 40);
+    for (l = pico_leds) let(p = pico2world(l[1], l[2])) translate([p[1], p[2]]) circle(d = lp_ring_d(), $fn = 40);   // the land is its own margin
     let(p = sw1_world()) translate([p[1], p[2]]) circle(d = guide_od + 2 * bay_keep, $fn = 40);
     // the OLED window (chamfered on -Y and in Z) and its tunnel's wall on +Y
     let(r = oled_win_inner(), g = wall + bay_keep)

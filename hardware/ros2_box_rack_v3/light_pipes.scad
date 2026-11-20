@@ -34,13 +34,17 @@ module lp_holes(extra = 0) {
 }
 
 // --- the lenses (translucent): a thin disc flush with the face and a stem pressed into the tube ----------
+// its rim carries the mouth's 45 deg chamfer all round, lp_lens_fit off it: the lens fills the chamfer, nothing loose
+module lente_rim() cylinder(d1 = lp_hole + 2 * lp_chamfer - 2 * lp_lens_fit, d2 = lp_lens_d, h = lp_chamfer, $fn = 48);
 module lente() {
+    lente_rim();
     cylinder(d = lp_lens_d, h = lp_lens_t, $fn = 48);
     cylinder(d = lp_stem_d, h = lp_lens_t + lp_stem_l, $fn = 32);
 }
 // cone version: the disc grows into a cone that sits on the recess cone (self-centring) and narrows to the stem
 lc_z = lp_lens_t + 0.05 + (lp_hole - lp_cone_fit - lp_lens_d) / 2;     // where the lens cone starts (its d = lp_lens_d)
 module lente_cono() {
+    lente_rim();
     cylinder(d = lp_lens_d, h = lc_z, $fn = 48);
     translate([0, 0, lc_z - 0.01]) cylinder(d1 = lp_lens_d, d2 = lp_stem_d, h = (lp_lens_d - lp_stem_d) / 2 + 0.01, $fn = 48);
     cylinder(d = lp_stem_d, h = lp_lens_t + lp_stem_l, $fn = 32);

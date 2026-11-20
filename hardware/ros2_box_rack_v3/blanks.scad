@@ -33,6 +33,8 @@ module blank(i) {
         }
         for (p = row_pins(i)) let(w = pico2world(p[0], p[1]))
             translate([blank_stem_x1() - blank_pin_depth, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d = blank_pin_d, h = blank_pin_depth + 1, $fn = 16);
+        for (p = row_pins(i)) let(w = pico2world(p[0], p[1]))      // lead-in at the stem's end
+            translate([blank_stem_x1() - blank_pin_lead, w[1], w[2]]) rotate([0, 90, 0]) cylinder(d1 = blank_pin_d, d2 = blank_pin_d + 2 * blank_pin_lead + 0.02, h = blank_pin_lead + 0.01, $fn = 16);
         // the nail notch: a 45 deg chamfer along that edge, outside
         translate([0, D / 2, edge[2]]) rotate([0, 45, 0]) cube([blank_notch * sqrt(2), D + 2, blank_notch * sqrt(2)], center = true);
     }

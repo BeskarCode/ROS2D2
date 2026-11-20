@@ -80,7 +80,9 @@ of the two faces: the one above or this one. The other parts are the same.
 Each of the board's holes has a dark tube inside, printed with the face, that carries its LED's light
 out without losing it; it ends 0.7 mm above the LED and never touches the board. The Pico's LED is just
 over 1 mm from the face and has no tube, only the hole. In the mouth of each hole, with a 0.4 mm chamfer,
-a translucent PLA lens sits flush with the face with 0.25 mm of play (if one is loose, a drop of glue).
+a translucent PLA lens (Ø 4.4) sits flush with the face with 0.15 mm of play; its rim carries the same chamfer, so it
+fills the mouth all round and does not wobble (if one is loose, a drop of glue).
+The chamfer is closed all round: 0.6 mm of whole face is left round it before any bay starts.
 When assembling, offer the board up without screws onto its 4 columns: it must sit without rocking; if
 it rocks, a tube touches its LED: sand the tip.
 
@@ -88,7 +90,7 @@ it rocks, a tube touches its LED: sand the tip.
 
 The face prints with its outer side on the bed, and in the version above each lens recess ends in a
 flat 1.25 mm ceiling round the tube, printed in mid-air. In this proposal that floor is a **45° cone**
-from the lens recess (Ø 5.9) down to the tube (Ø 3.4): it prints with no supports and no bridging. The
+from the lens recess (Ø 4.9) down to the tube (Ø 3.4): it prints with no supports and no bridging. The
 lenses carry the same cone (0.1 mm of play on the diameter), so they centre themselves and lead the
 light to the face. Everything else is as the LED face above (tubes, inserts and the same `logo_*_led.stl`).
 
@@ -117,7 +119,7 @@ the lenses are `stl/leds/led_lenses.stl`.
 | `stl/no_ams/inlay_grey.stl` | the dots' frame | grey, visible face on the bed |
 
 The fillings come out in place, as seen from outside but mirrored (visible face down): turn them over
-and press them into their pocket. They have 0.1 mm of play per side and sit flush with the face; fix
+and press them into their pocket. The pocket has 0.3 mm of play per side and each filling is 0.1 mm smaller per side (a small seam between colours); they sit flush with the face; fix
 them with a drop of cyanoacrylate. The grey frame is wider than in the AMS version (1.7 mm inwards, 1.2
 under the bottom row of dots) so it prints and handles on its own. 0.2 mm layers (7 layers), no brim.
 

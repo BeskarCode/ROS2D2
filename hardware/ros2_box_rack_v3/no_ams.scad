@@ -14,6 +14,6 @@ module na_2d(c) {
 module na_put(depth) multmatrix([[0, 0, -1, depth], [-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]]) linear_extrude(depth) children();
 
 module na_pockets(depth = na_depth, grow = 0) na_put(depth) offset(delta = na_fit + grow) union() for (c = logo_colours) na_2d(c);
-module relleno(c) na_put(na_depth) na_2d(c);
+module relleno(c) na_put(na_depth) offset(delta = -na_shrink) na_2d(c);
 
 module pared_no_ams() pared(leds = true, noams = true);
