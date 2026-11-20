@@ -32,7 +32,8 @@ PART = "55,0,25"         # the rest in print orientation
 # image -> camera
 VIEWS = {"wall_multicolor": WALL, "wall_monocolor": WALL, "wall_led_multicolor": WALL,
          "wall_led_monocolor": WALL, "wall_led_no_ams": WALL, "inlays": WALL,
-         "led_lenses": "35,0,25", "base": PART, "shell": "235,0,25", "push_rod": PART,
+         "wall_led_cone_multicolor": WALL, "wall_led_cone_monocolor": WALL,
+         "led_lenses": "35,0,25", "led_lenses_cone": "35,0,25", "base": PART, "shell": "235,0,25", "push_rod": PART,
          "frame_pi4": PART, "frame_pi5": PART, "hdmi_holder": PART, "hdmi_cover": PART,
          "ear": "55,0,35", "ear_blank": PART, "blanks_all": PART}
 
@@ -59,10 +60,12 @@ T = {
 
 CHECKLIST = [
     ("**Siempre:** `base.stl`, `shell.stl` y `push_rod.stl`.", "**Always:** `base.stl`, `shell.stl` and `push_rod.stl`."),
-    ("**Una pared principal** de las cinco opciones (tabla de abajo).",
-     "**One main wall** out of the five options (table below)."),
-    ("**Lentillas** `leds/led_lenses.stl`, solo si la pared que eliges es con LEDs.",
-     "**Lenses** `leds/led_lenses.stl`, only if the wall you pick has LEDs."),
+    ("**Una pared principal** de las siete opciones (tabla de abajo).",
+     "**One main wall** out of the seven options (table below)."),
+    ("**Lentillas**, solo si la pared que eliges es con LEDs: `leds/led_lenses.stl` para C, D y E; "
+     "`leds/led_lenses_cone.stl` para F y G (las de cono).",
+     "**Lenses**, only if the wall you pick has LEDs: `leds/led_lenses.stl` for C, D and E; "
+     "`leds/led_lenses_cone.stl` for F and G (the cone ones)."),
     ("**Un marco trasero:** `frame_pi4.stl` o `frame_pi5.stl`, según tu Raspberry Pi.",
      "**One back frame:** `frame_pi4.stl` or `frame_pi5.stl`, for your Raspberry Pi."),
     ("**HDMI trasero (opcional):** `hdmi_holder.stl` o `hdmi_cover.stl`, o ninguno (ver su apartado).",
@@ -79,21 +82,25 @@ DECIDE = ([["No", "Sí", "A · `wall_multicolor_bambu.3mf`"],
            ["No", "No", "B · `wall_monocolor.stl` (logo grabado, un color)"],
            ["Sí", "Sí", "C · `leds/wall_led_multicolor_bambu.3mf` + lentillas"],
            ["Sí", "No, pero quiero el logo en colores", "D · `no_ams/wall_led_no_ams.stl` + 3 rellenos + lentillas"],
-           ["Sí", "No, un solo color me vale", "E · `leds/wall_led_monocolor.stl` + lentillas"]],
+           ["Sí", "No, un solo color me vale", "E · `leds/wall_led_monocolor.stl` + lentillas"],
+           ["Sí, y sin soportes (cono)", "Sí", "F · `leds/wall_led_cone_multicolor_bambu.3mf` + lentillas de cono"],
+           ["Sí, y sin soportes (cono)", "No, un solo color me vale", "G · `leds/wall_led_cone_monocolor.stl` + lentillas de cono"]],
           [["No", "Yes", "A · `wall_multicolor_bambu.3mf`"],
            ["No", "No", "B · `wall_monocolor.stl` (engraved logo, one colour)"],
            ["Yes", "Yes", "C · `leds/wall_led_multicolor_bambu.3mf` + lenses"],
            ["Yes", "No, but I want the logo in colour", "D · `no_ams/wall_led_no_ams.stl` + 3 fillings + lenses"],
-           ["Yes", "No, one colour is fine", "E · `leds/wall_led_monocolor.stl` + lenses"]])
+           ["Yes", "No, one colour is fine", "E · `leds/wall_led_monocolor.stl` + lenses"],
+           ["Yes, and no supports (cone)", "Yes", "F · `leds/wall_led_cone_multicolor_bambu.3mf` + cone lenses"],
+           ["Yes, and no supports (cone)", "No, one colour is fine", "G · `leds/wall_led_cone_monocolor.stl` + cone lenses"]])
 
 # section: (title, intro, pieces); piece: (image, files, name, what it is, when, how to print)
 SECTIONS = [
     (("1 · Pared principal (elige una)", "1 · Main wall (pick one)"),
      ("La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por donde se conectan los "
-      "sensores desde fuera. Las cinco tienen los mismos insertos y encajan igual con la base y la tapa: solo "
+      "sensores desde fuera. Las siete tienen los mismos insertos y encajan igual con la base y la tapa: solo "
       "cambian el logo y los LEDs.",
       "The large wall with the OLED window, the DISPLAY button and the bays where the sensors plug in from "
-      "outside. All five have the same inserts and fit the base and the shell the same way: only the logo and "
+      "outside. All seven have the same inserts and fit the base and the shell the same way: only the logo and "
       "the LEDs change."),
      [("wall_multicolor", ["wall_multicolor_bambu.3mf", "wall_multicolor.3mf"],
        ("A · Pared con logo en 4 colores", "A · Wall with the logo in 4 colours"),
@@ -158,6 +165,31 @@ SECTIONS = [
        ("Con cualquier pared con LEDs: C, D o E.", "With any LED wall: C, D or E."),
        ("PLA translúcido (o PETG transparente), discos planos sobre la cama.",
         "Translucent PLA (or clear PETG), discs flat on the bed.")),
+      ("wall_led_cone_multicolor", ["leds/wall_led_cone_multicolor_bambu.3mf", "leds/wall_led_cone_multicolor.3mf"],
+       ("F · Pared con LEDs con cono, logo en 4 colores", "F · Cone LED wall, logo in 4 colours"),
+       ("La pared C, pero el fondo del hueco de cada lentilla es un cono a 45° que baja de Ø 5,9 hasta el tubo "
+        "(Ø 3,4), en vez de un techo plano de 1,25 mm que queda en el aire al imprimir. Por fuera se ve igual.",
+        "Wall C, but each lens recess ends in a 45° cone from Ø 5.9 down to the tube (Ø 3.4) instead of a flat "
+        "1.25 mm ceiling printed in mid-air. From outside it looks the same."),
+       ("Quieres los LEDs con AMS y que los agujeros salgan limpios sin soportes. Es una propuesta: aún sin "
+        "imprimir.",
+        "You want the LEDs with an AMS and clean holes with no supports. A proposal: not printed yet."),
+       ("Como C. Necesita las lentillas de cono, no las planas.",
+        "As C. Needs the cone lenses, not the flat ones.")),
+      ("wall_led_cone_monocolor", ["leds/wall_led_cone_monocolor.stl"],
+       ("G · Pared con LEDs con cono de un color", "G · Single-colour cone LED wall"),
+       ("La pared F con el logo grabado 1 mm.", "Wall F with the logo engraved 1 mm."),
+       ("Quieres los LEDs sin soportes, no tienes AMS y un solo color te vale. Propuesta: aún sin imprimir.",
+        "You want the LEDs with no supports, no AMS, one colour is fine. A proposal: not printed yet."),
+       ("Cara del logo sobre la cama, un solo filamento. Necesita las lentillas de cono.",
+        "Logo face on the bed, one filament. Needs the cone lenses.")),
+      ("led_lenses_cone", ["leds/led_lenses_cone.stl"], ("Lentillas de cono", "Cone lenses"),
+       ("13 lentillas (11 y 2 de repuesto): el disco a ras de la pared y debajo el mismo cono que el hueco, con "
+        "0,1 mm de holgura en el diámetro; se centran solas y llevan la luz del tubo a la cara.",
+        "13 lenses (11 and 2 spares): the disc flush with the wall and under it the same cone as the recess, "
+        "with 0.1 mm of play on the diameter; they centre themselves and lead the tube's light to the face."),
+       ("Solo con las paredes F y G (no valen para C, D ni E).", "Only with walls F and G (they don't fit C, D or E)."),
+       ("PLA translúcido, disco sobre la cama y cono hacia arriba.", "Translucent PLA, disc on the bed, cone up.")),
       ]),
     (("2 · Piezas comunes (siempre)", "2 · Common parts (always)"),
      ("Las mismas con cualquier pared.", "The same with any wall."),
@@ -248,6 +280,9 @@ NOT_TO_PRINT = [
       "slicer that can't read the 3MF.")),
     ("`leds/wall_led.stl`, `leds/logo_*_led.stl`",
      ("Lo mismo para `wall_led_multicolor*.3mf`.", "The same for `wall_led_multicolor*.3mf`.")),
+    ("`leds/wall_led_cone.stl`",
+     ("Lo mismo para `wall_led_cone_multicolor*.3mf` (con los mismos `logo_*_led.stl`).",
+      "The same for `wall_led_cone_multicolor*.3mf` (with the same `logo_*_led.stl`).")),
 ]
 
 
