@@ -90,7 +90,7 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por
 
 **Ficheros:** `stl/no_ams/inlay_navy.stl` · `stl/no_ams/inlay_blue.stl` · `stl/no_ams/inlay_grey.stl`
 
-**Qué es:** Marino: «ROS». Azul: «2D2» y los 12 puntos. Gris: el marco de los puntos, ensanchado hacia dentro a 1,7 mm (1,2 bajo la fila de abajo) para que se pueda imprimir y manejar. 1,4 mm de grueso (7 capas), 0,1 mm de holgura por lado, a ras de la pared.
+**Qué es:** Marino: «ROS». Azul: «2D2» y los 12 puntos. Gris: el marco de los puntos, ensanchado hacia dentro a 1,7 mm (1,2 bajo la fila de abajo) para que se pueda imprimir y manejar. 1,4 mm de grueso (7 capas), 0,3 mm de holgura por lado en el hueco y 0,1 mm menos por lado en cada relleno, a ras de la pared.
 
 **Cuándo:** Solo con la pared D.
 
@@ -114,7 +114,7 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por
 
 **Ficheros:** `stl/leds/led_lenses.stl`
 
-**Qué es:** 13 discos (11 y 2 de repuesto) que se meten en la boca de cada agujero, a ras de la pared, con 0,25 mm de holgura; si alguno baila, una gota de pegamento.
+**Qué es:** 13 discos (11 y 2 de repuesto) que se meten en la boca de cada agujero, a ras de la pared, con 0,15 mm de holgura; su borde lleva el chaflán de la boca. Si alguno baila, una gota de pegamento.
 
 **Cuándo:** Con cualquier pared con LEDs: C, D o E.
 
@@ -126,7 +126,7 @@ La pared grande con la ventana de la OLED, el pulsador DISPLAY y las bahías por
 
 **Ficheros:** `stl/leds/wall_led_cone_multicolor_bambu.3mf` · `stl/leds/wall_led_cone_multicolor.3mf`
 
-**Qué es:** La pared C, pero el fondo del hueco de cada lentilla es un cono a 45° que baja de Ø 5,9 hasta el tubo (Ø 3,4), en vez de un techo plano de 1,25 mm que queda en el aire al imprimir. Por fuera se ve igual.
+**Qué es:** La pared C, pero el fondo del hueco de cada lentilla es un cono a 45° que baja de Ø 4,9 hasta el tubo (Ø 3,4), en vez de un techo plano de 1,25 mm que queda en el aire al imprimir. Por fuera se ve igual.
 
 **Cuándo:** Quieres los LEDs con AMS y que los agujeros salgan limpios sin soportes. Es una propuesta: aún sin imprimir.
 
@@ -226,7 +226,7 @@ Las mismas con cualquier pared.
 
 **Ficheros:** `stl/blanks/blank_US1.stl … blank_EXP.stl` · `stl/blanks/blanks_all.stl`
 
-**Qué es:** Solo estética: una por conector de sensor (US1–US5, VL1–VL4, EXP). Se clava en los pines del conector como un Dupont y cierra a ras su franja de la abertura; los conectores con sensor quedan abiertos. Para quitarla, mete la uña en el chaflán de un borde. Si se cae o entra muy dura, ajusta `blank_pin_d` (1,0 mm) en `params.scad`.
+**Qué es:** Solo estética: una por conector de sensor (US1–US5, VL1–VL4, EXP). Se clava en los pines del conector como un Dupont y cierra a ras su franja de la abertura; los conectores con sensor quedan abiertos. Para quitarla, mete la uña en el chaflán de un borde. Si se cae o entra muy dura, ajusta `blank_pin_d` (1,3 mm; la boca lleva un chaflán de entrada) en `params.scad`.
 
 **Cuándo:** Opcional: las de los conectores que no uses (o `blanks_all.stl`, las diez).
 

@@ -79,10 +79,15 @@ def test_lens_recess_has_its_chamfer():
     assert is_empty("check_lens_chamfer")           # a ring 0.4 wide at each mouth: no wall left in it
 
 
+@pytest.mark.parametrize("d", [{}, {"cone": 1}, {"noams": 1}])
+def test_lens_recess_closed_all_round(d):
+    assert is_empty("check_lens_land", d)           # lp_land of whole face round each chamfer: the bays stop short of it
+
+
 def test_lens_fits_have_play():
     v = echo_values("echo_layout")
     assert (v["lp_bore"] - v["lp_stem_d"]) / 2 >= 0.15 - 1e-9
-    assert (v["lp_hole"] - v["lp_lens_d"]) / 2 >= 0.25 - 1e-9
+    assert (v["lp_hole"] - v["lp_lens_d"]) / 2 >= 0.15 - 1e-9
 
 
 def test_pico_lens_clear_of_the_other_cuts():

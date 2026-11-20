@@ -142,9 +142,9 @@ SECTIONS = [
        ("D · Rellenos del logo", "D · Fillings for the logo"),
        ("Marino: «ROS». Azul: «2D2» y los 12 puntos. Gris: el marco de los puntos, ensanchado hacia dentro "
         "a 1,7 mm (1,2 bajo la fila de abajo) para que se pueda imprimir y manejar. 1,4 mm de grueso (7 capas), "
-        "0,1 mm de holgura por lado, a ras de la pared.",
+        "0,3 mm de holgura por lado en el hueco y 0,1 mm menos por lado en cada relleno, a ras de la pared.",
         "Navy: \"ROS\". Blue: \"2D2\" and the 12 dots. Grey: the dots' frame, widened inwards to 1.7 mm "
-        "(1.2 under the bottom row) so it prints and handles. 1.4 mm thick (7 layers), 0.1 mm of play per side, "
+        "(1.2 under the bottom row) so it prints and handles. 1.4 mm thick (7 layers), 0.3 mm of play per side in the pocket and 0.1 mm less per side on each filling, "
         "flush with the wall."),
        ("Solo con la pared D.", "Only with wall D."),
        ("Una placa por color, cara vista sobre la cama, capas de 0,2 mm, sin borde. Salen en su sitio y en "
@@ -158,18 +158,18 @@ SECTIONS = [
        ("Cara del logo sobre la cama, un solo filamento. Necesita las lentillas.",
         "Logo face on the bed, one filament. Needs the lenses.")),
       ("led_lenses", ["leds/led_lenses.stl"], ("Lentillas de los LEDs", "LED lenses"),
-       ("13 discos (11 y 2 de repuesto) que se meten en la boca de cada agujero, a ras de la pared, con 0,25 mm "
-        "de holgura; si alguno baila, una gota de pegamento.",
-        "13 discs (11 and 2 spares) that drop into the mouth of each hole, flush with the wall, with 0.25 mm of "
-        "play; if one is loose, a drop of glue."),
+       ("13 discos (11 y 2 de repuesto) que se meten en la boca de cada agujero, a ras de la pared, con 0,15 mm "
+        "de holgura; su borde lleva el chaflán de la boca. Si alguno baila, una gota de pegamento.",
+        "13 discs (11 and 2 spares) that drop into the mouth of each hole, flush with the wall, with 0.15 mm of "
+        "play; the rim carries the mouth's chamfer. If one is loose, a drop of glue."),
        ("Con cualquier pared con LEDs: C, D o E.", "With any LED wall: C, D or E."),
        ("PLA translúcido (o PETG transparente), discos planos sobre la cama.",
         "Translucent PLA (or clear PETG), discs flat on the bed.")),
       ("wall_led_cone_multicolor", ["leds/wall_led_cone_multicolor_bambu.3mf", "leds/wall_led_cone_multicolor.3mf"],
        ("F · Pared con LEDs con cono, logo en 4 colores", "F · Cone LED wall, logo in 4 colours"),
-       ("La pared C, pero el fondo del hueco de cada lentilla es un cono a 45° que baja de Ø 5,9 hasta el tubo "
+       ("La pared C, pero el fondo del hueco de cada lentilla es un cono a 45° que baja de Ø 4,9 hasta el tubo "
         "(Ø 3,4), en vez de un techo plano de 1,25 mm que queda en el aire al imprimir. Por fuera se ve igual.",
-        "Wall C, but each lens recess ends in a 45° cone from Ø 5.9 down to the tube (Ø 3.4) instead of a flat "
+        "Wall C, but each lens recess ends in a 45° cone from Ø 4.9 down to the tube (Ø 3.4) instead of a flat "
         "1.25 mm ceiling printed in mid-air. From outside it looks the same."),
        ("Quieres los LEDs con AMS y que los agujeros salgan limpios sin soportes. Es una propuesta: aún sin "
         "imprimir.",
@@ -226,11 +226,11 @@ SECTIONS = [
        ("Solo estética: una por conector de sensor (US1–US5, VL1–VL4, EXP). Se clava en los pines del conector "
         "como un Dupont y cierra a ras su franja de la abertura; los conectores con sensor quedan abiertos. Para "
         "quitarla, mete la uña en el chaflán de un borde. Si se cae o entra muy dura, ajusta `blank_pin_d` "
-        "(1,0 mm) en `params.scad`.",
+        "(1,3 mm; la boca lleva un chaflán de entrada) en `params.scad`.",
         "Looks only: one per sensor connector (US1–US5, VL1–VL4, EXP). It plugs onto the connector's pins like a "
         "Dupont and closes its strip of the opening flush; the connectors with a sensor stay open. To take it "
         "out, put a nail in the chamfer on one edge. If it falls out or goes in too hard, change `blank_pin_d` "
-        "(1.0 mm) in `params.scad`."),
+        "(1.3 mm; each hole has a lead-in chamfer) in `params.scad`."),
        ("Opcional: las de los conectores que no uses (o `blanks_all.stl`, las diez).",
         "Optional: those of the connectors you don't use (or `blanks_all.stl`, all ten)."),
        ("Cara vista sobre la cama, del color de la pared.", "Visible face on the bed, in the wall's colour.")),

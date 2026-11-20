@@ -90,7 +90,7 @@ The large wall with the OLED window, the DISPLAY button and the bays where the s
 
 **Files:** `stl/no_ams/inlay_navy.stl` · `stl/no_ams/inlay_blue.stl` · `stl/no_ams/inlay_grey.stl`
 
-**What it is:** Navy: "ROS". Blue: "2D2" and the 12 dots. Grey: the dots' frame, widened inwards to 1.7 mm (1.2 under the bottom row) so it prints and handles. 1.4 mm thick (7 layers), 0.1 mm of play per side, flush with the wall.
+**What it is:** Navy: "ROS". Blue: "2D2" and the 12 dots. Grey: the dots' frame, widened inwards to 1.7 mm (1.2 under the bottom row) so it prints and handles. 1.4 mm thick (7 layers), 0.3 mm of play per side in the pocket and 0.1 mm less per side on each filling, flush with the wall.
 
 **When:** Only with wall D.
 
@@ -114,7 +114,7 @@ The large wall with the OLED window, the DISPLAY button and the bays where the s
 
 **Files:** `stl/leds/led_lenses.stl`
 
-**What it is:** 13 discs (11 and 2 spares) that drop into the mouth of each hole, flush with the wall, with 0.25 mm of play; if one is loose, a drop of glue.
+**What it is:** 13 discs (11 and 2 spares) that drop into the mouth of each hole, flush with the wall, with 0.15 mm of play; the rim carries the mouth's chamfer. If one is loose, a drop of glue.
 
 **When:** With any LED wall: C, D or E.
 
@@ -126,7 +126,7 @@ The large wall with the OLED window, the DISPLAY button and the bays where the s
 
 **Files:** `stl/leds/wall_led_cone_multicolor_bambu.3mf` · `stl/leds/wall_led_cone_multicolor.3mf`
 
-**What it is:** Wall C, but each lens recess ends in a 45° cone from Ø 5.9 down to the tube (Ø 3.4) instead of a flat 1.25 mm ceiling printed in mid-air. From outside it looks the same.
+**What it is:** Wall C, but each lens recess ends in a 45° cone from Ø 4.9 down to the tube (Ø 3.4) instead of a flat 1.25 mm ceiling printed in mid-air. From outside it looks the same.
 
 **When:** You want the LEDs with an AMS and clean holes with no supports. A proposal: not printed yet.
 
@@ -226,7 +226,7 @@ The same with any wall.
 
 **Files:** `stl/blanks/blank_US1.stl … blank_EXP.stl` · `stl/blanks/blanks_all.stl`
 
-**What it is:** Looks only: one per sensor connector (US1–US5, VL1–VL4, EXP). It plugs onto the connector's pins like a Dupont and closes its strip of the opening flush; the connectors with a sensor stay open. To take it out, put a nail in the chamfer on one edge. If it falls out or goes in too hard, change `blank_pin_d` (1.0 mm) in `params.scad`.
+**What it is:** Looks only: one per sensor connector (US1–US5, VL1–VL4, EXP). It plugs onto the connector's pins like a Dupont and closes its strip of the opening flush; the connectors with a sensor stay open. To take it out, put a nail in the chamfer on one edge. If it falls out or goes in too hard, change `blank_pin_d` (1.3 mm; each hole has a lead-in chamfer) in `params.scad`.
 
 **When:** Optional: those of the connectors you don't use (or `blanks_all.stl`, all ten).
 

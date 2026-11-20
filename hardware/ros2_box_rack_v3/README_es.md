@@ -80,15 +80,17 @@ uno de sus 10 LEDs (VL1–VL4, US1–US5 y PWR) y otro sobre el LED de la propia
 Cada agujero de la placa tiene por dentro un tubo oscuro, impreso con la pared, que lleva la luz de su
 LED hasta fuera sin que se pierda; acaba 0,7 mm por encima del LED y nunca toca la placa. El LED de la
 Pico queda a poco más de 1 mm de la pared y no lleva tubo, solo el agujero. En la boca de cada agujero,
-con un chaflán de 0,4 mm, va una lentilla de PLA translúcido a ras de la pared, con 0,25 mm de holgura
-(si alguna baila, una gota de pegamento). Al montar, presenta la placa sin tornillos sobre sus 4
+con un chaflán de 0,4 mm, va una lentilla de PLA translúcido (Ø 4,4) a ras de la pared, con 0,15 mm de holgura; su borde lleva el
+mismo chaflán, así que llena la boca alrededor y no baila
+(si alguna baila, una gota de pegamento). El chaflán rodea todo el hueco: quedan 0,6 mm de pared entera
+alrededor antes de que empiece ninguna bahía. Al montar, presenta la placa sin tornillos sobre sus 4
 columnas: debe asentar sin balancearse; si se balancea, algún tubo toca su LED: lija la punta.
 
 ### Propuesta: pared con LEDs con cono (sin soportes)
 
 La pared se imprime con la cara exterior sobre la cama, y en la versión de arriba el fondo de cada
 hueco de lentilla es un techo plano de 1,25 mm alrededor del tubo, que queda en el aire. En esta
-propuesta ese fondo es un **cono a 45°** que baja desde el hueco de la lentilla (Ø 5,9) hasta el tubo
+propuesta ese fondo es un **cono a 45°** que baja desde el hueco de la lentilla (Ø 4,9) hasta el tubo
 (Ø 3,4): se imprime sin soportes ni puentes. Las lentillas llevan el mismo cono (0,1 mm de holgura en el
 diámetro), así que se centran solas y guían la luz hacia la cara. Todo lo demás es igual que la pared
 con LEDs de arriba (tubos, insertos y los mismos logos `logo_*_led.stl`).
@@ -118,7 +120,7 @@ en `stl/no_ams/`; las lentillas son las de `stl/leds/led_lenses.stl`.
 | `stl/no_ams/inlay_grey.stl` | el marco de los puntos | gris, cara vista sobre la cama |
 
 Los rellenos salen en su sitio, como se ven desde fuera pero en espejo (la cara vista abajo): dales
-la vuelta y mételos en su hueco. Tienen 0,1 mm de holgura por lado y quedan a ras de la pared; fíjalos
+la vuelta y mételos en su hueco. El hueco tiene 0,3 mm de holgura por lado y cada relleno es 0,1 mm más pequeño por lado (una junta fina entre colores); quedan a ras de la pared; fíjalos
 con una gota de pegamento de cianoacrilato. El marco gris es más ancho que en la versión con AMS
 (1,7 mm hacia dentro, 1,2 bajo la fila de puntos de abajo) para que se pueda imprimir y manejar suelto.
 Capas de 0,2 mm (7 capas) y sin borde.

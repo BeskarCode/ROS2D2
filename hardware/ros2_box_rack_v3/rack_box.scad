@@ -21,7 +21,7 @@ include <blanks.scad>
 
 part = "wall";
 ga = "pico";  gb = "pi";  led = "VL1";
-dz = 0;  press = 0;  colour = "navy";  kind = "all";  gap = 0;  model = "pi4";  leds = 0;  pp = "pared";  bi = 0;
+dz = 0;  press = 0;  colour = "navy";  kind = "all";  gap = 0;  model = "pi4";  leds = 0;  pp = "pared";  bi = 0;  cone = 0;  noams = 0;
 
 module dot() { cube(0.01); }
 module printed() { pared(); base(); tapa(); marco(model); }
@@ -228,6 +228,11 @@ else if (part == "echo_lp_tips") {
     echo("pico_led_top", led_world(i)[0] - led_h); echo("stem_end", lp_lens_t + lp_stem_l); echo("wall", wall);
     dot();
 }
+else if (part == "check_lens_land") let($lp_cone = cone == 1) difference() {   // the whole ring round each chamfer is face, no bay in it
+    for (i = [0 : len(pico_leds) - 1]) lp_at(i) translate([0, 0, 0.01]) difference() {
+        cylinder(d = lp_ring_d() - 0.05, h = wall - 0.02, $fn = 64); translate([0, 0, -1]) cylinder(d = lp_hole + 2 * lp_chamfer + 0.05, h = wall + 2, $fn = 64); }
+    pared(leds = true, noams = noams == 1);
+}
 else if (part == "check_lens_chamfer") intersection() {      // a ring at each mouth, 0.1 deep, out to 0.25 (the 45 deg chamfer is 0.3 there)
     pared(leds = true);
     for (i = [0 : len(pico_leds) - 1]) lp_at(i) translate([0, 0, -0.01]) difference() {
@@ -261,7 +266,7 @@ else if (part == "na_pockets_montados") na_pockets();
 else if (part == "check_rellenos_vs_pared") intersection() { pared_no_ams(); union() for (c = logo_colours) relleno(c); }
 else if (part == "check_rellenos_flush") intersection() { union() for (c = logo_colours) relleno(c); translate([-5, 0, 0]) cube([4.99, D, H]); }
 else if (part == "check_rellenos_overlap") intersection() { relleno(colour); union() for (c = logo_colours) if (c != colour) relleno(c); }
-else if (part == "check_rellenos_fill") difference() { na_pockets(na_depth - 0.01, -na_fit - 0.01); union() for (c = logo_colours) relleno(c); }
+else if (part == "check_rellenos_fill") union() for (c = logo_colours) difference() { na_put(na_depth - 0.01) offset(delta = -na_shrink - 0.01) na_2d(c); relleno(c); }
 else if (part == "check_na_vs_holes") intersection() { na_pockets(wall, 0.3); lp_holes(); }
 else if (part == "check_na_vs_window") intersection() { na_pockets(wall, 0.3); scale([20, 1, 1]) oled_window(); }
 else if (part == "check_na_vs_cuts") intersection() { na_pockets(wall, 0.3); union() { rod_hole(); bays_cut(); } }

@@ -109,11 +109,13 @@ led_air = 0.7;                       // air between a tube's end and its LED (no
 // the light: a dark tube printed with the face from each hole to its LED, a thin translucent lens outside
 lp_bore = 3.4;  lp_tube_od = 5;      // tube: bore, outer d (2 perimeters)
 lp_tip_bore = 2.6;  lp_tip_od = 3.8; // its last 5 mm, among the board's low parts (nothing but the LED within led_well_d)
-lp_lens_d = 5.4;  lp_lens_t = 0.8;  lp_lens_fit = 0.25;   // lens disc: flush with the face in its recess
+lp_lens_d = 4.4;  lp_lens_t = 0.8;  lp_lens_fit = 0.15;  // lens disc: flush with the face in its recess (4.4: a whole ring fits beside the VL plugs; 0.25 of play left it loose)
 lp_stem_d = 3.1;  lp_stem_l = 1.5;   // its stem, in the tube's bore with 0.15 of play (glue a drop if loose)
 lp_lens_n = len(pico_leds) + 2;     // 11 + 2 spares on the plate
 lp_chamfer = 0.4;                    // 45 deg chamfer round each recess's mouth: no elephant's foot, the lens drops in
 lp_hole = lp_lens_d + 2 * lp_lens_fit;   // the lens recess on the outside: the dot seen from outside
+lp_land = 0.6;                       // whole face left round each chamfer: the bays stop here, the recess is closed all round
+function lp_ring_d() = lp_hole + 2 * lp_chamfer + 2 * lp_land;
 // cone version ($lp_cone = true): the recess floor is a 45 deg cone down to the bore, so the face prints
 // face down with no flat overhang round each bore; its lenses carry the same cone (lp_cone_fit of play on the diameter)
 $lp_cone = false;
@@ -135,7 +137,8 @@ bay_keep = 0.4;  bay_r = 1.5;
 blank_names = ["US1", "US2", "US3", "US4", "US5", "VL1", "VL2", "VL3", "VL4", "EXP"];
 blank_bays = [0, 0, 0, 0, 0, 1, 1, 1, 1, 2];   // which of pico_bays each one sits in
 blank_fit = 0.2;                     // round the plate, per side (0.4 seam between two blanks)
-blank_pin_d = 1.0;  blank_pin_depth = 7;   // holes for the 0.64 square pins: tighter if they fall out, wider if too hard
+blank_pin_d = 1.3;  blank_pin_depth = 7;   // holes for the 0.64 square pins (1.0 did not go in): tighter if they fall out, wider if too hard
+blank_pin_lead = 0.4;                // 45 deg lead-in at each hole's mouth
 blank_air = 0.3;                     // stem's end to the header's plastic
 blank_notch = 0.8;                   // 45 deg chamfer on one edge, outside: room for a nail to pull it out
 
@@ -165,5 +168,6 @@ module hdmi_turned() if (hdmi_turn) translate([hdmi_c[0], 0, hdmi_c[1]]) rotate(
 
 // --- LED face without AMS: deeper pockets, the logo and the names printed apart and pressed in -----------
 na_depth = 1.4;                      // pocket and inlay thickness, 7 layers (the wall is 2.5: 1.1 mm stays behind)
-na_fit = 0.1;                        // the pockets grow this much per side, the inlays keep their size
+na_fit = 0.3;                        // the pockets grow this much per side (0.1 was too tight: nothing went in)
+na_shrink = 0.1;                     // each inlay shrinks this much per side: a seam between two colours
 na_bold = 0.15;                      // the names grow this much per side: strokes ~0.8 mm, printable alone
