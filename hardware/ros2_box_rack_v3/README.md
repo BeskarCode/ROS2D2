@@ -84,6 +84,25 @@ a translucent PLA lens sits flush with the face with 0.25 mm of play (if one is 
 When assembling, offer the board up without screws onto its 4 columns: it must sit without rocking; if
 it rocks, a tube touches its LED: sand the tip.
 
+### Proposal: LED face with cones (no supports)
+
+The face prints with its outer side on the bed, and in the version above each lens recess ends in a
+flat 1.25 mm ceiling round the tube, printed in mid-air. In this proposal that floor is a **45° cone**
+from the lens recess (Ø 5.9) down to the tube (Ø 3.4): it prints with no supports and no bridging. The
+lenses carry the same cone (0.1 mm of play on the diameter), so they centre themselves and lead the
+light to the face. Everything else is as the LED face above (tubes, inserts and the same `logo_*_led.stl`).
+
+| STL | What it is | How to print |
+|---|---|---|
+| `stl/leds/wall_led_cone_multicolor_bambu.3mf` | cone LED face + navy, blue and grey logo | logo face on the bed; AMS: 1 white, 2 navy, 3 blue, 4 grey |
+| `stl/leds/wall_led_cone_multicolor.3mf` | the same, generic 3MF | |
+| `stl/leds/wall_led_cone_monocolor.stl` | single-colour cone LED face, logo engraved 1 mm | logo face on the bed |
+| `stl/leds/led_lenses_cone.stl` | 13 cone lenses (11 and 2 spares) | **translucent PLA**, disc on the bed, cone up |
+
+The flat lenses (`led_lenses.stl`) do not fit this face, nor the cone lenses the other one.
+
+![Section: flat ceiling vs cone](stl/leds/cone_vs_flat.svg)
+
 ## LED face without AMS (optional)
 
 The same LED face (same tubes, lenses and inserts) for printers without an AMS: the logo is a 1.4 mm
