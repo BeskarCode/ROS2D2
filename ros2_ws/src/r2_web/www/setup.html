@@ -340,6 +340,23 @@
   .syslive .pcb-cover { inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 16px; color: #fff;
                         background: rgba(13,17,23,.55); border-radius: 10px; }
   .syslive .pcb-cover[hidden] { display: none; }
+
+  /* Desktop: like Console and Navigation, the page never scrolls. The tabs and the Save bar stay put;
+     each tab fills what is left and its own columns scroll inside (the sensor list, System's side...). */
+  @media (min-width: 1000px) and (min-height: 600px) {
+    body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    main > .tabs, main > .bar { flex: none; }
+    main > .bar { margin: 8px 0 0; }
+    main > section:not([hidden]) { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    main > section > details.howto, main > section > .tabtools { flex: none; }
+    #form .layout, #sensors .slayout, #modes .mlayout, #system .syscols { flex: 1; min-height: 0; }
+    #form .layout { grid-auto-rows: minmax(0, 1fr); overflow: auto; }
+    #sensors .slayout, #modes .mlayout, #system .syscols { align-items: stretch; }
+    #sensors .slayout > *, #modes .mlayout > *, #system .syscols > * { min-height: 0; overflow: auto; }
+    #system .syscols .syslive { position: static; }
+    #file textarea { flex: 1; min-height: 0; }
+  }
 </style>
 </head>
 <body>
