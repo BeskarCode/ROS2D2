@@ -1,5 +1,5 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-// When R2 stops answering, the page that is already loaded says so kindly instead of failing bit by
+// When the ROS2D2 system stops answering, the page that is already loaded says so kindly instead of failing bit by
 // bit: a cover with what is down (the Pi's web server, or ROS through rosbridge), for how long, and
 // it goes away by itself when both are back. Moving to another section first checks that the Pi
 // answers, so the browser's own "can't reach this page" never shows: it waits here and goes on.
@@ -37,7 +37,7 @@ function ensureCover() {
   cover.setAttribute('role', 'alertdialog');
   cover.setAttribute('aria-live', 'assertive');
   cover.innerHTML = `<div class="card"><div class="big"><i class="fa-solid fa-plug-circle-exclamation"></i></div>
-    <h3>R2 is not answering</h3><p class="what"></p>
+    <h3>The ROS2D2 system is not answering</h3><p class="what"></p>
     <p><i class="fa-solid fa-spinner fa-spin"></i> Waiting for it to come back… <span class="secs"></span></p>
     <p class="go" hidden></p>
     <button type="button"><i class="fa-solid fa-rotate-right"></i>Reload now</button></div>`;
@@ -56,7 +56,7 @@ function render() {
     shown = false;
     if (cover) cover.hidden = true;
     if (goTo) { const u = goTo; goTo = null; location.href = u; return; }
-    if (was) toast('R2 is back: connection recovered', 'ok');
+    if (was) toast('ROS2D2 is back: connection recovered', 'ok');
     return;
   }
   // a short cut shows nothing; a page change waiting on it shows at once
