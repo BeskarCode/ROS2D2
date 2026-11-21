@@ -48,3 +48,11 @@ test('a source never heard after the wait (time 0) reads as gone, not as unknown
   assert.equal(k.pico.text, 'Pico: not connected');
   assert.equal(k.lidar.text, 'Lidar: no scans');
 });
+
+test('each pill takes you to the Setup tab about it', () => {
+  const k = Object.fromEntries(statusPills(all, now).map((p) => [p.key, p]));
+  assert.equal(k.pico.href, 'setup.html#system');
+  assert.equal(k.lidar.href, 'setup.html#sensors');
+  assert.equal(k.cam.href, 'setup.html#cameras');
+  assert.equal(k.mode.href, 'setup.html#modes');
+});

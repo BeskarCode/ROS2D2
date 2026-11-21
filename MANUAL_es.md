@@ -16,7 +16,9 @@ tarjeta o pestaña tiene arriba un **How it works** plegado.
 Las píldoras junto al menú son las mismas en todas las páginas y dicen cómo están las cosas: **ROS**
 (el enlace de la consola con ROS), el **Mega**, la placa de la **Pico** (con su versión de firmware),
 el **Lidar**, la **Camera** (o cuántas de las cámaras contestan) y el **Mode** encendido (uno
-automático o el seguimiento de caras). Verde está bien, ámbar hay que mirarlo, rojo es que no está. Si
+automático o el seguimiento de caras). Verde está bien, ámbar hay que mirarlo, rojo es que no está.
+Un clic en la píldora de Pico, Lidar, Camera o Mode abre su pestaña de Setup; cada pestaña de Setup
+tiene su propia dirección (`setup.html#system`…). Si
 R2 deja de contestar, una ventana lo avisa y se quita sola cuando vuelve. **Ctrl+S** guarda la página
 en la que estás, desde cualquier parte de ella.
 

@@ -16,15 +16,15 @@ export function statusPills(s, now) {
   const picoOn = fresh(s.picoAt) && s.pico && s.pico.connected;
   out.push(pill('pico', 'fa-microchip', `Pico: ${s.picoAt == null ? '…' : picoOn ? (s.pico.firmware || 'connected') : 'not connected'}`,
     s.picoAt == null ? '' : picoOn ? 'ok' : 'bad',
-    picoOn && s.pico.commit ? `The Pico sensor board · firmware ${s.pico.firmware} · ${s.pico.commit}` : 'The Pico sensor board'));
+    picoOn && s.pico.commit ? `The Pico sensor board · firmware ${s.pico.firmware} · ${s.pico.commit}` : 'The Pico sensor board', 'setup.html#system'));
   out.push(pill('lidar', 'fa-satellite-dish', `Lidar: ${s.scanAt == null ? '…' : fresh(s.scanAt) ? 'scanning' : 'no scans'}`,
-    s.scanAt == null ? '' : fresh(s.scanAt) ? 'ok' : 'warn', 'The lidar\'s scans (/scan)'));
+    s.scanAt == null ? '' : fresh(s.scanAt) ? 'ok' : 'warn', 'The lidar\'s scans (/scan)', 'setup.html#sensors'));
   const cams = Object.values(s.cams || {});
   const live = cams.filter(fresh).length;
   let camText = 'Camera: none', camCls = '';
   if (cams.length === 1) { camText = `Camera: ${live ? 'online' : 'offline'}`; camCls = live ? 'ok' : 'bad'; }
   else if (cams.length > 1) { camText = `Cameras: ${live} of ${cams.length} online`; camCls = live === cams.length ? 'ok' : live ? 'warn' : 'bad'; }
-  out.push(pill('cam', 'fa-video', camText, camCls, 'The cameras in cameras.yaml'));
+  out.push(pill('cam', 'fa-video', camText, camCls, 'The cameras in cameras.yaml', 'setup.html#cameras'));
   let mode = 'off', modeCls = '';
   if (s.auto && s.mode) { mode = MODE_LABELS[s.mode] || s.mode; modeCls = 'ok'; }
   else if (s.track) { mode = 'face tracking'; modeCls = 'ok'; }

@@ -16,7 +16,8 @@ works** at its top.
 The pills next to the menu are the same on every page and say how things are: **ROS** (the
 console's link to ROS), the **Mega**, the **Pico** board (its firmware version), the **Lidar**, the
 **Camera** (or how many of the cameras answer) and the **Mode** on (an automatic one, or face
-tracking). Green is fine, amber means look, red means it is not there. If R2 stops answering, a
+tracking). Green is fine, amber means look, red means it is not there. A click on the Pico, Lidar,
+Camera or Mode pill opens its Setup tab; each Setup tab has its own address (`setup.html#system`…). If R2 stops answering, a
 window says so and goes away by itself when it is back. **Ctrl+S** saves the page you are on, from
 anywhere on it.
 

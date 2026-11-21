@@ -321,6 +321,8 @@ function restartFailed() {
 let current = 'cameras';   // the tab on screen (Ctrl+S saves it)
 function showTab(name) {
   current = name;
+  // the address says the tab: a reload, a shared link or Back opens this same one
+  if (location.hash !== `#${name}`) history.replaceState(null, '', `#${name}`);
   if (name !== 'file' && name !== 'system') section = name;
   $('form').hidden = name !== 'cameras';
   $('sensors').hidden = name !== 'sensors';
@@ -409,5 +411,8 @@ setInterval(async () => {
 connect(load);
 sensorsTab.load();   // from the web server: works without rosbridge
 modesTab.load();
-// Setup -> Modes straight away with setup.html#modes
-if (location.hash === '#modes') showTab('modes');
+// setup.html#cameras, #sensors, #modes, #system or #file opens that tab (the status pills link here)
+const TABS = ['cameras', 'sensors', 'modes', 'system', 'file'];
+const tabFromHash = () => { const t = location.hash.slice(1); if (TABS.includes(t) && t !== current) showTab(t); };
+tabFromHash();
+addEventListener('hashchange', tabFromHash);
