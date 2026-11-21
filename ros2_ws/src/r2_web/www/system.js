@@ -229,7 +229,7 @@ export function createSystemTab() {
     const showBar = busy || fw.state === 'done' || fw.state === 'failed';
     $('fw-bar').hidden = !showBar;
     $('fw-warn').hidden = !busy;
-    if (busy) $('fold-fw').open = true;     // never flash with the progress folded away
+    if (busy) $('fold-board').open = true;     // never flash with the progress folded away
     if (showBar) {
       const p = fw.state === 'failed' ? 100 : flashProgress(fw.state, (Date.now() - fwStepAt) / 1000);
       $('fw-barfill').style.width = `${p}%`;
@@ -306,7 +306,7 @@ export function createSystemTab() {
   }
   $('sys-telemetry').addEventListener('change', (e) => setTelemetry(e.target.checked));
   $('sys-telemetry').checked = telemetry;
-  for (const id of ['fold-board', 'fold-fw']) {
+  for (const id of ['fold-board']) {
     try { $(id).open = localStorage.getItem(`r2web.${id}`) === '1'; } catch { /* private window */ }
     $(id).addEventListener('toggle', () => { try { localStorage.setItem(`r2web.${id}`, $(id).open ? '1' : '0'); } catch { /* private */ } });
   }
