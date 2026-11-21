@@ -3,9 +3,10 @@
 // controllers. The Mega takes them exactly as real Navs (ROS:PAD, VirtualPad.h), and a real Nav in
 // use always wins. Each page imports this: it adds a "Remote" button to the header.
 //
-// Safety: a Nav's state goes out 20 times a second only while something is pressed; when the window
-// closes, the page goes or the tab is hidden everything is let go at once, and if this page stops
-// sending, the Mega lets go by itself in 0.3 s. One window at a time across the console's tabs.
+// Like a real Nav, each one's state goes out all the time while the window is open (20 a second,
+// at rest too): the Mega takes 300 ms of silence as "controller lost" and switches tracking and the
+// modes off. So closing the window, leaving the page or hiding the tab is switching the controllers
+// off: everything is let go and the Mega stops the motors by itself. One window at a time across tabs.
 import { createPad } from './padlogic.js';
 import { confirmDialog } from './dialog.js';
 import { ensureConnected, publish, subscribe } from './rosbridge.js';
@@ -178,7 +179,6 @@ function send(p, s) {
 // 20 times a second while a Nav is active; one rest packet when it stops; nothing at rest
 function step() {
   const t = performance.now();
-  let any = false;
   for (const p of ['F', 'D']) {
     const now = pad[p].tick(t);
     if (now.length) {
@@ -186,12 +186,9 @@ function step() {
       now.forEach((b) => padEl.querySelector(`[data-b="${b}"]`)?.classList.remove('r2r-down'));
       render(padEl);
     }
-    const active = pad[p].active(t);
-    if (active || wasActive[p]) send(p, pad[p].state(t));
-    wasActive[p] = active;
-    any = any || active || pad[p].pressing();
+    if (pads.mega && pads.supported !== false) send(p, pad[p].state(t));   // at rest too, as a real Nav
+    wasActive[p] = pad[p].active(t);
   }
-  if (!any) { clearInterval(timer); timer = null; }
 }
 function kick() { if (!timer && win && !win.hidden) timer = setInterval(step, SEND_MS); step(); }
 
@@ -227,6 +224,7 @@ function open() {
   ensureConnected();
   win.hidden = false;
   btn.classList.add('open');
+  kick();                           // the two Navs are "switched on" while the window is open
   riskOk = false;
   showStatus();
   channel?.postMessage({ open: me });     // one window at a time across tabs
@@ -279,6 +277,9 @@ document.addEventListener('keydown', (e) => {
   win.querySelectorAll('.r2r-pad').forEach(render);
   kick();
 });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') releaseAll(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') releaseAll();
+  else if (win && !win.hidden) kick();      // back on the tab: the Navs are on again
+});
 window.addEventListener('pagehide', releaseAll);
 channel?.addEventListener('message', (e) => { if (e.data?.open && e.data.open !== me && win && !win.hidden) close(); });
