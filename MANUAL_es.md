@@ -42,7 +42,10 @@ y vídeos de eventos). Debajo: cuántas caras ve, la mejor puntuación y dónde 
 **Dome**: R2 en 3D con el dome girado como la Pi cree que está.
 
 - La barra de debajo es la velocidad del dome (izquierda / derecha).
-- *Track* enciende o apaga el seguimiento de caras: el dome gira para mirar a la cara más cercana.
+- *Track* enciende o apaga el seguimiento de caras: el dome gira para mirar a la cara más cercana. Con
+  varias personas sigue mirando a la primera, aunque se acerque otra; cuando la pierde espera 2 s con
+  el dome quieto (si vuelve, es la misma), y luego elige la cara más grande que vea y la saluda con un
+  sonido (`sound_new_face` en `dome_tracker.yaml`).
 - *Dome to front* lo vuelve a poner mirando al frente.
 - El dome no tiene sensor de posición: su ángulo se calcula a partir de las órdenes de velocidad.
   Cronometra una vuelta entera a velocidad 80 y escribe `360 ÷ segundos` en **°/s at speed 80**.

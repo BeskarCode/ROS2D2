@@ -41,7 +41,10 @@ Below: how many faces it sees, the best score and where the best one is.
 **Dome**: R2 in 3D with the dome turned as the Pi believes it is.
 
 - The bar under it is the dome's speed (left / right).
-- *Track* turns face tracking on or off: the dome turns to look at the nearest face.
+- *Track* turns face tracking on or off: the dome turns to look at the nearest face. With several
+  people it keeps looking at the first one, even if someone closer comes in; when it loses that face
+  it waits 2 s with the dome still (the same face coming back is the same one), then picks the
+  biggest face in view and says hello with a sound (`sound_new_face` in `dome_tracker.yaml`).
 - *Dome to front* turns it back to the front.
 - The dome has no position sensor: its angle is estimated from the speed commands. Time a full
   turn at speed 80 and type `360 ÷ seconds` in **°/s at speed 80**.
