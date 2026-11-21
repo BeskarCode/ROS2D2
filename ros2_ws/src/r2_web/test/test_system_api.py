@@ -50,13 +50,15 @@ def test_api_system_without_telemetry_reads_only_version(monkeypatch, tmp_path):
     def boom(*a, **k):
         raise AssertionError("telemetry read without being asked")
     monkeypatch.setattr(system_api, "snapshot", boom)
-    assert system_payload(False, None, version_path=str(tmp_path / "none")) == ({"version": {"commit": None}}, None)
+    monkeypatch.setattr(system_api, "pi_info", lambda: {})
+    assert system_payload(False, None, version_path=str(tmp_path / "none")) == ({"version": {"commit": None}, "info": {}}, None)
 
 
 def test_api_system_with_telemetry(monkeypatch, tmp_path):
     monkeypatch.setattr(system_api, "snapshot", lambda prev: ({"cpu": None}, "stat"))
+    monkeypatch.setattr(system_api, "pi_info", lambda: {})
     body, prev = system_payload(True, None, version_path=str(tmp_path / "none"))
-    assert body == {"version": {"commit": None}, "cpu": None} and prev == "stat"
+    assert body == {"version": {"commit": None}, "info": {}, "cpu": None} and prev == "stat"
 
 
 def test_undervoltage_from_hwmon_when_vcgencmd_cannot_run():
@@ -66,3 +68,30 @@ def test_undervoltage_from_hwmon_when_vcgencmd_cannot_run():
                                            "undervoltage_since_boot": None, "throttled_since_boot": None}
     assert throttled_from_hwmon("0\n")["undervoltage_now"] is False
     assert throttled_from_hwmon(None) is None
+
+
+from r2_web.system_api import parse_addresses, parse_uptime, parse_os_release
+
+IP_JSON = '[{"ifname":"lo","addr_info":[{"family":"inet","local":"127.0.0.1"}]},' \
+          '{"ifname":"eth0","addr_info":[{"family":"inet","local":"192.168.68.109","prefixlen":24}]},' \
+          '{"ifname":"wlan0","addr_info":[{"family":"inet","local":"10.42.0.1","prefixlen":24}]},' \
+          '{"ifname":"docker0","addr_info":[]}]'
+
+
+def test_parse_addresses_skips_loopback_and_empty():
+    assert parse_addresses(IP_JSON) == [{"iface": "eth0", "ip": "192.168.68.109/24"},
+                                        {"iface": "wlan0", "ip": "10.42.0.1/24"}]
+    assert parse_addresses("not json") == []
+
+
+def test_parse_uptime_and_os_release():
+    assert parse_uptime("12345.67 4000.00\n") == 12345
+    assert parse_uptime("") is None
+    assert parse_os_release('NAME="Ubuntu"\nPRETTY_NAME="Ubuntu 26.04.1 LTS"\n') == "Ubuntu 26.04.1 LTS"
+    assert parse_os_release("") is None
+
+
+def test_api_system_always_has_the_pi_info(monkeypatch, tmp_path):
+    monkeypatch.setattr(system_api, "pi_info", lambda: {"host": "r2pi", "up_s": 5})
+    body, _ = system_payload(False, None, version_path=str(tmp_path / "none"))
+    assert body["info"] == {"host": "r2pi", "up_s": 5}

@@ -232,6 +232,17 @@
   .ringtext { max-width: 260px; padding-top: 30px; }
   .stale .ring, .stale .ringtext, .camtm.stale .rings, .camtm.stale dl { filter: grayscale(1); opacity: .45; }
   .sysfold { margin: 14px 0 0; }
+  /* System: one block per part, its gauges always shown; details and settings in a modal */
+  .systop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 6px; }
+  .systop > details.howto { margin: 0; flex: 1 1 100%; }
+  .systop .systog { margin: 0; }
+  .sysblock { margin: 0 0 4px; }
+  .sysh .sysmore { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: var(--fs-s); padding: 3px 10px; }
+  .sysdl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: var(--fs); }
+  .sysdl dt { color: var(--muted); } .sysdl dd { margin: 0; overflow-wrap: anywhere; }
+  .sysdl dd.warn { color: var(--amber); } .sysdl dd.bad { color: var(--red); }
+  .r2modal .sysboard { margin-top: 4px; max-width: none; }
+  .r2modal .sysh4 { margin-top: 18px; }
   .wifibars { display: grid; gap: 6px; }
   .wifibar { display: grid; grid-template-columns: 82px 1fr 72px; align-items: center; gap: 10px; font-size: var(--fs-s); color: var(--muted, var(--muted)); }
   .wifibar .track { height: 10px; border-radius: 5px; background: var(--line, #30363d); overflow: hidden; }
@@ -259,7 +270,13 @@
   /* System: the live strip and the mirror of the Pico board */
   .syslive { margin-bottom: 18px; }
   /* System: the Pico board on the left, its settings on the right; one column (board first) when narrow */
-  .syscols { display: grid; grid-template-columns: minmax(0, 540px) minmax(380px, 1fr); gap: 40px; align-items: start; }
+  .syscols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 1.35fr); gap: var(--gap); align-items: start; }
+  /* the two columns are cards, like the other tabs' */
+  .syscols > .syslive, .syscols > .sysside { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .syscols > .syslive { display: flex; flex-direction: column; align-items: center; }
+  .sysside .sysblock { border-top: 1px solid var(--line); padding-top: 6px; }
+  .sysside .sysblock .sysh { margin-top: 4px; }
+  .sysside .sysblock .rings { justify-content: space-around; margin: 4px 0 8px; }
   .syscols .syslive { position: sticky; top: 12px; margin-bottom: 0; }
   .syscols .sysside > .help:first-child { margin-top: 0; }
   .syscols .sysside .sysh:first-of-type { margin-top: 10px; }
@@ -489,19 +506,52 @@
     <div class="syscols">
     <div id="sys-live" class="syslive"></div>
     <div class="sysside">
-    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">The Pi, the Pico board and the dome cameras. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p></details>
-    <label class="systog" title="Read how busy the Pi and the Pico are (only while on and this tab is open)">
+    <div class="systop">
+    <label class="systog" title="Read how busy the Pi, the Pico and the cameras are (only while on and this tab is open)">
       <input type="checkbox" id="sys-telemetry"><i class="fa-solid fa-chart-line"></i>Telemetry
       <span class="knob"></span><span class="state"></span></label>
     <label class="sysevery" title="How often the telemetry is read (the Pico is still asked every 2 s so it keeps sending)"><i class="fa-solid fa-stopwatch"></i>every
       <select id="sys-every"></select></label>
-    <h3 class="sysh"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi <span class="sub">software <b id="sys-pi-version">…</b></span></h3>
-    <div class="stats sys4" id="sys-pi" hidden></div>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">One block per part: the Pi, the Pico board
+      and each dome camera. Its gauges are always here: in colour while <b>Telemetry</b> is on (it reads only while on and this tab is open),
+      grey with the last values when it is off. Each block's button opens its details and settings.</p></details>
+    </div>
+    <div class="sysblock">
+    <h3 class="sysh"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi <span class="sub">software <b id="sys-pi-version">…</b></span>
+      <button type="button" class="sysmore" data-dlg="dlg-pi" title="The Pi's addresses, system and R2's WiFi"><i class="fa-solid fa-sliders"></i>Details</button></h3>
+    <div class="rings stale" id="sys-pi"></div>
     <p class="status bad" id="sys-pi-warn" hidden></p>
-    <h3 class="sysh"><i class="fa-solid fa-microchip"></i>Pico board <span class="sub">firmware <b id="sys-pico-version">…</b></span></h3>
-    <div class="stats sys4" id="sys-pico" hidden></div>
+    </div>
+    <div class="sysblock">
+    <h3 class="sysh"><i class="fa-solid fa-microchip"></i>Pico board <span class="sub">firmware <b id="sys-pico-version">…</b></span>
+      <button type="button" class="sysmore" data-dlg="dlg-pico" title="The board's settings, readings and firmware"><i class="fa-solid fa-sliders"></i>Settings</button></h3>
+    <div class="rings stale" id="sys-pico"></div>
     <p class="help" id="sys-pico-note" hidden></p>
-    <details class="sysfold" id="fold-board"><summary><i class="fa-solid fa-sliders"></i>Pico board settings</summary>
+    </div>
+    <div id="sys-cams"></div>
+    </div>
+    </div>
+
+    <dialog class="r2modal" id="dlg-pi" aria-labelledby="dlg-pi-h">
+      <h3 id="dlg-pi-h"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi<button type="button" class="r2modal-x" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button></h3>
+      <div class="body">
+        <dl class="sysdl" id="pi-info"></dl>
+        <h4 class="sysh4"><i class="fa-solid fa-wifi"></i>R2's WiFi <span class="sub">its own access point, for the cameras</span></h4>
+    <div class="sysboard">
+      <p class="status" id="wifi-text">…</p>
+      <div class="wifibars" id="wifi-bars"></div>
+      <div class="row"><span></span><span>
+        <button id="wifi-check" title="Look at how busy channels 1, 6 and 11 are now (R2's WiFi stays up)"><i class="fa-solid fa-magnifying-glass"></i>Check now</button>
+        <button id="wifi-move" title="Restart R2's WiFi so it moves to the quietest channel (the cameras drop for a few seconds)"><i class="fa-solid fa-arrow-right-arrow-left"></i>Move to the quietest</button></span></div>
+      <p class="help">The access point picks the quietest of channels 1, 6 and 11 each time it starts. A busy channel (a home WiFi on the same or a nearby channel) makes the cameras lose packets.</p>
+    </div>
+      </div>
+    </dialog>
+    <dialog class="r2modal" id="dlg-pico" aria-labelledby="dlg-pico-h">
+      <h3 id="dlg-pico-h"><i class="fa-solid fa-microchip"></i>Pico board<button type="button" class="r2modal-x" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button></h3>
+      <div class="body">
+        <dl class="sysdl" id="pico-info"></dl>
+        <h4 class="sysh4"><i class="fa-solid fa-sliders"></i>Settings</h4>
     <div class="sysboard" id="sys-board">
       <div class="row"><label><i class="fa-solid fa-clock"></i>display off after</label><select id="brd-timeout"></select></div>
       <div class="row"><label><i class="fa-solid fa-sun"></i>brightness</label><select id="brd-bright"></select></div>
@@ -513,7 +563,7 @@
       <p class="status warn" id="brd-why" hidden></p>
       <p class="help" id="brd-file"></p>
     </div>
-      <h4 class="sysh4"><i class="fa-solid fa-download"></i>Pico firmware</h4>
+        <h4 class="sysh4"><i class="fa-solid fa-download"></i>Firmware</h4>
       <div class="sysboard">
         <p class="status" id="fw-text">…</p>
         <div class="row"><span></span><span><button id="fw-check" title="Ask GitHub whether there is newer firmware for the Pico board"><i class="fa-solid fa-rotate"></i>Check for update</button>
@@ -524,20 +574,12 @@
         <p class="status warn" id="fw-warn" hidden><i class="fa-solid fa-triangle-exclamation"></i>Do not unplug the Pico, the Pi or R2's power until it says it is done. The Pico's sensors stop for a few seconds while it is copied.</p>
         <details id="fw-logbox" hidden><summary>output</summary><pre id="fw-log"></pre></details>
       </div>
-    </details>
-    <h3 class="sysh" id="sys-cams-h" hidden><i class="fa-solid fa-video"></i>Dome cameras <span class="sub">network cameras in cameras.yaml</span></h3>
-    <div id="sys-cams" hidden></div>
-    <h3 class="sysh"><i class="fa-solid fa-wifi"></i>R2's WiFi <span class="sub">its own access point, for the cameras</span></h3>
-    <div class="sysboard">
-      <p class="status" id="wifi-text">…</p>
-      <div class="wifibars" id="wifi-bars"></div>
-      <div class="row"><span></span><span>
-        <button id="wifi-check" title="Look at how busy channels 1, 6 and 11 are now (R2's WiFi stays up)"><i class="fa-solid fa-magnifying-glass"></i>Check now</button>
-        <button id="wifi-move" title="Restart R2's WiFi so it moves to the quietest channel (the cameras drop for a few seconds)"><i class="fa-solid fa-arrow-right-arrow-left"></i>Move to the quietest</button></span></div>
-      <p class="help">The access point picks the quietest of channels 1, 6 and 11 each time it starts. A busy channel (a home WiFi on the same or a nearby channel) makes the cameras lose packets.</p>
-    </div>
-    </div>
-    </div>
+      </div>
+    </dialog>
+    <dialog class="r2modal" id="dlg-cam" aria-labelledby="dlg-cam-h">
+      <h3 id="dlg-cam-h"><i class="fa-solid fa-video"></i><span id="dlg-cam-name">camera</span><button type="button" class="r2modal-x" title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button></h3>
+      <div class="body"><dl class="sysdl" id="cam-info"></dl></div>
+    </dialog>
   </section>
 
   <section id="file" hidden>

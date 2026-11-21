@@ -3,7 +3,9 @@
 setup/deploy.sh) and, on demand, its telemetry."""
 
 import glob
+import json
 import os
+import socket
 import subprocess
 
 VERSION_FILE = os.path.expanduser("~/r2_ws/VERSION")
@@ -118,9 +120,56 @@ def snapshot(prev_stat):
     return data, stat
 
 
+def parse_addresses(text):
+    """`ip -j -4 addr` -> [{"iface", "ip": "a.b.c.d/nn"}], without loopback and interfaces with no address."""
+    try:
+        links = json.loads(text)
+    except ValueError:
+        return []
+    out = []
+    for link in links:
+        if link.get("ifname") == "lo":
+            continue
+        for a in link.get("addr_info", []):
+            if a.get("family") == "inet":
+                out.append({"iface": link["ifname"], "ip": f"{a['local']}/{a['prefixlen']}" if "prefixlen" in a else a["local"]})
+    return out
+
+
+def parse_uptime(text):
+    """/proc/uptime -> whole seconds since boot, or None."""
+    try:
+        return int(float(text.split()[0]))
+    except (IndexError, ValueError):
+        return None
+
+
+def parse_os_release(text):
+    """/etc/os-release -> its PRETTY_NAME, or None."""
+    for line in text.splitlines():
+        if line.startswith("PRETTY_NAME="):
+            return line.split("=", 1)[1].strip().strip('"') or None
+    return None
+
+
+def pi_info():
+    """What the Pi is and where: shown in System -> Raspberry Pi (cheap: read on every poll)."""
+    try:
+        ip = subprocess.run(["ip", "-j", "-4", "addr", "show"], capture_output=True, text=True, timeout=2).stdout
+    except (OSError, subprocess.SubprocessError):
+        ip = ""
+    return {
+        "host": socket.gethostname(),
+        "up_s": parse_uptime(_read("/proc/uptime") or ""),
+        "os": parse_os_release(_read("/etc/os-release") or ""),
+        "ros": os.environ.get("ROS_DISTRO"),
+        "addresses": parse_addresses(ip),
+    }
+
+
 def system_payload(telemetry, prev_stat, version_path=VERSION_FILE):
     """GET /api/system: the version, plus the telemetry when asked. (body, stat for next time)"""
-    body = {"version": read_version(version_path)}
+    body = {"version": read_version(version_path), "info": pi_info()}
     if not telemetry:
         return body, prev_stat
     data, stat = snapshot(prev_stat)

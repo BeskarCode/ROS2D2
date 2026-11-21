@@ -79,3 +79,13 @@ details.howto .help, details.howto > div { margin: 6px 0 0; }
 /* ---- section titles inside a page (System): the same as card titles ---- */
 .sectitle { font-size: var(--fs-s); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .sectitle .sub { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+/* ---- a modal with details or settings (System): the console's own, like the confirmation window ---- */
+dialog.r2modal { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: 0; border-radius: 12px;
+  border: 1px solid var(--line2); background: var(--panel); color: var(--text); box-shadow: 0 16px 48px rgba(0,0,0,.6); }
+dialog.r2modal[open] { display: flex; flex-direction: column; }
+dialog.r2modal::backdrop { background: rgba(1,4,9,.65); }
+dialog.r2modal > h3 { margin: 0; padding: 12px 18px; font-size: 15px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
+dialog.r2modal .r2modal-x { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 16px; padding: 2px 6px; }
+dialog.r2modal .r2modal-x:hover { color: var(--text); }
+dialog.r2modal > .body { padding: 14px 18px 18px; overflow: auto; }

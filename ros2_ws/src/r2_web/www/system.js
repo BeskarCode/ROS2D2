@@ -27,7 +27,8 @@ export function createSystemTab() {
     const p = Number(localStorage.getItem('r2web.telemetry_ms'));
     if (TELEMETRY_PERIODS.includes(p)) period = p;
   } catch { /* private window */ }
-  let pico = null, picoAt = 0;
+  let pico = null, picoAt = 0, camsKnown = false;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const seen = {};               // key -> { min, max } since the tab was first opened
 
   // A ring gauge: the zones' colour ranges as a faint track, the value filled in its zone's colour,
@@ -54,65 +55,104 @@ export function createSystemTab() {
   const USED_SD = [[85, 'ok', 'normal'], [95, 'warn', 'filling up'], [Infinity, 'bad', 'almost full']];
   const USED_RAM = [[80, 'ok', 'normal'], [90, 'warn', 'tight'], [Infinity, 'bad', 'almost full']];
 
-  // Telemetry off (or the source gone): the rings keep their last values, greyed, instead of vanishing
-  function stale(box) {
-    box.classList.add('stale');
-    box.hidden = !box.innerHTML.trim();
+  // Telemetry off (or the source gone): the rings keep their last values, greyed ('.stale')
+
+  function piInfo(api) {
+    const i = api.info || {};
+    const addr = (i.addresses || []).map((a) => `${a.iface} ${a.ip}`).join(' · ') || '–';
+    const warn = throttleText(api.throttled);
+    dl('pi-info', [
+      ['name', i.host || '–'], ['up', uptime(i.up_s)], ['addresses', addr],
+      ['system', [i.os, i.ros ? `ROS 2 ${i.ros}` : ''].filter(Boolean).join(' · ') || '–'],
+      ['software', versionText(api.version)],
+      ...(warn.length ? [['power', warn.join(' · '), 'bad']] : []),
+    ]);
   }
 
   function showPi(api) {
     $('sys-pi-version').textContent = versionText(api.version);
+    piInfo(api);
     const box = $('sys-pi');
-    if (!telemetry || !api.disk) { stale(box); return; }
-    box.hidden = false;
-    const d = api.disk, m = api.mem;
-    const diskFree = d.total ? d.free / d.total : 1;
-    const memFree = m.total ? m.available / m.total : 1;
-    const cores = api.cpu && api.cpu.length > 1 ? `cores ${api.cpu.slice(1).map((c) => Math.round(c)).join(' · ')} %` : '';
-    box.className = 'rings';
-    box.innerHTML =
-      ring('pi-sd', 'SD free', bytes(d.free), (1 - diskFree) * 100, USED_SD, 0, 100, ' % used', `of ${bytes(d.total)}`) +
-      ring('pi-ram', 'RAM free', bytes(m.available), (1 - memFree) * 100, USED_RAM, 0, 100, ' % used', `of ${bytes(m.total)}`) +
-      ring('pi-cpu', 'CPU', api.cpu ? pct(api.cpu[0]) : '…', api.cpu ? api.cpu[0] : null, CPU_ZONES, 0, 100, ' %', cores) +
-      ring('pi-temp', 'temperature', api.temp_c == null ? '–' : `${api.temp_c.toFixed(0)} °C`, api.temp_c, PI_TEMP_ZONES, 30, 90, ' °C');
+    if (!telemetry || !api.disk) {
+      if (!box.innerHTML.trim()) box.innerHTML = piRings(null);
+      box.classList.add('stale');
+      return;
+    }
+    box.classList.remove('stale');
+    box.innerHTML = piRings(api);
     const warn = throttleText(api.throttled);
     $('sys-pi-warn').hidden = !warn.length;
     $('sys-pi-warn').innerHTML = warn.map((w) => `<i class="fa-solid fa-bolt"></i>${w}`).join(' · ');
   }
 
-  // ---------- the network dome cameras (GET api/domecams: the Pi asks each one) ----------
-  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const lastCam = {};      // name -> its last rings and lines, shown grey when it stops answering
-  function showCams(api) {
-    const box = $('sys-cams');
-    if (!telemetry || !api) {
-      box.querySelectorAll('.camtm').forEach((el) => el.classList.add('stale'));
-      $('sys-cams-h').hidden = box.hidden = !box.innerHTML.trim();
-      return;
+  // with no data (never read yet): the same four gauges, empty
+  function piRings(api) {
+    if (!api) {
+      return ring('pi-sd', 'SD free', '–', null, USED_SD, 0, 100, '') + ring('pi-ram', 'RAM free', '–', null, USED_RAM, 0, 100, '') +
+        ring('pi-cpu', 'CPU', '–', null, CPU_ZONES, 0, 100, '') + ring('pi-temp', 'temperature', '–', null, PI_TEMP_ZONES, 30, 90, '');
     }
-    const cams = api.cameras || [];
-    box.hidden = $('sys-cams-h').hidden = !cams.length;
-    if (box.hidden) return;
-    box.innerHTML = cams.map((c) => {
-      const head = `<h4><i class="fa-solid fa-video"></i> ${esc(c.name)} <span class="sub">${esc(c.url)}</span></h4>`;
-      if (!c.status) {
-        return `<div class="camtm stale">${head}<p class="status bad">No answer: ${esc(c.error || '?')}</p>${lastCam[c.name] || ''}</div>`;
-      }
-      const s = c.status;
-      const cpu = Array.isArray(s.cpu) ? s.cpu : null;
-      const rssi = Number.isFinite(s.rssi) && s.rssi < 0 ? -s.rssi : null;
-      const k = `cam-${c.name}`;
-      const rings =
-        ring(`${k}-temp`, 'chip temperature', s.temp_c == null ? '–' : `${s.temp_c.toFixed(0)} °C`, s.temp_c, CAM_TEMP_ZONES, 20, 90, ' °C') +
-        ring(`${k}-c0`, 'core 0 · WiFi, web', cpu ? pct(cpu[0]) : '–', cpu ? cpu[0] : null, CPU_ZONES, 0, 100, ' %') +
-        ring(`${k}-c1`, 'core 1 · finder', cpu ? pct(cpu[1]) : '–', cpu ? cpu[1] : null, CPU_ZONES, 0, 100, ' %') +
-        ring(`${k}-rssi`, 'WiFi signal', rssi == null ? '–' : `${s.rssi} dBm`, rssi, RSSI_ZONES, 20, 95, ' (-dBm)');
-      const lines = camLines(s, c.ms).map(([l, v, cls]) => `<dt>${esc(l)}</dt><dd class="${cls}">${esc(v)}</dd>`).join('');
-      const old = s.temp_c === undefined ? '<p class="help">Update this camera&#39;s firmware to see its temperature, load and reboots.</p>' : '';
-      lastCam[c.name] = `<div class="rings">${rings}</div>${old}<dl>${lines}</dl>`;
-      return `<div class="camtm">${head}${lastCam[c.name]}</div>`;
-    }).join('');
+    const d = api.disk, m = api.mem;
+    const diskFree = d.total ? d.free / d.total : 1;
+    const memFree = m.total ? m.available / m.total : 1;
+    const cores = api.cpu && api.cpu.length > 1 ? `cores ${api.cpu.slice(1).map((c) => Math.round(c)).join(' · ')} %` : '';
+    return (
+      ring('pi-sd', 'SD free', bytes(d.free), (1 - diskFree) * 100, USED_SD, 0, 100, ' % used', `of ${bytes(d.total)}`) +
+      ring('pi-ram', 'RAM free', bytes(m.available), (1 - memFree) * 100, USED_RAM, 0, 100, ' % used', `of ${bytes(m.total)}`) +
+      ring('pi-cpu', 'CPU', api.cpu ? pct(api.cpu[0]) : '…', api.cpu ? api.cpu[0] : null, CPU_ZONES, 0, 100, ' %', cores) +
+      ring('pi-temp', 'temperature', api.temp_c == null ? '–' : `${api.temp_c.toFixed(0)} °C`, api.temp_c, PI_TEMP_ZONES, 30, 90, ' °C'));
   }
+
+  // a details list in a modal: [[label, value, cls?]], values as text
+  function dl(id, rows) {
+    $(id).innerHTML = rows.map(([l, v, cls]) => `<dt>${esc(l)}</dt><dd class="${cls || ''}">${esc(v)}</dd>`).join('');
+  }
+
+  // ---------- the network dome cameras (GET api/domecams: the Pi asks each one) ----------
+  const camInfo = {};      // name -> its details rows, for the modal
+  let camShown = null;     // the camera whose modal is open
+  const camRings = (k, s) => {
+    const cpu = s && Array.isArray(s.cpu) ? s.cpu : null;
+    const rssi = s && Number.isFinite(s.rssi) && s.rssi < 0 ? -s.rssi : null;
+    return ring(`${k}-temp`, 'chip temperature', s && s.temp_c != null ? `${s.temp_c.toFixed(0)} °C` : '–', s ? s.temp_c : null, CAM_TEMP_ZONES, 20, 90, ' °C') +
+      ring(`${k}-c0`, 'core 0 · WiFi, web', cpu ? pct(cpu[0]) : '–', cpu ? cpu[0] : null, CPU_ZONES, 0, 100, ' %') +
+      ring(`${k}-c1`, 'core 1 · finder', cpu ? pct(cpu[1]) : '–', cpu ? cpu[1] : null, CPU_ZONES, 0, 100, ' %') +
+      ring(`${k}-rssi`, 'WiFi signal', rssi == null ? '–' : `${s.rssi} dBm`, rssi, RSSI_ZONES, 20, 95, ' (-dBm)');
+  };
+  function showCams(api, live) {
+    const box = $('sys-cams');
+    if (!api) { box.querySelectorAll('.rings').forEach((el) => el.classList.add('stale')); return; }
+    const cams = api.cameras || [];
+    box.innerHTML = cams.map((c) => {
+      const k = `cam-${c.name}`, s = live ? c.status : null;
+      if (live && c.status) camInfo[c.name] = camLines(c.status, c.ms);
+      else if (live) camInfo[c.name] = [['state', `No answer: ${c.error || '?'}`, 'bad'], ...(camInfo[c.name] || []).filter(([l]) => l !== 'state')];
+      const old = s && s.temp_c === undefined ? '<p class="help">Update this camera&#39;s firmware to see its temperature, load and reboots.</p>' : '';
+      const prev = box.querySelector(`.rings[data-cam="${CSS.escape(c.name)}"]`);
+      const rings = s ? camRings(k, s) : prev ? prev.innerHTML : camRings(k, null);
+      return `<div class="sysblock"><h3 class="sysh"><i class="fa-solid fa-video"></i>${esc(c.name)} <span class="sub">dome camera · ${esc(c.url)}</span>
+        <button type="button" class="sysmore" data-cam="${esc(c.name)}" title="Its uptime, WiFi, what it is finding and its memory"><i class="fa-solid fa-sliders"></i>Details</button></h3>
+        <div class="rings ${s ? '' : 'stale'}" data-cam="${esc(c.name)}">${rings}</div>${old}</div>`;
+    }).join('');
+    if (camShown) showCamInfo(camShown);
+  }
+  function showCamInfo(name) {
+    $('dlg-cam-name').textContent = name;
+    dl('cam-info', camInfo[name] && camInfo[name].length ? camInfo[name] : [['state', 'Turn the telemetry on to read it.']]);
+  }
+  $('sys-cams').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-cam]');
+    if (!b) return;
+    camShown = b.dataset.cam;
+    showCamInfo(camShown);
+    $('dlg-cam').showModal();
+  });
+  $('dlg-cam').addEventListener('close', () => { camShown = null; });
+  // every modal: its button opens it, the × or a click outside closes it (Esc too, by itself)
+  document.querySelectorAll('#system .sysmore[data-dlg]').forEach((b) => b.addEventListener('click', () => $(b.dataset.dlg).showModal()));
+  document.querySelectorAll('#system dialog.r2modal').forEach((d) => {
+    d.querySelector('.r2modal-x').addEventListener('click', () => d.close());
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+  });
 
   // ---------- R2's own WiFi: the access point's channel (GET api/wifi, POST survey / move) ----------
   function showWifi(look, what) {
@@ -161,31 +201,41 @@ export function createSystemTab() {
       : `${pico.firmware || '?'}${pico.commit ? ` · ${pico.commit}` : ''}`;
     const box = $('sys-pico'), note = $('sys-pico-note');
     note.hidden = true;
-    if (!telemetry || !fresh) { stale(box); return; }
+    dl('pico-info', [
+      ['state', fresh ? 'connected' : 'not connected', fresh ? '' : 'bad'],
+      ['firmware', fresh ? `${pico.firmware || '?'}${pico.commit ? ` · ${pico.commit}` : ''}` : '–'],
+      ...(fresh && pico.telemetry ? [['up', uptime(pico.telemetry.up_s)],
+        ['readings', pico.telemetry.rps.map((n, i) => `${Object.keys(pico.sensors || {})[i] || `#${i}`} ${n}/s`).join(' · ') || 'no sensors']] : []),
+    ]);
+    if (!box.innerHTML.trim()) box.innerHTML = picoRings(null);
+    if (!telemetry || !fresh) { box.classList.add('stale'); return; }
     if (!(pico.proto >= 2)) {
       note.hidden = false;
       note.textContent = 'Update the Pico firmware to see its telemetry.';
-      box.hidden = true;
+      box.classList.add('stale');
       return;
     }
     const tm = pico.telemetry;
     if (!tm) {
       note.hidden = false;
       note.textContent = 'Waiting for the Pico…';
-      stale(box);
+      box.classList.add('stale');
       return;
     }
-    const names = Object.keys(pico.sensors || {});
-    const rps = tm.rps.map((n, i) => `${names[i] || `#${i}`} ${n}/s`).join(' · ');
-    box.hidden = false;
-    box.className = 'rings';
-    box.innerHTML =
+    box.classList.remove('stale');
+    box.innerHTML = picoRings(tm);
+  }
+  function picoRings(tm) {
+    if (!tm) {
+      return ring('pico-c0', 'core 0 · measuring', '–', null, CPU_ZONES, 0, 100, '') + ring('pico-c1', 'core 1 · display', '–', null, CPU_ZONES, 0, 100, '') +
+        ring('pico-bus', 'I2C bus', '–', null, CPU_ZONES, 0, 100, '') + ring('pico-temp', 'chip temperature', '–', null, PICO_TEMP_ZONES, 10, 90, '');
+    }
+    return (
       ring('pico-c0', 'core 0 · measuring', pct(tm.c0), tm.c0, CPU_ZONES, 0, 100, ' %') +
       ring('pico-c1', 'core 1 · display', pct(tm.c1), tm.c1, CPU_ZONES, 0, 100, ' %') +
       ring('pico-bus', 'I2C bus', pct(tm.bus), tm.bus, CPU_ZONES, 0, 100, ' %',
         `display ${pct(tm.disp)}`, `a VL53L0X waited up to ${tm.wait_ms} ms for the bus`) +
-      ring('pico-temp', 'chip temperature', `${tm.temp_c.toFixed(0)} °C`, tm.temp_c, PICO_TEMP_ZONES, 10, 90, ' °C') +
-      `<div class="ringtext"><b>${uptime(tm.up_s)}</b><div class="l">up</div><div class="l dim">${rps || 'no sensors'}</div></div>`;
+      ring('pico-temp', 'chip temperature', `${tm.temp_c.toFixed(0)} °C`, tm.temp_c, PICO_TEMP_ZONES, 10, 90, ' °C'));
   }
   subscribe('/pico/state', 'std_msgs/msg/String', (m) => {
     try { pico = JSON.parse(m.data); picoAt = Date.now(); } catch { return; }
@@ -269,7 +319,7 @@ export function createSystemTab() {
     const showBar = busy || fw.state === 'done' || fw.state === 'failed';
     $('fw-bar').hidden = !showBar;
     $('fw-warn').hidden = !busy;
-    if (busy) $('fold-board').open = true;     // never flash with the progress folded away
+    if (busy && !$('dlg-pico').open) $('dlg-pico').showModal();   // never flash with the progress out of sight
     if (showBar) {
       const p = fw.state === 'failed' ? 100 : flashProgress(fw.state, (Date.now() - fwStepAt) / 1000);
       $('fw-barfill').style.width = `${p}%`;
@@ -321,8 +371,8 @@ export function createSystemTab() {
       showPi(api);
       boardView.pi(api);
     } catch { /* restarting */ }
-    if (telemetry) {
-      try { showCams(await (await fetch('api/domecams', { cache: 'no-store' })).json()); } catch { showCams(null); }
+    if (telemetry || !camsKnown) {
+      try { showCams(await (await fetch('api/domecams', { cache: 'no-store' })).json(), telemetry); camsKnown = true; } catch { showCams(null); }
     }
     showPico();
     if (visible) timer = setTimeout(poll, telemetry ? period : 5000);
@@ -343,15 +393,11 @@ export function createSystemTab() {
     telemetry = on;
     $('sys-telemetry').checked = on;
     try { localStorage.setItem('r2web.telemetry', on ? '1' : '0'); } catch { /* private window */ }
-    if (!on) { stale($('sys-pi')); stale($('sys-pico')); $('sys-pi-warn').hidden = true; showCams(null); stopPico(); }
+    if (!on) { $('sys-pi').classList.add('stale'); $('sys-pico').classList.add('stale'); $('sys-pi-warn').hidden = true; showCams(null); stopPico(); }
     restart();
   }
   $('sys-telemetry').addEventListener('change', (e) => setTelemetry(e.target.checked));
   $('sys-telemetry').checked = telemetry;
-  for (const id of ['fold-board']) {
-    try { $(id).open = localStorage.getItem(`r2web.${id}`) === '1'; } catch { /* private window */ }
-    $(id).addEventListener('toggle', () => { try { localStorage.setItem(`r2web.${id}`, $(id).open ? '1' : '0'); } catch { /* private */ } });
-  }
   $('sys-every').innerHTML = TELEMETRY_PERIODS.map((ms) => `<option value="${ms}">${ms / 1000} s</option>`).join('');
   $('sys-every').value = String(period);
   $('sys-every').addEventListener('change', (e) => {
