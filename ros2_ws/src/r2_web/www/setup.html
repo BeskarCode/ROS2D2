@@ -440,7 +440,10 @@
       </div>
       <div>
         <div class="sfilter"><button id="s-connected" title="show only the sensors that are measuring now">
-          <i class="fa-solid fa-plug-circle-check"></i>Connected only</button><span id="s-hiddenn"></span></div>
+          <i class="fa-solid fa-plug-circle-check"></i>Connected only</button>
+          <button id="s-hideall" title="Hide every sensor's beam (and the lidar's points) on the map"><i class="fa-solid fa-eye-slash"></i>Hide all</button>
+          <button id="s-showall" title="Show every sensor's beam (and the lidar's points) on the map"><i class="fa-solid fa-eye"></i>Show all</button>
+          <span id="s-hiddenn"></span></div>
         <div id="slist"></div>
         <div class="sadd"><select id="s-addtype"><option value="vl53l0x">VL53L0X</option><option value="hcsr04">HC-SR04</option>
           <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add" title="Add a sensor of the type on the left: it takes the first free connector of the Pico board"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
