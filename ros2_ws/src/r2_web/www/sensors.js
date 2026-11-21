@@ -286,6 +286,12 @@ export function createSensorsTab({ status }) {
     redraw();
   };
   $('s-connected').addEventListener('click', () => showOnlyConnected(!onlyConnected));
+  // every beam (and the lidar's points) hidden or shown on the map at once, like each card's eyes
+  $('s-hideall').addEventListener('click', () => {
+    for (const s of sensors) { hidden.add(s.name); if (isLidar(s)) hidden.add(s.name + '#points'); }
+    saveHidden(); renderList(); redraw();
+  });
+  $('s-showall').addEventListener('click', () => { hidden.clear(); saveHidden(); renderList(); redraw(); });
   showOnlyConnected(onlyConnected);
 
   // Live: the Pico's state and each Pico sensor's /range, drawn at most 4 times a second
