@@ -6,6 +6,7 @@ import { createSensorsTab } from './sensors.js';
 import { createSystemTab } from './system.js';
 import { createModesTab } from './modes.js';
 import { showStream, stopStream } from './mjpeg.js';
+import { onSaveKey } from './savekey.js';
 
 const $ = (id) => document.getElementById(id);
 const TRACKER = '/dome_tracker';
@@ -312,7 +313,9 @@ function restartFailed() {
 
 // Tabs: Cameras, Sensors, Modes, System, and File (the text of whichever of Cameras, Sensors
 // and Modes was open last; System has no file)
+let current = 'cameras';   // the tab on screen (Ctrl+S saves it)
 function showTab(name) {
+  current = name;
   if (name !== 'file' && name !== 'system') section = name;
   $('form').hidden = name !== 'cameras';
   $('sensors').hidden = name !== 'sensors';
@@ -345,6 +348,16 @@ function showTab(name) {
 }
 
 $('save').addEventListener('click', () => save(false));
+// Ctrl+S: what Save would do, and the status line it leaves, in a message seen from anywhere
+onSaveKey(async () => {
+  if (current === 'system') return { ok: null, text: 'Nothing to save here: the board settings save as you change them' };
+  if ($('save').disabled) return { ok: false, text: 'Cannot save now (an automatic mode or a restart is running)' };
+  $('status').textContent = '';
+  await save(false);
+  const text = $('status').textContent;
+  const ok = $('status').classList.contains('ok') || (!!text && !$('status').classList.contains('bad') && !$('status').classList.contains('warn'));
+  return { ok, text: text || (ok ? 'Saved' : 'Not saved') };
+});
 $('restart').addEventListener('click', () => save(true));
 $('tab-form').addEventListener('click', () => showTab('cameras'));
 $('tab-sensors').addEventListener('click', () => showTab('sensors'));

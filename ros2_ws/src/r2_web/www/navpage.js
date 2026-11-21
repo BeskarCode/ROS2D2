@@ -9,6 +9,7 @@ import { createModePick } from './modepick.js';
 import { GROUPS, FIELDS, changedKeys, toNavYaml } from './navsettings.js';
 import { call } from './rosbridge.js';
 import { freeText, nearestPoint } from './sensormath.js';
+import { onSaveKey } from './savekey.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
@@ -392,12 +393,7 @@ function buildSettings() {
     });
     inp.addEventListener('change', () => applyLive(f.key, P.nav[f.key]));
   }
-  $('nav-save').onclick = async () => {
-    const r = await fetch('api/nav', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ yaml: toNavYaml(P.nav) }) });
-    const body = await r.json();
-    if (r.ok) { settingsDirty = false; P.navSaved = true; addLine(`· settings saved: ${body.file}`, 'info'); } else addLine(`· ${body.error}`, 'info');
-    settingsState();
-  };
+  $('nav-save').onclick = saveNav;
   $('nav-defaults').onclick = () => {
     for (const f of FIELDS) { P.nav[f.key] = P.navDefaults[f.key]; applyLive(f.key, P.nav[f.key]); }
     settingsDirty = true;
@@ -406,3 +402,16 @@ function buildSettings() {
   };
   settingsState();
 }
+
+async function saveNav() {
+  if (!P.nav) return { ok: null, text: 'The nav settings have not loaded yet' };
+  let r, body;
+  try {
+    r = await fetch('api/nav', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ yaml: toNavYaml(P.nav) }) });
+    body = await r.json();
+  } catch { return { ok: false, text: 'Not saved: the Pi does not answer' }; }
+  if (r.ok) { settingsDirty = false; P.navSaved = true; addLine(`· settings saved: ${body.file}`, 'info'); } else addLine(`· ${body.error}`, 'info');
+  settingsState();
+  return r.ok ? { ok: true, text: `Nav settings saved in ${body.file}` } : { ok: false, text: `Not saved: ${body.error}` };
+}
+onSaveKey(saveNav);
