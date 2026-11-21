@@ -21,6 +21,7 @@ export function createPad({ longMs = 600, comboMs = 300 } = {}) {
   const letGo = new Set();          // pressed while held: its release lets it go
   let pulse = null;                 // { mask, until }: a click or a combination being sent
   let x = CENTRE, y = CENTRE, stickOn = false;
+  let forced = 0;                   // a shortcut's buttons (Remote -> Shortcuts)
 
   const promote = (name) => { downs.delete(name); promoted.add(name); held.add(name); };
 
@@ -59,8 +60,10 @@ export function createPad({ longMs = 600, comboMs = 300 } = {}) {
 
     reset() {
       held.clear(); downs.clear(); promoted.clear(); letGo.clear();
-      pulse = null; x = CENTRE; y = CENTRE; stickOn = false;
+      pulse = null; x = CENTRE; y = CENTRE; stickOn = false; forced = 0;
     },
+
+    force(mask) { forced = mask; },
 
     held() { return new Set(held); },
 
@@ -70,6 +73,7 @@ export function createPad({ longMs = 600, comboMs = 300 } = {}) {
     state(t) {
       let buttons = maskOf(held);
       if (pulse && t < pulse.until) buttons |= pulse.mask;
+      buttons |= forced;
       return { buttons, x, y };
     },
 

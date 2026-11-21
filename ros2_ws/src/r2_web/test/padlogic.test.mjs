@@ -109,3 +109,15 @@ test('pressing(): a button is down and may still become a HOLD (the window keeps
   p.up('CROSS', 750);
   assert.equal(p.pressing(), false);
 });
+
+test('force(mask): a shortcut presses those buttons on top of the rest; force(0) lets them go', () => {
+  const p = createPad();
+  p.force(maskOf(['PS', 'L2']));
+  assert.equal(p.state(0).buttons, maskOf(['PS', 'L2']));
+  assert.equal(p.active(0), true);
+  p.force(0);
+  assert.equal(p.state(0).buttons, 0);
+  assert.equal(p.active(0), false);
+  p.force(maskOf(['UP'])); p.reset();
+  assert.equal(p.state(0).buttons, 0);          // closing the window lets a shortcut go too
+});

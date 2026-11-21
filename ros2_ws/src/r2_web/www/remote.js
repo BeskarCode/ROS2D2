@@ -7,7 +7,8 @@
 // at rest too): the Mega takes 300 ms of silence as "controller lost" and switches tracking and the
 // modes off. So closing the window, leaving the page or hiding the tab is switching the controllers
 // off: everything is let go and the Mega stops the motors by itself. One window at a time across tabs.
-import { createPad } from './padlogic.js';
+import { createPad, maskOf } from './padlogic.js';
+import { GAP_MS, HOLD_MS, PRE_MS, shortcutList, stepsFor } from './shortcuts.js';
 import { confirmDialog } from './dialog.js';
 import { ensureConnected, publish, subscribe } from './rosbridge.js';
 
@@ -16,6 +17,7 @@ const TOPICS = { F: '/pad/foot', D: '/pad/dome' };
 const NAMES = { F: 'Foot Nav', D: 'Dome Nav' };
 
 let win = null, btn = null, timer = null, riskOk = false;
+let shortTimers = [], shortBusy = false;
 let pads = { F: 'none', D: 'none', supported: null, mega: false };
 const pad = { F: createPad(), D: createPad() };
 const wasActive = { F: false, D: false };
@@ -61,7 +63,25 @@ function addStyle() {
       font: 600 10px system-ui; color: var(--muted); touch-action: none; }
     .r2remote .r2r-dpad { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 34px); gap: 3px; }
     .r2remote .r2r-dpad .r2r-b { min-width: 0; width: 38px; height: 34px; padding: 0; }
-    .r2remote .r2r-help { margin: 0 14px 14px; font-size: var(--fs-s); color: var(--muted); }`;
+    .r2remote .r2r-help { margin: 0 14px 14px; font-size: var(--fs-s); color: var(--muted); }
+    .r2remote .r2r-tabs { display: flex; gap: 4px; padding: 8px 14px 0; }
+    .r2remote .r2r-tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); border-radius: 6px;
+      padding: 5px 12px; font: inherit; font-size: var(--fs); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+    .r2remote .r2r-tabs button:hover { background: var(--line); color: var(--text); }
+    .r2remote .r2r-tabs button.r2r-on { background: var(--line); border-color: var(--line2); color: var(--text); }
+    .r2remote .r2r-short { padding: 10px 14px 14px; }
+    .r2remote .r2r-sfind { width: 100%; box-sizing: border-box; margin: 0 0 8px; background: var(--bg); color: var(--text);
+      border: 1px solid var(--line2); border-radius: 6px; padding: 6px 10px; font: inherit; font-size: var(--fs); }
+    .r2remote .r2r-slist { max-height: min(52vh, 420px); overflow: auto; display: grid; gap: 4px; }
+    .r2remote .r2r-sgroup { font-size: var(--fs-s); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 8px 0 2px; }
+    .r2remote .r2r-srow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; color: var(--text); font: inherit;
+      font-size: var(--fs); cursor: pointer; }
+    .r2remote .r2r-srow:hover:not(:disabled) { border-color: var(--blue); }
+    .r2remote .r2r-srow:disabled { opacity: .5; cursor: default; }
+    .r2remote .r2r-srow.r2r-sent { border-color: var(--green); background: rgba(63,185,80,.12); }
+    .r2remote .r2r-srow .r2r-keys { color: var(--muted); font-size: var(--fs-s); white-space: nowrap; }
+    .r2remote .r2r-sstat { min-height: 1.3em; margin: 8px 0 0; font-size: var(--fs-s); color: var(--muted); }`;
   document.head.append(s);
 }
 
@@ -82,14 +102,28 @@ function build() {
   win.hidden = true;
   win.innerHTML = `<div class="r2r-bar"><i class="fa-solid fa-gamepad"></i><b>Remote control · virtual Navs</b>
       <button class="r2r-x" type="button" title="Close: lets everything go"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="r2r-tabs"><button type="button" class="r2r-on" data-tab="pads"><i class="fa-solid fa-gamepad"></i>Controllers</button>
+      <button type="button" data-tab="short" title="Every combination that does something, sent for you with one click"><i class="fa-solid fa-bolt"></i>Shortcuts</button></div>
+    <div class="r2r-tab" data-tab="pads">
     <div class="r2r-pads">${['F', 'D'].map((p) => `<div class="r2r-pad" data-pad="${p}"><h4>${NAMES[p]} <span class="r2r-chip">…</span></h4>
       <div class="r2r-warn"><i class="fa-solid fa-triangle-exclamation"></i> A real ${p === 'F' ? 'foot' : 'dome'} Nav is connected: if someone moves it, it wins.</div>
       <div class="r2r-nav">${navHtml()}</div></div>`).join('')}</div>
     <p class="r2r-help"><i class="fa-solid fa-circle-info"></i> Click = press and release. <b>Hold a button 0.6 s</b> to keep it pressed (HOLD),
-      then press another to send the combination. Click a held button, or press <b>Esc</b>, to let it go. Closing the window lets everything go.</p>`;
+      then press another to send the combination. Click a held button, or press <b>Esc</b>, to let it go. Closing the window lets everything go.</p>
+    </div>
+    <div class="r2r-tab r2r-short" data-tab="short" hidden>
+      <input class="r2r-sfind" type="search" placeholder="Find: holo, song, panel, Patrol…" aria-label="Find a shortcut">
+      <div class="r2r-slist"></div>
+      <p class="r2r-sstat"></p>
+      <p class="r2r-help" style="margin:4px 0 0"><i class="fa-solid fa-circle-info"></i> One click presses the whole combination on the two Navs, in the
+        order the Mega needs. The actions are ShadowMD Lite's default MarcDuino map; a combination given to a mode (Setup → Modes) starts the
+        mode instead. Free combinations are not listed.</p>
+    </div>`;
   document.body.append(win);
   win.querySelector('.r2r-x').addEventListener('click', close);
   win.querySelectorAll('.r2r-pad').forEach(wirePad);
+  win.querySelectorAll('.r2r-tabs button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  win.querySelector('.r2r-sfind').addEventListener('input', renderShortcuts);
   dragByBar();
 }
 
@@ -172,6 +206,84 @@ function wirePad(padEl) {
   knob.addEventListener('pointercancel', stickEnd);
 }
 
+// --- Shortcuts -------------------------------------------------------------------------------
+let shortcuts = shortcutList({});
+
+function showTab(name) {
+  win.querySelectorAll('.r2r-tabs button').forEach((b) => b.classList.toggle('r2r-on', b.dataset.tab === name));
+  win.querySelectorAll('.r2r-tab').forEach((t) => { t.hidden = t.dataset.tab !== name; });
+  if (name === 'short') loadShortcuts();
+}
+
+async function loadShortcuts() {
+  try {
+    const p = await (await fetch('api/modes', { cache: 'no-store' })).json();
+    if (!p.error) shortcuts = shortcutList(p.modes || {});
+  } catch { /* restarting: the MarcDuino ones still work */ }
+  renderShortcuts();
+}
+
+const GROUPS = { mode: 'Automatic modes', tracking: 'Face tracking', marcduino: 'MarcDuino actions' };
+
+function renderShortcuts() {
+  const list = win.querySelector('.r2r-slist');
+  const q = win.querySelector('.r2r-sfind').value.trim().toLowerCase();
+  const off = !pads.mega || pads.supported === false;
+  list.replaceChildren();
+  let group = null;
+  for (const sc of shortcuts) {
+    if (q && !`${sc.what} ${sc.label}`.toLowerCase().includes(q)) continue;
+    if (sc.kind !== group) {
+      group = sc.kind;
+      const h = document.createElement('div');
+      h.className = 'r2r-sgroup';
+      h.textContent = GROUPS[group];
+      list.append(h);
+    }
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'r2r-srow';
+    row.disabled = off || shortBusy;
+    row.dataset.combo = sc.combo;
+    const what = document.createElement('span'), keys = document.createElement('span');
+    what.textContent = sc.what;
+    keys.className = 'r2r-keys';
+    keys.textContent = sc.label;
+    row.append(what, keys);
+    row.addEventListener('click', () => runShortcut(sc, row));
+    list.append(row);
+  }
+  if (!list.children.length) list.textContent = 'Nothing matches.';
+  const stat = win.querySelector('.r2r-sstat');
+  if (off && !shortBusy) stat.textContent = !pads.mega ? 'No Mega: nothing to send to.' : 'This Mega firmware has no virtual Nav.';
+}
+
+function lockShortcuts(on) {
+  shortBusy = on;
+  win.querySelectorAll('.r2r-srow').forEach((r) => { r.disabled = on || !pads.mega || pads.supported === false; });
+}
+
+// Modifiers first, then the arrow (or L2) with them, then let go and wait: the sketch takes a
+// combination on the first loop its arrow is down, and needs a second without arrows before the next.
+async function runShortcut(sc, row) {
+  if (shortBusy) return;
+  const st = stepsFor(sc.combo);
+  for (const p of ['F', 'D']) if (st.then[p].length && !(await allowed(p))) return;
+  lockShortcuts(true);
+  const stat = win.querySelector('.r2r-sstat');
+  stat.textContent = `Sending ${sc.label}…`;
+  const at = (ms, fn) => shortTimers.push(setTimeout(fn, ms));
+  const press = (part) => { for (const p of ['F', 'D']) pad[p].force(maskOf(part[p])); kick(); };
+  press(st.first);
+  at(PRE_MS, () => press(st.then));
+  at(PRE_MS + HOLD_MS, () => {
+    press({ F: [], D: [] });
+    row.classList.add('r2r-sent');
+    stat.textContent = `Sent ${sc.label}: ${sc.what}.`;
+  });
+  at(PRE_MS + HOLD_MS + GAP_MS, () => { row.classList.remove('r2r-sent'); lockShortcuts(false); shortTimers = []; });
+}
+
 function send(p, s) {
   publish(TOPICS[p], 'std_msgs/msg/String', { data: JSON.stringify(s) });
 }
@@ -193,6 +305,9 @@ function step() {
 function kick() { if (!timer && win && !win.hidden) timer = setInterval(step, SEND_MS); step(); }
 
 function releaseAll() {
+  shortTimers.forEach(clearTimeout);
+  shortTimers = [];
+  if (shortBusy && win) { lockShortcuts(false); win.querySelectorAll('.r2r-srow.r2r-sent').forEach((r) => r.classList.remove('r2r-sent')); }
   for (const p of ['F', 'D']) {
     const had = pad[p].active(performance.now()) || wasActive[p];
     pad[p].reset();
@@ -217,6 +332,7 @@ function showStatus() {
     el.classList.toggle('r2r-off', off);
     el.classList.toggle('r2r-real', pads[p] === 'real' && !off);
   }
+  if (!win.querySelector('.r2r-tab[data-tab="short"]').hidden) renderShortcuts();
 }
 
 function open() {
