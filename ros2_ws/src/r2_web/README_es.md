@@ -22,6 +22,11 @@ La consola web de ROS2D2, en `http://<pi>:8080`. Cómo se usa está en el
 ros2 launch r2_web web.launch.py
 ```
 
+La **vista del móvil** (`www/phone.html`, `phone.js`, `phonelogic.js`) maneja a R2 desde un móvil: dos
+sticks, las acciones con favoritas, los modos y STOP; `remote_api.py` guarda sus ajustes
+(`remote.yaml`: el límite de los sticks, el modo invitado, las favoritas). Ella y la ventana Remote
+mandan a través de `padlink.js`.
+
 La ventana **Remote** (`www/remote.js`, `padlogic.js`, `shortcuts.js`) maneja dos PS3 Nav virtuales
 por `/pad/foot` y `/pad/dome`; el puente del Mega se los manda al Mega como `ROS:PAD`. Sus atajos siguen
 el mapa de botones de ShadowMD Lite ([CheatSheet](https://github.com/BeskarCode/ShadowMDLite/blob/main/CheatSheet.md)).

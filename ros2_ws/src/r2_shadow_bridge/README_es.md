@@ -39,6 +39,9 @@ velocidades.
 | out | `/r2/track_mode/reason` | `std_msgs/String` (latched) | Por qué se apagó: `boot`, `button`, `controller`, `pi`, `disconnected` |
 | srv | `/r2/auto_mode/disable` | `std_srvs/Trigger` | Apaga el modo autónomo |
 | srv | `/r2/track_mode/disable` | `std_srvs/Trigger` | Apaga el seguimiento de caras |
+| entra | `/pad/foot`, `/pad/dome` | `std_msgs/String` | Los Navs virtuales de la consola (ventana Remote, móvil), JSON `{id, buttons, x, y}`, que van al Mega como `ROS:PAD`. Los sticks se mantienen dentro del `stick_limit_pct` de `remote.yaml` (20 % por defecto); maneja una sola página (`id`) a la vez, y otra se ignora hasta que la primera lleve 1 s callada |
+| entra | `/r2/remote/reload` | `std_msgs/Empty` | Volver a leer `remote.yaml` (guardado desde Setup → Modes) |
+| sale | `/mega/pads` | `std_msgs/String` (latched) | JSON: cada Nav `real`, `virtual` o `none`, si el firmware tiene Navs virtuales, `owner` (la página que maneja) y `limit` |
 
 | Parámetro | Por defecto | Qué es |
 |---|---|---|

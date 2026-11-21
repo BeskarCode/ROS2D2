@@ -25,6 +25,7 @@ en la que estás, desde cualquier parte de ella.
 - [Console](#console)
 - [Navigation](#navigation)
 - [Mando a distancia](#mando-a-distancia): [Mandos](#mandos) · [Atajos](#atajos)
+- [Móvil](#móvil)
 - [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
   [System](#setup--system) · [File](#setup--file)
 
@@ -187,6 +188,48 @@ otro Nav, como dice la chuleta (*Foot ↑ + Cross* es la ↑ del foot con el Cro
 cada atajo la lista espera 1,2 s: el Mega no hace caso a una flecha que llega antes de un segundo
 desde la anterior.
 
+La ventana Remote y el móvil comparten los mismos dos Navs virtuales: solo maneja uno a la vez (el otro
+dice *Another device is driving R2*), y sus sticks llegan solo hasta el límite de Setup → Modes.
+
+---
+
+## Móvil
+
+| Drive | Actions | Modes |
+|---|---|---|
+| <img src="media/manual/phone-drive.png" alt="Vista del móvil, Drive" width="240"> | <img src="media/manual/phone-actions.png" alt="Vista del móvil, Actions" width="240"> | <img src="media/manual/phone-modes.png" alt="Vista del móvil, Modes" width="240"> |
+
+<img src="media/manual/phone-landscape.png" alt="Vista del móvil en horizontal: cada stick en su borde" width="560">
+
+Una vista de la consola para el móvil, al estilo de la app R2 Touch de MarcDuino: conducir a R2, lanzar
+sus acciones y encender sus modos. Conéctate a la WiFi de R2 (`R2D2`) y abre
+**`http://10.42.0.1:8080/phone.html`** (o el enlace de Setup → Modes). En el iPhone, en Safari,
+**Compartir → Añadir a pantalla de inicio** la deja como una app, a pantalla completa y con su icono;
+en Android funciona igual.
+
+- **Drive**: el stick del foot a la izquierda y el del dome a la derecha, cada uno con los botones de
+  su Nav (L1, L2, PS, ✕, ○), pulsados mientras tienes el dedo encima. **Los sticks solo llegan hasta
+  un punto**: el 20 % del recorrido del mando por defecto (Setup → Modes → Remote and phone), y la Pi
+  los mantiene ahí mande lo que mande la página, así que desde el móvil R2 nunca va tan rápido como con
+  el PS3 Nav. Un stick que vuelve al centro para ese motor. En horizontal cada stick queda en su borde
+  de la pantalla, bajo el pulgar.
+- **Actions**: todas las acciones de MarcDuino del mapa de ShadowMD Lite, con buscador; un toque la
+  lanza. **Mantén una pulsada** para hacerla favorita y darle un nombre corto: las favoritas van arriba
+  y se guardan en R2, para cualquier móvil. Una combinación dada a un modo no sale aquí: enciende el
+  modo (Modes).
+- **Modes**: los modos automáticos que tengan combinación en Setup → Modes, y el seguimiento de caras.
+  Un toque pulsa la combinación, como en el mando; otro, lo apaga. *Go to a point* solo sale con el
+  simulador.
+- **STOP** (siempre arriba): lo suelta todo y apaga el modo y el seguimiento de caras.
+
+Mientras la página está en pantalla, el móvil es los dos Navs, encendidos. **Con la pantalla bloqueada,
+otra app delante o la página cerrada no manda nada**, y el Mega se para solo, como cuando se pierde un
+mando real. Solo un dispositivo maneja a la vez: si está la ventana Remote u otro móvil, este lo avisa y
+toma el relevo un segundo después de que el otro se calle. Un Nav real en uso siempre manda.
+
+**Modo invitado** (Setup → Modes): el móvil solo enseña las acciones y STOP, para prestárselo a alguien.
+Es una comodidad, no un candado: lo que mantiene a R2 despacio es el límite de velocidad.
+
 ---
 
 ## Setup
@@ -269,6 +312,12 @@ reiniciar. Si no queda ningún sensor en uso mirando hacia delante, la consola a
 Cada modo automático se enciende con su propia **combinación del mando**; pulsarla otra vez lo
 apaga, y tocar el stick devuelve el control al momento. Una combinación dada a un modo deja de hacer
 su acción de MarcDuino. *Dome PS + L2* es el seguimiento de caras y no se puede dar a un modo.
+*Go to a point* sirve para probar la distribución de los sensores (sobre todo en el simulador): sin
+encoders en las ruedas, en el droide su posición deriva.
+
+**Remote and phone** (debajo del color): hasta dónde llegan los sticks de los Navs virtuales (de 5 a
+100 %, 20 % por defecto), el modo invitado del móvil y el enlace a la vista del móvil. Se guarda en
+cuanto cambia (`remote.yaml`).
 
 | | |
 |---|---|

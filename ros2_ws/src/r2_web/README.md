@@ -21,6 +21,11 @@ The ROS2D2 web console, on `http://<pi>:8080`. How to use it is in the
 ros2 launch r2_web web.launch.py
 ```
 
+The **phone view** (`www/phone.html`, `phone.js`, `phonelogic.js`) drives R2 from a phone: two
+sticks, the actions with favourites, the modes and STOP; `remote_api.py` keeps its settings
+(`remote.yaml`: the sticks' limit, guest mode, favourites). It and the Remote window send through
+`padlink.js`.
+
 The **Remote** window (`www/remote.js`, `padlogic.js`, `shortcuts.js`) drives two virtual PS3 Navs
 through `/pad/foot` and `/pad/dome`; the Mega bridge sends them to the Mega as `ROS:PAD`. Its
 shortcuts follow ShadowMD Lite's button map ([CheatSheet](https://github.com/BeskarCode/ShadowMDLite/blob/main/CheatSheet.md)).

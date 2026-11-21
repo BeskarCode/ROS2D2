@@ -24,6 +24,7 @@ anywhere on it.
 - [Console](#console)
 - [Navigation](#navigation)
 - [Remote control](#remote-control): [Controllers](#controllers) · [Shortcuts](#shortcuts)
+- [Phone](#phone)
 - [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
   [System](#setup--system) · [File](#setup--file)
 
@@ -179,6 +180,45 @@ as the cheat sheet says (*Foot ↑ + Cross* is the foot's ↑ with the dome's Cr
 shortcut the list waits 1.2 s: the Mega ignores an arrow that comes less than a second after the
 last one.
 
+The Remote window and the phone share the same two virtual Navs: only one drives at a time (the other
+says *Another device is driving R2*), and their sticks go only as far as the limit in Setup → Modes.
+
+---
+
+## Phone
+
+| Drive | Actions | Modes |
+|---|---|---|
+| <img src="media/manual/phone-drive.png" alt="Phone view, Drive" width="240"> | <img src="media/manual/phone-actions.png" alt="Phone view, Actions" width="240"> | <img src="media/manual/phone-modes.png" alt="Phone view, Modes" width="240"> |
+
+<img src="media/manual/phone-landscape.png" alt="Phone view in landscape: each stick at its edge" width="560">
+
+A view of the console for the phone, in the spirit of MarcDuino's R2 Touch: drive R2, play its actions
+and switch its modes. Join R2's WiFi (`R2D2`) and open **`http://10.42.0.1:8080/phone.html`** (or the
+link in Setup → Modes). On the iPhone, Safari's **Share → Add to Home Screen** makes it an app, full
+screen and with its icon; it works the same on Android.
+
+- **Drive**: the foot stick on the left, the dome's on the right, each with its Nav's buttons (L1, L2,
+  PS, ✕, ○), held while your finger is on them. **The sticks only go so far**: 20 % of the controller's
+  travel by default (Setup → Modes → Remote and phone), and the Pi keeps them there whatever the page
+  sends, so from the phone R2 never goes as fast as with the PS3 Nav. A stick back in the centre stops
+  that motor. In landscape each stick sits at its edge of the screen, under your thumb.
+- **Actions**: every MarcDuino action of ShadowMD Lite's map, with a search box; a tap sends it.
+  **Hold one** to make it a favourite and give it a short name: favourites go on top and are saved on
+  R2, for any phone. A combination given to a mode is not here: it starts the mode (Modes).
+- **Modes**: the automatic modes with a combination in Setup → Modes, and face tracking. A tap presses
+  the combination, as on the controller; again, it switches it off. *Go to a point* shows only with
+  the simulator.
+- **STOP** (always on top): lets everything go and switches the mode and face tracking off.
+
+While the page is on screen the phone is the two Navs, on. **A locked screen, another app or a closed
+page sends nothing**, and the Mega stops by itself, as when a real controller is lost. Only one device
+drives at a time: if the Remote window or another phone is driving, this one says so and takes over a
+second after the other goes quiet. A real Nav in use always wins.
+
+**Guest mode** (Setup → Modes): the phone shows only the actions and STOP, to lend it to someone. It
+is a convenience, not a lock: the speed limit is what keeps R2 slow.
+
 ---
 
 ## Setup
@@ -255,6 +295,12 @@ looking ahead, the console warns you: R2 will not move.
 Each automatic mode starts with its own **controller combination**; pressing it again switches the
 mode off, and touching the stick takes the control back at once. A combination given to a mode no
 longer plays its MarcDuino action. *Dome PS + L2* is face tracking and cannot be given to a mode.
+*Go to a point* is there to try the sensors' layout (mostly in the simulator): without wheel
+encoders, on the droid its position drifts.
+
+**Remote and phone** (under the colour): how far the virtual Navs' sticks go (5 to 100 %, 20 % by
+default), the phone's guest mode, and the link to the phone view. Saved as soon as it changes
+(`remote.yaml`).
 
 | | |
 |---|---|

@@ -38,6 +38,9 @@ and while one is off it sends nothing to its part (foot or dome), even if someon
 | out | `/r2/track_mode/reason` | `std_msgs/String` (latched) | Why it went off: `boot`, `button`, `controller`, `pi`, `disconnected` |
 | srv | `/r2/auto_mode/disable` | `std_srvs/Trigger` | Switches the autonomous mode off |
 | srv | `/r2/track_mode/disable` | `std_srvs/Trigger` | Switches face tracking off |
+| in | `/pad/foot`, `/pad/dome` | `std_msgs/String` | The console's virtual Navs (Remote window, phone), JSON `{id, buttons, x, y}`, sent to the Mega as `ROS:PAD`. The sticks are kept within `remote.yaml`'s `stick_limit_pct` (20 % by default); one page (`id`) drives at a time, another is ignored until it has been quiet for 1 s |
+| in | `/r2/remote/reload` | `std_msgs/Empty` | Re-read `remote.yaml` (saved from Setup → Modes) |
+| out | `/mega/pads` | `std_msgs/String` (latched) | JSON: each Nav `real`, `virtual` or `none`, whether the firmware has virtual Navs, `owner` (the page driving) and `limit` |
 
 | Parameter | Default | What it is |
 |---|---|---|
