@@ -253,6 +253,7 @@
   .ringtext { max-width: 260px; padding-top: 30px; }
   .stale .ring, .stale .ringtext, .camtm.stale .rings, .camtm.stale dl { filter: grayscale(1); opacity: .45; }
   .sysfold { margin: 14px 0 0; }
+  .sysh4 { font-size: 14px; margin: 16px 0 4px; display: flex; align-items: center; gap: 8px; }
   .fwbar { position: relative; height: 18px; border-radius: 9px; background: var(--line, #30363d); overflow: hidden; margin: 6px 0; }
   .fwbar i { position: absolute; inset: 0 auto 0 0; width: 0; background: #2ea043; transition: width .8s linear; }
   .fwbar span { position: relative; display: block; text-align: center; font-size: 11px; line-height: 18px; color: #fff; }
@@ -498,21 +499,20 @@
       <p class="status warn" id="brd-why" hidden></p>
       <p class="help" id="brd-file"></p>
     </div>
+      <h4 class="sysh4"><i class="fa-solid fa-download"></i>Pico firmware</h4>
+      <div class="sysboard">
+        <p class="status" id="fw-text">…</p>
+        <div class="row"><span></span><span><button id="fw-check" title="Ask GitHub whether there is newer firmware for the Pico board"><i class="fa-solid fa-rotate"></i>Check for update</button>
+          <button class="primary" id="fw-flash" title="Download, build and flash the newest Pico firmware (a few minutes; not while an automatic mode drives)"><i class="fa-solid fa-microchip"></i>Flash firmware</button>
+          <button id="fw-retry" hidden title="Copy the firmware already built onto the Pico again (after a failed copy)"><i class="fa-solid fa-rotate-right"></i>Retry</button></span></div>
+        <p class="status" id="fw-step" hidden></p>
+        <div class="fwbar" id="fw-bar" hidden><i id="fw-barfill"></i><span id="fw-barpct"></span></div>
+        <p class="status warn" id="fw-warn" hidden><i class="fa-solid fa-triangle-exclamation"></i>Do not unplug the Pico, the Pi or R2's power until it says it is done. The Pico's sensors stop for a few seconds while it is copied.</p>
+        <details id="fw-logbox" hidden><summary>output</summary><pre id="fw-log"></pre></details>
+      </div>
     </details>
     <h3 class="sysh" id="sys-cams-h" hidden><i class="fa-solid fa-video"></i>Dome cameras <span class="sub">network cameras in cameras.yaml</span></h3>
     <div id="sys-cams" hidden></div>
-    <details class="sysfold" id="fold-fw"><summary><i class="fa-solid fa-download"></i>Pico firmware</summary>
-<div class="sysboard">
-      <p class="status" id="fw-text">…</p>
-      <div class="row"><span></span><span><button id="fw-check" title="Ask GitHub whether there is newer firmware for the Pico board"><i class="fa-solid fa-rotate"></i>Check for update</button>
-        <button class="primary" id="fw-flash" title="Download, build and flash the newest Pico firmware (a few minutes; not while an automatic mode drives)"><i class="fa-solid fa-microchip"></i>Flash firmware</button>
-        <button id="fw-retry" hidden title="Copy the firmware already built onto the Pico again (after a failed copy)"><i class="fa-solid fa-rotate-right"></i>Retry</button></span></div>
-      <p class="status" id="fw-step" hidden></p>
-      <div class="fwbar" id="fw-bar" hidden><i id="fw-barfill"></i><span id="fw-barpct"></span></div>
-      <p class="status warn" id="fw-warn" hidden><i class="fa-solid fa-triangle-exclamation"></i>Do not unplug the Pico, the Pi or R2's power until it says it is done. The Pico's sensors stop for a few seconds while it is copied.</p>
-      <details id="fw-logbox" hidden><summary>output</summary><pre id="fw-log"></pre></details>
-    </div>
-    </details>
     </div>
     </div>
   </section>
