@@ -7,6 +7,7 @@
 import { CONNECTORS, OPTIONS, toYaml } from './boardform.js';
 import { createBoardView } from './boardview.js';
 import { publish, subscribe } from './rosbridge.js';
+import { confirmDialog } from './dialog.js';
 import {
   CAM_TEMP_ZONES, RSSI_ZONES, TELEMETRY_PERIODS, camLines, flashProgress, CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
   uptime, versionText, zone,
@@ -261,12 +262,14 @@ export function createSystemTab() {
     if (what === 'check') { fw = res; showFirmware(); } else loadFirmware();
   }
   $('fw-check').addEventListener('click', () => { $('fw-text').textContent = 'Checking GitHub…'; fwPost('check'); });
-  $('fw-flash').addEventListener('click', () => {
+  $('fw-flash').addEventListener('click', async () => {
     const m = fw && fw.main;
-    const what = m ? `${m.commit} (${m.subject})` : "main's latest";
-    const other = fw && fw.compare === 'unpublished' ? '\n\nThe Pico runs a build that is not on GitHub: this replaces it with main.' : '';
-    if (!window.confirm(`Flash the Pico with ${what}?\n\nThe Pi pulls it, builds it (a few minutes) and copies it; the Pico's sensors stop for a few seconds.${other}`)) return;
-    fwPost('flash');
+    const lines = [m ? `New firmware: ${m.commit} — ${m.subject}` : 'The newest firmware on GitHub (main).',
+      'The Pi downloads it, builds it (a few minutes) and copies it onto the Pico.'];
+    if (fw && fw.compare === 'unpublished') lines.push('The Pico runs a build that is not on GitHub: this replaces it with main.');
+    const ok = await confirmDialog({ title: 'Flash the Pico board?', lines, icon: 'fa-microchip', ok: 'Flash firmware',
+      warn: "Do not unplug the Pico, the Pi or R2's power until it says it is done. The Pico's sensors stop for a few seconds." });
+    if (ok) fwPost('flash');
   });
   $('fw-retry').addEventListener('click', () => fwPost('retry'));
 
