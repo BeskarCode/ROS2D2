@@ -119,3 +119,13 @@ test('dome camera lines and WiFi reasons', async () => {
   assert.equal(zone(19, RSSI_ZONES).cls, 'ok');
   assert.equal(zone(82, CAM_TEMP_ZONES).cls, 'bad');
 });
+
+test('flash progress: each step in its slice, creeping with time, 100 when done', async () => {
+  const { flashProgress } = await import('../www/systemfmt.js');
+  assert.equal(flashProgress('done', 0), 100);
+  assert.equal(flashProgress('idle', 5), 0);
+  assert.equal(flashProgress('compiling', 0), 10);
+  assert.ok(flashProgress('compiling', 120) > 30 && flashProgress('compiling', 120) < 80);
+  assert.ok(flashProgress('compiling', 10000) < 80);
+  assert.ok(flashProgress('flashing', 1) >= 85 && flashProgress('waiting', 0) >= 93);
+});

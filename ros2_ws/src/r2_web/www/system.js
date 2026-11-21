@@ -8,7 +8,7 @@ import { CONNECTORS, OPTIONS, toYaml } from './boardform.js';
 import { createBoardView } from './boardview.js';
 import { publish, subscribe } from './rosbridge.js';
 import {
-  CAM_TEMP_ZONES, RSSI_ZONES, TELEMETRY_PERIODS, camLines, CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
+  CAM_TEMP_ZONES, RSSI_ZONES, TELEMETRY_PERIODS, camLines, flashProgress, CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
   uptime, versionText, zone,
 } from './systemfmt.js';
 
@@ -204,7 +204,7 @@ export function createSystemTab() {
   $('brd-identify').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) command(`ID ${b.dataset.c}`); });
 
   // ---------- the Pico firmware: check GitHub, build and flash it on the Pi ----------
-  let fw = null, fwTimer = null;
+  let fw = null, fwTimer = null, fwStepState = null, fwStepAt = 0;
   const BUSY = ['starting', 'pulling', 'compiling', 'releasing', 'flashing', 'waiting'];
   function showFirmware() {
     if (!fw) return;
@@ -224,6 +224,18 @@ export function createSystemTab() {
     }
     step.append(busy ? `${fw.step_text}…` : fw.state === 'failed' ? `Failed: ${fw.error}`
       : fw.state === 'done' ? `Flashed: the Pico runs ${fw.pico_commit}` : '');
+    // the bar and the warning while it runs; the bar stays full (or red) at the end
+    if (fw.state !== fwStepState) { fwStepState = fw.state; fwStepAt = Date.now(); }
+    const showBar = busy || fw.state === 'done' || fw.state === 'failed';
+    $('fw-bar').hidden = !showBar;
+    $('fw-warn').hidden = !busy;
+    if (busy) $('fold-fw').open = true;     // never flash with the progress folded away
+    if (showBar) {
+      const p = fw.state === 'failed' ? 100 : flashProgress(fw.state, (Date.now() - fwStepAt) / 1000);
+      $('fw-barfill').style.width = `${p}%`;
+      $('fw-barpct').textContent = fw.state === 'failed' ? 'failed' : `${p} %`;
+      $('fw-bar').classList.toggle('bad', fw.state === 'failed');
+    }
     $('fw-check').disabled = busy || !fw.installed;
     $('fw-flash').disabled = busy || !fw.installed;
     $('fw-retry').hidden = !fw.can_retry;

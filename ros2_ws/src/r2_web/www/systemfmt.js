@@ -119,3 +119,17 @@ export function camLines(s, ms) {
   ];
   return lines;
 }
+
+// ---------- flashing the Pico from the console: how far it has gone, 0-100 ----------
+// Each step owns a slice of the bar; inside the long ones (the build takes minutes on the Pi) the
+// bar creeps on with the time spent, never reaching the next slice until the step really ends.
+const FLASH_STEPS = { starting: [0, 3, 5], pulling: [3, 10, 30], compiling: [10, 80, 240], releasing: [80, 85, 5],
+  flashing: [85, 93, 15], waiting: [93, 99, 20] };
+export function flashProgress(state, secs) {
+  if (state === 'done') return 100;
+  const s = FLASH_STEPS[state];
+  if (!s) return 0;
+  const [from, to, expect] = s;
+  const f = 1 - Math.exp(-Math.max(0, secs) / expect);   // fast at first, slower as it goes past the usual time
+  return Math.round(from + (to - from) * 0.95 * f);
+}
