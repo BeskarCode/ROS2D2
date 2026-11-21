@@ -83,3 +83,10 @@ export function createPad({ longMs = 600, comboMs = 300 } = {}) {
     },
   };
 }
+
+// Who drives the virtual Navs (/mega/pads' owner), from this page's point of view
+export function ownerState(pads, me) {
+  const owner = pads && pads.owner;
+  if (!owner) return 'free';
+  return owner === me ? 'mine' : 'other';
+}

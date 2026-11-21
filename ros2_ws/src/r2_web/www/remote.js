@@ -6,21 +6,16 @@
 // Like a real Nav, each one's state goes out all the time while the window is open (20 a second,
 // at rest too): the Mega takes 300 ms of silence as "controller lost" and switches tracking and the
 // modes off. So closing the window, leaving the page or hiding the tab is switching the controllers
-// off: everything is let go and the Mega stops the motors by itself. One window at a time across tabs.
-import { createPad, maskOf } from './padlogic.js';
-import { GAP_MS, HOLD_MS, PRE_MS, shortcutList, stepsFor } from './shortcuts.js';
-import { confirmDialog } from './dialog.js';
-import { ensureConnected, publish, subscribe } from './rosbridge.js';
+// off: everything is let go and the Mega stops the motors by itself. One window at a time across tabs;
+// the sending itself (and the one-page-at-a-time rule with the phone view) is padlink.js.
+import { shortcutList } from './shortcuts.js';
+import { createPadLink } from './padlink.js';
 
-const SEND_MS = 50;
-const TOPICS = { F: '/pad/foot', D: '/pad/dome' };
 const NAMES = { F: 'Foot Nav', D: 'Dome Nav' };
 
-let win = null, btn = null, timer = null, riskOk = false;
-let shortTimers = [], shortBusy = false;
-let pads = { F: 'none', D: 'none', supported: null, mega: false };
-const pad = { F: createPad(), D: createPad() };
-const wasActive = { F: false, D: false };
+let win = null, btn = null;
+const link = createPadLink({ onTick: markHolds });
+const pad = link.pad;
 const channel = 'BroadcastChannel' in window ? new BroadcastChannel('r2-remote') : null;
 const me = Math.random().toString(36).slice(2);
 
@@ -64,6 +59,10 @@ function addStyle() {
     .r2remote .r2r-dpad { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 34px); gap: 3px; }
     .r2remote .r2r-dpad .r2r-b { min-width: 0; width: 38px; height: 34px; padding: 0; }
     .r2remote .r2r-help { margin: 0 14px 14px; font-size: var(--fs-s); color: var(--muted); }
+    .r2remote .r2r-other { display: none; margin: 8px 14px 0; padding: 6px 10px; border-radius: 6px; font-size: var(--fs-s);
+      color: var(--amber); border: 1px solid var(--amber); }
+    .r2remote.r2r-isother .r2r-other { display: block; }
+    .r2remote.r2r-isother .r2r-pads, .r2remote.r2r-isother .r2r-slist { opacity: .45; pointer-events: none; }
     .r2remote .r2r-tabs { display: flex; gap: 4px; padding: 8px 14px 0; }
     .r2remote .r2r-tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); border-radius: 6px;
       padding: 5px 12px; font: inherit; font-size: var(--fs); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
@@ -104,6 +103,8 @@ function build() {
       <button class="r2r-x" type="button" title="Close: lets everything go"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="r2r-tabs"><button type="button" class="r2r-on" data-tab="pads"><i class="fa-solid fa-gamepad"></i>Controllers</button>
       <button type="button" data-tab="short" title="Every combination that does something, sent for you with one click"><i class="fa-solid fa-bolt"></i>Shortcuts</button></div>
+    <p class="r2r-other"><i class="fa-solid fa-mobile-screen"></i> Another device is driving R2 (the phone view, or a Remote
+      in another browser). This window takes over when it has been quiet for a second.</p>
     <div class="r2r-tab" data-tab="pads">
     <div class="r2r-pads">${['F', 'D'].map((p) => `<div class="r2r-pad" data-pad="${p}"><h4>${NAMES[p]} <span class="r2r-chip">…</span></h4>
       <div class="r2r-warn"><i class="fa-solid fa-triangle-exclamation"></i> A real ${p === 'F' ? 'foot' : 'dome'} Nav is connected: if someone moves it, it wins.</div>
@@ -127,16 +128,15 @@ function build() {
   dragByBar();
 }
 
-// The first action on a slot with a real Nav connected asks first, once per opening of the window
-async function allowed(p) {
-  if (pads[p] !== 'real' || riskOk) return true;
-  const ok = await confirmDialog({
-    title: 'A real controller is connected', icon: 'fa-triangle-exclamation', ok: 'Send anyway',
-    lines: [`The real ${p === 'F' ? 'foot' : 'dome'} Nav is on. What you send now acts on R2 as if pressed on it.`],
-    warn: 'If someone moves the real controller, it wins and this window is ignored.',
-  });
-  if (ok) riskOk = true;
-  return ok;
+const allowed = (p) => link.allowed(p);
+const kick = () => link.kick();
+
+// A button held long enough became HOLD while still pressed: mark it now (padlink's tick)
+function markHolds(p, names) {
+  if (!win) return;
+  const padEl = win.querySelector(`.r2r-pad[data-pad="${p}"]`);
+  names.forEach((b) => padEl.querySelector(`[data-b="${b}"]`)?.classList.remove('r2r-down'));
+  render(padEl);
 }
 
 function render(padEl) {
@@ -228,6 +228,7 @@ const GROUPS = { mode: 'Automatic modes', tracking: 'Face tracking', marcduino: 
 function renderShortcuts() {
   const list = win.querySelector('.r2r-slist');
   const q = win.querySelector('.r2r-sfind').value.trim().toLowerCase();
+  const pads = link.pads();
   const off = !pads.mega || pads.supported === false;
   list.replaceChildren();
   let group = null;
@@ -243,7 +244,7 @@ function renderShortcuts() {
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'r2r-srow';
-    row.disabled = off || shortBusy;
+    row.disabled = off || link.busy();
     row.dataset.combo = sc.combo;
     const what = document.createElement('span'), keys = document.createElement('span');
     what.textContent = sc.what;
@@ -255,71 +256,32 @@ function renderShortcuts() {
   }
   if (!list.children.length) list.textContent = 'Nothing matches.';
   const stat = win.querySelector('.r2r-sstat');
-  if (off && !shortBusy) stat.textContent = !pads.mega ? 'No Mega: nothing to send to.' : 'This Mega firmware has no virtual Nav.';
+  if (off && !link.busy()) stat.textContent = !pads.mega ? 'No Mega: nothing to send to.' : 'This Mega firmware has no virtual Nav.';
 }
 
 function lockShortcuts(on) {
-  shortBusy = on;
+  const pads = link.pads();
   win.querySelectorAll('.r2r-srow').forEach((r) => { r.disabled = on || !pads.mega || pads.supported === false; });
 }
 
-// Modifiers first, then the arrow (or L2) with them, then let go and wait: the sketch takes a
-// combination on the first loop its arrow is down, and needs a second without arrows before the next.
 async function runShortcut(sc, row) {
-  if (shortBusy) return;
-  const st = stepsFor(sc.combo);
-  for (const p of ['F', 'D']) if (st.then[p].length && !(await allowed(p))) return;
-  lockShortcuts(true);
+  if (link.busy()) return;
   const stat = win.querySelector('.r2r-sstat');
+  lockShortcuts(true);
   stat.textContent = `Sending ${sc.label}…`;
-  const at = (ms, fn) => shortTimers.push(setTimeout(fn, ms));
-  const press = (part) => { for (const p of ['F', 'D']) pad[p].force(maskOf(part[p])); kick(); };
-  press(st.first);
-  at(PRE_MS, () => press(st.then));
-  at(PRE_MS + HOLD_MS, () => {
-    press({ F: [], D: [] });
+  const done = await link.runShortcut(sc, () => {
     row.classList.add('r2r-sent');
     stat.textContent = `Sent ${sc.label}: ${sc.what}.`;
   });
-  at(PRE_MS + HOLD_MS + GAP_MS, () => { row.classList.remove('r2r-sent'); lockShortcuts(false); shortTimers = []; });
-}
-
-function send(p, s) {
-  publish(TOPICS[p], 'std_msgs/msg/String', { data: JSON.stringify(s) });
-}
-
-// 20 times a second while a Nav is active; one rest packet when it stops; nothing at rest
-function step() {
-  const t = performance.now();
-  for (const p of ['F', 'D']) {
-    const now = pad[p].tick(t);
-    if (now.length) {
-      const padEl = win.querySelector(`.r2r-pad[data-pad="${p}"]`);
-      now.forEach((b) => padEl.querySelector(`[data-b="${b}"]`)?.classList.remove('r2r-down'));
-      render(padEl);
-    }
-    if (pads.mega && pads.supported !== false) send(p, pad[p].state(t));   // at rest too, as a real Nav
-    wasActive[p] = pad[p].active(t);
-  }
-}
-function kick() { if (!timer && win && !win.hidden) timer = setInterval(step, SEND_MS); step(); }
-
-function releaseAll() {
-  shortTimers.forEach(clearTimeout);
-  shortTimers = [];
-  if (shortBusy && win) { lockShortcuts(false); win.querySelectorAll('.r2r-srow.r2r-sent').forEach((r) => r.classList.remove('r2r-sent')); }
-  for (const p of ['F', 'D']) {
-    const had = pad[p].active(performance.now()) || wasActive[p];
-    pad[p].reset();
-    wasActive[p] = false;
-    if (had) send(p, pad[p].state(0));
-  }
-  if (win) win.querySelectorAll('.r2r-pad').forEach(render);
-  clearInterval(timer); timer = null;
+  row.classList.remove('r2r-sent');
+  if (!done && stat.textContent.startsWith('Sending')) stat.textContent = '';
+  lockShortcuts(false);
 }
 
 function showStatus() {
   if (!win) return;
+  const pads = link.pads();
+  win.classList.toggle('r2r-isother', link.owner() === 'other');
   for (const p of ['F', 'D']) {
     const el = win.querySelector(`.r2r-pad[data-pad="${p}"]`), chip = el.querySelector('.r2r-chip');
     let text = 'virtual', cls = 'virtual', off = false;
@@ -337,20 +299,21 @@ function showStatus() {
 
 function open() {
   if (!win) build();
-  ensureConnected();
   win.hidden = false;
   btn.classList.add('open');
-  kick();                           // the two Navs are "switched on" while the window is open
-  riskOk = false;
+  link.start();                     // the two Navs are "switched on" while the window is open
   showStatus();
   channel?.postMessage({ open: me });     // one window at a time across tabs
 }
 
 function close() {
-  releaseAll();
-  if (win) win.hidden = true;
+  link.stop();
+  if (win) {
+    win.hidden = true;
+    win.querySelectorAll('.r2r-pad').forEach(render);
+    win.querySelectorAll('.r2r-srow.r2r-sent').forEach((r) => r.classList.remove('r2r-sent'));
+  }
   btn?.classList.remove('open');
-  riskOk = false;
 }
 
 function dragByBar() {
@@ -383,19 +346,11 @@ if (nav) {
   btn.addEventListener('click', (e) => { e.preventDefault(); if (win && !win.hidden) close(); else open(); });
   nav.append(btn);
 }
-subscribe('/mega/pads', 'std_msgs/msg/String', (m) => {
-  try { pads = { ...pads, ...JSON.parse(m.data) }; } catch { return; }
-  showStatus();
-});
+link.onPads(() => showStatus());
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || !win || win.hidden || document.querySelector('dialog[open]')) return;
   for (const p of ['F', 'D']) pad[p].esc();
   win.querySelectorAll('.r2r-pad').forEach(render);
   kick();
 });
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') releaseAll();
-  else if (win && !win.hidden) kick();      // back on the tab: the Navs are on again
-});
-window.addEventListener('pagehide', releaseAll);
 channel?.addEventListener('message', (e) => { if (e.data?.open && e.data.open !== me && win && !win.hidden) close(); });
