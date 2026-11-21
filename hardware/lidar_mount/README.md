@@ -1,5 +1,7 @@
 # RPLIDAR C1 tilt mount
 
+*En castellano: [README_es.md](README_es.md)*
+
 A mount for the RPLIDAR C1, hanging upside down from the droid, with an adjustable tilt to level
 the lidar's scan or aim it a little at the floor.
 
