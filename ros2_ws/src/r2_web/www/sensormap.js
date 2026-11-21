@@ -2,7 +2,7 @@
 // Top-down map of the droid and its sensors, in metres, front up (SVG). Sensors and the
 // test object are dragged with the mouse; they never leave the view (one outside after
 // zooming in is drawn on the edge, where it can be picked up again).
-import { R2, TYPES, blindSectorsBase, freeText, isLidar, reach, toMap, fromMap } from './sensormath.js';
+import { R2, TYPES, blindSectorsBase, freeText, isLidar, lidarColour, reach, toMap, fromMap } from './sensormath.js';
 
 const rad = (d) => d * Math.PI / 180;
 // its type's look, in its grey when it is not responding (state.colours, from sensors.js)
@@ -78,9 +78,10 @@ export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () 
            `stroke="#0d1117" stroke-width="${sw * 3}" paint-order="stroke">${freeText(free)}</text>`;
     }
     if (state.scan) {
+      const dot = lidarColour(state.sensors);        // the lidar card's colour
       for (const [x, y] of state.scan) {
         const [sx, sy] = toMap(x, y);
-        o += `<circle cx="${sx.toFixed(3)}" cy="${sy.toFixed(3)}" r="${sw * 2}" fill="#39c5cf"/>`;
+        o += `<circle cx="${sx.toFixed(3)}" cy="${sy.toFixed(3)}" r="${sw * 2}" fill="${dot}"/>`;
       }
     }
     // the droid

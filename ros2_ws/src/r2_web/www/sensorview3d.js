@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { loadModelMetres } from './models.js';
-import { TYPES, freeText, isLidar, reach, toThree } from './sensormath.js';
+import { TYPES, freeText, isLidar, lidarColour, reach, toThree } from './sensormath.js';
 import { textSprite } from './label3d.js';
 
 const rad = (d) => d * Math.PI / 180;
@@ -119,7 +119,7 @@ export function createSensorView3d(container, { onHover = () => {} } = {}) {
       const pos = new Float32Array(state.scan.flatMap(([x, y]) => toThree(x, y, z)));
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      dyn.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#39c5cf', size: 0.025 })));
+      dyn.add(new THREE.Points(g, new THREE.PointsMaterial({ color: lidarColour(state.sensors), size: 0.025 })));
     }
     render();
   }

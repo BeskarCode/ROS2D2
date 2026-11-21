@@ -217,3 +217,22 @@ test('PALETTE: 9 different colours, one per Pico connector', () => {
   assert.equal(new Set(PALETTE).size, 9);
   for (const c of PALETTE) assert.match(c, /^#[0-9a-f]{6}$/);
 });
+
+test('lidar points: the lidar card colour, else the type colour', async () => {
+  const { lidarColour } = await import('../www/sensormath.js');
+  assert.equal(lidarColour({ lidar: { type: 'rplidar_c1', colour: '#FF7EB6' }, tof: { type: 'vl53l0x' } }), '#ff7eb6');
+  assert.equal(lidarColour({ lidar: { type: 'rplidar_c1' } }), '#39c5cf');
+  assert.equal(lidarColour({}), '#39c5cf');
+  assert.equal(lidarColour(null), '#39c5cf');
+});
+
+test('lidar points inside the safety circle are split out (they go red)', async () => {
+  const { splitScan } = await import('../www/sensormath.js');
+  const pose = { x: 1, y: 2, th: 0 };
+  const scan = [[1.2, 2], [2, 2], [1, 2.29], [1, 2.31]];
+  const { inside, outside } = splitScan(scan, pose, 0.3);
+  assert.deepEqual(inside, [[1.2, 2], [1, 2.29]]);
+  assert.deepEqual(outside, [[2, 2], [1, 2.31]]);
+  assert.deepEqual(splitScan(scan, pose, 0), { inside: [], outside: scan });
+  assert.deepEqual(splitScan(scan, null, 0.3), { inside: [], outside: scan });
+});

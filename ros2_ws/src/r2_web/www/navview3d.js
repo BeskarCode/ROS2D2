@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { loadModelMetres } from './models.js';
 import { textSprite } from './label3d.js';
-import { freeText } from './sensormath.js';
+import { freeText, lidarColour, splitScan } from './sensormath.js';
 
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const rad = (d) => d * Math.PI / 180;
@@ -86,11 +86,14 @@ export function createNavView3d(container) {
 
   function buildWorld(st, lidarZ) {
     dispose(world);
-    if (st.scan.length) {
-      const pos = new Float32Array(st.scan.flatMap(([x, y]) => [y, lidarZ, x]));
+    // the lidar's points in its own colour, red inside the safety circle
+    const pts = splitScan(st.scan, st.pose, st.radius);
+    for (const [list, colour] of [[pts.outside, lidarColour(st.sensors)], [pts.inside, '#f85149']]) {
+      if (!list.length) continue;
+      const pos = new Float32Array(list.flatMap(([x, y]) => [y, lidarZ, x]));
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      world.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#39c5cf', size: 0.05 })));
+      world.add(new THREE.Points(g, new THREE.PointsMaterial({ color: colour, size: 0.05 })));
     }
     if (st.goal) {
       const f = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), new THREE.MeshBasicMaterial({ color: '#3fb950' }));
