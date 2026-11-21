@@ -32,6 +32,15 @@ def test_parse_checks_range_and_types():
     assert fav == [{"combo": "FOOT_UP", "name": "Scream"}, {"combo": "DOME_PS_L2", "name": "Look"}]
 
 
+def test_the_limit_never_falls_inside_shadows_dead_zone():
+    # ShadowMD ignores the foot stick within 128 +/- 15 (joystickFootDeadZoneRange): below 15 % the
+    # foot would not move at all, with no reason given
+    with pytest.raises(RemoteConfigError):
+        parse_remote("stick_limit_pct: 10")
+    assert parse_remote("stick_limit_pct: 15")["stick_limit_pct"] == 15
+    assert limit_stick(255, 15) - 128 > 15
+
+
 def test_limit_stick():
     assert limit_stick(255, 20) == 153 and limit_stick(0, 20) == 103      # L = round(127 * 0.2) = 25
     assert limit_stick(128, 20) == 128 and limit_stick(140, 20) == 140

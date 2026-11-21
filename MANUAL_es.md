@@ -315,8 +315,8 @@ su acción de MarcDuino. *Dome PS + L2* es el seguimiento de caras y no se puede
 *Go to a point* sirve para probar la distribución de los sensores (sobre todo en el simulador): sin
 encoders en las ruedas, en el droide su posición deriva.
 
-**Remote and phone** (debajo del color): hasta dónde llegan los sticks de los Navs virtuales (de 5 a
-100 %, 20 % por defecto), el modo invitado del móvil y el enlace a la vista del móvil. Se guarda en
+**Remote and phone** (debajo del color): hasta dónde llegan los sticks de los Navs virtuales (de 15 a
+100 %, 20 % por defecto; por debajo de 15 % el stick del foot se quedaría en la zona muerta de ShadowMD), el modo invitado del móvil y el enlace a la vista del móvil. Se guarda en
 cuanto cambia (`remote.yaml`).
 
 | | |

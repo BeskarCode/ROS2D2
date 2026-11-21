@@ -11,7 +11,7 @@ import yaml
 from r2_shadow_bridge.remote_cfg import DEFAULTS, RemoteConfigError, parse_remote
 
 HEADER = ("# ROS2D2 Remote window and phone view (saved from the web console).\n"
-          "# stick_limit_pct: 5..100, how far the virtual Navs' sticks go; guest: the phone shows only\n"
+          "# stick_limit_pct: 15..100, how far the virtual Navs' sticks go; guest: the phone shows only\n"
           "# the actions; favorites: [{combo, name}], the phone's favourite actions.\n")
 
 

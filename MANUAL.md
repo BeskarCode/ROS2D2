@@ -298,8 +298,8 @@ longer plays its MarcDuino action. *Dome PS + L2* is face tracking and cannot be
 *Go to a point* is there to try the sensors' layout (mostly in the simulator): without wheel
 encoders, on the droid its position drifts.
 
-**Remote and phone** (under the colour): how far the virtual Navs' sticks go (5 to 100 %, 20 % by
-default), the phone's guest mode, and the link to the phone view. Saved as soon as it changes
+**Remote and phone** (under the colour): how far the virtual Navs' sticks go (15 to 100 %, 20 % by
+default; below 15 % the foot stick would stay inside ShadowMD's dead zone), the phone's guest mode, and the link to the phone view. Saved as soon as it changes
 (`remote.yaml`).
 
 | | |

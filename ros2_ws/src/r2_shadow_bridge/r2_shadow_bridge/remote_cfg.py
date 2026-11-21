@@ -2,7 +2,7 @@
 """remote.yaml: the settings of the console's virtual Navs (the Remote window and the phone view),
 and the two rules the Mega bridge applies to them. No ROS here: test/test_remote_cfg.py.
 
-    stick_limit_pct: 20     # 5..100: how far the virtual Navs' sticks may go (a real Nav is not touched)
+    stick_limit_pct: 20     # 15..100: how far the virtual Navs' sticks may go (a real Nav is not touched)
     guest: false            # the phone shows only the actions and STOP
     favorites:              # the phone's favourite actions, top of its Actions tab
       - {combo: FOOT_UP_CROSS, name: Vol +}
@@ -19,7 +19,7 @@ from r2_nav.modes import COMBOS
 
 DEFAULTS = {"stick_limit_pct": 20, "guest": False, "favorites": []}
 USER_REMOTE = os.path.expanduser("~/.config/ros2d2/remote.yaml")
-LIMIT_MIN, LIMIT_MAX = 5, 100
+LIMIT_MIN, LIMIT_MAX = 15, 100   # under 15 % the foot stick stays in ShadowMD's dead zone (+/- 15)
 NAME_MAX = 20
 FAVORITE_COMBOS = set(COMBOS) | {"DOME_PS_L2"}
 
