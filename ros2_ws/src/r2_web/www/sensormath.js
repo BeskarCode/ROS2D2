@@ -249,3 +249,17 @@ export function lastFrontInUse(sensors, name) {
   if (!target || !ahead(target)) return false;
   return !sensors.some((s) => s.name !== name && s.enabled !== false && ahead(s));
 }
+
+/** The colour of the lidar's points: the lidar card's own (Setup -> Sensors), else the type's. */
+export function lidarColour(sensors) {
+  const lidar = Object.values(sensors || {}).find((s) => s && s.type === 'rplidar_c1');
+  return lidar ? sensorColour(lidar) : TYPES.rplidar_c1.colour;
+}
+
+/** The lidar's points inside the safety circle round the droid (drawn red) and the rest. */
+export function splitScan(scan, pose, radius) {
+  if (!pose || !(radius > 0)) return { inside: [], outside: scan };
+  const inside = [], outside = [];
+  for (const p of scan) (Math.hypot(p[0] - pose.x, p[1] - pose.y) < radius ? inside : outside).push(p);
+  return { inside, outside };
+}
