@@ -23,6 +23,7 @@ anywhere on it.
 
 - [Console](#console)
 - [Navigation](#navigation)
+- [Remote control](#remote-control): [Controllers](#controllers) · [Shortcuts](#shortcuts)
 - [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
   [System](#setup--system) · [File](#setup--file)
 
@@ -128,16 +129,71 @@ and whether the Mega is connected (without it nothing reaches the feet).
 
 ---
 
+## Remote control
+
+![The Remote window: the two virtual Navs](media/manual/remote.png)
+
+The **Remote** button, on every page, opens two virtual PS3 Navs, the **foot** one and the **dome**
+one, to try things at home without the real controllers. The Mega takes them exactly as real Navs:
+the same buttons do the same things. It needs a Mega firmware with the virtual Nav
+(`ENABLE_VIRTUAL_PAD` in ShadowMD Lite or the classic ShadowMD); each Nav's chip says how it is:
+
+| Chip | Means |
+|---|---|
+| **virtual** | the window drives this Nav |
+| **real Nav connected** | a real controller is on: the window warns before the first action, and if someone moves the real one, **the real one wins** |
+| **no Mega** / **this firmware has no virtual Nav** | nothing to send to: the Nav is greyed |
+
+While the window is open both Navs are "on" (their state goes out 20 times a second, like a real
+Nav). **Closing the window, hiding the tab or leaving the page switches them off**: everything is let
+go and the Mega stops the motors and the modes by itself, as when a real controller is lost. Only one
+Remote window is open at a time, across tabs.
+
+### Controllers
+
+- **Click** a button: press and release.
+- **Hold a button 0.6 s**: it stays pressed (**HOLD**, yellow; it turns yellow as soon as the time is
+  reached, so you know you can let go). Then press another button to send the **combination**: the
+  held ones and that one together. Hold more than one to make longer combinations (*L2* + *Cross* +
+  an arrow…).
+- **Click a held button**, or press **Esc**, to let it go.
+- **The stick**: drag the knob; it goes back to the centre when you let go. A click on the knob
+  without moving it is **L3**.
+
+### Shortcuts
+
+![The Remote window: Shortcuts](media/manual/remote-shortcuts.png)
+
+Every combination that does something, sent for you with **one click**, with a box to find one
+(*holo*, *song*, *panel*, *Patrol*…). They come in three groups:
+
+- **Automatic modes**: the combination each mode has in Setup → Modes (on / off).
+- **Face tracking**: Dome PS + L2 (on / off).
+- **MarcDuino actions**: ShadowMD Lite's default map (the one in its `CheatSheet.md`). A combination
+  given to a mode is listed as that mode, as it no longer plays its action; free combinations are
+  not listed.
+
+The window presses the buttons in the order the Mega reads them: first the modifiers (Cross, Circle,
+PS, L1, L2, L3), then the arrow, and with the dome Nav connected the modifier goes on the other Nav,
+as the cheat sheet says (*Foot ↑ + Cross* is the foot's ↑ with the dome's Cross). After each
+shortcut the list waits 1.2 s: the Mega ignores an arrow that comes less than a second after the
+last one.
+
+---
+
 ## Setup
 
-Setup has five tabs. **Save** keeps the tab's settings on the Pi (they apply at once);
+Setup has five tabs, each with its own address (`setup.html#cameras`, `#sensors`, `#modes`, `#system`,
+`#file`). On a computer screen the page does not scroll: each tab fills the window and its columns
+scroll inside. **Save** keeps the tab's settings on the Pi (they apply at once);
 **Save and restart** is only needed for the camera list.
 
 ### Setup → Cameras
 
 ![Setup, Cameras](media/manual/setup-cameras.png)
 
-Every camera plugged into the Pi, with:
+The map on the left is R2 seen from above with each camera's fan; on the right, every camera
+plugged into the Pi (or on R2's WiFi), with:
 
 - **use** (on or off), **number** (the arrows move it left or right in the list), **size** and
   **turn** (the two arrows turn the picture a quarter each way: 0, 90, 180, 270°, seen at once),
@@ -212,12 +268,16 @@ the colour. With the ESP32-P4 dome camera (`firmware/r2_domecam_p4`) the camera 
 itself while R2 follows it, so no video goes over the WiFi; with other cameras the Pi finds it in
 the video, as before.
 
+The tab has three columns: the modes, each with its combination and a small picture of what it does;
+the camera picture to click the colour on; and the colour's settings.
+
 ### Setup → System
 
 ![Setup, System: the display switched on, a screen picked, the DISPLAY button and a LED identified](media/manual/setup-system.gif)
 
-The tab has two columns: the strip and the board on the left, telemetry and the settings on the
-right; on narrow screens, the board on top and the settings below it.
+Two cards: on the left, what the Pi finds and the Pico board, live; on the right, one block per part
+(the Raspberry Pi, the Pico board and each dome camera) with its telemetry, and a button that opens
+its details and settings in a window of their own.
 
 **On top, what the Pi finds**: a strip with the Mega, the Pi, the lidar, the Pico board and each
 camera, green when found and grey when not, joined by the USB cables (green when both ends are
@@ -227,46 +287,45 @@ there). Sabertooth, SyRen, MarcDuino and the controllers do not show: the Pi can
 to scale and with each part where it is on the PCB: the connectors, the Pico, the DISPLAY button and
 the 0.96" display on its module, at its real size. While the display shows one sensor, its
 connector gets a yellow frame and an arrow points at it (on the *all* screen, every connector
-with a sensor), so the DISPLAY button's steps are easy to
-follow. Each connector's
-LED lights and blinks as the real one, with the sensor's reading beside it; the Pico's own green
-LED too; the display shows the real display's picture, pixel for pixel. The **DISPLAY** button works
-like the real one: a click is a press, holding it 3 s turns the display off (a bar fills while you
-hold). Press the real button and the copy follows. PWR lights when an HC-SR04 answers (they need its
-5 V); with none answering it shows dashed, as the Pico cannot tell. The board only sends this while
-this tab is open.
-
-**Telemetry** (the green switch): how busy the Pi and the Pico are, only while it is on and this tab
-is open. Each value is a ring with its colour ranges (green, amber, red), filled up to the value in
-its range's colour; hover it for the range seen and the limits. **every** sets how often it is read
-(1 to 30 s; the Pico is still asked every 2 s so it keeps sending).
-
-**Dome cameras** (with telemetry on): each network camera in cameras.yaml, asked by the Pi: chip
-temperature, how busy each core is (core 0: WiFi and web; core 1: the face or colour finder) and
-the WiFi signal as rings; under them, how long it has been up, how many times it has started and
-why it last did (a *crash*, *watchdog* or *brownout* shows in red), how many times the WiFi dropped
-and why, how fast it answers, what it is finding and how often, its clients, memory and firmware.
-A camera with older firmware shows only part of it.
-
-**R2's WiFi**: R2's own access point (the one the dome camera joins) picks the quietest of channels
-1, 6 and 11 each time it starts. A bar per channel shows how busy it is (green clear, amber busy, red
-very busy; ● the one in use). **Check now** looks again without dropping anything; **Move to the
-quietest** restarts the access point so it moves (the cameras drop for a few seconds). Needs
-`setup/install_wifi_channel.sh` run once on the Pi.
+with a sensor), so the DISPLAY button's steps are easy to follow. Each connector's LED lights and
+blinks as the real one, with the sensor's reading beside it; the Pico's own green LED too; the
+display shows the real display's picture, pixel for pixel. The **DISPLAY** button works like the
+real one: a click is a press, holding it 3 s turns the display off (a bar fills while you hold).
+Press the real button and the copy follows. PWR lights when an HC-SR04 answers (they need its 5 V);
+with none answering it shows dashed, as the Pico cannot tell. The board only sends this while this
+tab is open.
 
 ![Setup, System: telemetry](media/manual/setup-system-telemetry.png)
 
-- **Raspberry Pi**: software version, free SD, free RAM, CPU, temperature (with its normal, warm and
-  throttling zones) and voltage warnings.
-- **Pico board**: firmware version, each core's load, the I2C bus, readings per second of each
-  sensor and temperature.
-- **Board settings**: how long the board's display stays on, its brightness and when its LEDs light
-  (*only with the display on*, *always on*, *on, only the ones connected*, *always off*, *only the ones
-  failing*); turn the display on (showing the screen you pick) or
-  off; *Identify* makes a connector's LED blink.
-- **Pico firmware**: *Check for update* asks GitHub; *Flash firmware* downloads, builds and flashes
-  it from the Pi (a few minutes; not while an automatic mode drives). If the copy fails, *Retry*
-  copies it again without building.
+**Telemetry** (the green switch): how busy each part is, read only while it is on and this tab is
+open. The gauges are always there: **in colour** while it is on, **grey** with the last values (or
+empty) while it is off. Each value is a ring with its colour ranges (green, amber, red), filled up to
+the value in its range's colour; hover it for the range seen and the limits. **every** sets how often
+it is read (1 to 30 s; the Pico is still asked every 2 s so it keeps sending).
+
+- **Raspberry Pi**: free SD, free RAM, CPU (and each core) and temperature, with its normal, warm and
+  throttling zones; a voltage warning shows under them. **Details**: its name, how long it has been
+  up, its addresses (cable and R2's WiFi), the system and ROS 2 versions, the software version, and
+  **R2's WiFi**: R2's own access point (the one the dome camera joins) picks the quietest of channels
+  1, 6 and 11 each time it starts; a bar per channel shows how busy it is (green clear, amber busy,
+  red very busy; ● the one in use). **Check now** looks again without dropping anything; **Move to
+  the quietest** restarts the access point so it moves (the cameras drop for a few seconds). Needs
+  `setup/install_wifi_channel.sh` run once on the Pi.
+- **Pico board**: each core's load, the I2C bus and the chip temperature. **Settings**: whether it
+  is connected, its firmware, how long it has been up, the readings per second of each sensor, and
+  - **its settings**: how long the board's display stays on, its brightness and when its LEDs light
+    (*only with the display on*, *always on*, *on, only the ones connected*, *always off*, *only the
+    ones failing*); turn the display on (showing the screen you pick) or off; *Identify* makes a
+    connector's LED blink;
+  - **its firmware**: *Check for update* asks GitHub; *Flash firmware* downloads, builds and flashes
+    it from the Pi (a few minutes; not while an automatic mode drives); the window stays open with a
+    progress bar until it says it is done. If the copy fails, *Retry* copies it again without building.
+- **Each dome camera** (each network camera in cameras.yaml, asked by the Pi): chip temperature, how
+  busy each core is (core 0: WiFi and web; core 1: the face or colour finder) and the WiFi signal.
+  **Details**: how long it has been up, how many times it has started and why it last did (a
+  *crash*, *watchdog* or *brownout* shows in red), how many times the WiFi dropped and why, how fast
+  it answers, what it is finding and how often, its clients, memory and firmware. A camera with older
+  firmware shows only part of it.
 
 ### Setup → File
 

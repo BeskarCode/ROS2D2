@@ -24,6 +24,7 @@ en la que estás, desde cualquier parte de ella.
 
 - [Console](#console)
 - [Navigation](#navigation)
+- [Mando a distancia](#mando-a-distancia): [Mandos](#mandos) · [Atajos](#atajos)
 - [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
   [System](#setup--system) · [File](#setup--file)
 
@@ -135,16 +136,72 @@ navegador y por qué, y si el Mega está conectado (sin él no llega nada a los 
 
 ---
 
+## Mando a distancia
+
+![La ventana Remote: los dos Navs virtuales](media/manual/remote.png)
+
+El botón **Remote**, en todas las páginas, abre dos PS3 Nav virtuales, el del **foot** y el del
+**dome**, para probar cosas en casa sin sacar los mandos de verdad. El Mega los toma exactamente
+como Navs reales: los mismos botones hacen lo mismo. Hace falta un firmware del Mega con el Nav
+virtual (`ENABLE_VIRTUAL_PAD` en ShadowMD Lite o en el ShadowMD clásico); la etiqueta de cada Nav dice
+cómo está:
+
+| Etiqueta | Quiere decir |
+|---|---|
+| **virtual** | la ventana maneja este Nav |
+| **real Nav connected** | hay un mando real encendido: la ventana avisa antes de la primera acción, y si alguien mueve el real, **manda el real** |
+| **no Mega** / **this firmware has no virtual Nav** | no hay a quién mandarlo: el Nav sale en gris |
+
+Mientras la ventana está abierta los dos Navs están "encendidos" (su estado sale 20 veces por
+segundo, como un Nav real). **Cerrar la ventana, ocultar la pestaña o salir de la página los
+apaga**: se suelta todo y el Mega para los motores y los modos él solo, como cuando se pierde un
+mando real. Solo hay una ventana Remote abierta a la vez, entre todas las pestañas.
+
+### Mandos
+
+- **Clic** en un botón: pulsar y soltar.
+- **Mantener un botón 0,6 s**: se queda pulsado (**HOLD**, en amarillo; se pone amarillo en cuanto
+  llega al tiempo, así sabes que ya puedes soltar). Luego pulsa otro botón para mandar la
+  **combinación**: los mantenidos y ese, a la vez. Mantén más de uno para combinaciones más largas
+  (*L2* + *Cross* + una flecha…).
+- **Clic en un botón mantenido**, o **Esc**, para soltarlo.
+- **El stick**: arrastra la bola; vuelve al centro al soltarla. Un clic en la bola sin moverla es
+  **L3**.
+
+### Atajos
+
+![La ventana Remote: Shortcuts](media/manual/remote-shortcuts.png)
+
+La pestaña **Shortcuts** tiene todas las combinaciones que hacen algo, y las manda ella sola con
+**un clic**, con una caja para buscar (*holo*, *song*, *panel*, *Patrol*…). Van en tres grupos:
+
+- **Automatic modes**: la combinación de cada modo en Setup → Modes (encender / apagar).
+- **Face tracking**: Dome PS + L2 (encender / apagar).
+- **MarcDuino actions**: el mapa por defecto de ShadowMD Lite (el de su `CheatSheet.md`). Una
+  combinación dada a un modo sale como ese modo, porque ya no hace su acción; las combinaciones
+  libres no salen.
+
+La ventana pulsa los botones en el orden en que los lee el Mega: primero los modificadores (Cross,
+Circle, PS, L1, L2, L3) y después la flecha; y con el Nav del dome conectado el modificador va en el
+otro Nav, como dice la chuleta (*Foot ↑ + Cross* es la ↑ del foot con el Cross del dome). Después de
+cada atajo la lista espera 1,2 s: el Mega no hace caso a una flecha que llega antes de un segundo
+desde la anterior.
+
+---
+
 ## Setup
 
-Setup tiene cinco pestañas. **Save** guarda los ajustes de la pestaña en la Pi (se aplican al
+Setup tiene cinco pestañas, cada una con su dirección (`setup.html#cameras`, `#sensors`, `#modes`,
+`#system`, `#file`). En la pantalla de un ordenador la página no hace scroll: cada pestaña llena la
+ventana y sus columnas hacen scroll por dentro. **Save** guarda los ajustes de la pestaña en la Pi (se aplican al
 momento); **Save and restart** solo hace falta para la lista de cámaras.
 
 ### Setup → Cameras
 
 ![Setup, Cameras](media/manual/setup-cameras.png)
 
-Cada cámara enchufada a la Pi, con:
+A la izquierda, R2 visto desde arriba con el abanico de cada cámara; a la derecha, cada cámara
+enchufada a la Pi (o en la WiFi de R2), con:
 
 - **use** (encendida o no), **number** (las flechas la mueven a la izquierda o a la derecha de la
   lista), **size** y **turn** (las dos flechas giran la imagen un cuarto de vuelta a cada lado: 0, 90,
@@ -225,12 +282,16 @@ busca cuando lo pierde. Con la cámara del dome ESP32-P4 (`firmware/r2_domecam_p
 cámara la que busca el color mientras R2 lo sigue, así que no viaja vídeo por la WiFi; con las demás
 cámaras lo busca la Pi en el vídeo, como antes.
 
+La pestaña va en tres columnas: los modos, cada uno con su combinación y un dibujo pequeño de lo que
+hace; la imagen de la cámara para hacer clic en el color; y los ajustes del color.
+
 ### Setup → System
 
 ![Setup, System: la pantalla se enciende, se elige una pantalla, el botón DISPLAY y un LED identificado](media/manual/setup-system.gif)
 
-La pestaña va en dos columnas: a la izquierda la tira y la placa, a la derecha la telemetría y
-los ajustes; en pantallas estrechas, la placa arriba y los ajustes debajo.
+Dos tarjetas: a la izquierda, lo que la Pi detecta y la placa de la Pico en directo; a la derecha, un
+bloque por cada parte (la Raspberry Pi, la placa de la Pico y cada cámara del dome) con su
+telemetría, y un botón que abre sus detalles y ajustes en una ventana aparte.
 
 **Arriba, lo que la Pi detecta**: una tira con el Mega, la Pi, el lidar, la placa de la Pico y cada
 cámara, en verde si están y en gris si no, unidos por los cables USB (verdes cuando están los dos
@@ -240,46 +301,48 @@ extremos). Sabertooth, SyRen, MarcDuino y los mandos no salen: la Pi no los pued
 real, a escala y con cada pieza en su sitio del PCB: los conectores, la Pico, el pulsador DISPLAY y
 la pantalla de 0,96" en su módulo, a su tamaño. Mientras la pantalla enseña un sensor, su conector
 lleva un marco amarillo y una flecha lo señala (en la pantalla *all*, todos los conectores con
-sensor), para seguir fácilmente los pasos del botón DISPLAY. El LED de cada conector se enciende y parpadea como el real, con la lectura del sensor al
-lado; también el LED verde de la propia Pico; la pantalla enseña la imagen de la pantalla real,
-píxel a píxel. El botón **DISPLAY** funciona como el real: un clic es una pulsación y mantenerlo 3 s
-apaga la pantalla (mientras lo mantienes se llena una barra). Si pulsas el botón de la placa, la
-copia lo sigue. PWR se enciende cuando responde algún HC-SR04 (necesitan sus 5 V); si no responde
-ninguno sale punteado, porque la Pico no lo puede saber. La placa solo manda esto mientras esta
-pestaña está abierta.
-
-**Telemetry** (el interruptor verde): lo ocupadas que van la Pi y la Pico, solo mientras está
-encendido y esta pestaña abierta. Cada valor es un anillo con sus zonas de color (verde, ámbar,
-rojo), relleno hasta el valor con el color de su zona; al pasar el ratón se ven el rango visto y
-los límites. **every** elige cada cuánto se lee (de 1 a 30 s; a la Pico se le sigue pidiendo cada
-2 s para que no deje de mandarla).
-
-**Dome cameras** (con la telemetría encendida): cada cámara de red de cameras.yaml, preguntada por
-la Pi: temperatura del chip, lo ocupado que va cada núcleo (núcleo 0: WiFi y web; núcleo 1: el
-buscador de caras o de color) y la señal WiFi, en anillos; debajo, cuánto lleva encendida, cuántas
-veces ha arrancado y por qué arrancó la última vez (*crash*, *watchdog* o *brownout* salen en rojo),
-cuántas veces se le ha caído la WiFi y por qué, lo rápido que contesta, qué está buscando y a qué
-ritmo, sus clientes, la memoria y el firmware. Una cámara con firmware antiguo enseña solo una parte.
-
-**R2's WiFi**: el punto de acceso propio de R2 (al que se conecta la cámara del dome) elige el canal
-más tranquilo entre el 1, el 6 y el 11 cada vez que arranca. Una barra por canal enseña lo ocupado que
-está (verde libre, ámbar ocupado, rojo muy ocupado; ● el que está en uso). **Check now** vuelve a mirar
-sin cortar nada; **Move to the quietest** reinicia el punto de acceso para que cambie (las cámaras se
-cortan unos segundos). Hace falta ejecutar una vez `setup/install_wifi_channel.sh` en la Pi.
+sensor), para seguir fácilmente los pasos del botón DISPLAY. El LED de cada conector se enciende y
+parpadea como el real, con la lectura del sensor al lado; también el LED verde de la propia Pico; la
+pantalla enseña la imagen de la pantalla real, píxel a píxel. El botón **DISPLAY** funciona como el
+real: un clic es una pulsación y mantenerlo 3 s apaga la pantalla (mientras lo mantienes se llena
+una barra). Si pulsas el botón de la placa, la copia lo sigue. PWR se enciende cuando responde algún
+HC-SR04 (necesitan sus 5 V); si no responde ninguno sale punteado, porque la Pico no lo puede saber.
+La placa solo manda esto mientras esta pestaña está abierta.
 
 ![Setup, System: telemetría](media/manual/setup-system-telemetry.png)
 
-- **Raspberry Pi**: versión del software, SD libre, RAM libre, CPU, temperatura (con sus zonas
-  normal, caliente y de freno) y avisos de tensión.
-- **Placa de la Pico**: versión del firmware, carga de cada núcleo, el bus I2C, lecturas por segundo
-  de cada sensor y temperatura.
-- **Ajustes de la placa**: cuánto tiempo sigue encendida su pantalla, el brillo y cuándo se
-  encienden sus LEDs (*only with the display on*, *always on*, *on, only the ones connected*,
-  *always off*, *only the ones failing*); encender la pantalla (con la pantalla que elijas) o
-  apagarla; *Identify* hace parpadear el LED de un conector.
-- **Firmware de la Pico**: *Check for update* pregunta a GitHub; *Flash firmware* lo descarga,
-  compila y graba desde la Pi (unos minutos; no mientras conduce un modo automático). Si la copia
-  falla, *Retry* lo vuelve a copiar sin compilar.
+**Telemetry** (el interruptor verde): lo ocupada que va cada parte, leído solo mientras está
+encendido y esta pestaña abierta. Los indicadores están siempre: **en color** mientras está
+encendido, **en gris** con los últimos valores (o vacíos) mientras está apagado. Cada valor es un
+anillo con sus zonas de color (verde, ámbar, rojo), relleno hasta el valor con el color de su zona;
+al pasar el ratón se ven el rango visto y los límites. **every** elige cada cuánto se lee (de 1 a
+30 s; a la Pico se le sigue pidiendo cada 2 s para que no deje de mandarla).
+
+- **Raspberry Pi**: SD libre, RAM libre, CPU (y cada núcleo) y temperatura, con sus zonas normal,
+  caliente y de freno; debajo sale el aviso de tensión si lo hay. **Details**: su nombre, cuánto
+  lleva encendida, sus direcciones (cable y WiFi de R2), las versiones del sistema y de ROS 2, la del
+  software, y **R2's WiFi**: el punto de acceso propio de R2 (al que se conecta la cámara del dome)
+  elige el canal más tranquilo entre el 1, el 6 y el 11 cada vez que arranca; una barra por canal
+  enseña lo ocupado que está (verde libre, ámbar ocupado, rojo muy ocupado; ● el que está en uso).
+  **Check now** vuelve a mirar sin cortar nada; **Move to the quietest** reinicia el punto de acceso
+  para que cambie (las cámaras se cortan unos segundos). Hace falta ejecutar una vez
+  `setup/install_wifi_channel.sh` en la Pi.
+- **Placa de la Pico**: la carga de cada núcleo, el bus I2C y la temperatura del chip. **Settings**:
+  si está conectada, su firmware, cuánto lleva encendida, las lecturas por segundo de cada sensor, y
+  - **sus ajustes**: cuánto tiempo sigue encendida su pantalla, el brillo y cuándo se encienden sus
+    LEDs (*only with the display on*, *always on*, *on, only the ones connected*, *always off*,
+    *only the ones failing*); encender la pantalla (con la pantalla que elijas) o apagarla;
+    *Identify* hace parpadear el LED de un conector;
+  - **su firmware**: *Check for update* pregunta a GitHub; *Flash firmware* lo descarga, compila y
+    graba desde la Pi (unos minutos; no mientras conduce un modo automático); la ventana se queda
+    abierta con una barra de progreso hasta que dice que ha terminado. Si la copia falla, *Retry* lo
+    vuelve a copiar sin compilar.
+- **Cada cámara del dome** (cada cámara de red de cameras.yaml, preguntada por la Pi): temperatura
+  del chip, lo ocupado que va cada núcleo (núcleo 0: WiFi y web; núcleo 1: el buscador de caras o de
+  color) y la señal WiFi. **Details**: cuánto lleva encendida, cuántas veces ha arrancado y por qué
+  arrancó la última vez (*crash*, *watchdog* o *brownout* salen en rojo), cuántas veces se le ha
+  caído la WiFi y por qué, lo rápido que contesta, qué está buscando y a qué ritmo, sus clientes, la
+  memoria y el firmware. Una cámara con firmware antiguo enseña solo una parte.
 
 ### Setup → File
 

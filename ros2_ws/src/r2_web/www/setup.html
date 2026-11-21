@@ -189,9 +189,9 @@
   .mrow.active { border-color: var(--green); }
   /* the diagram (what the mode does, animated) beside the name and combination: the four fit with no scroll */
   .mcard { align-content: start; }
-  .mrow { grid-template-columns: 200px minmax(0, 1fr); column-gap: 12px; align-items: center; align-content: center; }
+  .mrow { grid-template-columns: minmax(90px, 200px) minmax(165px, 1fr); column-gap: 12px; align-items: center; align-content: center; }
   .mrow > :not(.mdiag) { grid-column: 2; }
-  .mrow .mdiag { grid-column: 1; grid-row: 1 / span 3; width: 200px; height: auto; border-radius: 6px; }
+  .mrow .mdiag { grid-column: 1; grid-row: 1 / span 3; width: 100%; height: auto; border-radius: 6px; }
   .mrow .mname { display: flex; align-items: center; gap: 8px; }
   .mrow .mname i { width: 16px; text-align: center; color: var(--muted); }
   .mrow .mname code { color: var(--muted); font-size: var(--fs-s); }
