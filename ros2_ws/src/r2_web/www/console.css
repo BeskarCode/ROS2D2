@@ -60,3 +60,22 @@ label.chk { color: var(--muted); font-size: var(--fs-s); display: inline-flex; g
 .note { padding: 0 12px 10px; font-size: var(--fs-s); color: var(--muted); margin: 0; }
 .status { color: var(--muted); font-size: var(--fs-s); }
 .status.ok { color: var(--green); } .status.bad { color: var(--red); } .status.warn { color: var(--amber); }
+
+/* ---- tabs (Setup): the same look as the header's sections ---- */
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.tabs button { background: transparent; border-color: transparent; color: var(--muted); }
+.tabs button:hover:not(:disabled) { background: var(--line); color: var(--text); filter: none; }
+.tabs button.on { background: var(--line); border-color: var(--line2); color: var(--text); }
+
+/* ---- "How it works": every help text, folded, at the top of its card or tab ---- */
+details.howto { margin: 0 0 10px; color: var(--muted); font-size: var(--fs-s); }
+details.howto > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+details.howto > summary::-webkit-details-marker { display: none; }
+details.howto > summary::after { content: '\25B8'; transition: transform .15s; }
+details.howto[open] > summary::after { transform: rotate(90deg); }
+details.howto .help, details.howto > div { margin: 6px 0 0; }
+.card > details.howto { margin: 0; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+
+/* ---- section titles inside a page (System): the same as card titles ---- */
+.sectitle { font-size: var(--fs-s); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sectitle .sub { text-transform: none; letter-spacing: 0; font-weight: 400; }

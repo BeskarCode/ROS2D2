@@ -42,3 +42,9 @@ test('mode: the automatic one on, or face tracking', () => {
   assert.equal(byKey(statusPills({ ...all, auto: true, mode: 'patrol' }, now)).mode.cls, 'ok');
   assert.equal(byKey(statusPills({ ...all, track: true }, now)).mode.text, 'Mode: face tracking');
 });
+
+test('a source never heard after the wait (time 0) reads as gone, not as unknown', () => {
+  const k = Object.fromEntries(statusPills({ ...all, picoAt: 0, scanAt: 0 }, now).map((p) => [p.key, p]));
+  assert.equal(k.pico.text, 'Pico: not connected');
+  assert.equal(k.lidar.text, 'Lidar: no scans');
+});

@@ -136,6 +136,10 @@
 
   <section class="card">
     <h2><span><i class="fa-solid fa-robot"></i>Dome <select id="model" aria-label="3D model"></select></span><span id="angle">0°</span></h2>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works: how the angle is estimated</summary><div>The dome has no position sensor: the angle is estimated from the speed commands.
+      Time a full turn at speed 80 and set °/s to 360 ÷ seconds.<br>
+      Simulate: the real camera does not move, so the faces are shifted by the estimated angle
+      as if it had turned with the dome. The yellow line shows where the virtual dome looks.</div></details>
     <div class="viewwrap">
       <canvas id="view3d"></canvas>
       <div id="loading">loading model…</div>
@@ -160,14 +164,12 @@
       <label><input type="checkbox" id="simulate"> <i class="fa-solid fa-flask"></i>simulate (no Mega)</label>
       <label><input type="checkbox" id="showfov" checked> <i class="fa-solid fa-eye"></i>camera view</label>
     </div>
-    <details class="note"><summary><i class="fa-solid fa-circle-info"></i> How the angle is estimated</summary>The dome has no position sensor: the angle is estimated from the speed commands.
-      Time a full turn at speed 80 and set °/s to 360 ÷ seconds.<br>
-      Simulate: the real camera does not move, so the faces are shifted by the estimated angle
-      as if it had turned with the dome. The yellow line shows where the virtual dome looks.</details>
   </section>
 
   <section class="card" id="megacard">
     <h2><span><i class="fa-solid fa-microchip"></i>Mega</span><span id="megastate">no bridge</span></h2>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works: what the lines mean</summary><div>→ sent to the Mega, ← what it answers. Without a Mega (simulation) the
+      amber lines are what the bridge <em>would</em> send. Repeats are grouped.</div></details>
     <div class="controls" id="modepick"></div>
     <div id="megalog"></div>
     <div class="controls">
@@ -175,8 +177,6 @@
       <button id="megaclear" title="Empty the Mega's message log"><i class="fa-solid fa-trash-can"></i>Clear</button>
       <label><input type="checkbox" id="megarx" checked> <i class="fa-solid fa-reply"></i>show replies</label>
     </div>
-    <details class="note"><summary><i class="fa-solid fa-circle-info"></i> What the lines mean</summary>→ sent to the Mega, ← what it answers. Without a Mega (simulation) the
-      amber lines are what the bridge <em>would</em> send. Repeats are grouped.</details>
   </section>
 </main>
 <script type="module" src="app.js"></script>

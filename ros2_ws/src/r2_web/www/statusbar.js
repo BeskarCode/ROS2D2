@@ -49,6 +49,8 @@ function start() {
     render();
   }).catch(() => {});
   setInterval(render, 1000);       // ages the "seen lately" ones
+  // nothing heard after a while is "nothing there", not "not known yet"
+  setTimeout(() => { for (const k of ['picoAt', 'scanAt']) if (st[k] == null) st[k] = 0; render(); }, 8000);
 }
 
 start();

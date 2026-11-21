@@ -14,9 +14,7 @@
 <style>
   a { color: var(--blue); }
   main { padding: var(--gap); }
-  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
-  .tabs button.on { background: var(--blue); border-color: var(--blue); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--gap); }
   .cam { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .cam.off { opacity: .55; }
   .cam .pic { position: relative; aspect-ratio: 4 / 3; background: #000; }
@@ -46,7 +44,7 @@
   .slider input[type=range] { width: 200px; accent-color: var(--blue); }
   .slider b { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
   /* Cameras: the coverage box and every camera in one grid, all the same width and height */
-  .layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); grid-auto-rows: 1fr; gap: 16px; }
+  .layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); grid-auto-rows: 1fr; gap: var(--gap); }
   .layout > .grid { display: contents; }
   .coverage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
   .coverage svg { max-height: 300px; }
@@ -97,8 +95,9 @@
   .sbar { height: 4px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
   .sbar i { display: block; height: 100%; background: var(--blue); }
   .stat.warn .sbar i { background: var(--amber); } .stat.bad .sbar i { background: var(--red); }
-  .sysh { font-size: 15px; margin: 18px 0 4px; display: flex; align-items: baseline; gap: 10px; }
-  .sysh .sub { color: var(--muted); font-size: var(--fs-s); font-weight: 400; }
+  .tabtools { display: flex; gap: 8px; margin: 0 0 10px; }
+  .sysh { font-size: var(--fs-s); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 18px 0 4px; display: flex; align-items: baseline; gap: 10px; }
+  .sysh .sub { color: var(--muted); font-size: var(--fs-s); font-weight: 400; text-transform: none; letter-spacing: 0; }
   /* the telemetry switch: a big pill with an icon, green and "on" while it reads */
   .systog { display: inline-flex; align-items: center; gap: 10px; margin: 6px 0 10px; padding: 9px 16px;
             border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer;
@@ -234,12 +233,12 @@
   .wifibar .track i { display: block; height: 100%; border-radius: 5px; }
   .wifibar.ok .track i { background: var(--green); } .wifibar.warn .track i { background: var(--amber); } .wifibar.bad .track i { background: var(--red); }
   .wifibar.current b { color: var(--text, var(--text)); }
-  .sysh4 { font-size: var(--fs); margin: 16px 0 4px; display: flex; align-items: center; gap: 8px; }
+  .sysh4 { font-size: var(--fs-s); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 4px; display: flex; align-items: center; gap: 8px; }
   .fwbar { position: relative; height: 18px; border-radius: 9px; background: var(--line, #30363d); overflow: hidden; margin: 6px 0; }
   .fwbar i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--green); transition: width .8s linear; }
   .fwbar span { position: relative; display: block; text-align: center; font-size: var(--fs-s); line-height: 18px; color: #fff; }
   .fwbar.bad i { background: var(--red); }
-  .sysfold > summary { cursor: pointer; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; list-style: none; }
+  .sysfold > summary { cursor: pointer; font-size: var(--fs-s); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; list-style: none; }
   .sysfold > summary::-webkit-details-marker { display: none; }
   .sysfold > summary::before { content: '\25B8'; color: var(--muted, var(--muted)); transition: transform .15s; }
   .sysfold[open] > summary::before { transform: rotate(90deg); }
@@ -362,14 +361,14 @@
     <button id="tab-modes" title="Modes: the controller buttons that start each automatic mode and its settings"><i class="fa-solid fa-gamepad"></i>Modes</button>
     <button id="tab-system" title="System: the Pi and the Pico board, their versions, telemetry, board settings and firmware"><i class="fa-solid fa-gauge-high"></i>System</button>
     <button id="tab-file" title="File: the settings file as text, to read or edit by hand"><i class="fa-solid fa-file-code"></i>File</button>
-    <button id="identify" title="Show each camera's number on its own picture, to know which is which"><i class="fa-solid fa-hashtag"></i>Identify</button>
   </div>
 
   <section id="form">
-    <p class="help">Every camera plugged into the Pi is listed. Numbers go left to right, like monitors:
+    <div class="tabtools"><button id="identify" title="Show each camera's number on its own picture, to know which is which"><i class="fa-solid fa-hashtag"></i>Identify</button></div>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">Every camera plugged into the Pi is listed. Numbers go left to right, like monitors:
       press <b>Identify</b> and cover a camera with your hand to see which picture goes dark.
       Direction and field of view apply at once; turning a camera on or off, or renumbering, needs
-      <b>Save and restart</b>.</p>
+      <b>Save and restart</b>.</p></details>
     <div class="layout">
     <div class="coverage">
       <svg id="map" viewBox="-110 -110 220 220" aria-label="what the cameras see, from above"></svg>
@@ -383,10 +382,10 @@
   </section>
 
   <section id="sensors" hidden>
-    <p class="help">R2 seen from above, front up, to scale (rings every 50 cm). Drag a sensor on the map to move it;
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">R2 seen from above, front up, to scale (rings every 50 cm). Drag a sensor on the map to move it;
       click it in the list to set where it points, how wide it sees and how far. <b>Red dots</b> are places near R2
       that no sensor covers. Pick a <b>test object</b> (top right) and drag it: the sensors that would see it light up,
-      with the distance they would read. <b>Save</b> applies at once: ROS moves the sensors' poses and the lidar's cut.</p>
+      with the distance they would read. <b>Save</b> applies at once: ROS moves the sensors' poses and the lidar's cut.</p></details>
     <p class="status bad" id="s-locked" hidden><i class="fa-solid fa-triangle-exclamation"></i>sensors.yaml has a
       mistake, so this view only shows it: fix the file in the <b>File</b> tab and Save.</p>
     <div class="slayout">
@@ -420,8 +419,8 @@
         <div id="s-blind"></div>
       </div>
       <div>
-        <div class="sfilter"><button id="s-connected" title="show only the sensors that are measuring now">
-          <i class="fa-solid fa-plug-circle-check"></i>Connected only</button>
+        <div class="sfilter"><label class="chk" title="show only the sensors that are measuring now"><input type="checkbox" id="s-connected">
+          <i class="fa-solid fa-plug-circle-check"></i>Connected only</label>
           <button id="s-hideall" title="Hide every sensor's beam (and the lidar's points) on the map"><i class="fa-solid fa-eye-slash"></i>Hide all</button>
           <button id="s-showall" title="Show every sensor's beam (and the lidar's points) on the map"><i class="fa-solid fa-eye"></i>Show all</button>
           <span id="s-hiddenn"></span></div>
@@ -433,10 +432,10 @@
   </section>
 
   <section id="modes" hidden>
-    <p class="help">Each mode starts with a combination on the controller; pressing it again switches the mode off.
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">Each mode starts with a combination on the controller; pressing it again switches the mode off.
       A combination given to a mode <b>no longer plays its MarcDuino action</b>. Dome PS + L2 is face tracking and cannot be
       given to a mode. For <b>Follow a colour</b>, wear something of a clear colour, click on it in the picture and check
-      how much of the picture it matches. <b>Save</b> applies at once: the Mega gets the new combinations.</p>
+      how much of the picture it matches. <b>Save</b> applies at once: the Mega gets the new combinations.</p></details>
     <p class="status bad" id="m-locked" hidden><i class="fa-solid fa-triangle-exclamation"></i>modes.yaml has a
       mistake, so this view only shows it: fix the file in the <b>File</b> tab and Save.</p>
     <div class="mlayout">
@@ -464,7 +463,7 @@
     <div class="syscols">
     <div id="sys-live" class="syslive"></div>
     <div class="sysside">
-    <p class="help">The Pi, the Pico board and the dome cameras. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">The Pi, the Pico board and the dome cameras. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p></details>
     <label class="systog" title="Read how busy the Pi and the Pico are (only while on and this tab is open)">
       <input type="checkbox" id="sys-telemetry"><i class="fa-solid fa-chart-line"></i>Telemetry
       <span class="knob"></span><span class="state"></span></label>
@@ -516,8 +515,8 @@
   </section>
 
   <section id="file" hidden>
-    <p class="help">The settings of the last tab as text: <code id="filename"></code>. You can also edit this file by hand on the Pi;
-      both ways edit the same file.</p>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">The settings of the last tab as text: <code id="filename"></code>. You can also edit this file by hand on the Pi;
+      both ways edit the same file.</p></details>
     <textarea id="yaml" spellcheck="false"></textarea>
   </section>
 
