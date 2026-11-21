@@ -96,7 +96,7 @@ function render() {
           <label><input type="checkbox" class="use"> <i class="fa-solid fa-power-off"></i>use</label></div>
         <div class="row"><label><i class="fa-solid fa-hashtag"></i>number</label><div class="step"><button data-a="left" title="Show this camera earlier in the list"><i class="fa-solid fa-chevron-left"></i></button><b>${r.num}</b><button data-a="right" title="Show this camera later in the list"><i class="fa-solid fa-chevron-right"></i></button></div></div>
         <div class="row"><label><i class="fa-solid fa-expand"></i>size</label><select class="mode">${modes.map((m) => `<option>${m}</option>`).join('')}</select></div>
-        <div class="row"><label><i class="fa-solid fa-rotate-right"></i>turn</label><select class="rotate">${[0, 90, 180, 270].map((d) => `<option value="${d}">${d}°</option>`).join('')}</select></div>
+        <div class="row"><label><i class="fa-solid fa-rotate-right"></i>turn</label><div class="step"><button data-turn="-90" title="Turn the picture a quarter anticlockwise"><i class="fa-solid fa-rotate-left"></i></button><b class="rotate"></b><button data-turn="90" title="Turn the picture a quarter clockwise"><i class="fa-solid fa-rotate-right"></i></button></div></div>
         <div class="row"><label><i class="fa-solid fa-compass"></i>points to</label><div class="slider"><input type="range" class="yawr" min="-180" max="180" step="1"><b class="yaw"></b></div></div>
         <div class="row"><label><i class="fa-solid fa-eye"></i>field of view</label><div class="slider"><input type="range" class="hfovr" min="20" max="170" step="1"><b class="hfov"></b></div></div>
       </div>`;
@@ -131,13 +131,14 @@ function render() {
         setParam(node, 'width', w).then(() => setParam(node, 'height', h)).then(() => setParam(node, 'fps', Math.round(fps)));
       }
     });
-    el.querySelector('.rotate').value = r.rotate;
-    el.querySelector('.rotate').addEventListener('change', (e) => {
+    el.querySelector('.rotate').textContent = `${r.rotate}°`;
+    el.querySelectorAll('button[data-turn]').forEach((btn) => btn.addEventListener('click', () => {
       // Live: the camera node turns the picture, and the face finder its boxes (a camera that
-      // finds the faces itself is told by it to turn its own picture too)
-      r.rotate = Number(e.target.value); dirty();
+      // finds the faces itself is told by it to turn what its finder searches too)
+      r.rotate = (r.rotate + Number(btn.dataset.turn) + 360) % 360; dirty();
+      el.querySelector('.rotate').textContent = `${r.rotate}°`;
       if (r.running) for (const node of [`/cameras/${r.name}/camera`, `/cameras/${r.name}/face_detector`]) setParam(node, 'rotate', r.rotate);
-    });
+    }));
     el.querySelectorAll('button[data-a]').forEach((b) => b.addEventListener('click', () => act(r, b.dataset.a)));
     el.querySelector('.yawr').value = r.yaw;
     el.querySelector('.hfovr').value = r.hfov;
