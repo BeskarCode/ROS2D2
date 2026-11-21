@@ -2,7 +2,7 @@
 // Top-down map of the droid and its sensors, in metres, front up (SVG). Sensors and the
 // test object are dragged with the mouse; they never leave the view (one outside after
 // zooming in is drawn on the edge, where it can be picked up again).
-import { R2, TYPES, blindSectorsBase, freeText, isLidar, lidarColour, reach, toMap, fromMap } from './sensormath.js';
+import { R2, TYPES, blindSectorsBase, freeText, isLidar, lidarPointColours, reach, toMap, fromMap } from './sensormath.js';
 
 const rad = (d) => d * Math.PI / 180;
 // its type's look, in its grey when it is not responding (state.colours, from sensors.js)
@@ -77,11 +77,16 @@ export function createSensorMap(svg, { onMove, onSelect, onObject, onHover = () 
            `<text y="${-free - sw * 6}" text-anchor="middle" font-size="${v / 20}" font-weight="700" fill="#56d364" ` +
            `stroke="#0d1117" stroke-width="${sw * 3}" paint-order="stroke">${freeText(free)}</text>`;
     }
+    // the navigation's safety circle: what the sensors have to cover
+    if (state.safety > 0) {
+      o += `<circle r="${state.safety}" fill="none" stroke="#f85149" stroke-opacity="0.8" stroke-width="${sw * 3}" ` +
+           `stroke-dasharray="${sw * 10} ${sw * 7}"><title>Navigation safety circle: ${Math.round(state.safety * 100)} cm</title></circle>`;
+    }
     if (state.scan) {
-      const dot = lidarColour(state.sensors);        // the lidar card's colour
-      for (const [x, y] of state.scan) {
+      const pc = lidarPointColours(state.sensors);   // the lidar card's colours; ignored ones grey
+      for (const [x, y, cls] of state.scan) {
         const [sx, sy] = toMap(x, y);
-        o += `<circle cx="${sx.toFixed(3)}" cy="${sy.toFixed(3)}" r="${sw * 2}" fill="${dot}"/>`;
+        o += `<circle cx="${sx.toFixed(3)}" cy="${sy.toFixed(3)}" r="${sw * 2}" fill="${pc[cls] || pc.far}"/>`;
       }
     }
     // the droid

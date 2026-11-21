@@ -47,7 +47,10 @@ LIDARS = ("rplidar_c1",)
 # counter-clockwise, -180..180; R2's own leg). Defaults = the droid before these settings existed.
 LIDAR_MOTOR = ("always", "with_modes", "off")
 FALLBACK_MODES = ("Standard", "DenseBoost")
-LIDAR_DEFAULTS = {"motor": "always", "scan_mode": "Standard", "inverted": False, "blind_sectors": []}
+LIDAR_DEFAULTS = {"motor": "always", "scan_mode": "Standard", "inverted": False, "blind_sectors": [],
+                  # the console's colours for its points: those that count (outside the navigation's
+                  # safety circle) and those inside it; points it ignores are always grey
+                  "points_colour": "#3fb950", "near_colour": "#f85149"}
 PICO_PINS = {"vl53l0x": ("xshut",), "hcsr04": ("trig", "echo")}
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 COLOUR = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -154,6 +157,9 @@ def _lidar_settings(name, s):
         raise SensorConfigError(f"{name}: scan_mode must be the name of one of the lidar's modes (Standard...)")
     if not isinstance(s["inverted"], bool):
         raise SensorConfigError(f"{name}: inverted must be true or false")
+    for key in ("points_colour", "near_colour"):
+        if not (isinstance(s[key], str) and COLOUR.match(s[key])):
+            raise SensorConfigError(f'{name}: {key} must be like "#ff8800" (in quotes)')
     sectors = s["blind_sectors"]
     if not isinstance(sectors, list):
         raise SensorConfigError(f"{name}: blind_sectors must be a list of [from, to] in degrees")

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { loadModelMetres } from './models.js';
 import { textSprite } from './label3d.js';
-import { freeText, lidarColour, splitScan } from './sensormath.js';
+import { freeText, lidarPointColours, splitScan } from './sensormath.js';
 
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const rad = (d) => d * Math.PI / 180;
@@ -86,9 +86,9 @@ export function createNavView3d(container) {
 
   function buildWorld(st, lidarZ) {
     dispose(world);
-    // the lidar's points in its own colour, red inside the safety circle
-    const pts = splitScan(st.scan, st.pose, st.radius);
-    for (const [list, colour] of [[pts.outside, lidarColour(st.sensors)], [pts.inside, '#f85149']]) {
+    // the lidar's points: its card's colours, outside / inside the safety circle
+    const pts = splitScan(st.scan, st.pose, st.radius), pc = lidarPointColours(st.sensors);
+    for (const [list, colour] of [[pts.outside, pc.far], [pts.inside, pc.near]]) {
       if (!list.length) continue;
       const pos = new Float32Array(list.flatMap(([x, y]) => [y, lidarZ, x]));
       const g = new THREE.BufferGeometry();

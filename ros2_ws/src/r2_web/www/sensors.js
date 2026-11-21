@@ -7,8 +7,8 @@ import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
 import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
-import { LIDAR_MOTOR, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue, PALETTE, sensorColour } from './sensormath.js';
-import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, sees, sideText, uniqueName } from './sensormath.js';
+import { LIDAR_MOTOR, LIDAR_POINTS, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue, PALETTE, sensorColour } from './sensormath.js';
+import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, rayCounts, sees, sideText, uniqueName } from './sensormath.js';
 
 const $ = (id) => document.getElementById(id);
 const OBJECTS = {
@@ -46,7 +46,8 @@ export function createSensorsTab({ status }) {
   let onlyConnected = false;
   try { onlyConnected = localStorage.getItem('r2web.onlyConnected') === '1'; } catch { /* private window */ }
   const saveHidden = () => { try { localStorage.setItem('r2web.hiddenBeams', JSON.stringify([...hidden])); } catch { /* private window */ } };
-  let scan = null;          // live lidar points in base_link: [[x, y]]
+  let scan = null;          // live lidar points in base_link: [[x, y, 'far' | 'near' | 'ignored']]
+  let safetyR = 0;          // the navigation's safety circle (nav.yaml safety_radius), drawn here too
   let scanHz = 0;
   let scanTurns = null;      // turns per second, unrounded, and points per turn (the lidar's info line)
   let scanPoints = null;
@@ -109,6 +110,7 @@ export function createSensorsTab({ status }) {
   async function load() {
     let api;
     try { api = await (await fetch('api/sensors', { cache: 'no-store' })).json(); } catch { return; }
+    try { safetyR = Number((await (await fetch('api/nav', { cache: 'no-store' })).json()).nav.safety_radius) || 0; } catch { safetyR = 0; }
     loaded = api;
     changed = false;
     locked = !!api.error;
@@ -156,8 +158,10 @@ export function createSensorsTab({ status }) {
   const lidarPointsShown = () => { const l = sensors.find(isLidar); return !l || !hidden.has(l.name + '#points'); };
   const hz = () => (scan && scanHz ? ` · /scan ${Math.round(scanHz)} Hz` : '');
 
-  // The lidar's points, at most twice a second, in base_link from where the lidar is now
-  subscribe('/scan', 'sensor_msgs/msg/LaserScan', (m) => {
+  // The lidar's points, at most twice a second, in base_link from where the lidar is now. The raw
+  // scan, so the points the droid ignores (outside the field of view, in a blind sector, past the
+  // range: what scan_crop cuts) show too, grey; the rest by the safety circle.
+  subscribe('/scan_raw', 'sensor_msgs/msg/LaserScan', (m) => {
     const s = sensors.find(isLidar);
     if (!s || !visible) return;
     const pts = [];
@@ -167,7 +171,8 @@ export function createSensorsTab({ status }) {
       if (r == null || !Number.isFinite(r) || r < m.range_min || r > m.range_max) continue;
       const a = m.angle_min + i * m.angle_increment;
       const lx = r * Math.cos(a), ly = r * Math.sin(a);
-      pts.push([s.x + lx * c - ly * n, s.y + lx * n + ly * c]);
+      const px = s.x + lx * c - ly * n, py = s.y + lx * n + ly * c;
+      pts.push([px, py, !rayCounts(s, a, r) ? 'ignored' : Math.hypot(px, py) < safetyR ? 'near' : 'far']);
     }
     const first = !scan;
     scan = pts;
@@ -219,7 +224,7 @@ export function createSensorsTab({ status }) {
       }));
       const shown = onlyConnected ? sensors.filter((s) => isConnected(badge(s)[0])) : sensors;
       const colours = Object.fromEntries(sensors.map((s) => [s.name, colourOf(s)]));
-      const state = { sensors: shown, colours, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint(scan), readings: live, hidden, hovered };
+      const state = { sensors: shown, colours, selected, object: object.none ? null : object, hits, cov, showGaps: $('s-gaps').checked, fullRange: $('s-far').checked, scan: lidarPointsShown() ? scan : null, near: nearestPoint((scan || []).filter((p) => p[2] !== 'ignored')), safety: safetyR, readings: live, hidden, hovered };
       map.draw(state);
       if (!$('view3d').hidden && $('views').className !== 'views v-top') view3d.draw(state);
       stats(cov);
@@ -587,6 +592,9 @@ export function createSensorsTab({ status }) {
     return `
       <div class="row"><label><i class="fa-brands fa-usb"></i>USB</label><span><button class="lusb" disabled title="Unplug the lidar in software (its motor stops first) or plug it back, without touching the cable. Back after a reboot">…</button>
         <span class="sub lusbmsg"></span></span></div>
+      <div class="row"><label title="The colour of the lidar's points here and in Navigation: those that count, and those inside the navigation's safety circle. The ones it ignores (outside its view, in a blind sector or too far) are always grey"><i class="fa-solid fa-braille"></i>points</label>
+        <span class="lptcols"><label class="chk"><input type="color" class="lpts" value="${s.points_colour || LIDAR_POINTS.far}"> outside the safety circle</label>
+        <label class="chk"><input type="color" class="lnear" value="${s.near_colour || LIDAR_POINTS.near}"> inside it</label></span></div>
       <div class="row"><label><i class="fa-solid fa-fan"></i>motor</label><select class="lmotor" title="Only with an automatic mode: R2 standing still is quiet; a mode waits up to 5 s for the lidar to spin up">
         ${LIDAR_MOTOR.map(([v, t]) => opt(v, t, s.motor || 'always')).join('')}</select></div>
       <div class="row"><label><i class="fa-solid fa-wave-square"></i>scan mode</label><select class="lmode" title="The modes the lidar says it has. Changing it restarts the lidar's driver">
@@ -618,6 +626,8 @@ export function createSensorsTab({ status }) {
       : 'not plugged in';
   }
   function wireLidar(el, s) {
+    el.querySelector('.lpts').addEventListener('input', (e) => { s.points_colour = e.target.value.toLowerCase(); touched(); });
+    el.querySelector('.lnear').addEventListener('input', (e) => { s.near_colour = e.target.value.toLowerCase(); touched(); });
     el.querySelector('.lusb').addEventListener('click', (e) => lidarUsb(el, { connected: e.currentTarget.dataset.state !== 'connected' }));
     lidarUsb(el);
     el.querySelector('.lmotor').addEventListener('change', (e) => { s.motor = e.target.value; touched(); });
@@ -658,7 +668,7 @@ export function createSensorsTab({ status }) {
         if (isLidar(s) && ['pitch_deg', 'stop_distance', 'pico'].includes(k)) continue;
         if (k === 'enabled' && s[k] !== false) continue;      // written only when ignored
         if (k === 'pico') out += `  pico: {${Object.entries(s.pico).map(([p, g]) => `${p}: ${g}`).join(', ')}}\n`;
-        else if (k === 'colour') out += `  colour: "${s[k]}"\n`;      // quoted: # starts a YAML comment
+        else if (k === 'colour' || k.endsWith('_colour')) out += `  ${k}: "${s[k]}"\n`;   // quoted: # starts a YAML comment
         else out += `  ${k}: ${typeof s[k] === 'number' ? r3(s[k]) : lidarYamlValue(s[k])}\n`;
       }
     }

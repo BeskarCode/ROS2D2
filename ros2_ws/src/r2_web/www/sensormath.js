@@ -250,10 +250,28 @@ export function lastFrontInUse(sensors, name) {
   return !sensors.some((s) => s.name !== name && s.enabled !== false && ahead(s));
 }
 
-/** The colour of the lidar's points: the lidar card's own (Setup -> Sensors), else the type's. */
-export function lidarColour(sensors) {
-  const lidar = Object.values(sensors || {}).find((s) => s && s.type === 'rplidar_c1');
-  return lidar ? sensorColour(lidar) : TYPES.rplidar_c1.colour;
+/** The colours of the lidar's points (its card in Setup -> Sensors, sensors.yaml points_colour and
+ *  near_colour): far = they count, outside the navigation's safety circle; near = inside it;
+ *  ignored = outside its field of view, in a blind sector or past its range (always grey). */
+export const LIDAR_POINTS = { far: '#3fb950', near: '#f85149', ignored: '#6e7681' };
+export function lidarPointColours(sensors) {
+  const l = Object.values(sensors || {}).find((s) => s && s.type === 'rplidar_c1') || {};
+  const pick = (v, d) => (typeof v === 'string' && COLOUR_RE.test(v) ? v.toLowerCase() : d);
+  return { far: pick(l.points_colour, LIDAR_POINTS.far), near: pick(l.near_colour, LIDAR_POINTS.near), ignored: LIDAR_POINTS.ignored };
+}
+
+/** Does a ray of the raw scan count (r2_sensors scan_crop keeps it)? angle in radians in the lidar's
+ *  own frame: inside +-fov_deg/2, outside every blind sector (mirrored when inverted), within range_max. */
+export function rayCounts(s, angle, range) {
+  const deg = wrap180(angle * 180 / Math.PI);
+  if (Math.abs(deg) > s.fov_deg / 2 + 1e-6) return false;
+  if (range > s.range_max) return false;
+  for (const [a0, b0] of s.blind_sectors || []) {
+    const [a, b] = s.inverted ? [-b0, -a0] : [a0, b0];
+    const inside = a <= b ? deg >= a && deg <= b : deg >= a || deg <= b;
+    if (inside) return false;
+  }
+  return true;
 }
 
 /** The lidar's points inside the safety circle round the droid (drawn red) and the rest. */
