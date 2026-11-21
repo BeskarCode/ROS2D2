@@ -27,12 +27,17 @@ Topics:
   out  /r2/track_mode         std_msgs/Bool       face tracking on or off (latched)
   out  /r2/track_mode/reason  std_msgs/String     why it went off: boot, button, controller,
                                                   pi or disconnected (latched)
-  in   /pad/foot, /pad/dome   std_msgs/String     the console's virtual Navs (Remote window), JSON
-                                                  {"buttons", "x", "y"}: sent as ROS:PAD, the newest of
-                                                  each at most 25 a second, never repeated (if the
-                                                  console goes quiet, so does this; the Mega lets go)
+  in   /pad/foot, /pad/dome   std_msgs/String     the console's virtual Navs (Remote window, phone view),
+                                                  JSON {"id", "buttons", "x", "y"}: sent as ROS:PAD, the
+                                                  newest of each at most 25 a second, never repeated (if
+                                                  the console goes quiet, so does this; the Mega lets go).
+                                                  The sticks are kept within remote.yaml's
+                                                  stick_limit_pct (20 % by default), and only one page
+                                                  (id) drives them at a time: another is ignored until
+                                                  the owner has been quiet for 1 s
+  in   /r2/remote/reload      std_msgs/Empty      re-read remote.yaml (saved from Setup -> Modes)
   out  /mega/pads             std_msgs/String     JSON {"F", "D": real|virtual|none, "supported": bool|null,
-                                                  "mega": bool} (latched)
+                                                  "mega": bool, "owner": id|null, "limit": pct} (latched)
 Services:
   /r2/auto_mode/disable       std_srvs/Trigger    switch the autonomous mode off
   /r2/track_mode/disable      std_srvs/Trigger    switch face tracking off
@@ -53,6 +58,7 @@ from std_msgs.msg import Bool, Empty, Int16, String
 from std_srvs.srv import Trigger
 
 from r2_nav.modes import bindings, load_modes, modes_path
+from r2_shadow_bridge.remote_cfg import USER_REMOTE, PadOwner, limit_stick, load_remote
 from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_line, dome_tick, foot_tick,
                                        is_auto_off_error, is_error, lines_for_mega_line,
                                        pad_line, parse_auto_line, parse_bind_reply, parse_pad_report,
@@ -110,11 +116,15 @@ class MegaBridgeNode(Node):
         self.create_subscription(Empty, "/r2/modes/reload", lambda _m: self._send_bindings(), 10)
         # virtual Navs: only the newest packet of each counts (depth 1), sent by _pad_tick
         self.pad_pending = {"F": None, "D": None}
-        self.pads = {"F": "none", "D": "none", "supported": None, "mega": False}
+        self.remote = load_remote(USER_REMOTE)
+        self.pad_owner = PadOwner(hold_s=1.0)
+        self.pads = {"F": "none", "D": "none", "supported": None, "mega": False, "owner": None,
+                     "limit": self.remote["stick_limit_pct"]}
         self.pad_asked_at = 0.0
         self.pub_pads = self.create_publisher(String, "/mega/pads", latched)
         self.create_subscription(String, "/pad/foot", lambda m: self._on_pad("F", m), 1)
         self.create_subscription(String, "/pad/dome", lambda m: self._on_pad("D", m), 1)
+        self.create_subscription(Empty, "/r2/remote/reload", lambda _m: self._load_remote(), 10)
         self.create_timer(0.04, self._pad_tick)
         self.create_service(Trigger, "/r2/auto_mode/disable", self._on_disable)
         self.create_service(Trigger, "/r2/track_mode/disable", self._on_track_disable)
@@ -245,18 +255,33 @@ class MegaBridgeNode(Node):
 
     # --- virtual Navs (the console's Remote window) -----------------------------------------
 
+    def _load_remote(self):
+        self.remote = load_remote(USER_REMOTE)
+        self.get_logger().info(f"remote.yaml: virtual Nav sticks limited to {self.remote['stick_limit_pct']} %")
+        self._set_pads(limit=self.remote["stick_limit_pct"])
+
     def _on_pad(self, pad, msg):
         try:
             d = json.loads(msg.data)
-            self.pad_pending[pad] = (int(d["buttons"]), int(d["x"]), int(d["y"]))
-        except (ValueError, KeyError, TypeError):
+            buttons = int(d["buttons"])
+            client = str(d.get("id") or "anon")
+        except (ValueError, KeyError, TypeError, AttributeError):
             self.get_logger().warning(f"bad /pad message: {msg.data[:80]}", throttle_duration_sec=10.0)
+            return
+        if not self.pad_owner.accept(client, time.monotonic()):
+            return                                          # another page drives the virtual Navs
+        pct = self.remote["stick_limit_pct"]
+        self.pad_pending[pad] = (buttons, limit_stick(d.get("x"), pct), limit_stick(d.get("y"), pct))
+        if self.pads.get("owner") != client:
+            self._set_pads(owner=client)
 
     def _pad_tick(self):
         """Send the newest packet of each Nav once (never repeated), at most 25 a second each.
         Firmware with no virtual Nav does not answer ROS:PAD:? : after 3 s it says so."""
         if self.pads["supported"] is None and self.ser is not None and time.monotonic() - self.pad_asked_at > 3.0:
             self._set_pads(supported=False)
+        if self.pad_owner.expire(time.monotonic()):
+            self._set_pads(owner=None)                     # the page that drove went quiet: free
         for pad in ("F", "D"):
             p = self.pad_pending[pad]
             if p is None:

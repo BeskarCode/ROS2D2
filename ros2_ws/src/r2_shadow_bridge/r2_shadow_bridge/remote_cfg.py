@@ -98,3 +98,10 @@ class PadOwner:
             self._last = now
             return True
         return False
+
+    def expire(self, now):
+        """True when the owner has just gone quiet for longer than hold_s (and is dropped)."""
+        if self.owner is not None and now - self._last > self.hold_s:
+            self.owner = None
+            return True
+        return False

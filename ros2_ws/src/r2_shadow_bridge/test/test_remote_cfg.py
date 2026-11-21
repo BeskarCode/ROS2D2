@@ -47,3 +47,11 @@ def test_pad_owner():
     assert o.accept("phone", 0.9)
     assert o.accept("pc", 2.0) and o.owner == "pc"      # the phone was quiet 1.1 s
     assert not o.accept("phone", 2.5)
+
+
+def test_pad_owner_expires():
+    o = PadOwner(hold_s=1.0)
+    o.accept("phone", 0.0)
+    assert o.expire(0.5) is False and o.owner == "phone"
+    assert o.expire(1.2) is True and o.owner is None        # quiet > 1 s: nobody drives
+    assert o.expire(1.3) is False                           # already free: no change to report
