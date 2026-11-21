@@ -88,8 +88,7 @@ The Raspberry Pi, the Pico sensor board and the 24 → 5 V converter go in a 3D-
 on a fixed front, and removable ears mount it standing or lying down. STL, print guide
 ([ES](hardware/ros2_box_rack_v3/print_guide/GUIA_IMPRESION.md) · [EN](hardware/ros2_box_rack_v3/print_guide/PRINT_GUIDE.md))
 and step-by-step assembly ([ES](hardware/ros2_box_rack_v3/MONTAJE.md) · [EN](hardware/ros2_box_rack_v3/ASSEMBLY.md)) in
-[`hardware/ros2_box_rack_v3`](hardware/ros2_box_rack_v3). The previous version stays in
-[`hardware/ros2_box_rack`](hardware/ros2_box_rack).
+[`hardware/ros2_box_rack_v3`](hardware/ros2_box_rack_v3).
 
 <a href="hardware/ros2_box_rack_v3"><img src="hardware/ros2_box_rack_v3/assembly/img/assembled_led.png" alt="The ROS2D2 rack box, LED face" width="480"></a>
 
