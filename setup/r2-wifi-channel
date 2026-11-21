@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
+"""Picks the quietest 2.4 GHz channel for R2's own access point (hostapd on wlan0).
+
+Installed as /usr/local/sbin/r2-wifi-channel by setup/install_wifi_channel.sh and run as root by
+hostapd itself before it starts (a systemd drop-in: ExecStartPre), so every time the AP comes up
+(at boot, or from the web console's button) it lands on the least crowded channel of 1, 6 and 11,
+the three that do not overlap. Why: a strong neighbour on an overlapping channel (a home mesh on 5
+next to R2 on 6) lost 60 % of the camera's packets; on a clear channel, none.
+
+    r2-wifi-channel pick      scan, write the best channel into hostapd.conf, say what it saw
+    r2-wifi-channel survey    scan and say how busy each channel is now, changing nothing (it works
+                              with the AP up; moving needs hostapd restarted, which runs pick)
+    r2-wifi-channel state     what the last pick found (JSON, also in /run/r2-wifi-channel.json)
+
+A failed scan leaves the channel as it was. Needs `iw` (apt install iw)."""
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import time
+
+CONF = "/etc/hostapd/hostapd.conf"
+STATE = "/run/r2-wifi-channel.json"
+IFACE = "wlan0"
+CANDIDATES = (1, 6, 11)
+
+
+def channel_of(freq_mhz):
+    """2.4 GHz channel from a frequency, or None (5 GHz does not bother a 2.4 GHz AP)."""
+    if freq_mhz == 2484:
+        return 14
+    if 2412 <= freq_mhz <= 2472:
+        return (freq_mhz - 2407) // 5
+    return None
+
+
+def parse_scan(text):
+    """`iw dev wlan0 scan` -> [{"ssid", "channel", "dbm"}] for the 2.4 GHz networks."""
+    nets, cur = [], None
+    for line in text.splitlines():
+        if line.startswith("BSS "):
+            cur = {"ssid": "", "channel": None, "dbm": None}
+            nets.append(cur)
+        elif cur is not None:
+            s = line.strip()
+            m = re.match(r"freq:\s*(\d+)", s)
+            if m:
+                cur["channel"] = channel_of(int(float(m.group(1))))
+            m = re.match(r"signal:\s*(-?[\d.]+)\s*dBm", s)
+            if m:
+                cur["dbm"] = float(m.group(1))
+            if s.startswith("SSID:"):
+                cur["ssid"] = s[5:].strip()
+    return [n for n in nets if n["channel"] and n["dbm"] is not None]
+
+
+def scores(nets, own_ssid=None):
+    """How busy each candidate channel is: the sum of every neighbour's power (mW) times how much
+    its channel overlaps ours (full on the same channel, none 5 or more channels away)."""
+    out = {}
+    for c in CANDIDATES:
+        total = 0.0
+        for n in nets:
+            if own_ssid and n["ssid"] == own_ssid:
+                continue
+            overlap = max(0.0, 1 - abs(n["channel"] - c) / 5)
+            total += overlap * 10 ** (n["dbm"] / 10)
+        out[c] = total
+    return out
+
+
+def best(score):
+    """The quietest channel; on a tie, the lower one."""
+    return min(sorted(score), key=lambda c: score[c])
+
+
+def busy_db(mw):
+    """A score as dBm, to show (-100 when nothing at all)."""
+    return round(10 * math.log10(mw), 1) if mw > 0 else -100.0
+
+
+def set_channel(conf_text, channel):
+    if re.search(r"^channel=\d+", conf_text, re.M):
+        return re.sub(r"^channel=\d+", f"channel={channel}", conf_text, flags=re.M)
+    return conf_text.rstrip("\n") + f"\nchannel={channel}\n"
+
+
+def current(conf_text):
+    m = re.search(r"^channel=(\d+)", conf_text, re.M)
+    return int(m.group(1)) if m else None
+
+
+def own_ssid(conf_text):
+    m = re.search(r"^ssid=(.*)$", conf_text, re.M)
+    return m.group(1).strip() if m else None
+
+
+def scan():
+    subprocess.run(["ip", "link", "set", IFACE, "up"], check=False, capture_output=True)
+    last = ""
+    for _ in range(3):           # the card may still be busy coming up
+        p = subprocess.run(["iw", "dev", IFACE, "scan"], capture_output=True, text=True, timeout=20)
+        if p.returncode == 0:
+            return p.stdout
+        last = p.stderr.strip()
+        time.sleep(1.5)
+    raise RuntimeError(f"scan failed: {last}")
+
+
+def pick():
+    with open(CONF, encoding="utf-8") as f:
+        text = f.read()
+    was = current(text)
+    state = {"at": int(time.time()), "was": was, "channel": was}
+    try:
+        nets = parse_scan(scan())
+        sc = scores(nets, own_ssid(text))
+        ch = best(sc)
+        state.update(channel=ch, networks=len(nets), busy_dbm={str(c): busy_db(v) for c, v in sc.items()})
+        if ch != was:
+            with open(CONF, "w", encoding="utf-8") as f:
+                f.write(set_channel(text, ch))
+    except Exception as e:       # no iw, scan refused...: keep the channel it had
+        state["error"] = str(e)
+    with open(STATE, "w", encoding="utf-8") as f:
+        json.dump(state, f)
+    print(json.dumps(state))
+    return 0
+
+
+def survey():
+    with open(CONF, encoding="utf-8") as f:
+        text = f.read()
+    out = {"at": int(time.time()), "channel": current(text)}
+    try:
+        nets = parse_scan(scan())
+        sc = scores(nets, own_ssid(text))
+        out.update(best=best(sc), networks=len(nets), busy_dbm={str(c): busy_db(v) for c, v in sc.items()})
+    except Exception as e:
+        out["error"] = str(e)
+    print(json.dumps(out))
+    return 0
+
+
+def main(argv):
+    if len(argv) != 2 or argv[1] not in ("pick", "survey", "state"):
+        print("usage: r2-wifi-channel pick | survey | state")
+        return 1
+    if argv[1] == "state":
+        try:
+            with open(STATE, encoding="utf-8") as f:
+                print(f.read())
+        except OSError:
+            print("{}")
+        return 0
+    if os.geteuid() != 0:
+        print("r2-wifi-channel: run it as root")
+        return 1
+    return pick() if argv[1] == "pick" else survey()
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

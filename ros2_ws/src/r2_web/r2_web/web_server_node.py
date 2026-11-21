@@ -34,6 +34,9 @@ and a small HTTP API for what ROS topics cannot do:
   POST /api/firmware/check | flash | retry   check GitHub / pull, build and flash / copy again
   GET  /api/system    the Pi's software version (~/r2_ws/VERSION); with ?telemetry=1 also its
                       SD, RAM, CPU, temperature and power/heat flags (System tab, on demand)
+  GET  /api/wifi        R2's own WiFi: the channel its AP picked when it started and how busy each was
+  POST /api/wifi/survey | move   look at the channels now (AP stays up) | restart the AP so it moves
+                      to the quietest (r2-wifi-channel, setup/install_wifi_channel.sh)
   GET  /api/domecams    each network camera's own /status (temperature, load, WiFi, reboots...),
                       asked now (System tab telemetry)
   GET  /api/lidar/usb   the lidar's USB: connected, disconnected (here, in software) or absent
@@ -71,6 +74,7 @@ from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
 from r2_web.domecam_api import domecams_payload
 from r2_web.ws_probe import probe
+from r2_web import wifi_api
 from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
 from r2_web.system_api import system_payload
 from r2_web.firmware_api import FirmwareJob, autonomous_active
@@ -145,6 +149,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, pico_board_payload(self.board_default, BOARD_USER_CONFIG))
         if self.path.split("?")[0] == "/api/lidar/usb":
             return self._json(*usb_state())
+        if self.path.split("?")[0] == "/api/wifi":
+            return self._json(*wifi_api.last_pick())
         if self.path.split("?")[0] == "/api/domecams":
             try:
                 cameras = load_cameras(config_path(self.default_config))
@@ -208,6 +214,9 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(200, self.firmware.status())
             res = self.firmware.flash() if route.endswith("flash") else self.firmware.retry()
             return self._json(200 if res == "ok" else 409, {"ok": True} if res == "ok" else {"error": res})
+        if route in ("/api/wifi/survey", "/api/wifi/move"):
+            self.rfile.read(int(self.headers.get("Content-Length", 0) or 0))
+            return self._json(*(wifi_api.survey() if route.endswith("survey") else wifi_api.move()))
         if route == "/api/lidar/usb":
             try:
                 connected = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["connected"]
