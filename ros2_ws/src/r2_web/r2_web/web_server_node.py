@@ -34,6 +34,8 @@ and a small HTTP API for what ROS topics cannot do:
   POST /api/firmware/check | flash | retry   check GitHub / pull, build and flash / copy again
   GET  /api/system    the Pi's software version (~/r2_ws/VERSION); with ?telemetry=1 also its
                       SD, RAM, CPU, temperature and power/heat flags (System tab, on demand)
+  GET  /api/domecams    each network camera's own /status (temperature, load, WiFi, reboots...),
+                      asked now (System tab telemetry)
   GET  /api/lidar/usb   the lidar's USB: connected, disconnected (here, in software) or absent
   POST /api/lidar/usb   {"connected": bool}: unplug it in software (motor stopped first) or plug
                       it back (root script r2-lidar-usb, setup/install_lidar_usb.sh)
@@ -67,6 +69,8 @@ from r2_web.modes_api import modes_payload, save_modes, set_start_mode
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
+from r2_web.domecam_api import domecams_payload
+from r2_web.ws_probe import probe
 from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
 from r2_web.system_api import system_payload
 from r2_web.firmware_api import FirmwareJob, autonomous_active
@@ -141,6 +145,12 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, pico_board_payload(self.board_default, BOARD_USER_CONFIG))
         if self.path.split("?")[0] == "/api/lidar/usb":
             return self._json(*usb_state())
+        if self.path.split("?")[0] == "/api/domecams":
+            try:
+                cameras = load_cameras(config_path(self.default_config))
+            except (OSError, yaml.YAMLError) as e:
+                return self._json(500, {"error": str(e)})
+            return self._json(200, domecams_payload(cameras))
         if self.path.split("?")[0] == "/api/firmware":
             return self._json(200, self.firmware.status())
         if self.path.split("?")[0] == "/api/system":
@@ -272,6 +282,12 @@ class WebServerNode(Node):
         self.release_client = self.create_client(SetBool, "/pico/release")
         self.stop_motor_client = self.create_client(EmptySrv, "/stop_motor")
         Handler.stop_lidar_motor = staticmethod(self._stop_lidar_motor)
+        # rosbridge watchdog: a heartbeat every second, and every 15 s a check that rosbridge
+        # still passes it on (it can stay alive and silent after an rclpy race when a page closes)
+        self.declare_parameter("ws_port", 9090)
+        self.pub_heartbeat = self.create_publisher(String, "/web/heartbeat", 1)
+        self.create_timer(1.0, lambda: self.pub_heartbeat.publish(String(data=str(int(time.time())))))
+        threading.Thread(target=self._watch_rosbridge, daemon=True).start()
         Handler.firmware = FirmwareJob(release=self._release, pico_state=lambda: self._latest("/pico/state", 3.0),
                                        autonomous=self._autonomous)
         handler = functools.partial(Handler, directory=root)
@@ -305,6 +321,27 @@ class WebServerNode(Node):
         done = threading.Event()
         fut.add_done_callback(lambda _: done.set())
         return done.wait(5.0) and fut.result() is not None and fut.result().success
+
+    def _watch_rosbridge(self):
+        port = self.get_parameter("ws_port").value
+        time.sleep(30)            # let it start
+        misses = 0
+        while rclpy.ok():
+            try:
+                ok = probe("/web/heartbeat", "std_msgs/msg/String", port=port, wait=4.0)
+            except ConnectionRefusedError:   # not listening (starting, or respawning): not a silent one
+                ok, misses = True, 0
+            except OSError:       # it took the connection but never answered (a timeout): frozen
+                ok = False
+            misses = 0 if ok else misses + 1
+            if misses >= 2:
+                self.get_logger().error("rosbridge passes no messages any more: restarting it")
+                subprocess.run(["pkill", "-f", "^python3 .*rosbridge_server/rosbridge_websocket"], check=False)
+                time.sleep(5)
+                subprocess.run(["pkill", "-KILL", "-f", "^python3 .*rosbridge_server/rosbridge_websocket"], check=False)   # if it ignored it
+                misses = 0
+                time.sleep(30)    # launch respawns it
+            time.sleep(15)
 
     def _stop_lidar_motor(self):
         """Stop the lidar's motor before its USB is unplugged (a C1 keeps the last order). From an

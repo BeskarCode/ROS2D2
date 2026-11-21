@@ -27,8 +27,11 @@ def generate_launch_description():
         DeclareLaunchArgument("video_port", default_value="8081"),
         # Pass rosbridge its port explicitly: otherwise a parent launch's own "port"
         # argument (the Mega's /dev/r2-mega) leaks into it
+        # respawn: web_console's watchdog kills a rosbridge that stopped passing messages, and
+        # launch starts it again
         IncludeLaunchDescription(AnyLaunchDescriptionSource(rosbridge),
-                                 launch_arguments={"port": LaunchConfiguration("ws_port")}.items()),
+                                 launch_arguments={"port": LaunchConfiguration("ws_port"),
+                                                   "respawn": "true"}.items()),
         Node(
             package="web_video_server",
             executable="web_video_server",
