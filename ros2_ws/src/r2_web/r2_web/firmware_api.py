@@ -165,7 +165,14 @@ class FirmwareJob:
     def _flash(self):
         self.log, self.failed_after_release = [], False
         try:
-            self._step("pulling", ["git", "-C", self.clone, "pull", "--ff-only"], 120)
+            # The clone only builds firmware: it follows origin/main, even after GitHub's history
+            # was rewritten (a pull --ff-only refused then), unless someone edited it by hand
+            local = self._step("pulling", ["git", "-C", self.clone, "status", "--porcelain", "--untracked-files=no"], 30)
+            if local.strip():
+                raise RuntimeError(f"the firmware copy on the Pi ({self.clone}) has local changes: "
+                                   "commit or undo them by hand first")
+            self._step("pulling", ["git", "-C", self.clone, "fetch", "-q", "origin", "main"], 120)
+            self._step("pulling", ["git", "-C", self.clone, "reset", "-q", "--hard", "origin/main"], 60)
             out = self._step("compiling", [os.path.join(self.clone, FIRMWARE, "build.sh"), "--jobs", "2", "--nice"], 1200,
                              env={"ARDUINO_CLI": ARDUINO_CLI})
             m = re.search(r"^build: r2_pico_sensors commit (\S+)", out, re.M)

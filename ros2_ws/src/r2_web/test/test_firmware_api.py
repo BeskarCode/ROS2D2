@@ -27,8 +27,9 @@ def test_compare():
 class Fake:
     """The outside world of a FirmwareJob: commands, the bridge and the Pico's state."""
 
-    def __init__(self, fail=None, pico_after=None):
+    def __init__(self, fail=None, pico_after=None, dirty=""):
         self.calls, self.releases = [], []
+        self.dirty = dirty                      # what git status --porcelain says of the clone
         self.fail = fail                        # a word of the command that fails
         self.pico = {"commit": "1500ee7", "connected": True}
         self.pico_after = pico_after or "a8fc309"
@@ -39,6 +40,8 @@ class Fake:
         line = " ".join(cmd)
         if self.fail and self.fail in line:
             return 1, f"{self.fail} went wrong"
+        if "status --porcelain" in line:
+            return 0, self.dirty
         if "build.sh" in line:
             return 0, "build: r2_pico_sensors commit a8fc309\nSketch uses 77432 bytes"
         if "rev-parse" in line or "log -1" in line:
@@ -66,7 +69,7 @@ def test_flash_all_the_way():
     s = j.status()
     assert s["state"] == "done" and s["error"] is None, s
     assert f.releases == [True, False]
-    order = [next(i for i, c in enumerate(f.calls) if w in c) for w in ("pull", "build.sh", "r2-pico-flash")]
+    order = [next(i for i, c in enumerate(f.calls) if w in c) for w in ("fetch", "reset", "build.sh", "r2-pico-flash")]
     assert order == sorted(order)
     assert any("--jobs 2" in c and "--nice" in c for c in f.calls)
 
@@ -222,3 +225,24 @@ def test_an_unexpected_error_gives_the_port_back_and_frees_the_job():
     s = j.state
     assert s == "failed" and "ros went away" in j.error
     assert calls[-1] is False
+
+
+def test_a_rewritten_github_history_does_not_stop_it():
+    # the clone only builds firmware: it follows origin/main even when GitHub's history was rewritten
+    f = Fake()
+    j = job(f)
+    j.flash()
+    j.wait()
+    assert j.status()["state"] == "done"
+    assert not any(" pull" in c for c in f.calls)
+    assert any("reset" in c and "origin/main" in c for c in f.calls)
+
+
+def test_a_clone_with_local_edits_is_left_alone():
+    f = Fake(dirty=" M firmware/r2_pico_sensors/Config.h")
+    j = job(f)
+    j.flash()
+    j.wait()
+    s = j.status()
+    assert s["state"] == "failed" and "local changes" in s["error"]
+    assert not any("reset" in c for c in f.calls) and not any("build.sh" in c for c in f.calls)
