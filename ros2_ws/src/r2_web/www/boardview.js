@@ -122,16 +122,9 @@ export function createBoardView(root) {
     // "all" = every connector with a sensor)
     const byConn = readingsByConnector(sensors, Object.fromEntries(Object.entries(ranges).map(([n, r]) => [n, Date.now() - r.at < 2000 ? r.range : undefined])));
     const shown = old ? [] : shownConnectors(pico, live, Object.keys(byConn));
-    // on the "all" screen a sensor not responding blinks (frame and arrow), like its x and its LED
-    const all = live && pico.display === 'all';
     for (const c of CONNECTOR_NAMES) {
-      const r = byConn[c];
-      const dead = all && r && pico.sensors && pico.sensors[r.name] === 'not_responding';
-      for (const sel of [`[data-focus="${c}"]`, `[data-arrow="${c}"]`]) {
-        const el = root.querySelector(sel);
-        el.classList.toggle('on', shown.includes(c));
-        el.classList.toggle('blink', !!dead);
-      }
+      root.querySelector(`[data-focus="${c}"]`).classList.toggle('on', shown.includes(c));
+      root.querySelector(`[data-arrow="${c}"]`).classList.toggle('on', shown.includes(c));
     }
     $('bv-picoled').classList.toggle('on', !!(leds && leds.PICO));
     const pwr = live ? pwrLit(pico) : null;
