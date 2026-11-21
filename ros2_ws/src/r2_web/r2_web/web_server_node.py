@@ -337,7 +337,7 @@ class WebServerNode(Node):
         misses = 0
         while rclpy.ok():
             try:
-                ok = probe("/web/heartbeat", "std_msgs/msg/String", port=port, wait=4.0)
+                ok = probe("/web/heartbeat", "std_msgs/msg/String", port=port, wait=3.0)
             except ConnectionRefusedError:   # not listening (starting, or respawning): not a silent one
                 ok, misses = True, 0
             except OSError:       # it took the connection but never answered (a timeout): frozen
@@ -346,11 +346,13 @@ class WebServerNode(Node):
             if misses >= 2:
                 self.get_logger().error("rosbridge passes no messages any more: restarting it")
                 subprocess.run(["pkill", "-f", "^python3 .*rosbridge_server/rosbridge_websocket"], check=False)
-                time.sleep(5)
+                time.sleep(2)
                 subprocess.run(["pkill", "-KILL", "-f", "^python3 .*rosbridge_server/rosbridge_websocket"], check=False)   # if it ignored it
                 misses = 0
-                time.sleep(30)    # launch respawns it
-            time.sleep(15)
+                time.sleep(20)    # launch respawns it
+            # every 5 s; a miss is checked again at once, so a frozen one is back in ~10 s. It freezes
+            # when a page leaves while rclpy is waiting on its subscription (InvalidHandle in spin).
+            time.sleep(1 if misses else 5)
 
     def _stop_lidar_motor(self):
         """Stop the lidar's motor before its USB is unplugged (a C1 keeps the last order). From an

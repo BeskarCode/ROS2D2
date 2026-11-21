@@ -46,13 +46,13 @@
   /* Cameras: the coverage box and every camera in one grid, all the same width and height */
   .layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); grid-auto-rows: 1fr; gap: var(--gap); }
   .layout > .grid { display: contents; }
-  .coverage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
-  .coverage svg { max-height: 300px; }
+  .coverage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; min-height: 0; }
   /* every control in a camera card the same width (slider + its value) */
   .cam .body .row > select, .cam .body .row > .step, .cam .body .row > .slider { width: 262px; max-width: 70%; flex: none; box-sizing: border-box; }
   .cam .body .row > .step { justify-content: space-between; }
   .cam .body .row > .slider input[type=range] { width: auto; flex: 1; min-width: 0; }
-  .coverage svg { width: 100%; height: auto; display: block; margin-bottom: 8px; }
+  .coverage svg { width: 100%; flex: 1; min-height: 260px; max-height: 70vh; display: block; margin-bottom: 8px; }
+  .coverage .legend { flex: none; }
   .coverage .legend { color: var(--muted); font-size: var(--fs-s); }
   .cam .badge { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: var(--fs-s); vertical-align: 1px; }
   .badge.online { background: rgba(63,185,80,.15); color: var(--green); }
@@ -95,7 +95,8 @@
   .sbar { height: 4px; background: var(--line); border-radius: 2px; margin-top: 6px; overflow: hidden; }
   .sbar i { display: block; height: 100%; background: var(--blue); }
   .stat.warn .sbar i { background: var(--amber); } .stat.bad .sbar i { background: var(--red); }
-  .tabtools { display: flex; gap: 8px; margin: 0 0 10px; }
+  .tabtools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 10px; }
+  .tabtools > details.howto { margin: 0; flex: 1; min-width: 200px; }
   .sysh { font-size: var(--fs-s); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 18px 0 4px; display: flex; align-items: baseline; gap: 10px; }
   .sysh .sub { color: var(--muted); font-size: var(--fs-s); font-weight: 400; text-transform: none; letter-spacing: 0; }
   /* the telemetry switch: a big pill with an icon, green and "on" while it reads */
@@ -186,7 +187,11 @@
   .mcard h4 i { margin-right: 6px; }
   .mrow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; background: var(--bg); }
   .mrow.active { border-color: var(--green); }
-  .mrow .mdiag { width: 100%; max-width: 320px; height: auto; border-radius: 8px; justify-self: center; }  /* what the mode does, animated */
+  /* the diagram (what the mode does, animated) beside the name and combination: the four fit with no scroll */
+  .mcard { align-content: start; }
+  .mrow { grid-template-columns: 200px minmax(0, 1fr); column-gap: 12px; align-items: center; align-content: center; }
+  .mrow > :not(.mdiag) { grid-column: 2; }
+  .mrow .mdiag { grid-column: 1; grid-row: 1 / span 3; width: 200px; height: auto; border-radius: 6px; }
   .mrow .mname { display: flex; align-items: center; gap: 8px; }
   .mrow .mname i { width: 16px; text-align: center; color: var(--muted); }
   .mrow .mname code { color: var(--muted); font-size: var(--fs-s); }
@@ -352,6 +357,10 @@
     main > section > details.howto, main > section > .tabtools { flex: none; }
     #form .layout, #sensors .slayout, #modes .mlayout, #system .syscols { flex: 1; min-height: 0; }
     #form .layout { grid-auto-rows: minmax(0, 1fr); overflow: auto; }
+    #form .coverage svg { min-height: 0; max-height: none; }
+    #form .cam { display: flex; flex-direction: column; min-height: 0; }
+    #form .cam .pic { aspect-ratio: auto; flex: 1; min-height: 120px; }
+    #form .cam .body { flex: none; }
     #sensors .slayout, #modes .mlayout, #system .syscols { align-items: stretch; }
     #sensors .slayout > *, #modes .mlayout > *, #system .syscols > * { min-height: 0; overflow: auto; }
     #system .syscols .syslive { position: static; }
@@ -381,11 +390,11 @@
   </div>
 
   <section id="form">
-    <div class="tabtools"><button id="identify" title="Show each camera's number on its own picture, to know which is which"><i class="fa-solid fa-hashtag"></i>Identify</button></div>
+    <div class="tabtools"><button id="identify" title="Show each camera's number on its own picture, to know which is which"><i class="fa-solid fa-hashtag"></i>Identify</button>
     <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">Every camera plugged into the Pi is listed. Numbers go left to right, like monitors:
       press <b>Identify</b> and cover a camera with your hand to see which picture goes dark.
       Direction and field of view apply at once; turning a camera on or off, or renumbering, needs
-      <b>Save and restart</b>.</p></details>
+      <b>Save and restart</b>.</p></details></div>
     <div class="layout">
     <div class="coverage">
       <svg id="map" viewBox="-110 -110 220 220" aria-label="what the cameras see, from above"></svg>
