@@ -129,3 +129,17 @@ test('flash progress: each step in its slice, creeping with time, 100 when done'
   assert.ok(flashProgress('compiling', 10000) < 80);
   assert.ok(flashProgress('flashing', 1) >= 85 && flashProgress('waiting', 0) >= 93);
 });
+
+test('WiFi channels: a bar each, quieter = greener, the one in use and the best marked', async () => {
+  const { wifiRows } = await import('../www/systemfmt.js');
+  const rows = wifiRows({ channel: 11, best: 11, busy_dbm: { 1: -35, 6: -29, 11: -85 } });
+  assert.deepEqual(rows.map((r) => r.ch), [1, 6, 11]);
+  assert.deepEqual(rows.map((r) => r.cls), ['bad', 'bad', 'ok']);
+  assert.equal(rows[2].current, true);
+  assert.equal(rows[2].best, true);
+  assert.equal(rows[0].current, false);
+  assert.ok(rows[1].pct > rows[0].pct && rows[0].pct > rows[2].pct);   // busier = longer bar
+  assert.equal(wifiRows({ channel: 6, busy_dbm: { 1: -60, 6: -100, 11: -100 } })[0].cls, 'warn');
+  assert.equal(wifiRows({ channel: 6, busy_dbm: { 1: -60, 6: -100, 11: -100 } })[1].pct, 0);   // nothing at all
+  assert.deepEqual(wifiRows(null), []);
+});

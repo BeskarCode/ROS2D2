@@ -133,3 +133,20 @@ export function flashProgress(state, secs) {
   const f = 1 - Math.exp(-Math.max(0, secs) / expect);   // fast at first, slower as it goes past the usual time
   return Math.round(from + (to - from) * 0.95 * f);
 }
+
+// ---------- R2's own WiFi (the AP): how busy channels 1, 6 and 11 are (GET api/wifi, POST survey) ----------
+// busy_dbm: every neighbour's signal added up, weighted by how much it overlaps that channel
+// (setup/r2-wifi-channel); -100 = nothing at all. The bar grows with it: -100 empty, -30 full.
+export function wifiRows(look) {
+  if (!look || !look.busy_dbm) return [];
+  return [1, 6, 11].map((ch) => {
+    const dbm = Number(look.busy_dbm[ch] ?? look.busy_dbm[String(ch)] ?? -100);
+    return {
+      ch, dbm,
+      pct: Math.round(Math.max(0, Math.min(100, (dbm + 100) / 70 * 100))),
+      cls: dbm < -75 ? 'ok' : dbm < -50 ? 'warn' : 'bad',
+      current: look.channel === ch,
+      best: look.best === ch,
+    };
+  });
+}

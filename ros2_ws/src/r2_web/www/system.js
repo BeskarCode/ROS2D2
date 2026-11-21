@@ -9,7 +9,7 @@ import { createBoardView } from './boardview.js';
 import { publish, subscribe } from './rosbridge.js';
 import { confirmDialog } from './dialog.js';
 import {
-  CAM_TEMP_ZONES, RSSI_ZONES, TELEMETRY_PERIODS, camLines, flashProgress, CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
+  CAM_TEMP_ZONES, RSSI_ZONES, TELEMETRY_PERIODS, camLines, flashProgress, wifiRows, CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
   uptime, versionText, zone,
 } from './systemfmt.js';
 
@@ -113,6 +113,45 @@ export function createSystemTab() {
       return `<div class="camtm">${head}${lastCam[c.name]}</div>`;
     }).join('');
   }
+
+  // ---------- R2's own WiFi: the access point's channel (GET api/wifi, POST survey / move) ----------
+  function showWifi(look, what) {
+    const rows = wifiRows(look);
+    $('wifi-bars').innerHTML = rows.map((r) => `<div class="wifibar ${r.cls}${r.current ? ' current' : ''}">
+      <b>channel ${r.ch}${r.current ? ' ●' : ''}</b><span class="track"><i style="width:${r.pct}%"></i></span>
+      <span>${r.dbm <= -99 ? 'clear' : `${Math.round(r.dbm)} dBm`}</span></div>`).join('');
+    const t = $('wifi-text');
+    if (!look) { t.className = 'status warn'; t.textContent = what; return; }
+    const best = rows.find((r) => r.best);
+    t.className = `status ${best && !best.current ? 'warn' : ''}`;
+    t.textContent = `On channel ${look.channel}${what ? ` · ${what}` : ''}` +
+      (best && !best.current ? ` · channel ${best.ch} is quieter now: Move to the quietest` : '');
+  }
+  async function loadWifi() {
+    try {
+      const r = await (await fetch('api/wifi', { cache: 'no-store' })).json();
+      showWifi(r.pick, r.pick ? 'picked when the access point started' : (r.error || 'unknown'));
+    } catch { showWifi(null, 'the Pi does not answer'); }
+  }
+  $('wifi-check').addEventListener('click', async () => {
+    $('wifi-text').textContent = 'Looking at the channels…';
+    try {
+      const r = await (await fetch('api/wifi/survey', { method: 'POST' })).json();
+      showWifi(r.survey, r.error ? '' : 'just now');
+      if (r.error) showWifi(null, r.error);
+    } catch { showWifi(null, 'the Pi does not answer'); }
+  });
+  $('wifi-move').addEventListener('click', async () => {
+    const ok = await confirmDialog({ title: "Move R2's WiFi?", icon: 'fa-wifi', ok: 'Move it',
+      lines: ['R2\'s access point restarts and comes back on the quietest of channels 1, 6 and 11.'],
+      warn: 'The cameras and anything else on R2\'s WiFi drop for a few seconds.' });
+    if (!ok) return;
+    $('wifi-text').textContent = 'Restarting the access point…';
+    try {
+      const r = await (await fetch('api/wifi/move', { method: 'POST' })).json();
+      if (r.error) showWifi(null, r.error); else showWifi(r.pick, 'moved just now');
+    } catch { showWifi(null, 'the Pi does not answer'); }
+  });
 
   // ---------- the Pico board ----------
   function showPico() {
@@ -322,7 +361,7 @@ export function createSystemTab() {
   });
 
   return {
-    show() { visible = true; restart(); loadBoard(); boardEnabled(); fwPost('check'); boardView.show(); },
+    show() { visible = true; restart(); loadBoard(); loadWifi(); boardEnabled(); fwPost('check'); boardView.show(); },
     hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; clearTimeout(picoTimer); picoTimer = null; boardView.hide(); },
   };
 }

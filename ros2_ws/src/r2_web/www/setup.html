@@ -253,6 +253,12 @@
   .ringtext { max-width: 260px; padding-top: 30px; }
   .stale .ring, .stale .ringtext, .camtm.stale .rings, .camtm.stale dl { filter: grayscale(1); opacity: .45; }
   .sysfold { margin: 14px 0 0; }
+  .wifibars { display: grid; gap: 6px; }
+  .wifibar { display: grid; grid-template-columns: 82px 1fr 72px; align-items: center; gap: 10px; font-size: 12px; color: var(--muted, #8b949e); }
+  .wifibar .track { height: 10px; border-radius: 5px; background: var(--line, #30363d); overflow: hidden; }
+  .wifibar .track i { display: block; height: 100%; border-radius: 5px; }
+  .wifibar.ok .track i { background: #3fb950; } .wifibar.warn .track i { background: #e3b341; } .wifibar.bad .track i { background: #f85149; }
+  .wifibar.current b { color: var(--text, #e6edf3); }
   .sysh4 { font-size: 14px; margin: 16px 0 4px; display: flex; align-items: center; gap: 8px; }
   .fwbar { position: relative; height: 18px; border-radius: 9px; background: var(--line, #30363d); overflow: hidden; margin: 6px 0; }
   .fwbar i { position: absolute; inset: 0 auto 0 0; width: 0; background: #2ea043; transition: width .8s linear; }
@@ -521,6 +527,15 @@
     </details>
     <h3 class="sysh" id="sys-cams-h" hidden><i class="fa-solid fa-video"></i>Dome cameras <span class="sub">network cameras in cameras.yaml</span></h3>
     <div id="sys-cams" hidden></div>
+    <h3 class="sysh"><i class="fa-solid fa-wifi"></i>R2's WiFi <span class="sub">its own access point, for the cameras</span></h3>
+    <div class="sysboard">
+      <p class="status" id="wifi-text">…</p>
+      <div class="wifibars" id="wifi-bars"></div>
+      <div class="row"><span></span><span>
+        <button id="wifi-check" title="Look at how busy channels 1, 6 and 11 are now (R2's WiFi stays up)"><i class="fa-solid fa-magnifying-glass"></i>Check now</button>
+        <button id="wifi-move" title="Restart R2's WiFi so it moves to the quietest channel (the cameras drop for a few seconds)"><i class="fa-solid fa-arrow-right-arrow-left"></i>Move to the quietest</button></span></div>
+      <p class="help">The access point picks the quietest of channels 1, 6 and 11 each time it starts. A busy channel (a home WiFi on the same or a nearby channel) makes the cameras lose packets.</p>
+    </div>
     </div>
     </div>
   </section>

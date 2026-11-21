@@ -239,6 +239,12 @@ why it last did (a *crash*, *watchdog* or *brownout* shows in red), how many tim
 and why, how fast it answers, what it is finding and how often, its clients, memory and firmware.
 A camera with older firmware shows only part of it.
 
+**R2's WiFi**: R2's own access point (the one the dome camera joins) picks the quietest of channels
+1, 6 and 11 each time it starts. A bar per channel shows how busy it is (green clear, amber busy, red
+very busy; ● the one in use). **Check now** looks again without dropping anything; **Move to the
+quietest** restarts the access point so it moves (the cameras drop for a few seconds). Needs
+`setup/install_wifi_channel.sh` run once on the Pi.
+
 ![Setup, System: telemetry](media/manual/setup-system-telemetry.png)
 
 - **Raspberry Pi**: software version, free SD, free RAM, CPU, temperature (with its normal, warm and
