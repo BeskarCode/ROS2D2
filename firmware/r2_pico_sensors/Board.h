@@ -38,12 +38,13 @@ enum class LedMode { Auto, On, Off, Errors, Connected };
 // A status LED at time now: waiting for the Pi (not configured yet) = a short flash every 2 s;
 // then on = measuring, blinking = not responding, off = no sensor on that connector. The
 // connector on the display shows a short blip of the opposite every second. Identifying (ID)
-// blinks it at 5 Hz whatever the mode. On the "all sensors" screen (allScreen) a sensor not
-// responding blinks its LED in step with its x on the display (400 ms), whatever the mode but Off.
+// blinks it at 5 Hz whatever the mode. On the "all sensors" screen (allScreen), whatever the mode
+// but Off: a sensor measuring is steady on, one not responding blinks in step with its x (400 ms).
 inline bool ledOn(bool configured, State s, bool onDisplay, uint32_t now, LedMode mode, bool displayOn,
                   bool identifying, bool allScreen = false) {
   if (identifying) return (now / 100) % 2;
   if (mode == LedMode::Off || (mode == LedMode::Auto && !displayOn)) return false;
+  if (allScreen && configured && s == State::Ok) return true;
   if (allScreen && configured && s == State::NotResponding) return (now / 400) % 2;   // as drawAll's x
   if (mode == LedMode::Errors) return configured && s == State::NotResponding && (now / 400) % 2;
   if (mode == LedMode::Connected) return configured && s == State::Ok;
