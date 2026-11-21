@@ -3,7 +3,7 @@
 // cameras) and the mirror of the Pico board (its LEDs, its display pixel for pixel and its
 // DISPLAY button, which works both ways). The Pico sends the mirror only while this tab asks
 // for it (/pico/mirror_request every 2 s; the bridge renews MIR, the Pico stops 5 s after).
-import { CONNECTOR_NAMES, LONG_PRESS_MS, fbPixels, isLive, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, stripItems } from './boardmirror.js';
+import { CONNECTOR_NAMES, LONG_PRESS_MS, fbPixels, isLive, ledsOf, pixelColor, pressKind, pwrLit, readingsByConnector, shownConnectors, stripItems } from './boardmirror.js';
 import { advertise, publish, subscribe } from './rosbridge.js';
 import { sensorColour } from './sensormath.js';
 
@@ -29,12 +29,16 @@ const US_Y = { US1: 12, US2: 22, US3: 32, US4: 42, US5: 52 };   // US1-5 at x 3,
 const VL_Y = { VL1: 12, VL2: 24, VL3: 39, VL4: 51 };            // VL1-4 at x 55, their LEDs at x 72.6
 function boardHtml() {
   const us = Object.entries(US_Y).map(([c, y]) =>
-    `<b class="pcb-name" style="${at(2, y - 4.4)}">${c}</b>`
+    `<div class="pcb-focus" data-focus="${c}" style="${box(0.6, y - 5, 23.2, y + 4.3)}"></div>`
+    + `<i class="pcb-arrow left" data-arrow="${c}" style="${at(26.5, y)}"></i>`
+    + `<b class="pcb-name" style="${at(2, y - 4.4)}">${c}</b>`
     + `<span class="pcb-val" data-val="${c}" style="${at(9, y - 4.2)}">—</span>`
     + header(3, y, 4, ['5V', 'TR', 'EC', 'G'])
     + `<span class="pcb-led" data-led="${c}" style="${at(21, y)}"></span>`).join('');
   const vl = Object.entries(VL_Y).map(([c, y]) =>
-    `<b class="pcb-name" style="${at(54, y - 4.4)}">${c}</b>`
+    `<div class="pcb-focus" data-focus="${c}" style="${box(52.6, y - 5, 74.8, y + 4.3)}"></div>`
+    + `<i class="pcb-arrow right" data-arrow="${c}" style="${at(51.6, y)}"></i>`
+    + `<b class="pcb-name" style="${at(54, y - 4.4)}">${c}</b>`
     + `<span class="pcb-val" data-val="${c}" style="${at(60.5, y - 4.2)}">—</span>`
     + header(55, y, 6, ['3V3', 'G', 'SCL', 'SDA', '–', 'XS'])
     + `<span class="pcb-led" data-led="${c}" style="${at(72.6, y)}"></span>`).join('');
@@ -107,11 +111,18 @@ export function createBoardView(root) {
     $('bv-pcb').classList.toggle('dead', !live || old);
     $('bv-btn').disabled = !live || old;
     for (const c of CONNECTOR_NAMES) root.querySelector(`[data-led="${c}"]`).classList.toggle('on', !!(leds && leds[c]));
+    // the connectors whose sensors the display shows (the DISPLAY button steps through them;
+    // "all" = every connector with a sensor)
+    const byConn = readingsByConnector(sensors, Object.fromEntries(Object.entries(ranges).map(([n, r]) => [n, Date.now() - r.at < 2000 ? r.range : undefined])));
+    const shown = old ? [] : shownConnectors(pico, live, Object.keys(byConn));
+    for (const c of CONNECTOR_NAMES) {
+      root.querySelector(`[data-focus="${c}"]`).classList.toggle('on', shown.includes(c));
+      root.querySelector(`[data-arrow="${c}"]`).classList.toggle('on', shown.includes(c));
+    }
     $('bv-picoled').classList.toggle('on', !!(leds && leds.PICO));
     const pwr = live ? pwrLit(pico) : null;
     $('bv-pwr').classList.toggle('on', pwr === true);
     $('bv-pwr').classList.toggle('unknown', pwr === null);
-    const byConn = readingsByConnector(sensors, Object.fromEntries(Object.entries(ranges).map(([n, r]) => [n, Date.now() - r.at < 2000 ? r.range : undefined])));
     for (const c of CONNECTOR_NAMES) {
       const r = byConn[c];
       const st = r && live && pico.sensors ? pico.sensors[r.name] : null;

@@ -288,6 +288,18 @@
   .syslive .pcb-led.on { background: #ff3b30; box-shadow: 0 0 1.2cqw #ff3b30; }
   .syslive .pcb-led.pico { background: #0e2a12; }
   .syslive .pcb-led.pico.on { background: #3fff6a; box-shadow: 0 0 1.2cqw #3fff6a; }
+  /* the connector the display shows: a frame round it and an arrow pointing at it */
+  .syslive .pcb-focus { position: absolute; border: 2px solid transparent; border-radius: 1cqw; pointer-events: none; }
+  .syslive .pcb-focus.on { border-color: #ffd60a; background: rgba(255, 214, 10, .12); box-shadow: 0 0 1.4cqw rgba(255, 214, 10, .7); }
+  .syslive .pcb-arrow { position: absolute; display: none; width: 0; height: 0; transform: translate(-50%, -50%); pointer-events: none;
+    border-top: 1.6cqw solid transparent; border-bottom: 1.6cqw solid transparent; filter: drop-shadow(0 0 .6cqw rgba(255, 214, 10, .8)); }
+  .syslive .pcb-arrow.left { border-right: 2.4cqw solid #ffd60a; }
+  .syslive .pcb-arrow.right { border-left: 2.4cqw solid #ffd60a; }
+  .syslive .pcb-arrow.on { display: block; animation: pcb-nudge 1s ease-in-out infinite; }
+  .syslive .pcb-arrow.left.on { --dx: -.6cqw; }
+  .syslive .pcb-arrow.right.on { --dx: .6cqw; }
+  @keyframes pcb-nudge { 50% { transform: translate(calc(-50% + var(--dx)), -50%); } }
+  @media (prefers-reduced-motion: reduce) { .syslive .pcb-arrow.on { animation: none; } }
   .syslive .pcb-led.pwr.unknown { background: transparent; border: 1px dashed #ff8a80; }
   .syslive .pcb-hole { width: 4cqw; height: 4cqw; border-radius: 50%; background: #0d1117; transform: translate(-50%, -50%); }
   .syslive .pcb-pico { background: #2e7d32; border: 2px solid #1b5e20; border-radius: .6cqw; box-sizing: border-box;
