@@ -214,6 +214,9 @@
   .mmatch.ok { background: rgba(63,185,80,.15); color: var(--green); }
   .mmatch.bad { background: rgba(248,81,73,.15); color: var(--red); }
   .mcard .row label { width: 120px; flex: none; }
+  .mcard .row label.chk { width: auto; }
+  .mcol { display: grid; gap: var(--gap); align-content: start; }
+  .mrow .mnote { grid-column: 2; font-size: var(--fs-s); color: var(--amber); }
   .mcard .slider input[type=range] { width: auto; flex: 1; }
   .mcard .slider b { min-width: 72px; }
 
@@ -491,6 +494,7 @@
         <div class="mpic"><img id="m-pic" alt="the follow camera"><div class="cross" id="m-cross" hidden></div><div class="msg" id="m-picmsg"></div></div>
         <div class="help" id="m-picnote"></div>
       </div>
+      <div class="mcol">
       <div class="mcard">
         <h4><i class="fa-solid fa-palette"></i>Colour to follow</h4>
         <div class="swrow"><span class="swatch empty" id="m-swatch"></span><span id="m-rgb"></span></div>
@@ -498,6 +502,18 @@
         <div class="mwarning" id="m-warning" hidden></div>
         <div class="row"><label><i class="fa-solid fa-video"></i>camera</label><select id="m-camera"></select></div>
         <div id="m-sliders" style="display:grid;gap:8px"></div>
+      </div>
+      <div class="mcard" id="m-remote">
+        <h4><i class="fa-solid fa-mobile-screen"></i>Remote and phone</h4>
+        <div class="row"><label><i class="fa-solid fa-gauge"></i>stick limit</label>
+          <span class="slider"><input type="range" id="rm-limit" min="5" max="100" step="5"><b id="rm-limitv"></b></span></div>
+        <div class="row"><label><i class="fa-solid fa-user"></i>guest</label>
+          <label class="chk" title="The phone shows only the actions and STOP: to lend it to someone"><input type="checkbox" id="rm-guest"> phone with actions only</label></div>
+        <div class="row"><label><i class="fa-solid fa-link"></i>phone view</label><a id="rm-link" target="_blank" rel="noopener"></a></div>
+        <p class="help" id="rm-help">The sticks of the Remote window and of the phone go only this far (the Pi keeps them there);
+          a real Nav is not touched. Changes are saved at once. On R2's own WiFi the phone view is
+          <b>http://10.42.0.1:8080/phone.html</b>; in Safari, <i>Add to Home Screen</i> makes it an app.</p>
+      </div>
       </div>
     </div>
   </section>

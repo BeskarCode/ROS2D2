@@ -6,6 +6,7 @@
 // While this tab is on screen the page publishes /marker/preview true (color_marker then sends
 // /marker/mask/compressed: the picture with the matches painted magenta). A click publishes
 // /marker/pick and the answer comes back on /marker/pick_result.
+import { toast } from './savekey.js';
 import { publish, subscribe } from './rosbridge.js';
 import { showStream, stopStream } from './mjpeg.js';
 import { COMBOS, MODES, MODE_LABELS, comboChoices, hsvToRgb, losesAction, pickToColor, toYaml } from './modesform.js';
@@ -73,6 +74,12 @@ export function createModesTab({ status }) {
         <img class="mdiag" src="img/modes/${m}.svg" alt="" loading="lazy">`;
       row.querySelector('b').textContent = MODE_LABELS[m];
       row.querySelector('code').textContent = m;
+      if (m === 'goto') {
+        const note = document.createElement('div');
+        note.className = 'mnote';
+        note.textContent = "To test the sensors' layout: without wheel encoders it drifts on the droid";
+        row.append(note);
+      }
       const sel = row.querySelector('select');
       const combo = cfg ? cfg[m].combo : null;
       sel.add(new Option('— no combo —', ''));
@@ -255,8 +262,36 @@ export function createModesTab({ status }) {
     return true;
   }
 
+  // ---------- Remote and phone (remote.yaml): saved as soon as it changes ----------
+  let remote = null;
+  async function loadRemote() {
+    try { remote = (await (await fetch('api/remote', { cache: 'no-store' })).json()).remote; } catch { return; }
+    $('rm-limit').value = remote.stick_limit_pct;
+    $('rm-limitv').textContent = `${remote.stick_limit_pct} %`;
+    $('rm-guest').checked = remote.guest;
+    const url = `${location.protocol}//${location.host}/phone.html`;
+    $('rm-link').href = url;
+    $('rm-link').textContent = url;
+  }
+  async function saveRemote(next) {
+    const favs = next.favorites.map((f) => `  - {combo: ${f.combo}, name: ${JSON.stringify(f.name)}}`).join('\n');
+    const yaml = `# ROS2D2 Remote window and phone view (saved from the web console).\n` +
+      `stick_limit_pct: ${next.stick_limit_pct}\nguest: ${next.guest}\nfavorites:${favs ? `\n${favs}` : ' []'}\n`;
+    let res;
+    try {
+      res = await (await fetch('api/remote', { method: 'POST', body: JSON.stringify({ yaml }) })).json();
+    } catch (e) { toast(`Not saved: ${e}`, 'bad', 5000); return; }
+    if (res.error) { toast(res.error, 'bad', 5000); loadRemote(); return; }
+    remote = next;
+    toast(`Saved: the virtual Navs' sticks go up to ${next.stick_limit_pct} %${next.guest ? ', the phone shows only the actions' : ''}`, 'ok', 2500);
+  }
+  $('rm-limit').addEventListener('input', (e) => { $('rm-limitv').textContent = `${e.target.value} %`; });
+  $('rm-limit').addEventListener('change', (e) => { if (remote) saveRemote({ ...remote, stick_limit_pct: Number(e.target.value) }); });
+  $('rm-guest').addEventListener('change', (e) => { if (remote) saveRemote({ ...remote, guest: e.target.checked }); });
+
   function show() {
     visible = true;
+    loadRemote();
     $('save').disabled = locked;
     if (!subscribed) {
       subscribed = true;

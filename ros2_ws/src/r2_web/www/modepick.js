@@ -13,7 +13,7 @@ export function createModePick(el, { onPress, log = () => {} } = {}) {
   el.classList.add('modepick');
   el.innerHTML = `<span class="mp-label" title="PS + L2 on the foot controller switches this mode on (and off)"><i class="fa-solid fa-gamepad"></i>Foot Nav PS + L2 starts</span>
     <span class="seg mp-modes">${MODES.map((m) =>
-      `<button data-mode="${m}" title="PS + L2 on the foot Nav will start ${MODE_LABELS[m]}"><i class="fa-solid ${ICONS[m]}"></i>${MODE_LABELS[m]}</button>`).join('')}</span>
+      `<button data-mode="${m}" title="PS + L2 on the foot Nav will start ${MODE_LABELS[m]}${m === 'goto' ? ". To test the sensors\' layout: without wheel encoders it drifts on the droid" : ''}"><i class="fa-solid ${ICONS[m]}"></i>${MODE_LABELS[m]}</button>`).join('')}</span>
     ${onPress ? '<button class="mp-press primary" title="Simulated PS + L2 on the foot controller: on when off, off when on"><i class="fa-solid fa-play"></i>PS + L2</button>' : ''}
     <button class="mp-stop" disabled title="Switch the automatic mode off (the controller can switch it on again)"><i class="fa-solid fa-stop"></i>Stop</button>
     <span class="mp-state"></span>`;
