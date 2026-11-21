@@ -41,6 +41,15 @@ export function pwrLit(pico) {
   return Object.entries(s).some(([n, st]) => n.startsWith('sonar') && st === 'ok') ? true : null;
 }
 
+/** The connectors whose sensors the board's display shows now (DS in /pico/state): the one of
+ *  VL1..US5, or for "all" every connector with a sensor (`used`); none for the logo, off, or no
+ *  live state. */
+export function shownConnectors(pico, live, used = []) {
+  if (!live || !pico) return [];
+  if (CONNECTOR_NAMES.includes(pico.display)) return [pico.display];
+  return pico.display === 'all' ? CONNECTOR_NAMES.filter((c) => used.includes(c)) : [];
+}
+
 /** Each board connector with a sensor: {VL1: {name, m}} (m in metres, Infinity = nothing in range). */
 export function readingsByConnector(sensors, ranges) {
   const out = {};

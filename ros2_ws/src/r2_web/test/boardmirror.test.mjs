@@ -95,3 +95,14 @@ test('isLive: the board is live only while /pico/state keeps coming and says con
   assert.equal(isLive({ connected: false }, now, now), false);
   assert.equal(isLive(null, now, now), false);
 });
+
+test('shownConnectors: the one the display shows, or every used one for "all", only while live', async () => {
+  const { shownConnectors } = await import('../www/boardmirror.js');
+  const used = ['US1', 'VL2', 'US3'];
+  assert.deepEqual(shownConnectors({ display: 'US3' }, true, used), ['US3']);
+  assert.deepEqual(shownConnectors({ display: 'VL4' }, true, used), ['VL4']);
+  assert.deepEqual(shownConnectors({ display: 'all' }, true, used), ['VL2', 'US1', 'US3']);
+  assert.deepEqual(shownConnectors({ display: 'VL1' }, false, used), []);
+  for (const d of ['logo', 'off', null, undefined]) assert.deepEqual(shownConnectors({ display: d }, true, used), []);
+  assert.deepEqual(shownConnectors(null, true, used), []);
+});
