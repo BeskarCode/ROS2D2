@@ -81,6 +81,7 @@ export function createBoardView(root) {
 
   let visible = false, askTimer = null;
   let pico = null, picoAt = 0, mega = false, sensors = {}, lidarDevice = false, cameras = [], piTemp = null;
+  let net = {}, netAt = 0;     // the network cameras' answers (api/domecams)
   const ranges = {}, rangeSubs = new Set();
   let mirror = { leds: null, fb: null, display_on: false, supported: null };
 
@@ -115,9 +116,16 @@ export function createBoardView(root) {
     // "all" = every connector with a sensor)
     const byConn = readingsByConnector(sensors, Object.fromEntries(Object.entries(ranges).map(([n, r]) => [n, Date.now() - r.at < 2000 ? r.range : undefined])));
     const shown = old ? [] : shownConnectors(pico, live, Object.keys(byConn));
+    // on the "all" screen a sensor not responding blinks (frame and arrow), like its x and its LED
+    const all = live && pico.display === 'all';
     for (const c of CONNECTOR_NAMES) {
-      root.querySelector(`[data-focus="${c}"]`).classList.toggle('on', shown.includes(c));
-      root.querySelector(`[data-arrow="${c}"]`).classList.toggle('on', shown.includes(c));
+      const r = byConn[c];
+      const dead = all && r && pico.sensors && pico.sensors[r.name] === 'not_responding';
+      for (const sel of [`[data-focus="${c}"]`, `[data-arrow="${c}"]`]) {
+        const el = root.querySelector(sel);
+        el.classList.toggle('on', shown.includes(c));
+        el.classList.toggle('blink', !!dead);
+      }
     }
     $('bv-picoled').classList.toggle('on', !!(leds && leds.PICO));
     const pwr = live ? pwrLit(pico) : null;
@@ -200,9 +208,21 @@ export function createBoardView(root) {
     try {
       const c = await (await fetch('api/cameras', { cache: 'no-store' })).json();
       const found = new Set((c.detected || []).flatMap((d) => [d.path, d.id, d.device].map(String)));
+      // network cameras: asked by the Pi for their /status at most every 5 s
+      if (Date.now() - netAt > 5000) {
+        netAt = Date.now();
+        try {
+          const d = await (await fetch('api/domecams', { cache: 'no-store' })).json();
+          net = Object.fromEntries((d.cameras || []).map((x) => [x.name, x]));
+        } catch { /* restarting */ }
+      }
       cameras = Object.entries(c.cameras || {}).map(([name, p]) => {
         const src = String(p.source ?? '');
-        return { title: name, ok: src.includes('://') ? null : found.has(src) || src === 'auto' };
+        if (!src.includes('://')) return { title: name, ok: found.has(src) || src === 'auto' };
+        const n = net[name];
+        if (!n) return { title: name, ok: null };
+        return n.status ? { title: name, ok: true, detail: `online${Number.isFinite(n.status.rssi) ? ` · ${n.status.rssi} dBm` : ''}` }
+          : { title: name, ok: false, detail: 'no answer' };
       });
     } catch { /* restarting */ }
     showStrip();

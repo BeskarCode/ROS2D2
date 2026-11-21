@@ -101,3 +101,21 @@ test('ringFill: where the value sits on the ring, 0..1', () => {
   assert.equal(ringFill(150, 0, 100), 1);
   assert.equal(ringFill(null, 0, 100), 0);
 });
+
+test('dome camera lines and WiFi reasons', async () => {
+  const { camLines, wifiReason, RSSI_ZONES, CAM_TEMP_ZONES } = await import('../www/systemfmt.js');
+  assert.equal(wifiReason(0), 'never dropped');
+  assert.equal(wifiReason(200), 'lost the AP (beacons) (200)');
+  assert.equal(wifiReason(999), 'reason (999)');
+  const s = { uptime_s: 3700, boots: 7, reset_reason: 'crash', ip: '10.42.0.61', wifi_reconnects: 2, wifi_last_reason: 4,
+    detect: 1, faces_fps: 8.5, score1: 30, score2: 40, faces_clients: 1, stream_clients: 0, heap: 225000, psram_free: 24e6,
+    fw: 'abc123', built: 'Nov 21 2026 10:20:00', sensor: 'OV5647', sensor_mode: '1280x960' };
+  const l = Object.fromEntries(camLines(s, 15).map(([k, v, c]) => [k, [v, c]]));
+  assert.equal(l.up[0], '1 h 01 min · start #7 · last: crash');
+  assert.equal(l.up[1], 'bad');
+  assert.match(l.WiFi[0], /2 drops · last: inactive too long \(4\) · answers in 15 ms/);
+  assert.equal(l.WiFi[1], 'warn');
+  assert.equal(l.finding[1], 'warn');
+  assert.equal(zone(19, RSSI_ZONES).cls, 'ok');
+  assert.equal(zone(82, CAM_TEMP_ZONES).cls, 'bad');
+});

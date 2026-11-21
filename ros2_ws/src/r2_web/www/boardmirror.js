@@ -71,8 +71,9 @@ export function stripItems({ mega, pi, lidar, pico, cameras }) {
       detail: pico && pico.connected ? (pico.firmware || 'connected') : 'not connected' },
   ];
   // a network camera (ok null): the Pi cannot tell from here whether it answers
+  // a network camera: ok from its own /status (null = not asked yet), its detail from there
   (cameras || []).forEach((c, i) => items.push({ key: `cam${i}`, label: c.title, ok: c.ok === null ? null : !!c.ok,
-    detail: c.ok === null ? 'network' : c.ok ? 'plugged in' : 'not found' }));
+    detail: c.detail || (c.ok === null ? 'network' : c.ok ? 'plugged in' : 'not found') }));
   return items;
 }
 
