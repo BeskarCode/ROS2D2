@@ -17,7 +17,13 @@ Topics:
                                                         the autonomous mode of the feet
   in   /r2/mode                        std_msgs/String  which mode is on (latched); while one is, this node
                                                         publishes nothing (the mode moves the dome)
-  out  ~/status                        std_msgs/String  disabled | mode | track off | no face | tracking
+  out  ~/status                        std_msgs/String  disabled | mode | track off | no face | waiting | tracking
+  out  /mega/command                   std_msgs/String  sound_new_face (a MarcDuino sound) when it picks a face
+                                                        to follow, with face tracking on
+
+With several faces it follows one, calmly (FaceLock): the first one while it stays near where it was,
+even if a bigger one comes in; lost, it waits lock_calm_s with the dome still, then picks the biggest
+face in view and plays sound_new_face (at most every sound_min_gap_s).
   out  /dome/angle_estimate            std_msgs/Float32 degrees, + = right; worked out from the speeds
                                                         sent, as the dome has no position sensor
   in   /dome/angle_reset               std_msgs/Empty   "the dome is facing front now": angle = 0
@@ -41,8 +47,8 @@ from std_msgs.msg import Bool, Empty, Float32, Int16, String
 from vision_msgs.msg import Detection2DArray
 
 from r2_camera.config import config_path, load_cameras
-from r2_dome_tracker.control import (DomeEstimate, DomeTracker, Gains, bearing_deg, face_error,
-                                     face_to_error, pick_face)
+from r2_dome_tracker.control import (DomeEstimate, DomeTracker, FaceLock, Gains, SoundGate, bearing_deg,
+                                     face_error, face_to_error)
 
 GAIN_PARAMS = {"min_speed", "max_speed", "kd", "deadzone", "invert", "lost_after"}
 
@@ -72,6 +78,13 @@ class DomeTrackerNode(Node):
         p("lost_after", g.lost_after, ParameterDescriptor(description="No face for this long: stop, seconds"))
         p("deg_per_s_at_80", 90.0, ParameterDescriptor(
             description="How fast the dome turns at speed 80, for the angle estimate: 360 / seconds per turn"))
+        p("lock_gate_deg", 15.0, ParameterDescriptor(
+            description="The face it follows is the one within this many degrees of where it last was"))
+        p("lock_calm_s", 2.0, ParameterDescriptor(
+            description="Its face lost: wait this long, dome still, before picking another"))
+        p("sound_new_face", "S1:$12", ParameterDescriptor(
+            description='MarcDuino command played when it picks a face to follow ("" = silent)'))
+        p("sound_min_gap_s", 3.0, ParameterDescriptor(description="Not that sound again within this long"))
         p("simulate", False, ParameterDescriptor(
             description="No Mega: shift the faces by the estimated dome angle so the loop closes"))
 
@@ -90,7 +103,10 @@ class DomeTrackerNode(Node):
         self.dome = DomeEstimate(self.param("deg_per_s_at_80"))
         self._last_tick = None
         self.width = {}            # picture width of each camera
-        self.latest = {}           # newest face of each camera: (t, bearing_deg, size)
+        self.latest = {}           # each camera's newest picture: [(t, bearing_deg, size), ...]
+        self.lock = FaceLock(self.param("lock_gate_deg"), self.param("lock_calm_s"))
+        self.sound_gate = SoundGate(self.param("sound_min_gap_s"))
+        self.waiting = False
         self._was_enabled = False
 
         sensor_qos = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -110,6 +126,7 @@ class DomeTrackerNode(Node):
         self.create_subscription(String, "/r2/mode", self._on_mode, latched)
         self.pub_speed = self.create_publisher(Int16, "/dome/speed_cmd", 10)
         self.pub_status = self.create_publisher(String, "~/status", 10)
+        self.pub_command = self.create_publisher(String, "/mega/command", 10)
         self.pub_angle = self.create_publisher(Float32, "/dome/angle_estimate", 10)
         self.create_subscription(Empty, "/dome/angle_reset", lambda _: self.dome.reset(), 10)
 
@@ -149,6 +166,11 @@ class DomeTrackerNode(Node):
         names = {prm.name for prm in params}
         if names & GAIN_PARAMS:
             self.tracker.gains = self._gains()
+        if names & {"lock_gate_deg", "lock_calm_s"}:
+            self.lock.gate_deg = self.param("lock_gate_deg")
+            self.lock.calm_s = self.param("lock_calm_s")
+        if "sound_min_gap_s" in names:
+            self.sound_gate.min_gap_s = self.param("sound_min_gap_s")
         if "deg_per_s_at_80" in names:
             self.dome.deg_per_s_at_80 = self.param("deg_per_s_at_80")
         if "rate_hz" in names:
@@ -165,19 +187,24 @@ class DomeTrackerNode(Node):
                                    throttle_duration_sec=10.0)
             return
         t = Time.from_msg(msg.header.stamp).nanoseconds / 1e9   # when the picture was taken
-        if msg.detections:
-            d = msg.detections[0]              # the biggest face in this picture
-            bearing = bearing_deg(face_error(d.bbox.center.position.x, width),
-                                  self.param(cam + ".yaw_deg"), self.param(cam + ".hfov_deg"))
-            self.latest[cam] = (t, bearing, d.bbox.size_x / width)
-        else:
-            self.latest[cam] = None
+        yaw, hfov = self.param(cam + ".yaw_deg"), self.param(cam + ".hfov_deg")
+        self.latest[cam] = [(t, bearing_deg(face_error(d.bbox.center.position.x, width), yaw, hfov),
+                             d.bbox.size_x / width) for d in msg.detections]
 
-        # Follow the biggest face any camera has seen recently
+        # Every face seen recently by any camera; the lock follows one of them. Its bearing for the
+        # lock is in a frame that does not turn with the dome (the cameras ride on it: add the
+        # estimated dome angle; in simulation they stand still, the bearing already is that).
         now = self.get_clock().now().nanoseconds / 1e9
-        best = pick_face(self.latest, now, self.param("lost_after"))
-        err = None if best is None else face_to_error(best[1], self.dome.angle, self._cam_geometry(),
-                                                      self.param("simulate"))
+        simulate = self.param("simulate")
+        faces = [(ft, b if simulate else b + self.dome.angle, size, b)
+                 for got in self.latest.values() for ft, b, size in got
+                 if now - ft <= self.param("lost_after")]
+        best, new, self.waiting = self.lock.update(faces, now)
+        if new and self.track_on and not self.mode and self.param("enabled"):
+            sound = self.param("sound_new_face").strip()
+            if sound and self.sound_gate.ready(now):
+                self.pub_command.publish(String(data=sound))      # hello: a new face to follow
+        err = None if best is None else face_to_error(best[3], self.dome.angle, self._cam_geometry(), simulate)
         if err is None:
             self.tracker.no_face()
         else:
@@ -203,6 +230,7 @@ class DomeTrackerNode(Node):
             # a mode is on: it drives the dome, this node stays silent (not even a zero)
             if self._was_enabled:
                 self.tracker.reset()
+                self.lock.reset()
             self._was_enabled = False
             self.pub_status.publish(String(data="mode"))
             return 0
@@ -210,13 +238,15 @@ class DomeTrackerNode(Node):
             if self._was_enabled:
                 self.pub_speed.publish(Int16(data=0))   # one stop, then quiet: the controller is free
                 self.tracker.reset()
+                self.lock.reset()
             self._was_enabled = False
             self.pub_status.publish(String(data="disabled" if not self.param("enabled") else "track off"))
             return 0
         self._was_enabled = True
         speed = self.tracker.speed(now)
         self.pub_speed.publish(Int16(data=speed))
-        self.pub_status.publish(String(data="tracking" if self.tracker.has_target(now) else "no face"))
+        state = "tracking" if self.tracker.has_target(now) else "waiting" if self.waiting else "no face"
+        self.pub_status.publish(String(data=state))
         return speed
 
 

@@ -123,6 +123,59 @@ def pick_face(latest, now, max_age):
     return t, bearing
 
 
+class FaceLock:
+    """Which face to follow when there are several: calmly, not the biggest of every picture.
+
+    It keeps the face it has while that one stays within gate_deg of where it last was (people
+    move, a bigger face coming in does not steal the dome). Lost, it waits calm_s with the dome
+    still: the same face coming back is the same face. After that, the biggest face in view is
+    the new one (new_lock: the time to say hello).
+
+    faces: [(t, bearing_deg, size, ...)] seen recently, bearing in a frame that does not turn with
+    the dome (so the dome's own turning does not look like the face moving). Extra items are kept.
+    update() -> (face or None, new_lock, waiting).
+    """
+
+    def __init__(self, gate_deg=15.0, calm_s=2.0):
+        self.gate_deg = gate_deg
+        self.calm_s = calm_s
+        self.reset()
+
+    def reset(self):
+        self.bearing = None       # where the face it follows was last seen
+        self.last_seen = None
+
+    def update(self, faces, now):
+        if self.bearing is not None:
+            near = [f for f in faces if abs(f[1] - self.bearing) <= self.gate_deg]
+            if near:
+                f = min(near, key=lambda f: abs(f[1] - self.bearing))
+                self.bearing, self.last_seen = f[1], now
+                return f, False, False
+            if now - self.last_seen <= self.calm_s:
+                return None, False, True          # lost it a moment ago: wait, the dome still
+            self.reset()
+        if not faces:
+            return None, False, False
+        f = max(faces, key=lambda f: f[2])
+        self.bearing, self.last_seen = f[1], now
+        return f, True, False
+
+
+class SoundGate:
+    """Not the same sound twice within min_gap_s (two people taking turns in front of R2)."""
+
+    def __init__(self, min_gap_s=3.0):
+        self.min_gap_s = min_gap_s
+        self.last = None
+
+    def ready(self, now):
+        if self.last is not None and now - self.last < self.min_gap_s:
+            return False
+        self.last = now
+        return True
+
+
 def face_to_error(bearing, dome_deg, cameras, simulate):
     """Bearing of a face (degrees, from where the cameras point now) -> tracker error.
 

@@ -11,5 +11,9 @@ dome_tracker:
     invert: true
     lost_after: 0.2
     deg_per_s_at_80: 90.0      # 360 / seconds for a full turn at speed 80 (measure it)
+    lock_gate_deg: 15.0        # several faces: it keeps the one within this of where it last was
+    lock_calm_s: 2.0           # its face lost: wait this long, dome still, before picking another
+    sound_new_face: "S1:$12"   # played when it picks a face to follow ("" = silent; match your sound banks)
+    sound_min_gap_s: 3.0       # not that sound again within this long
     simulate: false
     camera_hfov_deg: 60.0
