@@ -196,3 +196,20 @@ def calibration_factor(units, measured, seconds, turning):
     """Units per m/s (measured = metres covered) or per rad/s (measured = full turns)."""
     amount = measured * 2 * math.pi if turning else measured
     return units / (amount / seconds)
+
+
+# ---------- virtual PS3 Navs (the console's Remote window; VirtualPad.h on the Mega) ----------
+PAD_BUTTONS_MASK = 0x03FF          # the 10 buttons of a Nav (bit order as DroidButton)
+_PAD_REPORT = re.compile(r"^PAD F:(real|virtual|none) D:(real|virtual|none)$")
+
+
+def pad_line(pad, buttons, x, y):
+    """One Nav's whole state for the Mega: ROS:PAD:<F|D>,<buttons hex>,<x>,<y>."""
+    b = int(buttons) & PAD_BUTTONS_MASK
+    return f"ROS:PAD:{pad},{b:04X},{min(255, max(0, int(x)))},{min(255, max(0, int(y)))}\n"
+
+
+def parse_pad_report(line):
+    """"PAD F:real D:none" -> {"F": "real", "D": "none"}, or None."""
+    m = _PAD_REPORT.match(line.strip())
+    return {"F": m.group(1), "D": m.group(2)} if m else None

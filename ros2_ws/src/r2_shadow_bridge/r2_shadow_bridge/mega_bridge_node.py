@@ -27,11 +27,18 @@ Topics:
   out  /r2/track_mode         std_msgs/Bool       face tracking on or off (latched)
   out  /r2/track_mode/reason  std_msgs/String     why it went off: boot, button, controller,
                                                   pi or disconnected (latched)
+  in   /pad/foot, /pad/dome   std_msgs/String     the console's virtual Navs (Remote window), JSON
+                                                  {"buttons", "x", "y"}: sent as ROS:PAD, the newest of
+                                                  each at most 25 a second, never repeated (if the
+                                                  console goes quiet, so does this; the Mega lets go)
+  out  /mega/pads             std_msgs/String     JSON {"F", "D": real|virtual|none, "supported": bool|null,
+                                                  "mega": bool} (latched)
 Services:
   /r2/auto_mode/disable       std_srvs/Trigger    switch the autonomous mode off
   /r2/track_mode/disable      std_srvs/Trigger    switch face tracking off
 """
 
+import json
 import os
 import threading
 import time
@@ -48,7 +55,8 @@ from std_srvs.srv import Trigger
 from r2_nav.modes import bindings, load_modes, modes_path
 from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_line, dome_tick, foot_tick,
                                        is_auto_off_error, is_error, lines_for_mega_line,
-                                       parse_auto_line, parse_bind_reply, parse_track_line, twist_to_units)
+                                       pad_line, parse_auto_line, parse_bind_reply, parse_pad_report,
+                                       parse_track_line, twist_to_units)
 
 
 class MegaBridgeNode(Node):
@@ -100,6 +108,14 @@ class MegaBridgeNode(Node):
         self.create_subscription(Twist, "/foot/cmd_vel", self._on_foot, 10)
         self.create_subscription(String, "/mega/command", self._on_command, 10)
         self.create_subscription(Empty, "/r2/modes/reload", lambda _m: self._send_bindings(), 10)
+        # virtual Navs: only the newest packet of each counts (depth 1), sent by _pad_tick
+        self.pad_pending = {"F": None, "D": None}
+        self.pads = {"F": "none", "D": "none", "supported": None, "mega": False}
+        self.pad_asked_at = 0.0
+        self.pub_pads = self.create_publisher(String, "/mega/pads", latched)
+        self.create_subscription(String, "/pad/foot", lambda m: self._on_pad("F", m), 1)
+        self.create_subscription(String, "/pad/dome", lambda m: self._on_pad("D", m), 1)
+        self.create_timer(0.04, self._pad_tick)
         self.create_service(Trigger, "/r2/auto_mode/disable", self._on_disable)
         self.create_service(Trigger, "/r2/track_mode/disable", self._on_track_disable)
         self.create_timer(1.0 / self.get_parameter("rate_hz").value, self._tick)
@@ -137,6 +153,9 @@ class MegaBridgeNode(Node):
         self._write("ROS:AUTO:?\n")
         self._write("ROS:TRACK:?\n")
         self._send_bindings()
+        self._set_pads(F="none", D="none", supported=None, mega=True)
+        self.pad_asked_at = time.monotonic()
+        self._write("ROS:PAD:?\n")
         return True
 
     def _lost(self, why):
@@ -149,19 +168,23 @@ class MegaBridgeNode(Node):
                 pass
             self.ser = None
         self.pub_connected.publish(Bool(data=False))
+        self.pad_pending = {"F": None, "D": None}
+        self._set_pads(F="none", D="none", mega=False)
         self._set_auto(False, "disconnected")
         self._set_track(False, "disconnected")
         self.get_logger().error(f"lost the Mega: {why}")
 
-    def _write(self, line):
+    def _write(self, line, echo=True):
         with self.lock:
             ser = self.ser
             if ser is None:
-                self._echo(f"(not sent) {line}")
+                if echo:
+                    self._echo(f"(not sent) {line}")
                 return False
             try:
                 ser.write(line.encode("ascii"))
-                self._echo(line)
+                if echo:
+                    self._echo(line)
                 return True
             except (serial.SerialException, OSError) as e:
                 err = e
@@ -208,6 +231,10 @@ class MegaBridgeNode(Node):
                 if track is not None:
                     self._set_track(*track)
                     continue
+                pads = parse_pad_report(line)
+                if pads is not None:
+                    self._set_pads(supported=True, **pads)
+                    continue
                 if is_auto_off_error(line) and self.auto_on:
                     # We missed an AUTO OFF line: the Mega is the authority. Stop sending
                     # and ask why, so /r2/auto_mode/reason is right too.
@@ -215,6 +242,35 @@ class MegaBridgeNode(Node):
                     self._write("ROS:AUTO:?\n")
                 if is_error(line):
                     self.get_logger().warning(f"Mega: {line}")
+
+    # --- virtual Navs (the console's Remote window) -----------------------------------------
+
+    def _on_pad(self, pad, msg):
+        try:
+            d = json.loads(msg.data)
+            self.pad_pending[pad] = (int(d["buttons"]), int(d["x"]), int(d["y"]))
+        except (ValueError, KeyError, TypeError):
+            self.get_logger().warning(f"bad /pad message: {msg.data[:80]}", throttle_duration_sec=10.0)
+
+    def _pad_tick(self):
+        """Send the newest packet of each Nav once (never repeated), at most 25 a second each.
+        Firmware with no virtual Nav does not answer ROS:PAD:? : after 3 s it says so."""
+        if self.pads["supported"] is None and self.ser is not None and time.monotonic() - self.pad_asked_at > 3.0:
+            self._set_pads(supported=False)
+        for pad in ("F", "D"):
+            p = self.pad_pending[pad]
+            if p is None:
+                continue
+            self.pad_pending[pad] = None
+            if self.pads["supported"] is False:
+                continue
+            self._write(pad_line(pad, *p), echo=False)     # 20 a second: kept out of /mega/tx
+
+    def _set_pads(self, **kw):
+        new = {**self.pads, **kw}
+        if new != self.pads or kw.get("mega") is not None:
+            self.pads = new
+            self.pub_pads.publish(String(data=json.dumps(self.pads)))
 
     # --- modes ---------------------------------------------------------------------------
 

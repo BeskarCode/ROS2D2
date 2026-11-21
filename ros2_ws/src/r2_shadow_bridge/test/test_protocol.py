@@ -201,3 +201,22 @@ def test_auto_transition_quiet_off_reasons():
     assert auto_transition("follow", False, "boot") == ("", "boot", None)
     assert auto_transition("follow", False, "disconnected") == ("", "disconnected", None)
     assert auto_transition("", False, "button") == ("", "button", None)
+
+
+def test_pad_line_formats_a_virtual_nav():
+    from r2_shadow_bridge.protocol import pad_line
+    assert pad_line("D", 0x280, 128, 128) == "ROS:PAD:D,0280,128,128\n"
+    assert pad_line("F", 0, 0, 255) == "ROS:PAD:F,0000,0,255\n"
+
+
+def test_pad_line_clamps_to_the_nav_ranges():
+    from r2_shadow_bridge.protocol import pad_line
+    assert pad_line("F", 0xFFFF, -5, 300) == "ROS:PAD:F,03FF,0,255\n"
+
+
+def test_parse_pad_report():
+    from r2_shadow_bridge.protocol import parse_pad_report
+    assert parse_pad_report("PAD F:real D:none") == {"F": "real", "D": "none"}
+    assert parse_pad_report("PAD F:virtual D:virtual") == {"F": "virtual", "D": "virtual"}
+    assert parse_pad_report("PAD F:bad D:none") is None
+    assert parse_pad_report("AUTO ON") is None
