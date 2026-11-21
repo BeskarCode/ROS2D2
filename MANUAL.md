@@ -229,7 +229,15 @@ this tab is open.
 
 **Telemetry** (the green switch): how busy the Pi and the Pico are, only while it is on and this tab
 is open. Each value is a ring with its colour ranges (green, amber, red), filled up to the value in
-its range's colour; hover it for the range seen and the limits.
+its range's colour; hover it for the range seen and the limits. **every** sets how often it is read
+(1 to 30 s; the Pico is still asked every 2 s so it keeps sending).
+
+**Dome cameras** (with telemetry on): each network camera in cameras.yaml, asked by the Pi: chip
+temperature, how busy each core is (core 0: WiFi and web; core 1: the face or colour finder) and
+the WiFi signal as rings; under them, how long it has been up, how many times it has started and
+why it last did (a *crash*, *watchdog* or *brownout* shows in red), how many times the WiFi dropped
+and why, how fast it answers, what it is finding and how often, its clients, memory and firmware.
+A camera with older firmware shows only part of it.
 
 ![Setup, System: telemetry](media/manual/setup-system-telemetry.png)
 

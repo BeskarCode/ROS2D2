@@ -241,7 +241,15 @@ pestaña está abierta.
 **Telemetry** (el interruptor verde): lo ocupadas que van la Pi y la Pico, solo mientras está
 encendido y esta pestaña abierta. Cada valor es un anillo con sus zonas de color (verde, ámbar,
 rojo), relleno hasta el valor con el color de su zona; al pasar el ratón se ven el rango visto y
-los límites.
+los límites. **every** elige cada cuánto se lee (de 1 a 30 s; a la Pico se le sigue pidiendo cada
+2 s para que no deje de mandarla).
+
+**Dome cameras** (con la telemetría encendida): cada cámara de red de cameras.yaml, preguntada por
+la Pi: temperatura del chip, lo ocupado que va cada núcleo (núcleo 0: WiFi y web; núcleo 1: el
+buscador de caras o de color) y la señal WiFi, en anillos; debajo, cuánto lleva encendida, cuántas
+veces ha arrancado y por qué arrancó la última vez (*crash*, *watchdog* o *brownout* salen en rojo),
+cuántas veces se le ha caído la WiFi y por qué, lo rápido que contesta, qué está buscando y a qué
+ritmo, sus clientes, la memoria y el firmware. Una cámara con firmware antiguo enseña solo una parte.
 
 ![Setup, System: telemetría](media/manual/setup-system-telemetry.png)
 
