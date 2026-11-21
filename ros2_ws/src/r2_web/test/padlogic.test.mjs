@@ -97,3 +97,15 @@ test('reset lets everything go at once (window closed, tab hidden)', () => {
   assert.deepEqual(p.state(800), { buttons: 0, x: 128, y: 128 });
   assert.equal(p.active(800), false);
 });
+
+test('pressing(): a button is down and may still become a HOLD (the window keeps ticking)', () => {
+  const p = createPad();
+  assert.equal(p.pressing(), false);
+  p.down('PS', 0);
+  assert.equal(p.pressing(), true);
+  assert.deepEqual(p.tick(600), ['PS']);
+  assert.equal(p.pressing(), false);
+  p.down('CROSS', 700);
+  p.up('CROSS', 750);
+  assert.equal(p.pressing(), false);
+});

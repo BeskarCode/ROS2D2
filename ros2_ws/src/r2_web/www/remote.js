@@ -122,6 +122,7 @@ function wirePad(padEl) {
       el.setPointerCapture?.(e.pointerId);
       pad[p].down(b, performance.now());
       if (!pad[p].held().has(b)) el.classList.add('r2r-down');
+      kick();                       // tick while pressed: the HOLD lights up at 0.6 s, before letting go
     });
     const end = () => {
       if (!pressed) return;
@@ -179,11 +180,16 @@ function step() {
   const t = performance.now();
   let any = false;
   for (const p of ['F', 'D']) {
-    if (pad[p].tick(t).length) render(win.querySelector(`.r2r-pad[data-pad="${p}"]`));
+    const now = pad[p].tick(t);
+    if (now.length) {
+      const padEl = win.querySelector(`.r2r-pad[data-pad="${p}"]`);
+      now.forEach((b) => padEl.querySelector(`[data-b="${b}"]`)?.classList.remove('r2r-down'));
+      render(padEl);
+    }
     const active = pad[p].active(t);
     if (active || wasActive[p]) send(p, pad[p].state(t));
     wasActive[p] = active;
-    any = any || active;
+    any = any || active || pad[p].pressing();
   }
   if (!any) { clearInterval(timer); timer = null; }
 }

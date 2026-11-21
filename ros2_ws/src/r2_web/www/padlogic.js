@@ -64,6 +64,9 @@ export function createPad({ longMs = 600, comboMs = 300 } = {}) {
 
     held() { return new Set(held); },
 
+    // a button is down and not yet decided (tap or HOLD): the window keeps ticking to mark the HOLD
+    pressing() { return downs.size > 0; },
+
     state(t) {
       let buttons = maskOf(held);
       if (pulse && t < pulse.until) buttons |= pulse.mask;
