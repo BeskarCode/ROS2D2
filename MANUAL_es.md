@@ -141,7 +141,8 @@ momento); **Save and restart** solo hace falta para la lista de cámaras.
 Cada cámara enchufada a la Pi, con:
 
 - **use** (encendida o no), **number** (las flechas la mueven a la izquierda o a la derecha de la
-  lista), **size** y **turn** (0, 90, 180, 270°),
+  lista), **size** y **turn** (las dos flechas giran la imagen un cuarto de vuelta a cada lado: 0, 90,
+  180, 270°, se ve al momento),
 - **points to** y **field of view**: hacia dónde mira en R2, para que el seguimiento con el dome sepa
   dónde está una cara.
 
@@ -176,6 +177,11 @@ reiniciar. Si no queda ningún sensor en uso mirando hacia delante, la consola a
 
 **La tarjeta del lidar** también ajusta el propio lidar:
 
+- **USB**: *Disconnect* para el motor y desconecta el USB del lidar por software, como si quitaras el
+  cable (su driver se para); *Connect* lo vuelve a conectar y el driver arranca en unos segundos.
+  Se aplica al momento, sin Save, y al reiniciar la Pi vuelve conectado. El puerto sigue dando 5 V
+  (una Pi 4 no puede apagar un solo puerto). Hace falta ejecutar una vez `setup/install_lidar_usb.sh`
+  en la Pi.
 - **Motor**: *Always*; *Only with an automatic mode* (con R2 quieto no hace ruido; al empezar un
   modo, espera hasta 5 s al lidar antes de moverse; el motor se para 5 s después del último modo);
   u *Off*.
@@ -222,7 +228,9 @@ extremos). Sabertooth, SyRen, MarcDuino y los mandos no salen: la Pi no los pued
 
 **La placa de la Pico, en directo** (firmware de la Pico 0.3.0 o posterior): una copia de la placa
 real, a escala y con cada pieza en su sitio del PCB: los conectores, la Pico, el pulsador DISPLAY y
-la pantalla de 0,96" en su módulo, a su tamaño. El LED de cada conector se enciende y parpadea como el real, con la lectura del sensor al
+la pantalla de 0,96" en su módulo, a su tamaño. Mientras la pantalla enseña un sensor, su conector
+lleva un marco amarillo y una flecha lo señala (en la pantalla *all*, todos los conectores con
+sensor), para seguir fácilmente los pasos del botón DISPLAY. El LED de cada conector se enciende y parpadea como el real, con la lectura del sensor al
 lado; también el LED verde de la propia Pico; la pantalla enseña la imagen de la pantalla real,
 píxel a píxel. El botón **DISPLAY** funciona como el real: un clic es una pulsación y mantenerlo 3 s
 apaga la pantalla (mientras lo mantienes se llena una barra). Si pulsas el botón de la placa, la
