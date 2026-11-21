@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { onSaveKey } from './savekey.js';
+import { reportRos } from './offline.js';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
 import { picoPill } from './picostate.js';
@@ -109,6 +110,7 @@ function connect() {
   ws = new WebSocket(WS_URL);
   setPill('conn', 'connecting…', '');
   ws.onopen = () => {
+    reportRos(true);
     setPill('conn', 'rosbridge ok', 'ok');
     subscribe('/dome/speed_cmd', 'std_msgs/msg/Int16', onSpeed);
     subscribe('/dome_tracker/status', 'std_msgs/msg/String', onStatus);
@@ -136,7 +138,7 @@ function connect() {
       delete pending[msg.id];
     }
   };
-  ws.onclose = () => { setPill('conn', 'no rosbridge — retrying', 'bad'); setTimeout(connect, 2000); };
+  ws.onclose = () => { reportRos(false); setPill('conn', 'no rosbridge — retrying', 'bad'); setTimeout(connect, 2000); };
   ws.onerror = () => ws.close();
 }
 

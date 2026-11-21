@@ -1,6 +1,8 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // rosbridge for the setup page: one websocket, service calls, parameters and throttled
 // subscriptions (sent again after a reconnect).
+import { reportRos } from './offline.js';
+
 const WS_URL = `ws://${location.hostname || 'localhost'}:9090`;
 
 let ws = null;
@@ -11,13 +13,13 @@ const subs = {};           // topic -> subscribe message, to send again on recon
 
 export function connect(onOpen) {
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => { advertised.clear(); Object.values(subs).forEach(send); onOpen(); };
+  ws.onopen = () => { reportRos(true); advertised.clear(); Object.values(subs).forEach(send); onOpen(); };
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data);
     if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic].forEach((cb) => cb(m.msg));
     if (m.op === 'service_response' && pending[m.id]) { pending[m.id](m.result ? m.values : null); delete pending[m.id]; }
   };
-  ws.onclose = () => setTimeout(() => connect(onOpen), 2000);
+  ws.onclose = () => { reportRos(false); setTimeout(() => connect(onOpen), 2000); };
 }
 
 /** Send if the socket is open; true if it went. */
