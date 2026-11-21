@@ -24,6 +24,10 @@ and a small HTTP API for what ROS topics cannot do:
                       then publishes /r2/modes/reload so the Mega bridge sends the new bindings
   POST /api/modes/start  {"mode": "goto|forward|patrol|follow"}: PS + L2 starts that mode (it swaps
                       combos with the mode that had PS + L2), saved and sent to the Mega the same way
+  GET  /api/remote    remote.yaml in use (the virtual Navs' stick limit, guest mode, the phone's
+                      favourite actions) and any error in it (then the defaults, as the bridge uses)
+  POST /api/remote    save it in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid; then
+                      publishes /r2/remote/reload so the Mega bridge uses the new limit
   POST /api/restart   restart ROS2D2 (systemd unit r2d2) so a new camera list is used
   GET  /api/pico_board   pico_board.yaml in use (the Pico board's display timeout, brightness,
                       LED mode) and any error in it
@@ -67,6 +71,8 @@ from r2_camera.config import USER_CONFIG, config_path, load_cameras, usb_cameras
 from r2_camera.source import list_modes
 from r2_sensors.config import USER_CONFIG as SENSORS_USER_CONFIG
 from r2_nav.modes import USER_MODES
+from r2_shadow_bridge.remote_cfg import USER_REMOTE
+from r2_web.remote_api import remote_payload, save_remote
 from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
 from r2_web.modes_api import modes_payload, save_modes, set_start_mode
 from r2_web.nav_api import nav_payload, save_nav
@@ -118,6 +124,7 @@ class Handler(SimpleHTTPRequestHandler):
     modes_default = ""
     board_default = ""
     on_modes_saved = staticmethod(lambda: None)
+    on_remote_saved = staticmethod(lambda: None)
     firmware = None             # FirmwareJob, set by the node
     prev_stat = None            # the last /proc/stat sample, for the CPU %
     stat_lock = threading.Lock()
@@ -143,6 +150,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, nav_payload(self.nav_default, NAV_USER_CONFIG))
         if self.path.split("?")[0] == "/api/modes":
             return self._json(200, modes_payload(self.modes_default, USER_MODES))
+        if self.path.split("?")[0] == "/api/remote":
+            return self._json(200, remote_payload(USER_REMOTE))
         if self.path.split("?")[0] == "/api/sensors":
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
         if self.path.split("?")[0] == "/api/pico_board":
@@ -197,6 +206,15 @@ class Handler(SimpleHTTPRequestHandler):
             code, body = set_start_mode(self.modes_default, USER_MODES, mode)
             if code == 200:
                 self.on_modes_saved()
+            return self._json(code, body)
+        if route == "/api/remote":
+            try:
+                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not saved: {e}"})
+            code, body = save_remote(text, USER_REMOTE)
+            if code == 200:
+                self.on_remote_saved()
             return self._json(code, body)
         if route == "/api/modes":
             try:
@@ -284,6 +302,8 @@ class WebServerNode(Node):
         Handler.board_default = os.path.join(get_package_share_directory("r2_pico_bridge"), "config", "pico_board.yaml")
         self.pub_reload = self.create_publisher(Empty, "/r2/modes/reload", 10)
         Handler.on_modes_saved = staticmethod(lambda: self.pub_reload.publish(Empty()))
+        self.pub_remote_reload = self.create_publisher(Empty, "/r2/remote/reload", 10)
+        Handler.on_remote_saved = staticmethod(lambda: self.pub_remote_reload.publish(Empty()))
         # the Pico firmware (System tab): what it needs to know, from ROS
         self.seen = {}          # topic -> (dict, monotonic time)
         for topic in ("/pico/state", "/nav/state", "/follow/state"):
