@@ -251,6 +251,20 @@
   .ring.warn .l:first-of-type { color: #d29922; } .ring.bad .l:first-of-type { color: #f85149; }
   .ring .dim, .ringtext .dim { font-size: 11px; opacity: .8; }
   .ringtext { max-width: 260px; padding-top: 30px; }
+  .stale .ring, .stale .ringtext, .camtm.stale .rings, .camtm.stale dl { filter: grayscale(1); opacity: .45; }
+  .sysfold { margin: 14px 0 0; }
+  .sysfold > summary { cursor: pointer; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; list-style: none; }
+  .sysfold > summary::-webkit-details-marker { display: none; }
+  .sysfold > summary::before { content: '\25B8'; color: var(--muted, #8b949e); transition: transform .15s; }
+  .sysfold[open] > summary::before { transform: rotate(90deg); }
+  .sysevery { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; font-size: 13px; color: var(--muted, #8b949e); }
+  .camtm h4 { margin: 10px 0 0; font-size: 13px; }
+  .camtm h4 .sub { color: var(--muted, #8b949e); font-weight: 400; }
+  .camtm dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0 0 12px; font-size: 12px; }
+  .camtm dt { color: var(--muted, #8b949e); }
+  .camtm dd { margin: 0; overflow-wrap: anywhere; }
+  .camtm dd.warn { color: #e3b341; }
+  .camtm dd.bad { color: #ff6b6b; }
   .ringtext b { font-size: 18px; }
   /* System: the live strip and the mirror of the Pico board */
   .syslive { margin-bottom: 18px; }
@@ -299,6 +313,9 @@
   .syslive .pcb-arrow.left.on { --dx: -.6cqw; }
   .syslive .pcb-arrow.right.on { --dx: .6cqw; }
   @keyframes pcb-nudge { 50% { transform: translate(calc(-50% + var(--dx)), -50%); } }
+  /* "all" screen, a sensor not responding: on 400 ms, off 400 ms, as its x and its LED */
+  .syslive .pcb-focus.on.blink, .syslive .pcb-arrow.on.blink { animation: pcb-blink .8s steps(1, end) infinite; }
+  @keyframes pcb-blink { 50% { visibility: hidden; } }
   @media (prefers-reduced-motion: reduce) { .syslive .pcb-arrow.on { animation: none; } }
   .syslive .pcb-led.pwr.unknown { background: transparent; border: 1px dashed #ff8a80; }
   .syslive .pcb-hole { width: 4cqw; height: 4cqw; border-radius: 50%; background: #0d1117; transform: translate(-50%, -50%); }
@@ -446,16 +463,19 @@
     <div class="syscols">
     <div id="sys-live" class="syslive"></div>
     <div class="sysside">
-    <p class="help">The Pi and the Pico board. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p>
+    <p class="help">The Pi, the Pico board and the dome cameras. <b>Telemetry</b> reads how busy they are only while it is on and this tab is open.</p>
     <label class="systog" title="Read how busy the Pi and the Pico are (only while on and this tab is open)">
       <input type="checkbox" id="sys-telemetry"><i class="fa-solid fa-chart-line"></i>Telemetry
       <span class="knob"></span><span class="state"></span></label>
+    <label class="sysevery" title="How often the telemetry is read (the Pico is still asked every 2 s so it keeps sending)"><i class="fa-solid fa-stopwatch"></i>every
+      <select id="sys-every"></select></label>
     <h3 class="sysh"><i class="fa-brands fa-raspberry-pi"></i>Raspberry Pi <span class="sub">software <b id="sys-pi-version">…</b></span></h3>
     <div class="stats sys4" id="sys-pi" hidden></div>
     <p class="status bad" id="sys-pi-warn" hidden></p>
     <h3 class="sysh"><i class="fa-solid fa-microchip"></i>Pico board <span class="sub">firmware <b id="sys-pico-version">…</b></span></h3>
     <div class="stats sys4" id="sys-pico" hidden></div>
     <p class="help" id="sys-pico-note" hidden></p>
+    <details class="sysfold" id="fold-board"><summary><i class="fa-solid fa-sliders"></i>Pico board settings</summary>
     <div class="sysboard" id="sys-board">
       <div class="row"><label><i class="fa-solid fa-clock"></i>display off after</label><select id="brd-timeout"></select></div>
       <div class="row"><label><i class="fa-solid fa-sun"></i>brightness</label><select id="brd-bright"></select></div>
@@ -467,8 +487,11 @@
       <p class="status warn" id="brd-why" hidden></p>
       <p class="help" id="brd-file"></p>
     </div>
-    <h3 class="sysh"><i class="fa-solid fa-download"></i>Pico firmware</h3>
-    <div class="sysboard">
+    </details>
+    <h3 class="sysh" id="sys-cams-h" hidden><i class="fa-solid fa-video"></i>Dome cameras <span class="sub">network cameras in cameras.yaml</span></h3>
+    <div id="sys-cams" hidden></div>
+    <details class="sysfold" id="fold-fw"><summary><i class="fa-solid fa-download"></i>Pico firmware</summary>
+<div class="sysboard">
       <p class="status" id="fw-text">…</p>
       <div class="row"><span></span><span><button id="fw-check" title="Ask GitHub whether there is newer firmware for the Pico board"><i class="fa-solid fa-rotate"></i>Check for update</button>
         <button class="primary" id="fw-flash" title="Download, build and flash the newest Pico firmware (a few minutes; not while an automatic mode drives)"><i class="fa-solid fa-microchip"></i>Flash firmware</button>
@@ -476,6 +499,7 @@
       <p class="status" id="fw-step" hidden></p>
       <details id="fw-logbox" hidden><summary>output</summary><pre id="fw-log"></pre></details>
     </div>
+    </details>
     </div>
     </div>
   </section>

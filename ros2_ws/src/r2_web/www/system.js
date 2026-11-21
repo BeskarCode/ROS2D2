@@ -1,25 +1,31 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Setup -> System: the Pi's and the Pico's versions and, while "Telemetry" is on and the tab
-// is open, how busy they are. The Pi's from GET api/system?telemetry=1 every 2 s; the Pico's
-// from /pico/state, asked for with /pico/telemetry_request every 2 s (the bridge sends TM 0
-// once the requests stop). Temperature and load show the ranges they move in.
+// is open, how busy they are, every 1-30 s (picked next to the switch). The Pi's from GET
+// api/system?telemetry=1; the dome cameras' from GET api/domecams (the Pi asks each one); the
+// Pico's from /pico/state, asked for with /pico/telemetry_request every 2 s whatever the period
+// (the bridge sends TM 0 once the requests stop). Temperature and load show the ranges they move in.
 import { CONNECTORS, OPTIONS, toYaml } from './boardform.js';
 import { createBoardView } from './boardview.js';
 import { publish, subscribe } from './rosbridge.js';
 import {
-  CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
+  CAM_TEMP_ZONES, RSSI_ZONES, TELEMETRY_PERIODS, camLines, CPU_ZONES, PICO_TEMP_ZONES, PI_TEMP_ZONES, bytes, ringBands, ringFill, displayButtons, firmwareText, minMax, pct, throttleText,
   uptime, versionText, zone,
 } from './systemfmt.js';
 
 const $ = (id) => document.getElementById(id);
-const POLL_MS = 2000;
+const PICO_ASK_MS = 2000;   // the bridge stops the Pico's telemetry 5 s after the last ask
 
 export function createSystemTab() {
   const boardView = createBoardView($('sys-live'));
   let visible = false;
   let timer = null;
   let telemetry = false;
-  try { telemetry = localStorage.getItem('r2web.telemetry') === '1'; } catch { /* private window */ }
+  let period = 2000;
+  try {
+    telemetry = localStorage.getItem('r2web.telemetry') === '1';
+    const p = Number(localStorage.getItem('r2web.telemetry_ms'));
+    if (TELEMETRY_PERIODS.includes(p)) period = p;
+  } catch { /* private window */ }
   let pico = null, picoAt = 0;
   const seen = {};               // key -> { min, max } since the tab was first opened
 
@@ -47,11 +53,17 @@ export function createSystemTab() {
   const USED_SD = [[85, 'ok', 'normal'], [95, 'warn', 'filling up'], [Infinity, 'bad', 'almost full']];
   const USED_RAM = [[80, 'ok', 'normal'], [90, 'warn', 'tight'], [Infinity, 'bad', 'almost full']];
 
+  // Telemetry off (or the source gone): the rings keep their last values, greyed, instead of vanishing
+  function stale(box) {
+    box.classList.add('stale');
+    box.hidden = !box.innerHTML.trim();
+  }
+
   function showPi(api) {
     $('sys-pi-version').textContent = versionText(api.version);
     const box = $('sys-pi');
-    box.hidden = !telemetry;
-    if (!telemetry || !api.disk) return;
+    if (!telemetry || !api.disk) { stale(box); return; }
+    box.hidden = false;
     const d = api.disk, m = api.mem;
     const diskFree = d.total ? d.free / d.total : 1;
     const memFree = m.total ? m.available / m.total : 1;
@@ -67,6 +79,40 @@ export function createSystemTab() {
     $('sys-pi-warn').innerHTML = warn.map((w) => `<i class="fa-solid fa-bolt"></i>${w}`).join(' · ');
   }
 
+  // ---------- the network dome cameras (GET api/domecams: the Pi asks each one) ----------
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const lastCam = {};      // name -> its last rings and lines, shown grey when it stops answering
+  function showCams(api) {
+    const box = $('sys-cams');
+    if (!telemetry || !api) {
+      box.querySelectorAll('.camtm').forEach((el) => el.classList.add('stale'));
+      $('sys-cams-h').hidden = box.hidden = !box.innerHTML.trim();
+      return;
+    }
+    const cams = api.cameras || [];
+    box.hidden = $('sys-cams-h').hidden = !cams.length;
+    if (box.hidden) return;
+    box.innerHTML = cams.map((c) => {
+      const head = `<h4><i class="fa-solid fa-video"></i> ${esc(c.name)} <span class="sub">${esc(c.url)}</span></h4>`;
+      if (!c.status) {
+        return `<div class="camtm stale">${head}<p class="status bad">No answer: ${esc(c.error || '?')}</p>${lastCam[c.name] || ''}</div>`;
+      }
+      const s = c.status;
+      const cpu = Array.isArray(s.cpu) ? s.cpu : null;
+      const rssi = Number.isFinite(s.rssi) && s.rssi < 0 ? -s.rssi : null;
+      const k = `cam-${c.name}`;
+      const rings =
+        ring(`${k}-temp`, 'chip temperature', s.temp_c == null ? '–' : `${s.temp_c.toFixed(0)} °C`, s.temp_c, CAM_TEMP_ZONES, 20, 90, ' °C') +
+        ring(`${k}-c0`, 'core 0 · WiFi, web', cpu ? pct(cpu[0]) : '–', cpu ? cpu[0] : null, CPU_ZONES, 0, 100, ' %') +
+        ring(`${k}-c1`, 'core 1 · finder', cpu ? pct(cpu[1]) : '–', cpu ? cpu[1] : null, CPU_ZONES, 0, 100, ' %') +
+        ring(`${k}-rssi`, 'WiFi signal', rssi == null ? '–' : `${s.rssi} dBm`, rssi, RSSI_ZONES, 20, 95, ' (-dBm)');
+      const lines = camLines(s, c.ms).map(([l, v, cls]) => `<dt>${esc(l)}</dt><dd class="${cls}">${esc(v)}</dd>`).join('');
+      const old = s.temp_c === undefined ? '<p class="help">Update this camera&#39;s firmware to see its temperature, load and reboots.</p>' : '';
+      lastCam[c.name] = `<div class="rings">${rings}</div>${old}<dl>${lines}</dl>`;
+      return `<div class="camtm">${head}${lastCam[c.name]}</div>`;
+    }).join('');
+  }
+
   // ---------- the Pico board ----------
   function showPico() {
     if (!visible) return;
@@ -74,17 +120,19 @@ export function createSystemTab() {
     $('sys-pico-version').textContent = !fresh ? 'not connected'
       : `${pico.firmware || '?'}${pico.commit ? ` · ${pico.commit}` : ''}`;
     const box = $('sys-pico'), note = $('sys-pico-note');
-    box.hidden = note.hidden = true;
-    if (!telemetry || !fresh) return;
+    note.hidden = true;
+    if (!telemetry || !fresh) { stale(box); return; }
     if (!(pico.proto >= 2)) {
       note.hidden = false;
       note.textContent = 'Update the Pico firmware to see its telemetry.';
+      box.hidden = true;
       return;
     }
     const tm = pico.telemetry;
     if (!tm) {
       note.hidden = false;
       note.textContent = 'Waiting for the Pico…';
+      stale(box);
       return;
     }
     const names = Object.keys(pico.sensors || {});
@@ -214,30 +262,52 @@ export function createSystemTab() {
   async function poll() {
     timer = null;
     if (!visible) return;
-    if (telemetry) publish('/pico/telemetry_request', 'std_msgs/msg/Bool', { data: true });
     try {
       const api = await (await fetch(`api/system${telemetry ? '?telemetry=1' : ''}`, { cache: 'no-store' })).json();
       showPi(api);
       boardView.pi(api);
     } catch { /* restarting */ }
+    if (telemetry) {
+      try { showCams(await (await fetch('api/domecams', { cache: 'no-store' })).json()); } catch { showCams(null); }
+    }
     showPico();
-    if (visible) timer = setTimeout(poll, telemetry ? POLL_MS : 5000);
+    if (visible) timer = setTimeout(poll, telemetry ? period : 5000);
   }
-  const restart = () => { clearTimeout(timer); timer = null; poll(); };
+  // the Pico keeps sending its telemetry only while asked at least every 5 s, whatever the period
+  let picoTimer = null;
+  function askPico() {
+    clearTimeout(picoTimer);
+    picoTimer = null;
+    if (!visible || !telemetry) return;
+    publish('/pico/telemetry_request', 'std_msgs/msg/Bool', { data: true });
+    picoTimer = setTimeout(askPico, PICO_ASK_MS);
+  }
+  const restart = () => { clearTimeout(timer); timer = null; askPico(); poll(); };
   const stopPico = () => publish('/pico/telemetry_request', 'std_msgs/msg/Bool', { data: false });
 
   function setTelemetry(on) {
     telemetry = on;
     $('sys-telemetry').checked = on;
     try { localStorage.setItem('r2web.telemetry', on ? '1' : '0'); } catch { /* private window */ }
-    if (!on) { $('sys-pi').hidden = true; $('sys-pi-warn').hidden = true; stopPico(); }
+    if (!on) { stale($('sys-pi')); stale($('sys-pico')); $('sys-pi-warn').hidden = true; showCams(null); stopPico(); }
     restart();
   }
   $('sys-telemetry').addEventListener('change', (e) => setTelemetry(e.target.checked));
   $('sys-telemetry').checked = telemetry;
+  for (const id of ['fold-board', 'fold-fw']) {
+    try { $(id).open = localStorage.getItem(`r2web.${id}`) === '1'; } catch { /* private window */ }
+    $(id).addEventListener('toggle', () => { try { localStorage.setItem(`r2web.${id}`, $(id).open ? '1' : '0'); } catch { /* private */ } });
+  }
+  $('sys-every').innerHTML = TELEMETRY_PERIODS.map((ms) => `<option value="${ms}">${ms / 1000} s</option>`).join('');
+  $('sys-every').value = String(period);
+  $('sys-every').addEventListener('change', (e) => {
+    period = Number(e.target.value);
+    try { localStorage.setItem('r2web.telemetry_ms', String(period)); } catch { /* private window */ }
+    restart();
+  });
 
   return {
     show() { visible = true; restart(); loadBoard(); boardEnabled(); fwPost('check'); boardView.show(); },
-    hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; boardView.hide(); },
+    hide() { if (visible && telemetry) stopPico(); visible = false; clearTimeout(timer); timer = null; clearTimeout(picoTimer); picoTimer = null; boardView.hide(); },
   };
 }

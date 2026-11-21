@@ -83,3 +83,39 @@ export function displayButtons(ds) {
   if (!ds || ds === 'off') return { on: false, screen: null };
   return { on: true, screen: ds === 'logo' ? 'all' : ds };
 }
+
+// ---------- the network (ESP32) dome cameras: GET api/domecams ----------
+// ESP32-P4: rated to 85 °C ambient; the chip sensor reads above the air around it
+export const CAM_TEMP_ZONES = [[65, 'ok', 'normal'], [80, 'warn', 'warm'], [Infinity, 'bad', 'too hot']];
+// WiFi signal as dBm below zero (bigger = weaker), so the ring fills as it gets worse
+export const RSSI_ZONES = [[67, 'ok', 'good'], [77, 'warn', 'weak'], [Infinity, 'bad', 'very weak']];
+// The telemetry refresh the console offers (ms); the Pico is still asked every 2 s in between
+export const TELEMETRY_PERIODS = [1000, 2000, 5000, 10000, 30000];
+
+// Why the WiFi last dropped (wifi_err_reason_t), the usual ones in words
+const WIFI_REASONS = {
+  1: 'unspecified', 2: 'authentication expired', 3: 'left (auth)', 4: 'inactive too long', 5: 'AP full',
+  8: 'left', 15: 'handshake timed out', 200: 'lost the AP (beacons)', 201: 'AP not found',
+  202: 'authentication failed', 203: 'association failed', 204: 'handshake timed out',
+  205: 'connection failed', 206: 'AP reset', 207: 'roaming',
+};
+export function wifiReason(code) {
+  if (!code) return 'never dropped';
+  return `${WIFI_REASONS[code] || 'reason'} (${code})`;
+}
+
+/** The text lines under a dome camera's rings: [label, value, cls] from its /status. */
+export function camLines(s, ms) {
+  const lines = [
+    ['up', `${uptime(s.uptime_s)} · start #${s.boots ?? '?'} · last: ${s.reset_reason || '?'}`,
+      ['crash', 'watchdog', 'brownout', 'power glitch', 'CPU lockup'].some((w) => (s.reset_reason || '').includes(w)) ? 'bad' : ''],
+    ['WiFi', `${s.ip || '?'} · ${s.wifi_reconnects ?? '?'} drops · last: ${wifiReason(s.wifi_last_reason)}${ms != null ? ` · answers in ${ms} ms` : ''}`,
+      s.wifi_reconnects > 0 ? 'warn' : ''],
+    ['finding', s.detect === 2 ? `colour · ${s.faces_fps ?? 0} /s` : s.detect === 1 ? `faces · ${s.faces_fps ?? 0} /s · scores ${s.score1}/${s.score2}` : 'nothing',
+      s.detect === 1 && s.faces_fps < 10 ? 'warn' : ''],
+    ['clients', `faces ${s.faces_clients ?? 0} · video ${s.stream_clients ?? 0}`, ''],
+    ['memory', `${bytes(s.heap)} internal · ${bytes(s.psram_free)} PSRAM free`, s.heap < 40000 ? 'warn' : ''],
+    ['firmware', `${s.fw || '?'}${s.built ? ` · built ${s.built}` : ''} · ${s.sensor || 'no camera'} ${s.sensor_mode || ''}`.trim(), ''],
+  ];
+  return lines;
+}
