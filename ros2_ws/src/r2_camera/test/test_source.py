@@ -51,3 +51,22 @@ def test_parse_v4l2_formats():
     modes = parse_v4l2_formats(V4L2)
     assert modes["MJPG"] == [(1280, 720, 30.0), (640, 480, 30.0)]     # no repeats, best fps
     assert modes["YUYV"] == [(1280, 720, 10.0)]
+
+
+def test_network_camera_opens_with_short_timeouts(monkeypatch):
+    import cv2
+    from r2_camera import source as src
+    seen = {}
+
+    class Cap:
+        def __init__(self, *args):
+            seen["args"] = args
+        def isOpened(self):
+            return True
+        def set(self, *a):
+            return True
+    monkeypatch.setattr(src.cv2, "VideoCapture", Cap)
+    src.open_capture("http://10.42.0.61:81/stream", 640, 480, 30, "MJPG")
+    params = seen["args"][2]
+    assert params[params.index(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC) + 1] == 3000
+    assert params[params.index(cv2.CAP_PROP_READ_TIMEOUT_MSEC) + 1] == 3000
