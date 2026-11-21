@@ -9,7 +9,7 @@ Teal: what ROS2D2 adds. Dashed: ordered, to buy or not fitted yet.
 ## Bill of materials
 
 **This is an inventory of what we are using while testing, not a shopping list:** ROS2D2 is still
-being tested on the droid. Only what we add to a ShadowMD droid. Status as of 7 November 2026; prices only where we have
+being tested on the droid. Only what we add to a ShadowMD droid. Status as of 21 November 2026; prices only where we have
 paid or checked them.
 
 ### Brain
@@ -24,8 +24,15 @@ paid or checked them.
 
 | Part | Qty | What for |
 |---|---|---|
-| ESP32-S3 N16R8 CAM (Freenove or clone) | 1 | Finds faces itself and streams video over WiFi (`firmware/r2_domecam`) |
-| 72° autofocus camera module (OV5640 or similar) | 1 | Replaces the 160° fisheye: faces come out bigger |
+| Waveshare ESP32-P4-WIFI6 (ESP32-P4 + ESP32-C6 for the WiFi, 32 MB flash, 32 MB PSRAM) | 1 | Finds faces or a colour itself and sends the Pi only where they are; video only while you tune it from the console (`firmware/r2_domecam_p4`) |
+| OV5647 camera, Raspberry Pi Camera (B) Rev 2.0 type: 5 MP, 60.6° diagonal (about 50° wide), manual focus | 1 | MIPI-CSI; focus it by hand at about 2 m |
+| 15-to-22-pin MIPI-CSI ribbon | 1 | The OV5647 has a 15-pin ribbon, the board a 22-pin socket (it comes in Waveshare's kit) |
+
+**The ESP32-S3 camera is obsolete.** We tried an ESP32-S3 N16R8 CAM (and an XIAO ESP32S3 Sense)
+with OV2640 and OV5640 modules (`firmware/r2_domecam`): it is not powerful enough. On real
+frames (backlit, dim room, small faces) it found almost no faces, the picture was poor, and
+detecting while sending video halved its speed. We have abandoned that line: only the ESP32-P4
+camera is supported. The old sketch stays in the repo for reference, with no more fixes.
 
 ### Sensors
 

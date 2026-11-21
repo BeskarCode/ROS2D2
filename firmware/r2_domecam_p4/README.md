@@ -9,7 +9,7 @@ It does the vision work in the dome so the Pi does not have to: it finds the **f
 **colour** of the shirt R2 follows, and sends the Pi only where they are. Video only goes out
 while someone tunes the camera from the console.
 
-It speaks to the Pi exactly like the ESP32-S3 camera (`firmware/r2_domecam`), plus the colour,
+It speaks to the Pi exactly like the old ESP32-S3 camera (`firmware/r2_domecam`, now obsolete), plus the colour,
 so one can replace the other.
 
 ## The board
