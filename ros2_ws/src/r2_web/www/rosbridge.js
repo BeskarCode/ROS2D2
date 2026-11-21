@@ -11,15 +11,23 @@ const pending = {};
 const handlers = {};       // topic -> [callbacks] (two tabs may follow the same topic)
 const subs = {};           // topic -> subscribe message, to send again on reconnect
 
+const onOpens = [];
+/** One socket per page, shared by everyone who calls this (the page, the status pills, the Remote
+ *  window); onOpen runs on every (re)connection. */
 export function connect(onOpen) {
+  if (onOpen) onOpens.push(onOpen);
+  if (ws && ws.readyState <= WebSocket.OPEN) {      // already connecting or open: just join it
+    if (ws.readyState === WebSocket.OPEN && onOpen) onOpen();
+    return;
+  }
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => { reportRos(true); advertised.clear(); Object.values(subs).forEach(send); onOpen(); };
+  ws.onopen = () => { reportRos(true); advertised.clear(); Object.values(subs).forEach(send); onOpens.forEach((f) => f()); };
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data);
     if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic].forEach((cb) => cb(m.msg));
     if (m.op === 'service_response' && pending[m.id]) { pending[m.id](m.result ? m.values : null); delete pending[m.id]; }
   };
-  ws.onclose = () => { reportRos(false); setTimeout(() => connect(onOpen), 2000); };
+  ws.onclose = () => { reportRos(false); setTimeout(() => connect(), 2000); };
 }
 
 /** Send if the socket is open; true if it went. */

@@ -309,7 +309,7 @@ export function createSensorsTab({ status }) {
     const el = $('picopill');
     if (!el) return;
     const p = picoPill(pico, Date.now() - picoAt);
-    el.hidden = simWorld;
+    el.hidden = true;               // the shared status bar (statusbar.js) shows the Pico now
     el.className = 'pill ' + p.cls;
     el.innerHTML = '<i class="fa-solid fa-microchip"></i>';
     el.append(p.text);

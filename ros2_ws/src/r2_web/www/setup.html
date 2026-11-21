@@ -10,33 +10,12 @@
 <script type="importmap">
   { "imports": { "three": "./vendor/three.module.min.js" } }
 </script>
+<link rel="stylesheet" href="console.css">
 <style>
-  :root {
-    --bg: #0d1117; --panel: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
-    --blue: #3b82f6; --green: #3fb950; --amber: #d29922; --red: #f85149;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-  header .brand { height: 56px; }
-  header .logo { margin-left: auto; height: 48px; }
   a { color: var(--blue); }
-  nav.modes { display: flex; gap: 4px; margin-left: 16px; }
-  nav.modes a { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 8px;
-                color: var(--muted); text-decoration: none; border: 1px solid transparent; font-size: 14px; }
-  nav.modes a:hover { color: var(--text); background: var(--line); }
-  nav.modes a.on { color: var(--text); background: var(--line); border-color: #3a4250; }
-  .pill i, button i, .card h2 i, label i { margin-right: 6px; }
-  .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; background: var(--line); color: var(--muted); }
-  .pill.ok { background: rgba(63,185,80,.15); color: var(--green); }
-  .pill.bad { background: rgba(248,81,73,.15); color: var(--red); }
-  button.icon i, .step button i, .trow button i { margin: 0; }
-  main { padding: 16px; max-width: 1600px; margin: 0 auto; }
+  main { padding: var(--gap); }
   .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
   .tabs button.on { background: var(--blue); border-color: var(--blue); }
-  button { background: var(--line); color: var(--text); border: 1px solid #3a4250; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
-  button.primary { background: var(--blue); border-color: var(--blue); }
-  button:disabled { opacity: .5; cursor: default; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
   .cam { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .cam.off { opacity: .55; }
@@ -53,13 +32,9 @@
   .step { display: flex; align-items: center; gap: 6px; }
   .step button { width: 32px; height: 28px; padding: 0; font-size: 17px; }
   .step b { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
-  select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: inherit; }
   textarea { width: 100%; min-height: 60vh; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
              padding: 12px; font: 13px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
-  .status { color: var(--muted); font-size: 13px; }
-  .status.ok { color: var(--green); } .status.bad { color: var(--red); } .status.warn { color: var(--amber); }
-  .help { color: var(--muted); font-size: 12px; max-width: 900px; }
   .restarting { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
                 background: rgba(13, 17, 23, .78); }
   .restarting[hidden] { display: none; }
@@ -377,7 +352,7 @@
     <a href="setup.html" class="on"><i class="fa-solid fa-gear"></i>Setup</a>
     <a id="manual" href="https://github.com/BeskarCode/ROS2D2/blob/main/MANUAL.md#setup" target="_blank" rel="noopener" title="The user manual on GitHub: what each part of this page does (opens a new tab)"><i class="fa-solid fa-book"></i>Manual</a>
   </nav>
-  <span id="picopill" class="pill"><i class="fa-solid fa-microchip"></i>Pico: …</span>
+  <span hidden id="picopill" class="pill"><i class="fa-solid fa-microchip"></i>Pico: …</span>
   <img class="logo" src="astromech-spain-logo.png" alt="Astromech Spain">
 </header>
 <main>

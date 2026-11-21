@@ -1,6 +1,7 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Navigation page: watch the navigator drive R2 (the real one or the simulated one), give it a
 // goal, edit the simulated room, and read the telemetry and what goes to the Mega.
+import './statusbar.js';
 import { connect, publish, subscribe } from './rosbridge.js';
 import { MODELS } from './models.js';
 import { createNavMap } from './navmap.js';
