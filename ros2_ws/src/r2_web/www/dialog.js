@@ -22,7 +22,9 @@ function addStyle() {
     .r2dlg button { background: var(--line); color: var(--text); border: 1px solid var(--line2); border-radius: 6px; padding: 6px 14px;
       font: inherit; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
     .r2dlg button:hover { filter: brightness(1.15); }
-    .r2dlg button.primary { background: var(--blue); border-color: var(--blue); }`;
+    .r2dlg button.primary { background: var(--blue); border-color: var(--blue); }
+    .r2dlg input { width: 100%; box-sizing: border-box; background: var(--bg); color: var(--text); border: 1px solid var(--line2);
+      border-radius: 6px; padding: 8px 10px; font: inherit; }`;
   document.head.append(s);
 }
 
@@ -60,5 +62,38 @@ export function confirmDialog({ title, lines = [], warn = '', ok = 'OK', cancel 
     document.body.append(d);
     d.showModal();
     yes.focus();
+  });
+}
+
+// The same window with a text box: the text typed (trimmed), or null for Cancel / Esc / empty.
+//   const name = await promptDialog({ title: 'Name this favourite', value: 'Vol +', max: 20 })
+export function promptDialog({ title, lines = [], value = '', max = 40, ok = 'OK', cancel = 'Cancel', icon: ic = 'fa-pen' }) {
+  addStyle();
+  return new Promise((resolve) => {
+    const d = el('dialog', 'r2dlg');
+    const h = el('h3');
+    h.append(icon(ic), document.createTextNode(title));
+    const body = el('div', 'body');
+    for (const l of lines) body.append(el('p', '', l));
+    const input = el('input');
+    input.type = 'text';
+    input.maxLength = max;
+    input.value = value;
+    body.append(input);
+    const acts = el('div', 'acts');
+    const no = el('button', '', cancel);
+    const yes = el('button', 'primary', ok);
+    no.type = yes.type = 'button';
+    acts.append(no, yes);
+    d.append(h, body, acts);
+    const done = (v) => { d.close(); d.remove(); resolve(v); };
+    no.addEventListener('click', () => done(null));
+    yes.addEventListener('click', () => done(input.value.trim() || null));
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); yes.click(); } });
+    d.addEventListener('cancel', (e) => { e.preventDefault(); done(null); });
+    document.body.append(d);
+    d.showModal();
+    input.focus();
+    input.select();
   });
 }
