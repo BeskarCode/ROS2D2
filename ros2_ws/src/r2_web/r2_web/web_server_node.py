@@ -34,6 +34,9 @@ and a small HTTP API for what ROS topics cannot do:
   POST /api/firmware/check | flash | retry   check GitHub / pull, build and flash / copy again
   GET  /api/system    the Pi's software version (~/r2_ws/VERSION); with ?telemetry=1 also its
                       SD, RAM, CPU, temperature and power/heat flags (System tab, on demand)
+  GET  /api/lidar/usb   the lidar's USB: connected, disconnected (here, in software) or absent
+  POST /api/lidar/usb   {"connected": bool}: unplug it in software (motor stopped first) or plug
+                      it back (root script r2-lidar-usb, setup/install_lidar_usb.sh)
 
 http://<pi>:8080/          console        http://<pi>:8080/setup.html   camera, sensor and mode setup
 """
@@ -53,7 +56,7 @@ from ament_index_python.packages import get_package_share_directory
 from rcl_interfaces.msg import ParameterDescriptor
 from rclpy.node import Node
 from std_msgs.msg import Empty, String
-from std_srvs.srv import SetBool
+from std_srvs.srv import Empty as EmptySrv, SetBool
 
 from r2_camera.config import USER_CONFIG, config_path, load_cameras, usb_cameras
 from r2_camera.source import list_modes
@@ -63,6 +66,7 @@ from r2_nav.nav_core import USER_CONFIG as NAV_USER_CONFIG
 from r2_web.modes_api import modes_payload, save_modes, set_start_mode
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.lidar_api import lidar_needs_restart
+from r2_web.lidar_usb_api import set_usb, usb_state
 from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
 from r2_web.system_api import system_payload
 from r2_web.firmware_api import FirmwareJob, autonomous_active
@@ -135,6 +139,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, sensors_payload(self.sensors_default, SENSORS_USER_CONFIG))
         if self.path.split("?")[0] == "/api/pico_board":
             return self._json(200, pico_board_payload(self.board_default, BOARD_USER_CONFIG))
+        if self.path.split("?")[0] == "/api/lidar/usb":
+            return self._json(*usb_state())
         if self.path.split("?")[0] == "/api/firmware":
             return self._json(200, self.firmware.status())
         if self.path.split("?")[0] == "/api/system":
@@ -192,6 +198,12 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(200, self.firmware.status())
             res = self.firmware.flash() if route.endswith("flash") else self.firmware.retry()
             return self._json(200 if res == "ok" else 409, {"ok": True} if res == "ok" else {"error": res})
+        if route == "/api/lidar/usb":
+            try:
+                connected = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["connected"]
+            except (ValueError, KeyError, TypeError) as e:
+                return self._json(400, {"error": f"not done: {e}"})
+            return self._json(*set_usb(connected, stop_motor=self.stop_lidar_motor))
         if route == "/api/pico_board":
             try:
                 text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
@@ -258,6 +270,8 @@ class WebServerNode(Node):
         for topic in ("/pico/state", "/nav/state", "/follow/state"):
             self.create_subscription(String, topic, lambda m, t=topic: self._remember(t, m), 10)
         self.release_client = self.create_client(SetBool, "/pico/release")
+        self.stop_motor_client = self.create_client(EmptySrv, "/stop_motor")
+        Handler.stop_lidar_motor = staticmethod(self._stop_lidar_motor)
         Handler.firmware = FirmwareJob(release=self._release, pico_state=lambda: self._latest("/pico/state", 3.0),
                                        autonomous=self._autonomous)
         handler = functools.partial(Handler, directory=root)
@@ -291,6 +305,17 @@ class WebServerNode(Node):
         done = threading.Event()
         fut.add_done_callback(lambda _: done.set())
         return done.wait(5.0) and fut.result() is not None and fut.result().success
+
+    def _stop_lidar_motor(self):
+        """Stop the lidar's motor before its USB is unplugged (a C1 keeps the last order). From an
+        HTTP thread; no driver running = nothing to stop."""
+        if not self.stop_motor_client.wait_for_service(timeout_sec=1.0):
+            return
+        fut = self.stop_motor_client.call_async(EmptySrv.Request())
+        done = threading.Event()
+        fut.add_done_callback(lambda _: done.set())
+        done.wait(3.0)
+        time.sleep(0.5)   # let the stop command leave the serial port before it goes
 
     def destroy_node(self):
         self.httpd.shutdown()

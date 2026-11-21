@@ -585,6 +585,8 @@ export function createSensorsTab({ status }) {
         <input type="number" class="num sb" min="-180" max="180" step="1" value="${b}">°
         <button class="eye srm" title="Remove this blind sector"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
     return `
+      <div class="row"><label><i class="fa-brands fa-usb"></i>USB</label><span><button class="lusb" disabled title="Unplug the lidar in software (its motor stops first) or plug it back, without touching the cable. Back after a reboot">…</button>
+        <span class="sub lusbmsg"></span></span></div>
       <div class="row"><label><i class="fa-solid fa-fan"></i>motor</label><select class="lmotor" title="Only with an automatic mode: R2 standing still is quiet; a mode waits up to 5 s for the lidar to spin up">
         ${LIDAR_MOTOR.map(([v, t]) => opt(v, t, s.motor || 'always')).join('')}</select></div>
       <div class="row"><label><i class="fa-solid fa-wave-square"></i>scan mode</label><select class="lmode" title="The modes the lidar says it has. Changing it restarts the lidar's driver">
@@ -594,7 +596,30 @@ export function createSensorsTab({ status }) {
         <span>${sectors}<button class="addsec" title="Add a blind sector"><i class="fa-solid fa-plus"></i>Add</button></span></div>
       <div class="row"><label><i class="fa-solid fa-circle-info"></i>lidar</label><span class="sub lidarinfo">${lidarInfoText(lidarInfo, scanTurns, scanPoints)}</span></div>`;
   }
+  // The lidar's USB, unplugged in software and back (POST api/lidar/usb): applies at once, no Save
+  async function lidarUsb(el, body) {
+    const btn = el.querySelector('.lusb'), msg = el.querySelector('.lusbmsg');
+    btn.disabled = true;
+    if (body) msg.textContent = body.connected ? 'connecting…' : 'stopping the motor and disconnecting…';
+    let r;
+    try {
+      r = await (await fetch('api/lidar/usb', body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' })).json();
+    } catch { r = { error: 'no answer from the Pi' }; }
+    if (body && !r.error) {   // the answer may be a step behind: read the state again
+      try { r = await (await fetch('api/lidar/usb', { cache: 'no-store' })).json(); } catch { /* keep the POST's */ }
+    }
+    const state = r.state;
+    btn.innerHTML = state === 'connected' ? '<i class="fa-solid fa-plug-circle-xmark"></i>Disconnect'
+      : '<i class="fa-solid fa-plug-circle-check"></i>Connect';
+    btn.disabled = !(state === 'connected' || state === 'disconnected');
+    btn.dataset.state = state || '';
+    msg.textContent = r.error ? r.error
+      : state === 'connected' ? 'connected' : state === 'disconnected' ? 'disconnected (in software): Connect, or reboot the Pi'
+      : 'not plugged in';
+  }
   function wireLidar(el, s) {
+    el.querySelector('.lusb').addEventListener('click', (e) => lidarUsb(el, { connected: e.currentTarget.dataset.state !== 'connected' }));
+    lidarUsb(el);
     el.querySelector('.lmotor').addEventListener('change', (e) => { s.motor = e.target.value; touched(); });
     el.querySelector('.lmode').addEventListener('change', (e) => { s.scan_mode = e.target.value; touched(); });
     el.querySelector('.linv').addEventListener('change', (e) => { s.inverted = e.target.checked; touched(); });

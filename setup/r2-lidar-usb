@@ -1,0 +1,52 @@
+#!/bin/sh
+# ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
+# Installed as /usr/local/sbin/r2-lidar-usb by setup/install_lidar_usb.sh; run with sudo by the
+# web console. Unplugs the lidar's USB in software (off) or plugs it back (on), as if the cable
+# were pulled: Linux lets go of /dev/r2-lidar, so systemd stops r2d2-lidar (BindsTo), and on
+# "on" udev finds it again and starts the driver. The port keeps giving 5 V (the Pi 4 cannot
+# switch one port off), so stop the motor first (the console calls /stop_motor before "off").
+# Back after a reboot. Arguments: on | off | state. Exit 0 = done; else one line saying why.
+set -u
+
+STATE=/run/r2-lidar-usb   # the USB id it unplugged, to plug the same one back
+LINK=/dev/r2-lidar
+
+[ "$(id -u)" = 0 ] || { echo "r2-lidar-usb: run it with sudo"; exit 1; }
+
+case "${1:-}" in
+  state)
+    if [ -e "$LINK" ]; then echo connected
+    elif [ -f "$STATE" ]; then echo disconnected
+    else echo absent; fi
+    exit 0 ;;
+  off)
+    [ -e "$LINK" ] || { [ -f "$STATE" ] && { echo "r2-lidar-usb: already disconnected"; exit 0; }
+                        echo "r2-lidar-usb: no lidar plugged in ($LINK)"; exit 1; }
+    # /sys/class/tty/ttyUSB0/device -> .../1-1.3/1-1.3:1.0/ttyUSB0: the USB device is the
+    # directory above the interface (the one with a busnum file)
+    TTY=$(basename "$(readlink -f "$LINK")")
+    DIR=$(readlink -f "/sys/class/tty/$TTY/device")
+    while [ "$DIR" != / ] && [ ! -f "$DIR/busnum" ]; do DIR=$(dirname "$DIR"); done
+    [ -f "$DIR/busnum" ] || { echo "r2-lidar-usb: cannot find the USB device of $LINK"; exit 1; }
+    ID=$(basename "$DIR")
+    case "$ID" in *[!0-9.-]*|"") echo "r2-lidar-usb: odd USB id '$ID'"; exit 1 ;; esac
+    echo "$ID" > "$STATE"
+    echo "$ID" > /sys/bus/usb/drivers/usb/unbind || { rm -f "$STATE"; echo "r2-lidar-usb: unbind failed"; exit 1; }
+    echo disconnected ;;
+  on)
+    [ -f "$STATE" ] || { [ -e "$LINK" ] && { echo connected; exit 0; }
+                         echo "r2-lidar-usb: it was not disconnected here: unplug and plug the cable"; exit 1; }
+    ID=$(cat "$STATE")
+    case "$ID" in *[!0-9.-]*|"") rm -f "$STATE"; echo "r2-lidar-usb: odd USB id '$ID'"; exit 1 ;; esac
+    echo "$ID" > /sys/bus/usb/drivers/usb/bind || { echo "r2-lidar-usb: bind failed"; exit 1; }
+    rm -f "$STATE"
+    i=0
+    while [ ! -e "$LINK" ]; do
+      i=$((i + 1))
+      [ $i -gt 50 ] && { echo "r2-lidar-usb: $LINK did not come back in 10 s"; exit 1; }
+      sleep 0.2
+    done
+    echo connected ;;
+  *)
+    echo "usage: r2-lidar-usb on | off | state"; exit 1 ;;
+esac
