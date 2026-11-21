@@ -20,6 +20,12 @@ void web_register_status(int (*add)(char *out, size_t size));
 // Small helpers for the other servers (:81, :82)
 httpd_handle_t web_start_port(int port, int ctrl_port);
 
+// A never-ending answer (video, faces) served by a task of its own, so its server keeps taking new
+// clients and a client that died does not block the next one. loop(req) sends until a send fails;
+// *clients counts them (at most max, else 503).
+esp_err_t web_serve_async(httpd_req_t *req, esp_err_t (*loop)(httpd_req_t *req), const char *name,
+                          int stack, int *clients, int max);
+
 #ifdef __cplusplus
 }
 #endif

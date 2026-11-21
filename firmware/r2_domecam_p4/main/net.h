@@ -7,3 +7,5 @@ void net_start(void);
 bool net_connected(void);
 const char *net_ip(void);   // "0.0.0.0" while not connected
 int net_rssi(void);         // dBm, 0 while not connected
+unsigned long net_reconnects(void);   // times the WiFi dropped since it started
+int net_last_reason(void);            // why it last dropped (wifi_err_reason_t), 0 = never
