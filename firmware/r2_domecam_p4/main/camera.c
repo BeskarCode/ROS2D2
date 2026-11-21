@@ -95,7 +95,9 @@ bool camera_get_frame(frame_t *out, int fmt, int out_w, TickType_t wait) {
     if (spent >= wait || xSemaphoreTake(s_new, wait - spent) != pdTRUE) return false;
   }
   int out_h = s_h * out_w / s_w;
-  int rot = s_rotate;
+  // rotate is for the detectors only, as on the ESP32-S3 camera: the Pi turns the video itself
+  // (its camera node has the same rotate), so a turned JPEG would come out turned twice
+  int rot = fmt == FRAME_JPEG ? 0 : s_rotate;
   bool turned = rot == 90 || rot == 270;
   int bpp = fmt == FRAME_RGB888 ? 3 : 2;
   size_t raw_len = align_up((size_t)out_w * out_h * bpp);

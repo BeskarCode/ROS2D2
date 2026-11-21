@@ -26,7 +26,8 @@ esp_err_t camera_start(void);
 bool camera_ok(void);
 
 // The newest picture, out_w pixels wide before turning (320, 640, 800 or 1280; the height keeps
-// 4:3), turned by camera_rotate() and mirrored by vflip/hmirror. Waits up to `wait` for a picture
+// 4:3), turned by camera_rotate() (not FRAME_JPEG: the Pi turns the video) and mirrored by
+// vflip/hmirror. Waits up to `wait` for a picture
 // newer than out->seq. FRAME_RGB888 bytes are R,G,B. false: no camera, timeout or no memory.
 bool camera_get_frame(frame_t *out, int fmt, int out_w, TickType_t wait);
 void camera_release(frame_t *f);
