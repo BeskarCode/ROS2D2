@@ -1,7 +1,7 @@
 // node --test ros2_ws/src/r2_web/test/*.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from '../www/picostate.js';
+import { OFF_COLOUR, isConnected, liveName, picoPill, sensorBadge } from '../www/picostate.js';
 
 const up = (sensors = {}, more = {}) => ({ connected: true, firmware: '0.1.0', config_error: null, sensors, ...more });
 
@@ -50,4 +50,9 @@ test('"Connected only" keeps the sensors that measure, real or simulated', () =>
 test('a Pico sensor that is not responding is grey, a different tone per type', () => {
   assert.ok(OFF_COLOUR.vl53l0x && OFF_COLOUR.hcsr04 && OFF_COLOUR.vl53l0x !== OFF_COLOUR.hcsr04);
   assert.equal(OFF_COLOUR.rplidar_c1, undefined);   // the lidar keeps its colour
+});
+
+test('liveName: a sensor renamed on screen is still found by the name the Pi knows until saved', () => {
+  assert.equal(liveName({ name: 'sonar_right', savedName: 'sonar_front_right' }), 'sonar_front_right');
+  assert.equal(liveName({ name: 'sonar_left' }), 'sonar_left');          // new, never saved
 });

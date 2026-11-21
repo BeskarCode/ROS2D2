@@ -6,7 +6,7 @@ import { MODELS } from './models.js';
 import { call, publish, subscribe } from './rosbridge.js';
 import { createSensorMap } from './sensormap.js';
 import { createSensorView3d } from './sensorview3d.js';
-import { OFF_COLOUR, isConnected, picoPill, sensorBadge } from './picostate.js';
+import { OFF_COLOUR, isConnected, liveName, picoPill, sensorBadge } from './picostate.js';
 import { LIDAR_MOTOR, LIDAR_POINTS, lastFrontInUse, lidarInfoText, lidarModes, lidarYamlValue, PALETTE, sensorColour } from './sensormath.js';
 import { CONNECTORS, PICO_GPIO, R2, TYPES, beamDefaults, connectorOf, connectorPins, coverage, freeConnector, defaultName, isLidar, nearestPoint, rayCounts, sees, sideText, uniqueName } from './sensormath.js';
 
@@ -117,7 +117,7 @@ export function createSensorsTab({ status }) {
     $('s-add').disabled = locked;
     $('s-locked').hidden = !locked;
     if (visible) $('save').disabled = locked;
-    sensors = Object.entries(api.sensors).map(([name, s]) => ({ ...s, name, found: null }));
+    sensors = Object.entries(api.sensors).map(([name, s]) => ({ ...s, name, savedName: name, found: null }));
     for (const s of sensors) s.nameEdited = s.name !== defaultName(s, taken(s));
     if (!sensors.some((s) => s.name === selected)) selected = sensors[0] ? sensors[0].name : null;
     renderList();
@@ -147,7 +147,7 @@ export function createSensorsTab({ status }) {
   function badge(s) {
     if (!isLidar(s)) {
       const now = Date.now();
-      const b = sensorBadge(s.name, pico, reading(s.name, now), now - picoAt, simWorld);
+      const b = sensorBadge(liveName(s), pico, reading(liveName(s), now), now - picoAt, simWorld);
       return [b.cls, `<i class="fa-solid ${ICONS[b.cls]}"></i> ${b.text}`];
     }
     if (loaded.lidar_device) return ['ok', `<i class="fa-solid fa-plug-circle-check"></i> plugged in${hz()}`];
@@ -219,7 +219,7 @@ export function createSensorsTab({ status }) {
       const cov = coverage(sensors);
       const now = Date.now();
       const live = Object.fromEntries(sensors.map((s) => {
-        const b = isLidar(s) ? null : badge(s)[0], r = reading(s.name, now);
+        const b = isLidar(s) ? null : badge(s)[0], r = reading(liveName(s), now);
         return [s.name, (b === 'ok' || b === 'sim') && r ? r.range : null];
       }));
       const shown = onlyConnected ? sensors.filter((s) => isConnected(badge(s)[0])) : sensors;
@@ -318,8 +318,8 @@ export function createSensorsTab({ status }) {
   setInterval(() => { showPico(); live(); }, 1000);
   function subscribeRanges() {
     for (const s of sensors) {
-      if (isLidar(s) || rangeSubs.has(s.name)) continue;
-      const name = s.name;
+      if (isLidar(s) || rangeSubs.has(liveName(s))) continue;
+      const name = liveName(s);
       rangeSubs.add(name);
       // rosbridge sends inf (nothing in range) as null
       subscribe(`/range/${name}`, 'sensor_msgs/msg/Range', (m) => {
@@ -668,7 +668,7 @@ export function createSensorsTab({ status }) {
               '# (base_link, REP 103). yaw_deg + = left, pitch_deg + = down.\n';
     for (const s of sensors) {
       out += `${s.name}:\n`;
-      const keys = [...FIELDS, ...Object.keys(s).filter((k) => !FIELDS.includes(k) && !['name', 'nameEdited', 'found', 'noBoard'].includes(k))];
+      const keys = [...FIELDS, ...Object.keys(s).filter((k) => !FIELDS.includes(k) && !['name', 'savedName', 'nameEdited', 'found', 'noBoard'].includes(k))];
       for (const k of keys) {
         if (s[k] === undefined) continue;
         if (isLidar(s) && ['pitch_deg', 'stop_distance', 'pico'].includes(k)) continue;
@@ -689,6 +689,10 @@ export function createSensorsTab({ status }) {
     if (res.error) { status(res.error, 'bad'); return false; }
     changed = false;
     loaded = { ...loaded, file: res.file, saved: true, yaml: text ?? toYaml() };
+    if (text == null) {                 // the Pi knows them by these names now (a File save reloads)
+      for (const t of sensors) t.savedName = t.name;
+      subscribeRanges();
+    }
     status(`Saved in ${res.file}. The sensor poses follow at once.${res.lidar_restarted ? ' The lidar restarts with its new settings (a few seconds without /scan).' : ''}`, 'ok');
     return true;
   }

@@ -434,3 +434,21 @@ def test_mirror_cleared_when_the_pico_goes(bench3):
     assert bench3.spin_until(lambda: bench3.mirror[-1] == {"leds": None, "fb": None, "display_on": False,
                                                           "btn": None, "supported": None}, 4)
     bench3.plug()                                            # the fixture unplugs it at the end
+
+
+def test_a_renamed_sensor_keeps_measuring_under_its_new_name(bench):
+    # The web console renames a sensor when it is turned (its name follows where it points); its
+    # pins stay, so the CFG line to the Pico is the same. The new name must still take over: state,
+    # /range/<new name>, and nothing under the old one.
+    bench.pico.states = "ONNNNNN"
+    bench.pico.readings = {0: 420}
+    assert bench.spin_until(lambda: sensors(bench).get("tof_front_left") == "ok")
+    got = []
+    bench.ear.create_subscription(Range, "/range/tof_left", lambda m: got.append(m), qos_profile_sensor_data)
+    text = bench.config.read_text(encoding="utf-8")
+    assert "tof_front_left:" in text
+    bench.config.write_text(text.replace("tof_front_left:", "tof_left:"), encoding="utf-8")
+    touch_later(bench.config)
+    assert bench.spin_until(lambda: "tof_left" in sensors(bench) and "tof_front_left" not in sensors(bench))
+    assert bench.spin_until(lambda: len(got) > 0)
+    assert bench.spin_until(lambda: sensors(bench).get("tof_left") == "ok")

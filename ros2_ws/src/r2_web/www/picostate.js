@@ -17,6 +17,11 @@ export function picoPill(state, ageMs) {
   return { cls: 'ok', text: `Pico: connected${state.firmware ? ` · ${state.firmware}` : ''}${state.commit ? ` · ${state.commit}` : ''}` };
 }
 
+// The name the Pi knows a sensor by: the one in the saved file. The page may rename a sensor while it
+// is edited (its name follows where it points), but the Pico's state and /range/<name> keep the saved
+// name until Save; a new sensor has only its own.
+export const liveName = (s) => s.savedName ?? s.name;
+
 // A badge class that means the sensor is there and measuring (for "Connected only")
 export const isConnected = (cls) => cls === 'ok' || cls === 'sim';
 // A Pico sensor that is not measuring is drawn grey, a tone per type (light = ToF, dark = ultrasonic)

@@ -122,16 +122,21 @@ class PicoBridge(Node):
         if sensors is None and not force:
             return
         line, names = cfg_line(self.reloader.sensors)
-        if line == self.line and not force:
-            return
+        # The same pins (the same CFG line) can still come with new names (the web console renames a
+        # sensor that is turned) or new ranges and poses: those always apply. Only new pins go to the
+        # Pico; with the same pins each sensor keeps its state, matched by its place in the file.
+        resend = force or line != self.line
         with self.lock:
+            old = dict(zip(self.names, self.status.values())) if not resend else {}
+            by_place = dict(zip(names, self.status.values())) if not resend and len(self.names) == len(names) else {}
             self.line, self.names = line, names
             self.sensors = {n: self.reloader.sensors[n] for n in names}
-            self.status = {n: "waiting" for n in names}
+            self.status = {n: old.get(n, by_place.get(n, "waiting")) for n in names}
         for n in names:
             if n not in self.pub_range:
                 self.pub_range[n] = self.create_publisher(Range, f"/range/{n}", qos_profile_sensor_data)
-        self.send_cfg()
+        if resend:
+            self.send_cfg()
         self.publish_state()
 
     def send_cfg(self):
