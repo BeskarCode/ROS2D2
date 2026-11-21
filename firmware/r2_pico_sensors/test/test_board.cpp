@@ -150,7 +150,11 @@ int main() {
           !ledOn(true, State::NotResponding, false, 900, m, true, false, true), "all screen: not responding blinks as the x");
   }
   check(!ledOn(true, State::NotResponding, false, 500, LedMode::Off, true, false, true), "all screen: mode off stays dark");
-  check(ledOn(true, State::Ok, false, 900, LedMode::Connected, true, false, true), "all screen: measuring stays on (connected)");
+  for (LedMode m : {LedMode::Auto, LedMode::On, LedMode::Errors, LedMode::Connected}) {
+    check(ledOn(true, State::Ok, false, 500, m, true, false, true) && ledOn(true, State::Ok, false, 900, m, true, false, true),
+          "all screen: measuring is steady on, whatever the mode");
+  }
+  check(!ledOn(true, State::Ok, false, 500, LedMode::Off, true, false, true), "all screen: mode off, measuring stays dark");
   check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Connected, true, false, true), "all screen: empty stays dark");
 
   // display timeout (UI t=...): 10 s, and 0 = never
