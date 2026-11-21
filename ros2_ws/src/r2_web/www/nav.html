@@ -24,19 +24,19 @@
   #view3d { position:relative; width:100%; flex:1; min-height:240px; background:#0b0f14; }
   #view3d canvas { display:block; width:100%; height:100%; }
   #view3d .msg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); }
-  .hint { color:var(--muted); font-size:11px; padding:4px 12px; }
+  .hint { color:var(--muted); font-size: var(--fs-s); padding:4px 12px; }
   .bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 12px; border-top:1px solid var(--line); flex:none; }
   .readings { padding:8px 12px; display:grid; gap:5px; flex:none; }
-  .rd { display:grid; grid-template-columns:130px 1fr 64px; gap:8px; align-items:center; font-size:12px; }
+  .rd { display:grid; grid-template-columns:130px 1fr 64px; gap:8px; align-items:center; font-size: var(--fs-s); }
   .rd .n { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .rd .n i { font-style:normal; font-size:10px; padding:0 5px; border-radius:6px; margin-left:4px; }
   .rd .n i.sim { background:rgba(59,130,246,.18); color:var(--blue); } .rd .n i.real { background:rgba(63,185,80,.15); color:var(--green); }
   .rd .track { position:relative; height:10px; background:#0b0f14; border-radius:5px; overflow:hidden; }
   .rd .fill { position:absolute; inset:0 auto 0 0; border-radius:5px; }
   .rd .stop { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--red); }
-  .rd .raw { position:absolute; top:0; bottom:0; width:2px; background:#e6edf3; opacity:.8; }
+  .rd .raw { position:absolute; top:0; bottom:0; width:2px; background:var(--text); opacity:.8; }
   .rd b { text-align:right; font-variant-numeric:tabular-nums; }
-  .navstate { padding:8px 12px; border-top:1px solid var(--line); font-size:13px; flex:none; }
+  .navstate { padding:8px 12px; border-top:1px solid var(--line); font-size: var(--fs); flex:none; }
   .navstate .big { font-size:16px; font-weight:700; }
   .log { font:12px/1.5 ui-monospace,Consolas,monospace; padding:8px 12px; flex:1; min-height:80px; overflow:auto; background:#0b0f14; }
   .log .tx { color:#79c0ff; } .log .unsent { color:var(--amber); } .log .rx { color:var(--muted); } .log .info { color:var(--muted); }
@@ -46,23 +46,23 @@
   .seg button:first-child { border-radius:6px 0 0 6px; } .seg button:last-child { border-radius:0 6px 6px 0; }
   .seg button.on { background:var(--blue); border-color:var(--blue); color:#fff; }
   .modepick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .modepick .mp-label { color:var(--muted); font-size:12px; }
-  .modepick .mp-state { font-size:12px; color:var(--muted); }
+  .modepick .mp-label { color:var(--muted); font-size: var(--fs-s); }
+  .modepick .mp-state { font-size: var(--fs-s); color:var(--muted); }
   .modepick .mp-state.ok { color:var(--green); font-weight:600; }
-  #routeinfo { color:var(--muted); font-size:12px; }
+  #routeinfo { color:var(--muted); font-size: var(--fs-s); }
   #settings details { border-top:1px solid var(--line); }
-  #settings summary { padding:8px 12px; cursor:pointer; font-size:13px; font-weight:600; display:flex; gap:10px; align-items:center; }
-  #settings summary .st { font-weight:400; color:var(--muted); font-size:12px; }
+  #settings summary { padding:8px 12px; cursor:pointer; font-size: var(--fs); font-weight:600; display:flex; gap:10px; align-items:center; }
+  #settings summary .st { font-weight:400; color:var(--muted); font-size: var(--fs-s); }
   #settings .groups { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px 18px; padding:4px 12px 10px; }
-  #settings h4 { margin:6px 0 4px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  #settings .f { display:grid; grid-template-columns:150px 1fr 74px; gap:8px; align-items:center; font-size:12px; margin:3px 0; }
+  #settings h4 { margin:6px 0 4px; font-size: var(--fs-s); color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  #settings .f { display:grid; grid-template-columns:150px 1fr 74px; gap:8px; align-items:center; font-size: var(--fs-s); margin:3px 0; }
   #settings .f label { color:var(--muted); }
   #settings .f.changed label { color:var(--amber); }
   #settings .f input[type=range] { width:100%; accent-color:var(--blue); }
   #settings .f b { font-variant-numeric:tabular-nums; text-align:right; font-weight:600; }
   #settings .acts { display:flex; gap:8px; align-items:center; padding:0 12px 10px; }
   .rd { grid-template-columns:130px 1fr 64px auto; }
-  .rd .sw { padding:1px 6px; font-size:11px; }
+  .rd .sw { padding:1px 6px; font-size: var(--fs-s); }
   .rd .sw.off { color:var(--red); border-color:var(--red); }
 </style>
 </head>
@@ -73,7 +73,7 @@
     <a href="./"><i class="fa-solid fa-gauge-high"></i>Console</a>
     <a href="nav.html" class="on"><i class="fa-solid fa-route"></i>Navigation</a>
     <a href="setup.html"><i class="fa-solid fa-gear"></i>Setup</a>
-    <a id="manual" href="https://github.com/BeskarCode/ROS2D2/blob/main/MANUAL.md#navigation" target="_blank" rel="noopener" title="The user manual on GitHub: what each part of this page does (opens a new tab)"><i class="fa-solid fa-book"></i>Manual</a>
+    <a id="manual" href="https://github.com/BeskarCode/ROS2D2/blob/main/MANUAL.md#navigation" target="_blank" rel="noopener" title="The user manual on GitHub: what each part of this page does (opens a new tab)"><i class="fa-solid fa-book"></i>Manual<i class="fa-solid fa-arrow-up-right-from-square ext" aria-label="(opens GitHub in a new tab)"></i></a>
   </nav>
   <span hidden id="conn" class="pill">connecting…</span>
   <span id="simpill" class="pill warn" hidden><i class="fa-solid fa-flask"></i>simulation</span>

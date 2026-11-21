@@ -11,12 +11,12 @@ function ensureBox() {
   style.textContent = `
     .r2toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px); z-index: 10000;
       max-width: min(560px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 10px; font: 14px system-ui, sans-serif;
-      display: flex; gap: 10px; align-items: center; color: #e6edf3; background: #1f2630; border: 1px solid #3d4652;
+      display: flex; gap: 10px; align-items: center; color: var(--text); background: #1f2630; border: 1px solid #3d4652;
       box-shadow: 0 8px 28px rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; }
     .r2toast.show { opacity: 1; transform: translate(-50%, 0); }
-    .r2toast.ok { border-color: #2ea043; } .r2toast.ok i { color: #3fb950; }
-    .r2toast.warn { border-color: #9e6a03; } .r2toast.warn i { color: #e3b341; }
-    .r2toast.bad { border-color: #da3633; } .r2toast.bad i { color: #ff6b6b; }
+    .r2toast.ok { border-color: var(--green); } .r2toast.ok i { color: var(--green); }
+    .r2toast.warn { border-color: var(--amber); } .r2toast.warn i { color: var(--amber); }
+    .r2toast.bad { border-color: var(--red); } .r2toast.bad i { color: var(--red); }
     @media (prefers-reduced-motion: reduce) { .r2toast { transition: none; } }`;
   document.head.append(style);
   box = document.createElement('div');

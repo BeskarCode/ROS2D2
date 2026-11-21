@@ -7,7 +7,7 @@ import { createSensorsTab } from './sensors.js';
 import { createSystemTab } from './system.js';
 import { createModesTab } from './modes.js';
 import { showStream, stopStream } from './mjpeg.js';
-import { onSaveKey } from './savekey.js';
+import { onSaveKey, toast } from './savekey.js';
 
 const $ = (id) => document.getElementById(id);
 const TRACKER = '/dome_tracker';
@@ -105,7 +105,10 @@ function render() {
     el.querySelector('.title').textContent = r.title + (r.name ? ` (${r.name})` : '');
     const badge = document.createElement('span');
     badge.className = 'badge ' + (r.missing ? 'offline' : 'online');
-    badge.innerHTML = r.missing ? '<i class="fa-solid fa-plug-circle-xmark"></i> offline' : '<i class="fa-solid fa-plug-circle-check"></i> plugged in';
+    // USB: plugged in; network: online (the same words as the rest of the console)
+    const net = String(r.source).includes('://');
+    badge.innerHTML = r.missing ? '<i class="fa-solid fa-plug-circle-xmark"></i> offline'
+      : net ? '<i class="fa-solid fa-wifi"></i> online' : '<i class="fa-solid fa-plug-circle-check"></i> plugged in';
     el.querySelector('.title').after(badge);
     el.querySelector('.path').textContent = r.source;
     el.querySelector('.use').checked = r.use;
@@ -348,7 +351,13 @@ function showTab(name) {
   }
 }
 
-$('save').addEventListener('click', () => save(false));
+// Save: the status line below, and the same floating message as Ctrl+S
+$('save').addEventListener('click', async () => {
+  $('status').textContent = '';
+  await save(false);
+  const text = $('status').textContent, cls = $('status').classList;
+  if (text) toast(text, cls.contains('bad') ? 'bad' : cls.contains('warn') ? 'warn' : 'ok', cls.contains('bad') ? 5000 : 2500);
+});
 // Ctrl+S: what Save would do, and the status line it leaves, in a message seen from anywhere
 onSaveKey(async () => {
   if (current === 'system') return { ok: null, text: 'Nothing to save here: the board settings save as you change them' };
