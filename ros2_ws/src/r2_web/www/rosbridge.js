@@ -57,6 +57,11 @@ const advertised = new Set();
 export function advertise(topic, type) {
   if (!advertised.has(topic) && send({ op: 'advertise', topic, type })) advertised.add(topic);
 }
+/** Open the socket if this page has not (the console page talks to rosbridge on its own). */
+export function ensureConnected() {
+  if (!ws) connect(() => {});
+}
+
 export function publish(topic, type, msg) {
   advertise(topic, type);
   send({ op: 'publish', topic, msg });

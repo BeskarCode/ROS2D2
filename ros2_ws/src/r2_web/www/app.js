@@ -1,5 +1,6 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // ROS2D2 web console: talks to ROS through rosbridge's JSON protocol over a WebSocket.
+import './remote.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { onSaveKey } from './savekey.js';
