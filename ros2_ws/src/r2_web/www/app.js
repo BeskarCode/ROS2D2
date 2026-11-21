@@ -2,6 +2,7 @@
 // ROS2D2 web console: talks to ROS through rosbridge's JSON protocol over a WebSocket.
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
+import { onSaveKey } from './savekey.js';
 import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
 import { MODELS, loadModel } from './models.js';
 import { picoPill } from './picostate.js';
@@ -568,3 +569,6 @@ connect();
 // ---------- the mode PS + L2 starts, and Stop (its own rosbridge socket: modepick.js is shared with Navigation) ----------
 connectBridge(() => {});
 createModePick($('modepick'));
+
+// Ctrl+S: this page keeps nothing to save (its settings apply at once); say so instead of the browser's dialog
+onSaveKey(async () => ({ ok: null, text: 'Nothing to save on this page: its settings apply at once' }));
