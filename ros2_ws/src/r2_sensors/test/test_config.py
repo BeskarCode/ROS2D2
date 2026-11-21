@@ -194,3 +194,16 @@ def test_colour_optional_and_kept():
 def test_colour_must_be_hex(bad):
     with pytest.raises(SensorConfigError, match="colour"):
         parse_sensors(VL("tof_a", bad))
+
+
+def test_lidar_point_colours_default_and_kept():
+    s = parse_sensors(LIDAR_200)["lidar"]
+    assert s["points_colour"] == "#3fb950" and s["near_colour"] == "#f85149"
+    s = parse_sensors(LIDAR_200 + '  points_colour: "#58a6ff"\n  near_colour: "#f97316"\n')["lidar"]
+    assert s["points_colour"] == "#58a6ff" and s["near_colour"] == "#f97316"
+
+
+@pytest.mark.parametrize("bad", ['points_colour: "green"', "near_colour: #ff0000", 'near_colour: "#ff00"'])
+def test_lidar_point_colours_must_be_hex(bad):
+    with pytest.raises(SensorConfigError, match="colour"):
+        parse_sensors(LIDAR_200 + f"  {bad}\n")

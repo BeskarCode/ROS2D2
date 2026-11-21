@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { loadModelMetres } from './models.js';
-import { TYPES, freeText, isLidar, lidarColour, reach, toThree } from './sensormath.js';
+import { TYPES, freeText, isLidar, lidarPointColours, reach, toThree } from './sensormath.js';
 import { textSprite } from './label3d.js';
 
 const rad = (d) => d * Math.PI / 180;
@@ -116,10 +116,22 @@ export function createSensorView3d(container, { onHover = () => {} } = {}) {
     if (state.scan && state.scan.length) {
       const lidar = state.sensors.find(isLidar);
       const z = lidar ? lidar.z : 0.1;
-      const pos = new Float32Array(state.scan.flatMap(([x, y]) => toThree(x, y, z)));
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      dyn.add(new THREE.Points(g, new THREE.PointsMaterial({ color: lidarColour(state.sensors), size: 0.025 })));
+      const pc = lidarPointColours(state.sensors);   // the lidar card's colours; ignored ones grey
+      for (const cls of ['ignored', 'far', 'near']) {
+        const list = state.scan.filter((p) => (p[2] || 'far') === cls);
+        if (!list.length) continue;
+        const pos = new Float32Array(list.flatMap(([x, y]) => toThree(x, y, z)));
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        dyn.add(new THREE.Points(g, new THREE.PointsMaterial({ color: pc[cls], size: 0.025 })));
+      }
+    }
+    // the navigation's safety circle: what the sensors have to cover
+    if (state.safety > 0) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(state.safety - 0.01, state.safety + 0.01, 96),
+        new THREE.MeshBasicMaterial({ color: '#f85149', side: THREE.DoubleSide, transparent: true, opacity: 0.8 }));
+      ring.rotation.x = -Math.PI / 2; ring.position.y = 0.003;
+      dyn.add(ring);
     }
     render();
   }

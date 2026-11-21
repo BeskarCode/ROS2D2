@@ -218,12 +218,27 @@ test('PALETTE: 9 different colours, one per Pico connector', () => {
   for (const c of PALETTE) assert.match(c, /^#[0-9a-f]{6}$/);
 });
 
-test('lidar points: the lidar card colour, else the type colour', async () => {
-  const { lidarColour } = await import('../www/sensormath.js');
-  assert.equal(lidarColour({ lidar: { type: 'rplidar_c1', colour: '#FF7EB6' }, tof: { type: 'vl53l0x' } }), '#ff7eb6');
-  assert.equal(lidarColour({ lidar: { type: 'rplidar_c1' } }), '#39c5cf');
-  assert.equal(lidarColour({}), '#39c5cf');
-  assert.equal(lidarColour(null), '#39c5cf');
+test("lidar point colours: the card's points / near colours, else green and red", async () => {
+  const { lidarPointColours } = await import('../www/sensormath.js');
+  assert.deepEqual(lidarPointColours({ lidar: { type: 'rplidar_c1', points_colour: '#58A6FF', near_colour: '#f97316' } }),
+    { far: '#58a6ff', near: '#f97316', ignored: '#6e7681' });
+  assert.deepEqual(lidarPointColours({ lidar: { type: 'rplidar_c1' } }), { far: '#3fb950', near: '#f85149', ignored: '#6e7681' });
+  assert.deepEqual(lidarPointColours(null), { far: '#3fb950', near: '#f85149', ignored: '#6e7681' });
+});
+
+test('a lidar ray counts as scan_crop says: inside the fov, outside blind sectors, within range', async () => {
+  const { rayCounts } = await import('../www/sensormath.js');
+  const d = (deg) => deg * Math.PI / 180;
+  const s = { fov_deg: 200, range_max: 3, blind_sectors: [[30, 60]], inverted: false };
+  assert.equal(rayCounts(s, d(0), 1), true);
+  assert.equal(rayCounts(s, d(99), 1), true);
+  assert.equal(rayCounts(s, d(101), 1), false);          // outside the 200 deg it sees
+  assert.equal(rayCounts(s, d(-101), 1), false);
+  assert.equal(rayCounts(s, d(45), 1), false);           // blind sector
+  assert.equal(rayCounts(s, d(-45), 1), true);
+  assert.equal(rayCounts(s, d(0), 3.5), false);          // past range_max
+  assert.equal(rayCounts({ ...s, inverted: true }, d(-45), 1), false);   // mounted upside down: mirrored
+  assert.equal(rayCounts({ ...s, blind_sectors: [[170, -170]], fov_deg: 360 }, d(180), 1), false);   // crossing 180
 });
 
 test('lidar points inside the safety circle are split out (they go red)', async () => {
