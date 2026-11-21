@@ -63,6 +63,11 @@ function boardHtml() {
     + `<b class="pcb-txt" style="${at(36.6, 75)}">SW1</b>`
     + `<button class="pcb-button" id="bv-btn" style="${box(35.2, 76.2, 40.8, 81.8)}" title="DISPLAY: click = a press; hold 3 s = off, like the real button"><i></i></button>`
     + `<b class="pcb-txt" style="${at(35.3, 82.8)}">DISPLAY</b>`
+    // first visit: a hint that the button can be pressed (gone for good once pressed or closed)
+    + `<span class="pcb-tipring" id="bv-tipring" hidden style="${box(34.2, 75.2, 41.8, 82.8)}"></span>`
+    + `<div class="pcb-tip" id="bv-tip" hidden role="note" style="left:${(38 / W * 100).toFixed(3)}%;bottom:${((90 - 74.4) / H * 100).toFixed(3)}%">`
+    + '<b>Try it:</b> click this button to press the real DISPLAY button on the board. Hold it 3 s to turn the display off.'
+    + '<button type="button" id="bv-tipok" title="Got it: do not show this again">Got it</button></div>'
     + `<div class="pcb-hold" id="bv-hold" style="${box(33, 85.6, 43, 86.4)}"><i></i></div>`
     // the 0.96" SSD1306 module on J2: its board, its glass and the 21.74 x 10.86 mm screen
     + `<div class="pcb-oledmod" style="${box(45.5, 60.5, 73, 88.5)}"></div>`
@@ -111,6 +116,7 @@ export function createBoardView(root) {
     $('bv-cover').textContent = cover;
     $('bv-pcb').classList.toggle('dead', !live || old);
     $('bv-btn').disabled = !live || old;
+    tipShow(live && !old);
     for (const c of CONNECTOR_NAMES) root.querySelector(`[data-led="${c}"]`).classList.toggle('on', !!(leds && leds[c]));
     // the connectors whose sensors the display shows (the DISPLAY button steps through them;
     // "all" = every connector with a sensor)
@@ -173,6 +179,18 @@ export function createBoardView(root) {
     $('bv-hold').classList.remove('show');
     $('bv-hold').firstElementChild.style.width = '0';
   }
+  // the first-visit hint: shown while the board is live and nobody has pressed or closed it yet
+  const TIP_KEY = 'r2web.tip.display';
+  let tipDone = false;
+  try { tipDone = localStorage.getItem(TIP_KEY) === '1'; } catch { /* private window: show it each time */ }
+  function tipDismiss() {
+    tipDone = true;
+    try { localStorage.setItem(TIP_KEY, '1'); } catch { /* private window */ }
+    $('bv-tip').hidden = $('bv-tipring').hidden = true;
+  }
+  function tipShow(live) { $('bv-tip').hidden = $('bv-tipring').hidden = tipDone || !live; }
+  $('bv-tipok').addEventListener('click', tipDismiss);
+  $('bv-btn').addEventListener('pointerdown', () => { if (!tipDone) tipDismiss(); });
   $('bv-btn').addEventListener('pointerdown', down);
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $('bv-btn').addEventListener(ev, up));
   function flashButton() {          // the real button was pressed (BTN)
