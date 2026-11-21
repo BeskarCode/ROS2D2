@@ -7,7 +7,10 @@
 
 #include "config.h"
 #include "esp_heap_caps.h"
+#include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "net.h"
 
 #define MAX_CONTROLS 40
@@ -47,7 +50,7 @@ static esp_err_t page_handler(httpd_req_t *req) {
 }
 
 static esp_err_t status_handler(httpd_req_t *req) {
-  char json[1024];
+  char json[1536];
   int n = snprintf(json, sizeof(json),
                    "{\"name\":\"%s\",\"ip\":\"%s\",\"rssi\":%d,\"board\":\"esp32p4\",\"uptime_s\":%lu,"
                    "\"heap\":%u,\"psram_free\":%u",
@@ -96,7 +99,61 @@ httpd_handle_t web_start_port(int port, int ctrl_port) {
   cfg.ctrl_port = ctrl_port;
   cfg.core_id = 0;   // web servers with the WiFi on core 0: core 1 is the detector's
   cfg.lru_purge_enable = true;
+  // /status builds a 1.5 KB answer with decimals (printf of floats needs ~2 KB more): the
+  // default 4 KB stack overflowed ("Stack protection fault" on every /status)
+  cfg.stack_size = 8192;
+  // A client that left without closing (the Pi rebooted, WiFi dropped) is found in seconds, not
+  // minutes: TCP keepalive probes, and a send that cannot go out gives up after 2 s
+  cfg.keep_alive_enable = true;
+  cfg.keep_alive_idle = 5;
+  cfg.keep_alive_interval = 2;
+  cfg.keep_alive_count = 3;
+  cfg.send_wait_timeout = 2;
+  cfg.recv_wait_timeout = 5;
+  // :80 page/status/control, :81 video, :82 faces: few clients each (lwIP has 16 sockets)
+  cfg.max_open_sockets = port == 80 ? 5 : 4;
+  cfg.backlog_conn = 2;
   return httpd_start(&h, &cfg) == ESP_OK ? h : NULL;
+}
+
+typedef struct {
+  httpd_req_t *req;
+  esp_err_t (*loop)(httpd_req_t *);
+  int *clients;
+} async_job_t;
+
+static void async_task(void *arg) {
+  async_job_t *j = (async_job_t *)arg;
+  j->loop(j->req);
+  httpd_req_async_handler_complete(j->req);   // closes the socket
+  __atomic_sub_fetch(j->clients, 1, __ATOMIC_RELAXED);
+  free(j);
+  vTaskDelete(NULL);
+}
+
+esp_err_t web_serve_async(httpd_req_t *req, esp_err_t (*loop)(httpd_req_t *), const char *name, int stack,
+                          int *clients, int max) {
+  if (__atomic_add_fetch(clients, 1, __ATOMIC_RELAXED) > max) {
+    __atomic_sub_fetch(clients, 1, __ATOMIC_RELAXED);
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    return httpd_resp_sendstr(req, "too many clients");
+  }
+  async_job_t *j = calloc(1, sizeof(*j));
+  if (!j || httpd_req_async_handler_begin(req, &j->req) != ESP_OK) {
+    free(j);
+    __atomic_sub_fetch(clients, 1, __ATOMIC_RELAXED);
+    return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "no memory");
+  }
+  j->loop = loop;
+  j->clients = clients;
+  // core 0, with the WiFi and the web servers: core 1 is the detector's
+  if (xTaskCreatePinnedToCore(async_task, name, stack, j, 5, NULL, 0) != pdPASS) {
+    httpd_req_async_handler_complete(j->req);
+    free(j);
+    __atomic_sub_fetch(clients, 1, __ATOMIC_RELAXED);
+    ESP_LOGW("web", "no memory for a %s task", name);
+  }
+  return ESP_OK;
 }
 
 httpd_handle_t web_start(void) {

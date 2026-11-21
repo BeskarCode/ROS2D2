@@ -20,9 +20,13 @@ CONFIG_ESP_WIFI_SOFTAP_SUPPORT=n
 
 # Several sockets: page, stream, faces at once
 CONFIG_LWIP_MAX_SOCKETS=16
-CONFIG_LWIP_TCP_SND_BUF_DEFAULT=65535
+# A smaller send queue: a dropped link is noticed sooner and old pictures do not pile up
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=16384
 CONFIG_LWIP_TCP_WND_DEFAULT=65535
 CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
+
+# /status: how busy each core is (run time of the idle tasks)
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
 
 # Camera: OV5647 on MIPI-CSI, 1280x960 with 2x2 binning = the whole field of view (~50 deg wide)
 CONFIG_CAMERA_OV5647=y

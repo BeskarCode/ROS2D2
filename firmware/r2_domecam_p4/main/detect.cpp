@@ -121,10 +121,12 @@ static void detect_task(void *arg) {
 
 // ---------------------------------------------------------------- :82/faces
 
-static esp_err_t faces_handler(httpd_req_t *req) {
+// One task per client (web_serve_async): the Pi's node, plus someone measuring, plus one spare
+#define MAX_FACES_CLIENTS 3
+
+static esp_err_t faces_loop(httpd_req_t *req) {
   httpd_resp_set_type(req, "application/x-ndjson");
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-  __atomic_add_fetch(&s_clients, 1, __ATOMIC_RELAXED);
   uint32_t sent = 0;
   int64_t last = esp_timer_get_time();
   char buf[LINE_SIZE + 1];
@@ -149,8 +151,11 @@ static esp_err_t faces_handler(httpd_req_t *req) {
       vTaskDelay(pdMS_TO_TICKS(5));
     }
   }
-  __atomic_sub_fetch(&s_clients, 1, __ATOMIC_RELAXED);
   return err;
+}
+
+static esp_err_t faces_handler(httpd_req_t *req) {
+  return web_serve_async(req, faces_loop, "faces", 8192, &s_clients, MAX_FACES_CLIENTS);
 }
 
 // ---------------------------------------------------------------- /control and /status

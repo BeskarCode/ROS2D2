@@ -3,6 +3,7 @@
 // colour itself and sends the Pi only where they are; video only while someone tunes it.
 #include "camera.h"
 #include "detect.h"
+#include "diag.h"
 #include "esp_log.h"
 #include "net.h"
 #include "nvs_flash.h"
@@ -18,6 +19,7 @@ void app_main(void) {
     nvs_flash_erase();
     nvs_flash_init();
   }
+  diag_start();
   net_start();
   camera_start();   // without a camera it says so and the rest keeps working
   httpd_handle_t web = web_start();

@@ -6,11 +6,15 @@
 #include "camera.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "web.h"
 
 #define BOUNDARY "r2domecamframe"
 
-static volatile int s_clients;
+static int s_clients;
+#define MAX_STREAMS 2     // each one encodes its own JPEGs
+#define MIN_FRAME_US 66000   // at most ~15 pictures a second: leaves air for the faces and /control
 
 int stream_clients(void) { return s_clients; }
 
@@ -26,11 +30,10 @@ static esp_err_t capture_handler(httpd_req_t *req) {
 }
 
 // MJPEG: only encodes while someone is watching (the console). Normal use sends no video.
-static esp_err_t stream_handler(httpd_req_t *req) {
-  if (!camera_ok()) return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "no camera");
+static esp_err_t stream_loop(httpd_req_t *req) {
   httpd_resp_set_type(req, "multipart/x-mixed-replace;boundary=" BOUNDARY);
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-  s_clients++;
+  int64_t last = 0;
   frame_t f = {0};
   esp_err_t err = ESP_OK;
   char head[128];
@@ -44,14 +47,25 @@ static esp_err_t stream_handler(httpd_req_t *req) {
       continue;
     }
     misses = 0;
+    int64_t now = esp_timer_get_time();
+    if (now - last < MIN_FRAME_US) {
+      camera_release(&f);
+      vTaskDelay(pdMS_TO_TICKS((MIN_FRAME_US - (now - last)) / 1000 + 1));
+      continue;
+    }
+    last = now;
     int n = snprintf(head, sizeof(head), "\r\n--" BOUNDARY "\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n",
                      (unsigned)f.len);
     err = httpd_resp_send_chunk(req, head, n);
     if (err == ESP_OK) err = httpd_resp_send_chunk(req, (const char *)f.buf, f.len);
     camera_release(&f);
   }
-  s_clients--;
   return err;
+}
+
+static esp_err_t stream_handler(httpd_req_t *req) {
+  if (!camera_ok()) return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "no camera");
+  return web_serve_async(req, stream_loop, "stream", 8192, &s_clients, MAX_STREAMS);
 }
 
 static int add_status(char *out, size_t size) {

@@ -11,6 +11,11 @@
 // The same name as the ESP32-S3 camera, so one can replace the other without touching the Pi.
 #define CAM_HOSTNAME  "r2-domecam1"
 
+// A fixed address on the Pi's network, so the Pi finds it at once after a WiFi drop (mDNS can take
+// a minute to answer again). Outside the Pi's DHCP pool (10.42.0.11-50): 10.42.0.61 for
+// r2-domecam1, .62 for r2-domecam2... Put the same address in the Pi's cameras.yaml. "" = DHCP.
+#define CAM_STATIC_IP "10.42.0.61"
+
 // Video for the console (only sent while someone watches it): width 320, 640, 800 or 1280
 // (the height keeps 4:3) and JPEG quality 1 (smallest) .. 100 (best).
 // (Also from /control?var=framesize|quality&val=N until the next reboot.)
