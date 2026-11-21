@@ -251,6 +251,12 @@ veces ha arrancado y por qué arrancó la última vez (*crash*, *watchdog* o *br
 cuántas veces se le ha caído la WiFi y por qué, lo rápido que contesta, qué está buscando y a qué
 ritmo, sus clientes, la memoria y el firmware. Una cámara con firmware antiguo enseña solo una parte.
 
+**R2's WiFi**: el punto de acceso propio de R2 (al que se conecta la cámara del dome) elige el canal
+más tranquilo entre el 1, el 6 y el 11 cada vez que arranca. Una barra por canal enseña lo ocupado que
+está (verde libre, ámbar ocupado, rojo muy ocupado; ● el que está en uso). **Check now** vuelve a mirar
+sin cortar nada; **Move to the quietest** reinicia el punto de acceso para que cambie (las cámaras se
+cortan unos segundos). Hace falta ejecutar una vez `setup/install_wifi_channel.sh` en la Pi.
+
 ![Setup, System: telemetría](media/manual/setup-system-telemetry.png)
 
 - **Raspberry Pi**: versión del software, SD libre, RAM libre, CPU, temperatura (con sus zonas
