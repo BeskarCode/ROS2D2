@@ -122,9 +122,15 @@ export function createBoardView(root) {
     // "all" = every connector with a sensor)
     const byConn = readingsByConnector(sensors, Object.fromEntries(Object.entries(ranges).map(([n, r]) => [n, Date.now() - r.at < 2000 ? r.range : undefined])));
     const shown = old ? [] : shownConnectors(pico, live, Object.keys(byConn));
+    // yellow while its sensor measures; grey when there is none on that connector or it does not answer
     for (const c of CONNECTOR_NAMES) {
-      root.querySelector(`[data-focus="${c}"]`).classList.toggle('on', shown.includes(c));
-      root.querySelector(`[data-arrow="${c}"]`).classList.toggle('on', shown.includes(c));
+      const r = byConn[c];
+      const absent = !r || !(pico && pico.sensors && pico.sensors[r.name] === 'ok');
+      for (const sel of [`[data-focus="${c}"]`, `[data-arrow="${c}"]`]) {
+        const el = root.querySelector(sel);
+        el.classList.toggle('on', shown.includes(c));
+        el.classList.toggle('absent', absent);
+      }
     }
     $('bv-picoled').classList.toggle('on', !!(leds && leds.PICO));
     const pwr = live ? pwrLit(pico) : null;

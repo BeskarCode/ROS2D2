@@ -315,6 +315,11 @@
   .syslive .pcb-arrow.left { border-right: 2.4cqw solid #ffd60a; }
   .syslive .pcb-arrow.right { border-left: 2.4cqw solid #ffd60a; }
   .syslive .pcb-arrow.on { display: block; animation: pcb-nudge 1s ease-in-out infinite; }
+  /* the connector shown has no sensor, or it does not answer: the same frame and arrow, grey */
+  .syslive .pcb-focus.on.absent { border-color: #8b949e; background: rgba(139, 148, 158, .12); box-shadow: 0 0 1.4cqw rgba(139, 148, 158, .5); }
+  .syslive .pcb-arrow.left.absent { border-right-color: #8b949e; }
+  .syslive .pcb-arrow.right.absent { border-left-color: #8b949e; }
+  .syslive .pcb-arrow.absent { filter: drop-shadow(0 0 .6cqw rgba(139, 148, 158, .6)); }
   .syslive .pcb-arrow.left.on { --dx: -.6cqw; }
   .syslive .pcb-arrow.right.on { --dx: .6cqw; }
   @keyframes pcb-nudge { 50% { transform: translate(calc(-50% + var(--dx)), -50%); } }
