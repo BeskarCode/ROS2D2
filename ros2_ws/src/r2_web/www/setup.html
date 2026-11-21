@@ -313,9 +313,6 @@
   .syslive .pcb-arrow.left.on { --dx: -.6cqw; }
   .syslive .pcb-arrow.right.on { --dx: .6cqw; }
   @keyframes pcb-nudge { 50% { transform: translate(calc(-50% + var(--dx)), -50%); } }
-  /* "all" screen, a sensor not responding: on 400 ms, off 400 ms, as its x and its LED */
-  .syslive .pcb-focus.on.blink, .syslive .pcb-arrow.on.blink { animation: pcb-blink .8s steps(1, end) infinite; }
-  @keyframes pcb-blink { 50% { visibility: hidden; } }
   @media (prefers-reduced-motion: reduce) { .syslive .pcb-arrow.on { animation: none; } }
   .syslive .pcb-led.pwr.unknown { background: transparent; border: 1px dashed #ff8a80; }
   .syslive .pcb-hole { width: 4cqw; height: 4cqw; border-radius: 50%; background: #0d1117; transform: translate(-50%, -50%); }
