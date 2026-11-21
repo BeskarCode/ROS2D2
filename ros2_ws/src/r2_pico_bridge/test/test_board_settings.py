@@ -5,14 +5,14 @@ from r2_pico_bridge.board_settings import DEFAULTS, BoardSettingsError, command_
 
 
 def test_defaults_are_todays_behaviour():
-    assert DEFAULTS == {"display_timeout_s": 30, "brightness": 2, "leds": "auto"}
+    assert DEFAULTS == {"display_timeout_s": 30, "brightness": 2, "leds": "auto", "power_saving": False}
     assert parse("") == DEFAULTS
     assert parse("brightness: 3\n") == {**DEFAULTS, "brightness": 3}
 
 
 def test_valid_values():
     s = parse("display_timeout_s: 0\nbrightness: 0\nleds: errors\n")
-    assert s == {"display_timeout_s": 0, "brightness": 0, "leds": "errors"}
+    assert s == {"display_timeout_s": 0, "brightness": 0, "leds": "errors", "power_saving": False}
     for t in (10, 30, 60, 300, 0):
         assert parse(f"display_timeout_s: {t}\n")["display_timeout_s"] == t
     for led in ("auto", "on", "off", "errors", "connected"):
@@ -50,3 +50,17 @@ def test_the_console_may_press_the_button():
     assert command_ok("PRESS short") and command_ok("PRESS long")
     for bad in ("PRESS", "PRESS x", "PRESS short\nBOOT", "MIR 1"):
         assert not command_ok(bad), bad
+
+
+def test_power_saving_turns_every_board_led_off_but_keeps_the_choice():
+    s = parse("leds: connected\npower_saving: true\n")
+    assert s["leds"] == "connected" and s["power_saving"] is True
+    assert ui_line(s) == "UI t=30 b=2 led=off"
+    assert ui_line({**s, "power_saving": False}) == "UI t=30 b=2 led=conn"
+    assert parse("")["power_saving"] is False
+
+
+def test_power_saving_must_be_true_or_false():
+    import pytest
+    with pytest.raises(BoardSettingsError):
+        parse("power_saving: maybe\n")

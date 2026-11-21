@@ -5,6 +5,8 @@ by the bridge after every CFG and whenever the file changes (the Pico keeps none
     display_timeout_s: 30     # 10, 30, 60, 300, or 0 = never off by itself
     brightness: 2             # 0-3
     leds: auto                # auto (only with the display on) | on | connected (only those measuring) | off | errors (only those failing)
+    power_saving: false       # true: every LED off (the board's, sent as led=off, and the Pi's own ACT and
+                              # PWR, by the web console); leds keeps its choice for when it goes off again
 
 Saved from the web console (System tab) in ~/.config/ros2d2/pico_board.yaml; when that file
 exists it wins over the package's one. No ROS here: tested on its own."""
@@ -15,7 +17,7 @@ import re
 import yaml
 
 USER_CONFIG = os.path.expanduser("~/.config/ros2d2/pico_board.yaml")
-DEFAULTS = {"display_timeout_s": 30, "brightness": 2, "leds": "auto"}
+DEFAULTS = {"display_timeout_s": 30, "brightness": 2, "leds": "auto", "power_saving": False}
 TIMEOUTS = (10, 30, 60, 300, 0)
 BRIGHTNESS = (0, 1, 2, 3)
 LEDS = ("auto", "on", "connected", "off", "errors")
@@ -60,6 +62,8 @@ def parse(text):
         raise BoardSettingsError("brightness must be 0, 1, 2 or 3")
     if s["leds"] not in LEDS:
         raise BoardSettingsError(f"leds must be one of {', '.join(LEDS)}")
+    if not isinstance(s["power_saving"], bool):
+        raise BoardSettingsError("power_saving must be true or false")
     return s
 
 
@@ -70,7 +74,8 @@ def load(path):
 
 def ui_line(s):
     """The UI line the Pico understands (no newline)."""
-    return f"UI t={s['display_timeout_s']} b={s['brightness']} led={_LED_WORD[s['leds']]}"
+    led = "off" if s.get("power_saving") else _LED_WORD[s["leds"]]
+    return f"UI t={s['display_timeout_s']} b={s['brightness']} led={led}"
 
 
 def command_ok(line):
