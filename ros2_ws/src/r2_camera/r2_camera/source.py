@@ -23,11 +23,16 @@ def is_file(source):
             and not is_network(source) and os.path.isfile(source))
 
 
+NETWORK_TIMEOUTS = [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 3000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 3000]
+
+
 def open_capture(source, width, height, fps, fourcc):
     """Open a camera and ask for the given format. Returns None if it can't be opened."""
     if is_network(source) or is_file(source):
-        # ESP32 / IP cameras and video files: size and fps are decided by the source itself
-        cap = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
+        # ESP32 / IP cameras and video files: size and fps are decided by the source itself.
+        # A camera that drops off the WiFi is noticed in 3 s (FFmpeg's own wait is ~30 s).
+        params = [] if is_file(source) else NETWORK_TIMEOUTS
+        cap = cv2.VideoCapture(source, cv2.CAP_FFMPEG, params)
     else:
         backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_V4L2
         cap = cv2.VideoCapture(source, backend)

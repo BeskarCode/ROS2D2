@@ -18,6 +18,7 @@ Topics (relative to the node, e.g. /cameras/cam2/...):
 """
 
 import threading
+import time
 import urllib.request
 
 import cv2
@@ -70,18 +71,26 @@ class RemoteFacesNode(Node):
         return self.get_parameter(name).value
 
     def _read_loop(self):
+        lost_at = None   # when the faces stopped: each outage is logged once, with how long it lasted
         while not self._stop.is_set():
             try:
                 with urllib.request.urlopen(self.param("url"), timeout=5.0) as stream:
-                    self.get_logger().info("receiving faces from the camera")
+                    if lost_at is None:
+                        self.get_logger().info("receiving faces from the camera")
+                    else:
+                        self.get_logger().warning(
+                            f"faces back from the camera after {time.monotonic() - lost_at:.1f} s without them")
+                        lost_at = None
                     self._tell_rotate()
                     for line in iter_lines(stream):
                         if self._stop.is_set():
                             return
                         self._on_line(line)
+                    raise ConnectionError("the camera closed the connection")
             except Exception as e:   # camera off, WiFi gone, busy...: keep trying
-                self.get_logger().warning(f"no faces from {self.param('url')} ({e}), retrying",
-                                          throttle_duration_sec=30.0)
+                if lost_at is None:
+                    lost_at = time.monotonic()
+                    self.get_logger().warning(f"no faces from {self.param('url')} ({e}), retrying")
             self._stop.wait(self.param("reconnect_sec"))
 
     def _after_params(self, params):
