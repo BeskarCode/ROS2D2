@@ -134,7 +134,7 @@ Setup has five tabs. **Save** keeps the tab's settings on the Pi (they apply at 
 Every camera plugged into the Pi, with:
 
 - **use** (on or off), **number** (the arrows move it left or right in the list), **size** and
-  **turn** (0, 90, 180, 270°),
+  **turn** (the two arrows turn the picture a quarter each way: 0, 90, 180, 270°, seen at once),
 - **points to** and **field of view**: where it looks on R2, so the dome tracking knows where a face is.
 
 *Identify* puts each number on its picture: cover a camera with your hand to see which picture goes
@@ -168,6 +168,10 @@ looking ahead, the console warns you: R2 will not move.
 
 **The lidar's card** also sets the lidar itself:
 
+- **USB**: *Disconnect* stops the motor and unplugs the lidar's USB in software, as if the cable were
+  pulled (its driver stops); *Connect* plugs it back and the driver starts again in a few seconds.
+  It applies at once, with no Save, and a reboot of the Pi connects it again. The port keeps its 5 V
+  (a Pi 4 cannot switch one port off). Needs `setup/install_lidar_usb.sh` run once on the Pi.
 - **Motor**: *Always*; *Only with an automatic mode* (R2 standing still is quiet; when a mode starts,
   it waits up to 5 s for the lidar before moving; the motor stops 5 s after the last mode); or *Off*.
 - **Scan mode**: the modes the lidar says it has (a C1: *Standard*, 16 m; *DenseBoost*, 40 m).
@@ -212,7 +216,10 @@ there). Sabertooth, SyRen, MarcDuino and the controllers do not show: the Pi can
 
 **The Pico board, live** (Pico firmware 0.3.0 or newer): a copy of the real board,
 to scale and with each part where it is on the PCB: the connectors, the Pico, the DISPLAY button and
-the 0.96" display on its module, at its real size. Each connector's
+the 0.96" display on its module, at its real size. While the display shows one sensor, its
+connector gets a yellow frame and an arrow points at it (on the *all* screen, every connector
+with a sensor), so the DISPLAY button's steps are easy to
+follow. Each connector's
 LED lights and blinks as the real one, with the sensor's reading beside it; the Pico's own green
 LED too; the display shows the real display's picture, pixel for pixel. The **DISPLAY** button works
 like the real one: a click is a press, holding it 3 s turns the display off (a bar fills while you
