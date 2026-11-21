@@ -104,7 +104,7 @@ Tilting mounts for the HC-SR04 and the VL53L0X, adjustable in 10Â° steps from âˆ
 
 | Package | Node | What it does |
 |---|---|---|
-| `r2_camera` | `camera_node` | USB or network (ESP32-CAM) camera, one instance per camera |
+| `r2_camera` | `camera_node` | USB or network (ESP32-P4 dome) camera, one instance per camera |
 | `r2_vision` | `face_detector` | OpenCV YuNet face detector, closest face first |
 | `r2_dome_tracker` | `dome_tracker` | Dome speed from the face position (control law tuned on the droid) |
 | `r2_shadow_bridge` | `mega_bridge`, `foot_calibrate` | The only node that talks to the Mega over USB serial; the feet move only in autonomous mode (PS + L2 on the foot controller), the dome only with face tracking on (PS + L2 on the dome controller); the two are independent |

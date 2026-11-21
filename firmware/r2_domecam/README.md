@@ -1,4 +1,10 @@
-# r2_domecam
+# r2_domecam (obsolete)
+
+> **Obsolete, no longer supported.** The ESP32-S3 is not powerful enough for R2's dome camera:
+> on real frames (backlit, dim room, small faces) it found almost no faces, the picture was poor,
+> and finding faces while sending video halved its speed. We have abandoned this line; the
+> supported dome camera is the ESP32-P4 one, [`firmware/r2_domecam_p4`](../r2_domecam_p4/README.md).
+> This sketch stays for reference only, with no more fixes.
 
 A camera for R2's dome, sent to the Raspberry Pi over WiFi. The dome turns, so the camera
 needs no cables through it: 5 V from the dome, picture by WiFi.
