@@ -52,7 +52,9 @@ Flash with `idf.py -p COMx flash monitor`, or with esptool from the files in `bu
 The OV5647 runs in its 1280x960 mode with 2x2 binning (45 fps): the only mode that uses the whole
 sensor, so the picture has the full field of view (about 50° wide). The 800x640 and 1920x1080 modes
 crop the middle. The P4's ISP does automatic exposure and white balance; its PPA scales, turns and
-mirrors the picture for each user (console video, face finder, colour finder).
+mirrors the picture for each user (console video, face finder, colour finder). `rotate` turns only
+what the finders search, as on the ESP32-S3 camera: the video goes out unturned and the Pi turns
+it (its camera node has the same `rotate`), so it is never turned twice.
 
 | URL | What |
 |-----|------|
