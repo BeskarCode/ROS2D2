@@ -3,6 +3,7 @@
 //   g++ -std=c++17 -Wall -I. test/test_board.cpp -o /tmp/b && /tmp/b
 #include <cstdio>
 #include <cstring>
+#include <initializer_list>
 
 #include "Board.h"
 
@@ -141,6 +142,16 @@ int main() {
   check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Connected, true, false), "connected: an empty connector stays dark");
   check(ledOn(true, State::Ok, false, 50, LedMode::Off, false, true) != ledOn(true, State::Ok, false, 150, LedMode::Off, false, true),
         "identify blinks at 5 Hz whatever the mode");
+
+  // the "all sensors" screen: one not responding blinks its LED with the x on the display (400 ms),
+  // whatever the LED mode but off; measuring and empty connectors keep what their mode says
+  for (LedMode m : {LedMode::Auto, LedMode::On, LedMode::Errors, LedMode::Connected}) {
+    check(ledOn(true, State::NotResponding, false, 500, m, true, false, true) &&
+          !ledOn(true, State::NotResponding, false, 900, m, true, false, true), "all screen: not responding blinks as the x");
+  }
+  check(!ledOn(true, State::NotResponding, false, 500, LedMode::Off, true, false, true), "all screen: mode off stays dark");
+  check(ledOn(true, State::Ok, false, 900, LedMode::Connected, true, false, true), "all screen: measuring stays on (connected)");
+  check(!ledOn(true, State::NotConfigured, false, 500, LedMode::Connected, true, false, true), "all screen: empty stays dark");
 
   // display timeout (UI t=...): 10 s, and 0 = never
   Ui t10;

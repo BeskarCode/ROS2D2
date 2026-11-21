@@ -241,7 +241,7 @@ void drawLeds(uint32_t now) {
     State s = configured ? stateOf(c, &mm) : State::NotConfigured;
     bool identifying = c == identifyConn && (int32_t)(identifyUntil - now) > 0;
     bool lit = ledOn(configured, s, ui.screen == Screen::Sensor && c == ui.shown, now, uiCfg.leds,
-                     ui.screen != Screen::Off, identifying);
+                     ui.screen != Screen::Off, identifying, ui.screen == Screen::All);
     digitalWrite(CONN_LED[c], lit);
     levels |= (uint16_t)lit << c;
   }
