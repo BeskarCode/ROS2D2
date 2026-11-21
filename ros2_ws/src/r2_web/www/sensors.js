@@ -281,11 +281,11 @@ export function createSensorsTab({ status }) {
   addEventListener('pointercancel', () => { pressing = false; updateHold(); });
   const showOnlyConnected = (on) => {
     onlyConnected = on;
-    $('s-connected').classList.toggle('on', on);
+    $('s-connected').checked = on;
     try { localStorage.setItem('r2web.onlyConnected', on ? '1' : '0'); } catch { /* private window */ }
     redraw();
   };
-  $('s-connected').addEventListener('click', () => showOnlyConnected(!onlyConnected));
+  $('s-connected').addEventListener('change', (e) => showOnlyConnected(e.target.checked));
   // every beam (and the lidar's points) hidden or shown on the map at once, like each card's eyes
   $('s-hideall').addEventListener('click', () => {
     for (const s of sensors) { hidden.add(s.name); if (isLidar(s)) hidden.add(s.name + '#points'); }
@@ -309,7 +309,7 @@ export function createSensorsTab({ status }) {
     const el = $('picopill');
     if (!el) return;
     const p = picoPill(pico, Date.now() - picoAt);
-    el.hidden = simWorld;
+    el.hidden = true;               // the shared status bar (statusbar.js) shows the Pico now
     el.className = 'pill ' + p.cls;
     el.innerHTML = '<i class="fa-solid fa-microchip"></i>';
     el.append(p.text);

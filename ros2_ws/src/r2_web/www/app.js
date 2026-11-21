@@ -1,5 +1,6 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // ROS2D2 web console: talks to ROS through rosbridge's JSON protocol over a WebSocket.
+import './statusbar.js';
 import './remote.js';
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
@@ -67,7 +68,7 @@ let pico = null, picoAt = 0;
 function showPico() {
   const p = picoPill(pico, Date.now() - picoAt);
   const el = $('picopill');
-  el.hidden = simOn;
+  el.hidden = true;                 // the shared status bar (statusbar.js) shows the Pico now
   el.className = 'pill ' + p.cls;
   el.innerHTML = '<i class="fa-solid fa-microchip"></i>';
   el.append(p.text);

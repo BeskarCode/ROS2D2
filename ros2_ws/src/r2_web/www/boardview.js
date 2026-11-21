@@ -140,7 +140,7 @@ export function createBoardView(root) {
       const r = byConn[c];
       const st = r && live && pico.sensors ? pico.sensors[r.name] : null;
       const val = root.querySelector(`[data-val="${c}"]`);
-      val.textContent = !r ? '—' : st === 'ok' ? metres(r.m) : st === 'not_responding' ? 'no answer' : '—';
+      val.textContent = !r ? '—' : st === 'ok' ? metres(r.m) : st === 'not_responding' ? 'not responding' : '—';
       val.style.borderLeftColor = r && sensors[r.name] ? sensorColour(sensors[r.name]) : 'transparent';   // the sensor's colour
     }
     drawOled(live && !old ? fbPixels(mirror.fb) : null);
@@ -239,7 +239,7 @@ export function createBoardView(root) {
         const n = net[name];
         if (!n) return { title: name, ok: null };
         return n.status ? { title: name, ok: true, detail: `online${Number.isFinite(n.status.rssi) ? ` · ${n.status.rssi} dBm` : ''}` }
-          : { title: name, ok: false, detail: 'no answer' };
+          : { title: name, ok: false, detail: 'offline' };
       });
     } catch { /* restarting */ }
     showStrip();

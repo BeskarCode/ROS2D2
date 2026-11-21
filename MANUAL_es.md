@@ -8,13 +8,17 @@
 
 La consola la sirve la Pi que va dentro de R2: abre `http://<pi>:8080` en cualquier navegador de la
 misma red (la dirección de la Pi en la red de casa, o `10.42.0.1` en la WiFi propia de R2). Tiene tres
-páginas, en la barra de arriba: **Console**, **Navigation** y **Setup**. El botón **Manual** abre este
-manual (en inglés) por la parte de la página o pestaña en la que estás. Todos los botones tienen una
-ayuda: deja el ratón encima.
+páginas, en la barra de arriba: **Console**, **Navigation** y **Setup**. El botón **Manual** (marcado
+con ↗: sale de la consola) abre este manual (en inglés) en GitHub, en otra pestaña, por la parte de la
+página o pestaña en la que estás. Todos los botones tienen una ayuda: deja el ratón encima; y cada
+tarjeta o pestaña tiene arriba un **How it works** plegado.
 
-Las píldoras junto al menú dicen cómo están las cosas: **rosbridge** (el enlace de la consola con
-ROS), el **tracker** de caras, el **mode** automático, el **Mega** y la placa de la **Pico**. Verde
-está bien, ámbar hay que mirarlo, rojo es que no está.
+Las píldoras junto al menú son las mismas en todas las páginas y dicen cómo están las cosas: **ROS**
+(el enlace de la consola con ROS), el **Mega**, la placa de la **Pico** (con su versión de firmware),
+el **Lidar**, la **Camera** (o cuántas de las cámaras contestan) y el **Mode** encendido (uno
+automático o el seguimiento de caras). Verde está bien, ámbar hay que mirarlo, rojo es que no está. Si
+R2 deja de contestar, una ventana lo avisa y se quita sola cuando vuelve. **Ctrl+S** guarda la página
+en la que estás, desde cualquier parte de ella.
 
 - [Console](#console)
 - [Navigation](#navigation)
@@ -162,7 +166,11 @@ R2 visto desde arriba, a escala (anillos cada 50 cm), y R2 en 3D (*Top*, *3D* o 
 - **colour**: cada sensor puede tomar uno de 9 colores fijos (los que ya usa otro salen apagados), que se usa en el mapa, en el 3D, en su
   tarjeta y junto a su conector en la placa (System). El botón de al lado le devuelve el color de su tipo.
 - Los **puntos rojos** son sitios cerca de R2 que no cubre ningún sensor; los números bajo el mapa
-  dicen cuánto suelo se cubre hasta 50 cm y hasta 1 m, y hacia dónde está ciego R2.
+  dicen cuánto suelo se cubre hasta 50 cm y hasta 1 m, y hacia dónde está ciego R2. El anillo rojo
+  discontinuo es el **círculo de seguridad de la navegación**, para ajustar los sensores contra él.
+- Encima de la lista: **Connected only** esconde los sensores que no están midiendo; **Hide all** y
+  **Show all** esconden o enseñan de golpe todos los haces (y los puntos del lidar) en el mapa, como
+  los ojos de cada tarjeta.
 - **Test object**: elige uno (pata de silla, persona, pared, caja baja) y arrástralo: se iluminan
   los sensores que lo verían, con la distancia que leerían.
 - **Add sensor** usa el primer conector libre de la placa de la Pico; **Remove** lo quita.

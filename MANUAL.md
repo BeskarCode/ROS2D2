@@ -8,12 +8,17 @@
 
 The console is served by the Pi inside R2: open `http://<pi>:8080` in any browser on the same network
 (the Pi's address on your home network, or `10.42.0.1` on R2's own WiFi). It has three pages, in the
-bar at the top: **Console**, **Navigation** and **Setup**. The **Manual** button opens this manual at
-the part about the page (or tab) you are on. Every button has a tooltip: hold the mouse over it.
+bar at the top: **Console**, **Navigation** and **Setup**. The **Manual** button (marked ↗: it leaves
+the console) opens this manual on GitHub, in a new tab, at the part about the page (or tab) you are
+on. Every button has a tooltip: hold the mouse over it, and each card or tab has a folded **How it
+works** at its top.
 
-The pills next to the menu say how things are: **rosbridge** (the console's link to ROS), the face
-**tracker**, the automatic **mode**, the **Mega** and the **Pico** board. Green is fine, amber means
-look, red means it is not there.
+The pills next to the menu are the same on every page and say how things are: **ROS** (the
+console's link to ROS), the **Mega**, the **Pico** board (its firmware version), the **Lidar**, the
+**Camera** (or how many of the cameras answer) and the **Mode** on (an automatic one, or face
+tracking). Green is fine, amber means look, red means it is not there. If R2 stops answering, a
+window says so and goes away by itself when it is back. **Ctrl+S** saves the page you are on, from
+anywhere on it.
 
 - [Console](#console)
 - [Navigation](#navigation)
@@ -153,7 +158,10 @@ R2 seen from above, to scale (rings every 50 cm), and R2 in 3D (*Top*, *3D* or *
 - **colour**: each sensor can take one of 9 fixed colours, used on the map, in 3D, on its card and next
   to its connector on the board (System); the ones another sensor uses look faded. The button next to it brings back its type's colour.
 - **Red dots** are places near R2 that no sensor covers; the numbers under the map say how much of
-  the floor is covered up to 50 cm and 1 m, and where R2 is blind.
+  the floor is covered up to 50 cm and 1 m, and where R2 is blind. The dashed red ring is the
+  **navigation's safety circle**, to set the sensors against it.
+- Over the list: **Connected only** hides the sensors that are not measuring; **Hide all** and **Show
+  all** hide or show every beam (and the lidar's points) on the map at once, like each card's eyes.
 - **Test object**: pick one (chair leg, person, wall, low box) and drag it: the sensors that would
   see it light up, with the distance they would read.
 - **Add sensor** takes the first free connector of the Pico board; **Remove** takes it out.

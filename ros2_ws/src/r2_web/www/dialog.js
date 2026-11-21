@@ -9,20 +9,20 @@ function addStyle() {
   style = true;
   const s = document.createElement('style');
   s.textContent = `
-    dialog.r2dlg { max-width: min(480px, calc(100vw - 32px)); padding: 0; border-radius: 12px; border: 1px solid #3a4250;
-      background: #161b22; color: #e6edf3; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    dialog.r2dlg { max-width: min(480px, calc(100vw - 32px)); padding: 0; border-radius: 12px; border: 1px solid var(--line2);
+      background: var(--panel); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
       box-shadow: 0 16px 48px rgba(0,0,0,.6); }
     dialog.r2dlg::backdrop { background: rgba(1,4,9,.65); }
     .r2dlg h3 { margin: 0; padding: 14px 18px; font-size: 15px; display: flex; gap: 10px; align-items: center;
-      border-bottom: 1px solid #2a313c; }
+      border-bottom: 1px solid var(--line); }
     .r2dlg .body { padding: 14px 18px; }
     .r2dlg .body p { margin: 0 0 10px; }
-    .r2dlg .warn { color: #e3b341; display: flex; gap: 8px; align-items: baseline; }
-    .r2dlg .acts { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid #2a313c; }
-    .r2dlg button { background: #2a313c; color: #e6edf3; border: 1px solid #3a4250; border-radius: 6px; padding: 6px 14px;
+    .r2dlg .warn { color: var(--amber); display: flex; gap: 8px; align-items: baseline; }
+    .r2dlg .acts { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); }
+    .r2dlg button { background: var(--line); color: var(--text); border: 1px solid var(--line2); border-radius: 6px; padding: 6px 14px;
       font: inherit; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
     .r2dlg button:hover { filter: brightness(1.15); }
-    .r2dlg button.primary { background: #1f6feb; border-color: #388bfd; }`;
+    .r2dlg button.primary { background: var(--blue); border-color: var(--blue); }`;
   document.head.append(s);
 }
 

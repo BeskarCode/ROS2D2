@@ -22,13 +22,13 @@ function ensureCover() {
     .r2off { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 16px;
       background: rgba(1,4,9,.78); backdrop-filter: blur(2px); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
     .r2off[hidden] { display: none; }
-    .r2off .card { max-width: 440px; width: 100%; background: #161b22; color: #e6edf3; border: 1px solid #3a4250;
+    .r2off .card { max-width: 440px; width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--line2);
       border-radius: 12px; padding: 20px 22px; box-shadow: 0 16px 48px rgba(0,0,0,.6); text-align: center; }
     .r2off h3 { margin: 6px 0 8px; font-size: 17px; }
-    .r2off .big { font-size: 30px; color: #e3b341; }
-    .r2off p { margin: 6px 0; color: #8b949e; }
-    .r2off .what { color: #e6edf3; }
-    .r2off button { width: auto; margin: 12px auto 0; background: #2a313c; color: #e6edf3; border: 1px solid #3a4250; border-radius: 6px;
+    .r2off .big { font-size: 30px; color: var(--amber); }
+    .r2off p { margin: 6px 0; color: var(--muted); }
+    .r2off .what { color: var(--text); }
+    .r2off button { width: auto; margin: 12px auto 0; background: var(--line); color: var(--text); border: 1px solid var(--line2); border-radius: 6px;
       padding: 6px 14px; font: inherit; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }`;
   document.head.append(style);
   cover = document.createElement('div');

@@ -25,43 +25,43 @@ const me = Math.random().toString(36).slice(2);
 function addStyle() {
   const s = document.createElement('style');
   s.textContent = `
-    .r2rbtn.open { color: #fff !important; background: #1f6feb !important; border-color: #388bfd !important; }
+    .r2rbtn.open { color: #fff !important; background: var(--blue) !important; border-color: var(--blue) !important; }
     .r2remote { position: fixed; left: 50%; top: 110px; transform: translateX(-50%); width: min(760px, calc(100vw - 32px)); z-index: 8000;
-      background: #161b22; color: #e6edf3; border: 1px solid #3a4250; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,.6);
+      background: var(--panel); color: var(--text); border: 1px solid var(--line2); border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,.6);
       font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
     .r2remote[hidden] { display: none; }
-    .r2remote .r2r-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #2a313c; cursor: move; user-select: none; touch-action: none; }
-    .r2remote .r2r-bar b { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #8b949e; }
-    .r2remote .r2r-bar .r2r-x { margin-left: auto; background: none; border: none; color: #8b949e; font-size: 16px; cursor: pointer; }
+    .r2remote .r2r-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: move; user-select: none; touch-action: none; }
+    .r2remote .r2r-bar b { font-size: var(--fs); letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .r2remote .r2r-bar .r2r-x { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; }
     .r2remote .r2r-pads { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; }
     @media (max-width: 640px) { .r2remote .r2r-pads { grid-template-columns: 1fr; } }
-    .r2remote .r2r-pad { border: 1px solid #2a313c; border-radius: 10px; padding: 10px 12px 14px; }
+    .r2remote .r2r-pad { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 14px; }
     .r2remote .r2r-pad.r2r-off { opacity: .5; pointer-events: none; }
-    .r2remote h4 { margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-    .r2remote .r2r-chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #2a313c; color: #8b949e; font-weight: 400; }
-    .r2remote .r2r-chip.r2r-virtual { color: #3fb950; background: rgba(63,185,80,.12); }
+    .r2remote h4 { margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font-size: var(--fs); }
+    .r2remote .r2r-chip { font-size: var(--fs-s); padding: 1px 8px; border-radius: 999px; background: var(--line); color: var(--muted); font-weight: 400; }
+    .r2remote .r2r-chip.r2r-virtual { color: var(--green); background: rgba(63,185,80,.12); }
     .r2remote .r2r-chip.r2r-real { color: #ffd60a; background: rgba(255,214,10,.12); }
-    .r2remote .r2r-warn { display: none; font-size: 12px; color: #ffd60a; border: 1px solid rgba(255,214,10,.5); border-radius: 6px; padding: 5px 8px; margin: 0 0 8px; }
+    .r2remote .r2r-warn { display: none; font-size: var(--fs-s); color: #ffd60a; border: 1px solid rgba(255,214,10,.5); border-radius: 6px; padding: 5px 8px; margin: 0 0 8px; }
     .r2remote .r2r-pad.r2r-real .r2r-warn { display: block; }
     .r2remote .r2r-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; align-items: center; justify-items: center; }
     .r2remote .r2r-shoulders, .r2remote .r2r-faces { grid-column: 1 / -1; display: flex; gap: 10px; }
-    .r2remote .r2r-b { position: relative; min-width: 44px; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid #3a4250; background: #21262d;
-      color: #e6edf3; font: 600 13px system-ui; cursor: pointer; user-select: none; touch-action: none; overflow: hidden; }
+    .r2remote .r2r-b { position: relative; min-width: 44px; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line2); background: #21262d;
+      color: var(--text); font: 600 13px system-ui; cursor: pointer; user-select: none; touch-action: none; overflow: hidden; }
     .r2remote .r2r-b.r2r-round { width: 44px; height: 44px; min-width: 0; padding: 0; border-radius: 50%; }
     .r2remote .r2r-b.r2r-down { background: #30363d; transform: scale(.96); }
     .r2remote .r2r-b.r2r-hold, .r2remote .r2r-knob.r2r-hold { background: rgba(255,214,10,.18); border-color: #ffd60a; color: #ffd60a; box-shadow: 0 0 10px rgba(255,214,10,.45); }
     .r2remote .r2r-b.r2r-hold::after { content: 'HOLD'; position: absolute; left: 0; right: 0; bottom: 1px; font-size: 8px; letter-spacing: 1px; }
     .r2remote .r2r-b .r2r-fill { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: #ffd60a; }
     .r2remote .r2r-b.r2r-down .r2r-fill { width: 100%; transition: width .6s linear; }
-    .r2remote .r2r-b.r2r-sent { background: rgba(63,185,80,.25); border-color: #3fb950; }
-    .r2remote .r2r-cross { color: #7aa2ff; } .r2remote .r2r-circle { color: #ff7b7b; } .r2remote .r2r-ps { font-size: 11px; }
-    .r2remote .r2r-stickbox { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(#1c2128, #0f1318); border: 1px solid #3a4250; position: relative; touch-action: none; }
+    .r2remote .r2r-b.r2r-sent { background: rgba(63,185,80,.25); border-color: var(--green); }
+    .r2remote .r2r-cross { color: #7aa2ff; } .r2remote .r2r-circle { color: #ff7b7b; } .r2remote .r2r-ps { font-size: var(--fs-s); }
+    .r2remote .r2r-stickbox { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(#1c2128, #0f1318); border: 1px solid var(--line2); position: relative; touch-action: none; }
     .r2remote .r2r-knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%;
       background: radial-gradient(circle at 40% 35%, #4b5563, #1f2937); border: 1px solid #6b7280; cursor: grab; display: grid; place-items: center;
-      font: 600 10px system-ui; color: #8b949e; touch-action: none; }
+      font: 600 10px system-ui; color: var(--muted); touch-action: none; }
     .r2remote .r2r-dpad { display: grid; grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 34px); gap: 3px; }
     .r2remote .r2r-dpad .r2r-b { min-width: 0; width: 38px; height: 34px; padding: 0; }
-    .r2remote .r2r-help { margin: 0 14px 14px; font-size: 12px; color: #8b949e; }`;
+    .r2remote .r2r-help { margin: 0 14px 14px; font-size: var(--fs-s); color: var(--muted); }`;
   document.head.append(s);
 }
 

@@ -10,54 +10,33 @@
 <script type="importmap">
   { "imports": { "three": "./vendor/three.module.min.js" } }
 </script>
+<link rel="stylesheet" href="console.css">
 <style>
-  :root { --bg:#0d1117; --panel:#161b22; --line:#2a313c; --text:#e6edf3; --muted:#8b949e;
-          --blue:#3b82f6; --green:#3fb950; --amber:#d29922; --red:#f85149; }
-  * { box-sizing:border-box; }
   html, body { height:100%; }
-  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
-         display:flex; flex-direction:column; overflow:hidden; }
-  header { display:flex; align-items:center; gap:10px; padding:6px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; flex:none; }
-  header .brand { height:44px; } header .logo { margin-left:auto; height:40px; }
-  nav.modes { display:flex; gap:4px; margin-left:12px; }
-  nav.modes a { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:8px; color:var(--muted);
-                text-decoration:none; border:1px solid transparent; }
-  nav.modes a:hover { color:var(--text); background:var(--line); }
-  nav.modes a.on { color:var(--text); background:var(--line); border-color:#3a4250; }
-  .pill { padding:2px 10px; border-radius:999px; font-size:12px; background:var(--line); color:var(--muted); }
-  .pill.ok { background:rgba(63,185,80,.15); color:var(--green); } .pill.warn { background:rgba(210,153,34,.15); color:var(--amber); }
-  .pill.bad { background:rgba(248,81,73,.15); color:var(--red); }
-  .pill i, button i, h2 i, label.chk i { margin-right:6px; }
-  main { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(300px,.75fr); gap:10px; padding:10px; }
+  body { display:flex; flex-direction:column; overflow:hidden; }
+  main { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(300px,.75fr); gap:var(--gap); padding:var(--gap); }
   @media (max-width:1100px) { body { overflow:auto; display:block; } main { grid-template-columns:1fr; } }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
-  .card h2 { margin:0; padding:8px 12px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
-             border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:8px; flex:none; }
-  .card h2 .v { color:var(--text); text-transform:none; letter-spacing:0; }
+  .card { display:flex; flex-direction:column; min-height:0; }
+  .card h2 { flex:none; }
   #c-nav { overflow:auto; }
   canvas#map { width:min(100%, calc((100vh - 330px) * 1.5)); aspect-ratio:3 / 2; display:block; margin:0 auto; background:#0b0f14;
                cursor:crosshair; flex:none; touch-action:none; }
   #view3d { position:relative; width:100%; flex:1; min-height:240px; background:#0b0f14; }
   #view3d canvas { display:block; width:100%; height:100%; }
   #view3d .msg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); }
-  .hint { color:var(--muted); font-size:11px; padding:4px 12px; }
+  .hint { color:var(--muted); font-size: var(--fs-s); padding:4px 12px; }
   .bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 12px; border-top:1px solid var(--line); flex:none; }
-  button { background:var(--line); color:var(--text); border:1px solid #3a4250; border-radius:6px; padding:5px 10px; font:inherit; cursor:pointer; }
-  button.on, button.primary { background:var(--blue); border-color:var(--blue); }
-  button:disabled { opacity:.45; cursor:default; }
-  label.chk { color:var(--muted); font-size:12px; display:flex; gap:4px; align-items:center; }
-  select { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:4px; padding:3px 6px; font:inherit; }
   .readings { padding:8px 12px; display:grid; gap:5px; flex:none; }
-  .rd { display:grid; grid-template-columns:130px 1fr 64px; gap:8px; align-items:center; font-size:12px; }
+  .rd { display:grid; grid-template-columns:130px 1fr 64px; gap:8px; align-items:center; font-size: var(--fs-s); }
   .rd .n { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .rd .n i { font-style:normal; font-size:10px; padding:0 5px; border-radius:6px; margin-left:4px; }
   .rd .n i.sim { background:rgba(59,130,246,.18); color:var(--blue); } .rd .n i.real { background:rgba(63,185,80,.15); color:var(--green); }
   .rd .track { position:relative; height:10px; background:#0b0f14; border-radius:5px; overflow:hidden; }
   .rd .fill { position:absolute; inset:0 auto 0 0; border-radius:5px; }
   .rd .stop { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--red); }
-  .rd .raw { position:absolute; top:0; bottom:0; width:2px; background:#e6edf3; opacity:.8; }
+  .rd .raw { position:absolute; top:0; bottom:0; width:2px; background:var(--text); opacity:.8; }
   .rd b { text-align:right; font-variant-numeric:tabular-nums; }
-  .navstate { padding:8px 12px; border-top:1px solid var(--line); font-size:13px; flex:none; }
+  .navstate { padding:8px 12px; border-top:1px solid var(--line); font-size: var(--fs); flex:none; }
   .navstate .big { font-size:16px; font-weight:700; }
   .log { font:12px/1.5 ui-monospace,Consolas,monospace; padding:8px 12px; flex:1; min-height:80px; overflow:auto; background:#0b0f14; }
   .log .tx { color:#79c0ff; } .log .unsent { color:var(--amber); } .log .rx { color:var(--muted); } .log .info { color:var(--muted); }
@@ -67,23 +46,23 @@
   .seg button:first-child { border-radius:6px 0 0 6px; } .seg button:last-child { border-radius:0 6px 6px 0; }
   .seg button.on { background:var(--blue); border-color:var(--blue); color:#fff; }
   .modepick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .modepick .mp-label { color:var(--muted); font-size:12px; }
-  .modepick .mp-state { font-size:12px; color:var(--muted); }
+  .modepick .mp-label { color:var(--muted); font-size: var(--fs-s); }
+  .modepick .mp-state { font-size: var(--fs-s); color:var(--muted); }
   .modepick .mp-state.ok { color:var(--green); font-weight:600; }
-  #routeinfo { color:var(--muted); font-size:12px; }
+  #routeinfo { color:var(--muted); font-size: var(--fs-s); }
   #settings details { border-top:1px solid var(--line); }
-  #settings summary { padding:8px 12px; cursor:pointer; font-size:13px; font-weight:600; display:flex; gap:10px; align-items:center; }
-  #settings summary .st { font-weight:400; color:var(--muted); font-size:12px; }
+  #settings summary { padding:8px 12px; cursor:pointer; font-size: var(--fs); font-weight:600; display:flex; gap:10px; align-items:center; }
+  #settings summary .st { font-weight:400; color:var(--muted); font-size: var(--fs-s); }
   #settings .groups { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px 18px; padding:4px 12px 10px; }
-  #settings h4 { margin:6px 0 4px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  #settings .f { display:grid; grid-template-columns:150px 1fr 74px; gap:8px; align-items:center; font-size:12px; margin:3px 0; }
+  #settings h4 { margin:6px 0 4px; font-size: var(--fs-s); color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  #settings .f { display:grid; grid-template-columns:150px 1fr 74px; gap:8px; align-items:center; font-size: var(--fs-s); margin:3px 0; }
   #settings .f label { color:var(--muted); }
   #settings .f.changed label { color:var(--amber); }
   #settings .f input[type=range] { width:100%; accent-color:var(--blue); }
   #settings .f b { font-variant-numeric:tabular-nums; text-align:right; font-weight:600; }
   #settings .acts { display:flex; gap:8px; align-items:center; padding:0 12px 10px; }
   .rd { grid-template-columns:130px 1fr 64px auto; }
-  .rd .sw { padding:1px 6px; font-size:11px; }
+  .rd .sw { padding:1px 6px; font-size: var(--fs-s); }
   .rd .sw.off { color:var(--red); border-color:var(--red); }
 </style>
 </head>
@@ -94,13 +73,13 @@
     <a href="./"><i class="fa-solid fa-gauge-high"></i>Console</a>
     <a href="nav.html" class="on"><i class="fa-solid fa-route"></i>Navigation</a>
     <a href="setup.html"><i class="fa-solid fa-gear"></i>Setup</a>
-    <a id="manual" href="https://github.com/BeskarCode/ROS2D2/blob/main/MANUAL.md#navigation" target="_blank" rel="noopener" title="The user manual on GitHub: what each part of this page does (opens a new tab)"><i class="fa-solid fa-book"></i>Manual</a>
+    <a id="manual" href="https://github.com/BeskarCode/ROS2D2/blob/main/MANUAL.md#navigation" target="_blank" rel="noopener" title="The user manual on GitHub: what each part of this page does (opens a new tab)"><i class="fa-solid fa-book"></i>Manual<i class="fa-solid fa-arrow-up-right-from-square ext" aria-label="(opens GitHub in a new tab)"></i></a>
   </nav>
-  <span id="conn" class="pill">connecting…</span>
+  <span hidden id="conn" class="pill">connecting…</span>
   <span id="simpill" class="pill warn" hidden><i class="fa-solid fa-flask"></i>simulation</span>
-  <span id="automode" class="pill"><i class="fa-solid fa-gamepad"></i>auto: ?</span>
-  <span id="navpill" class="pill">nav: ?</span>
-  <span id="megapill" class="pill bad"><i class="fa-solid fa-microchip"></i>mega: not connected</span>
+  <span hidden id="automode" class="pill"><i class="fa-solid fa-gamepad"></i>auto: ?</span>
+  <span hidden id="navpill" class="pill">nav: ?</span>
+  <span hidden id="megapill" class="pill bad"><i class="fa-solid fa-microchip"></i>mega: not connected</span>
   <img class="logo" src="astromech-spain-logo.png" alt="Astromech Spain">
 </header>
 <main id="main">

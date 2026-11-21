@@ -1,6 +1,7 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Navigation page: watch the navigator drive R2 (the real one or the simulated one), give it a
 // goal, edit the simulated room, and read the telemetry and what goes to the Mega.
+import './statusbar.js';
 import './remote.js';
 import { connect, publish, subscribe } from './rosbridge.js';
 import { MODELS } from './models.js';
@@ -10,7 +11,7 @@ import { createModePick } from './modepick.js';
 import { GROUPS, FIELDS, changedKeys, toNavYaml } from './navsettings.js';
 import { call } from './rosbridge.js';
 import { freeText, nearestPoint } from './sensormath.js';
-import { onSaveKey } from './savekey.js';
+import { onSaveKey, toast } from './savekey.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
@@ -247,7 +248,7 @@ function telemetry() {
     const gone = lost.includes(n), age = sources[n];
     const b = el.querySelector('b');
     b.textContent = (ignored ? 'ignored · ' : '') + (gone ? `LOST · ${age == null ? '?' : age.toFixed(1)} s`
-      : !reporting ? 'no data' : s.pitch_deg > 30 ? 'floor ok'
+      : !reporting ? 'not responding' : s.pitch_deg > 30 ? 'floor ok'
       : d == null || !Number.isFinite(d) ? 'clear' : `${d.toFixed(2)} m`);
     b.style.color = gone ? 'var(--red)' : '';
     b.title = age == null ? 'never heard' : `last reading ${age.toFixed(2)} s ago`;
@@ -394,7 +395,7 @@ function buildSettings() {
     });
     inp.addEventListener('change', () => applyLive(f.key, P.nav[f.key]));
   }
-  $('nav-save').onclick = saveNav;
+  $('nav-save').onclick = async () => { const r = await saveNav(); toast(r.text, r.ok ? 'ok' : r.ok === null ? 'warn' : 'bad'); };
   $('nav-defaults').onclick = () => {
     for (const f of FIELDS) { P.nav[f.key] = P.navDefaults[f.key]; applyLive(f.key, P.nav[f.key]); }
     settingsDirty = true;
