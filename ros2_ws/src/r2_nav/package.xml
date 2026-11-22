@@ -20,6 +20,8 @@
   <exec_depend>python3-yaml</exec_depend>
   <exec_depend>r2_sensors</exec_depend>
   <exec_depend>r2_dome_tracker</exec_depend>
+  <exec_depend>r2_camera</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
 
   <test_depend>python3-pytest</test_depend>
 

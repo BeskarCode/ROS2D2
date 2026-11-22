@@ -93,6 +93,40 @@ class DomeEstimate:
         self.angle = (self.angle + 180.0) % 360.0 - 180.0
 
 
+MEGA_TIMEOUT = 0.3   # s: the Mega stops the dome this long after the last ROS:DOME: order
+
+
+class SpeedIntegrator:
+    """The dome angle from every DM: speed ordered on /dome/speed_cmd, whoever sent it (face tracking,
+    Follow a colour, Patrol / Free roam). An order counts until the next one, or MEGA_TIMEOUT."""
+
+    def __init__(self, deg_per_s_at_80=90.0):
+        self.est = DomeEstimate(deg_per_s_at_80)
+        self.reset()
+
+    def reset(self):
+        self.est.reset()
+        self.last = None             # (t, speed, invert) of the last order, counted up to `counted`
+        self.counted = None
+
+    def _catch_up(self, now):
+        if self.last is None:
+            return
+        t, speed, invert = self.last
+        end = min(now, t + MEGA_TIMEOUT)
+        if end > self.counted:
+            self.est.update(speed, invert, end - self.counted)
+            self.counted = end
+
+    def on_speed(self, t, speed, invert):
+        self._catch_up(t)
+        self.last, self.counted = (t, speed, invert), t
+
+    def angle(self, now):
+        self._catch_up(now)
+        return self.est.angle
+
+
 REF_HALF_FOV = 30.0   # degrees off centre that count as error 1 (the gains were tuned on a 60 deg camera)
 
 

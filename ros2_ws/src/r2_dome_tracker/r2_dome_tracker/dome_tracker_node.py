@@ -47,7 +47,7 @@ from std_msgs.msg import Bool, Empty, Float32, Int16, String
 from vision_msgs.msg import Detection2DArray
 
 from r2_camera.config import config_path, load_cameras
-from r2_dome_tracker.control import (DomeEstimate, DomeTracker, FaceLock, Gains, SoundGate, bearing_deg,
+from r2_dome_tracker.control import (DomeTracker, FaceLock, Gains, SoundGate, SpeedIntegrator, bearing_deg,
                                      face_error, face_to_error)
 
 GAIN_PARAMS = {"min_speed", "max_speed", "kd", "deadzone", "invert", "lost_after"}
@@ -100,8 +100,7 @@ class DomeTrackerNode(Node):
             p(f"{name}.hfov_deg", hfov, ParameterDescriptor(description="Horizontal field of view, degrees"))
 
         self.tracker = DomeTracker(self._gains())
-        self.dome = DomeEstimate(self.param("deg_per_s_at_80"))
-        self._last_tick = None
+        self.dome = SpeedIntegrator(self.param("deg_per_s_at_80"))   # every /dome/speed_cmd, whoever sends it
         self.width = {}            # picture width of each camera
         self.latest = {}           # each camera's newest picture: [(t, bearing_deg, size), ...]
         self.lock = FaceLock(self.param("lock_gate_deg"), self.param("lock_calm_s"))
@@ -129,6 +128,8 @@ class DomeTrackerNode(Node):
         self.pub_command = self.create_publisher(String, "/mega/command", 10)
         self.pub_angle = self.create_publisher(Float32, "/dome/angle_estimate", 10)
         self.create_subscription(Empty, "/dome/angle_reset", lambda _: self.dome.reset(), 10)
+        # the angle counts every speed ordered: ours, and Follow a colour's or the wander node's while a mode is on
+        self.create_subscription(Int16, "/dome/speed_cmd", self._on_speed_cmd, 10)
 
         self.add_on_set_parameters_callback(self._check_params)
         self.add_post_set_parameters_callback(self._after_params)
@@ -172,7 +173,7 @@ class DomeTrackerNode(Node):
         if "sound_min_gap_s" in names:
             self.sound_gate.min_gap_s = self.param("sound_min_gap_s")
         if "deg_per_s_at_80" in names:
-            self.dome.deg_per_s_at_80 = self.param("deg_per_s_at_80")
+            self.dome.est.deg_per_s_at_80 = self.param("deg_per_s_at_80")
         if "rate_hz" in names:
             self._timer.cancel()
             self._timer = self.create_timer(1.0 / self.param("rate_hz"), self._tick)
@@ -196,7 +197,7 @@ class DomeTrackerNode(Node):
         # estimated dome angle; in simulation they stand still, the bearing already is that).
         now = self.get_clock().now().nanoseconds / 1e9
         simulate = self.param("simulate")
-        faces = [(ft, b if simulate else b + self.dome.angle, size, b)
+        faces = [(ft, b if simulate else b + self.dome_angle, size, b)
                  for got in self.latest.values() for ft, b, size in got
                  if now - ft <= self.param("lost_after")]
         best, new, self.waiting = self.lock.update(faces, now)
@@ -204,7 +205,7 @@ class DomeTrackerNode(Node):
             sound = self.param("sound_new_face").strip()
             if sound and self.sound_gate.ready(now):
                 self.pub_command.publish(String(data=sound))      # hello: a new face to follow
-        err = None if best is None else face_to_error(best[3], self.dome.angle, self._cam_geometry(), simulate)
+        err = None if best is None else face_to_error(best[3], self.dome_angle, self._cam_geometry(), simulate)
         if err is None:
             self.tracker.no_face()
         else:
@@ -216,13 +217,19 @@ class DomeTrackerNode(Node):
     def _on_track_mode(self, msg):
         self.track_on = msg.data
 
+    def _now(self):
+        return self.get_clock().now().nanoseconds / 1e9
+
+    def _on_speed_cmd(self, msg):
+        self.dome.on_speed(self._now(), msg.data, self.param("invert"))
+
+    @property
+    def dome_angle(self):
+        return self.dome.angle(self._now())
+
     def _tick(self):
-        now = self.get_clock().now().nanoseconds / 1e9
-        dt = 0.0 if self._last_tick is None else now - self._last_tick
-        self._last_tick = now
-        speed = self._step(now)
-        self.dome.update(speed, self.param("invert"), dt)
-        self.pub_angle.publish(Float32(data=float(self.dome.angle)))
+        self._step(self._now())
+        self.pub_angle.publish(Float32(data=float(self.dome_angle)))
 
     def _step(self, now):
         """Publish this tick's speed and status; returns the speed the dome turns at."""

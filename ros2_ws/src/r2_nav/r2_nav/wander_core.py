@@ -19,6 +19,7 @@ import math
 from dataclasses import dataclass, field
 
 from r2_dome_tracker.control import REF_HALF_FOV, DomeTracker, FaceLock
+from r2_nav.modes import WANDER_MODES
 
 BLOCKED = ("searching", "gave up")      # /nav/state states that count as blocked
 SWEEP_DEG = 45.0                         # looking round: the dome goes this far each side
@@ -163,3 +164,13 @@ class Wander:
         out.home_dist = None if home is None else home[0]
         out.dome = self._dome(now, best, waiting, dome_deg)
         return out
+
+
+def wander_active(mode, auto_on):
+    """Does the head run? Patrol or Free roam, with the autonomous mode on."""
+    return bool(auto_on) and mode in WANDER_MODES
+
+
+def leave_outputs(was_active, active):
+    """What to send when the head stops: one stop for the dome, then nothing (the dome tracker takes over)."""
+    return [("dome", 0)] if was_active and not active else []

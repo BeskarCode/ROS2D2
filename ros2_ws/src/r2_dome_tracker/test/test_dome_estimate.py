@@ -68,3 +68,31 @@ def test_simulate_shifts_by_the_dome_angle():
 def test_simulate_drops_faces_the_turned_cameras_would_not_see():
     # Dome turned 90 deg right: a face at -40 is 130 deg off, out of both cameras
     assert face_to_error(-40.0, 90.0, CAMS, simulate=True) is None
+
+
+# ---------- the angle from every /dome/speed_cmd (the tracker's, Follow a colour's, the wander node's) ----------
+def test_speed_integrator_sums_what_was_sent():
+    from r2_dome_tracker.control import SpeedIntegrator
+    s = SpeedIntegrator(deg_per_s_at_80=90.0)
+    for i in range(10):                                   # 80 for 1 s, a message every 0.1 s
+        s.on_speed(i * 0.1, 80, invert=False)
+    assert s.angle(1.0) == pytest.approx(90.0)
+    s.on_speed(1.0, 0, invert=False)
+    assert s.angle(5.0) == pytest.approx(90.0)            # stopped
+
+
+def test_speed_integrator_stops_counting_when_the_orders_stop():
+    from r2_dome_tracker.control import SpeedIntegrator
+    s = SpeedIntegrator(deg_per_s_at_80=90.0)
+    s.on_speed(0.0, 80, invert=False)
+    assert s.angle(2.0) == pytest.approx(90.0 * 0.3)      # the Mega stops the dome 300 ms after the last one
+
+
+def test_speed_integrator_invert_and_reset():
+    from r2_dome_tracker.control import SpeedIntegrator
+    s = SpeedIntegrator(deg_per_s_at_80=90.0)
+    s.on_speed(0.0, -40, invert=True)
+    s.on_speed(0.2, 0, invert=True)
+    assert s.angle(0.2) == pytest.approx(9.0)             # 45 deg/s right for 0.2 s
+    s.reset()
+    assert s.angle(1.0) == 0.0

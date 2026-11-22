@@ -176,3 +176,17 @@ def test_heading_none_until_a_pose():
     assert w.step(0.1, None, None, [], 0.0).heading is None
     o = w.step(0.2, (1.0, 2.0, 0.7), "forward", [], 0.0)
     assert o.heading == pytest.approx(0.7) and o.home_dist == pytest.approx(0.0)   # the start is where it is now
+
+
+def test_wander_active_only_in_its_modes_with_auto_on():
+    from r2_nav.wander_core import wander_active
+    assert wander_active("patrol", True) and wander_active("free", True)
+    assert not wander_active("patrol", False)
+    assert not wander_active("forward", True) and not wander_active("", True) and not wander_active(None, True)
+
+
+def test_mode_off_stops_dome_once():
+    from r2_nav.wander_core import leave_outputs
+    assert leave_outputs(True, False) == [("dome", 0)]     # leaving: one stop for the dome
+    assert leave_outputs(False, False) == []               # then silence (the dome tracker is free)
+    assert leave_outputs(False, True) == [] and leave_outputs(True, True) == []

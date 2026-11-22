@@ -1,5 +1,5 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
-"""The navigator and the follow node (one drives per mode) (the simulation and the main launch include it),
+"""The navigator, the follow node and the wander node (Patrol and Free roam's head) (one drives per mode) (the simulation and the main launch include it),
 and on the droid the dead reckoning that gives them /odom (the simulator brings its own).
 
     ros2 launch r2_nav nav.launch.py                       # droid
@@ -45,6 +45,9 @@ def generate_launch_description():
         Node(package="r2_nav", executable="navigator", name="navigator",
              parameters=[{"config": LaunchConfiguration("nav_config")}], output="screen"),
         Node(package="r2_nav", executable="follow", name="follow",
+             parameters=[{"config": LaunchConfiguration("nav_config")}], output="screen"),
+        # the head of Patrol and Free roam (the navigator is their legs)
+        Node(package="r2_nav", executable="wander", name="wander",
              parameters=[{"config": LaunchConfiguration("nav_config")}], output="screen"),
         Node(package="r2_nav", executable="dead_reckoning", name="dead_reckoning", output="screen",
              condition=IfCondition(LaunchConfiguration("dead_reckoning"))),
