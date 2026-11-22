@@ -9,10 +9,9 @@
 import { toast } from './savekey.js';
 import { publish, subscribe } from './rosbridge.js';
 import { showStream, stopStream } from './mjpeg.js';
-import { COMBOS, MODES, MODE_LABELS, comboChoices, hsvToRgb, losesAction, pickToColor, toYaml } from './modesform.js';
+import { COMBOS, MODES, MODE_ICONS as ICONS, MODE_LABELS, comboChoices, hsvToRgb, losesAction, pickToColor, toYaml } from './modesform.js';
 
 const $ = (id) => document.getElementById(id);
-const ICONS = { goto: 'fa-location-crosshairs', forward: 'fa-arrow-up', patrol: 'fa-route', follow: 'fa-shirt' };
 const FOLLOW_SLIDERS = [
   // key, label, icon, min, max, step, how it reads
   ['hue_tol', 'hue margin', 'fa-palette', 2, 40, 1, (v) => `±${v}`],

@@ -10,6 +10,7 @@ const DEFAULTS = {
   patrol: { combo: null, sound_on: '', sound_off: '' },
   follow: { combo: null, sound_on: 'S1:$12', sound_off: 'S1:$13', sound_lost: 'S1:$22', camera: 'cam1', color: null,
             hue_tol: 12, light_tol: 70, area_ref: null, distance: 1.5, max_speed: 0.3, search_s: 5 },
+  free: { combo: null, sound_on: '', sound_off: '' },
 };
 const cfg = () => JSON.parse(JSON.stringify(DEFAULTS));
 
@@ -18,6 +19,7 @@ function fixedCfg() {
   let c = cfg();
   c.follow.combo = 'FOOT_UP_PS';
   c.patrol.combo = 'DOME_LEFT_L2_CROSS';
+  c.free.combo = 'FOOT_DOWN_L1';
   c.forward.sound_on = 'MD:$PS1';
   Object.assign(c.follow, { hue_tol: 8, light_tol: 55, distance: 2.2, max_speed: 0.25, search_s: 0 });
   c = pickToColor({ h: 104, s: 201, v: 87.6, rgb: [20, 60, 88], warning: '', match: 0.21, area: 0.0712345 }, c);
@@ -89,4 +91,14 @@ test('startMode: the mode PS + L2 starts, or null', () => {
   assert.equal(startMode({ ...DEFAULTS, goto: { combo: null }, patrol: { combo: 'FOOT_PS_L2' } }), 'patrol');
   assert.equal(startMode({ ...DEFAULTS, goto: { combo: 'FOOT_UP' } }), null);
   assert.equal(startMode({}), null);
+});
+
+import { MODES, MODE_LABELS, MODE_ICONS } from '../www/modesform.js';
+test('Free roam: the last mode, with its label and icon; Patrol has its new icon', () => {
+  assert.equal(MODES.at(-1), 'free');
+  assert.equal(MODE_LABELS.free, 'Free roam');
+  assert.deepEqual(MODE_ICONS, { goto: 'fa-location-crosshairs', forward: 'fa-arrow-up', patrol: 'fa-bullseye',
+    follow: 'fa-shirt', free: 'fa-shuffle' });
+  const owners = comboChoices(fixedCfg(), 'goto').filter((c) => c.taken_by).map((c) => [c.name, c.taken_by]);
+  assert.deepEqual(owners.find(([n]) => n === 'FOOT_DOWN_L1'), ['FOOT_DOWN_L1', 'free']);
 });

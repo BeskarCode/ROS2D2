@@ -3,8 +3,9 @@
 // combinations each mode can take, modes.yaml as text, and a colour picked on the camera.
 // Names and order are r2_nav/modes.py's (and the firmware's ROS_COMBO_NAMES).
 
-export const MODES = ['goto', 'forward', 'patrol', 'follow'];
-export const MODE_LABELS = { goto: 'Go to a point', forward: 'Go forward', patrol: 'Patrol', follow: 'Follow a colour' };
+export const MODES = ['goto', 'forward', 'patrol', 'follow', 'free'];
+export const MODE_LABELS = { goto: 'Go to a point', forward: 'Go forward', patrol: 'Patrol', follow: 'Follow a colour', free: 'Free roam' };
+export const MODE_ICONS = { goto: 'fa-location-crosshairs', forward: 'fa-arrow-up', patrol: 'fa-bullseye', follow: 'fa-shirt', free: 'fa-shuffle' };
 
 const DIRS = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
 export const COMBOS = [
@@ -45,6 +46,7 @@ const FIELDS = {
   goto: ['combo', 'sound_on', 'sound_off'],
   forward: ['combo', 'sound_on', 'sound_off'],
   patrol: ['combo', 'sound_on', 'sound_off'],
+  free: ['combo', 'sound_on', 'sound_off'],
   follow: ['combo', 'sound_on', 'sound_off', 'sound_lost', 'camera', 'color', 'hue_tol', 'light_tol',
            'area_ref', 'distance', 'max_speed', 'search_s'],
 };

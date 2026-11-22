@@ -15,7 +15,7 @@ import yaml
 from r2_nav.nav_core import SOUND
 
 USER_MODES = os.path.expanduser("~/.config/ros2d2/modes.yaml")
-MODES = ("goto", "forward", "patrol", "follow")
+MODES = ("goto", "forward", "patrol", "follow", "free")      # free last, like the firmware's MODE_FREE
 _DIRS = ("UP", "DOWN", "LEFT", "RIGHT")
 COMBOS = (("FOOT_PS_L2",)
           + tuple(f"FOOT_{d}{s}" for d in _DIRS for s in ("", "_CROSS", "_CIRCLE", "_L1", "_PS", "_L3"))
@@ -27,6 +27,7 @@ DEFAULTS = {
     "goto": dict(_COMMON, combo="FOOT_PS_L2"),
     "forward": dict(_COMMON),
     "patrol": dict(_COMMON),
+    "free": dict(_COMMON),
     "follow": dict(_COMMON, sound_on="S1:$12", sound_off="S1:$13", sound_lost="S1:$22", camera="cam1",
                    color=None, hue_tol=12, light_tol=70, area_ref=None, distance=1.5, max_speed=0.3,
                    search_s=5),
@@ -123,7 +124,8 @@ def drives_in(mode, mine):
     return mode == mine
 
 
-NAV_MODES = ("goto", "forward", "patrol")       # the modes the navigator drives (follow has its own node)
+NAV_MODES = ("goto", "forward", "patrol", "free")   # the modes the navigator drives (follow has its own node)
+WANDER_MODES = ("patrol", "free")                  # the wander node chooses where they go
 
 
 def nav_mode(mode):

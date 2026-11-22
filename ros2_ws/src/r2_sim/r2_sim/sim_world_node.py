@@ -167,12 +167,12 @@ class SimWorld(Node):
 
     def _press(self, what):
         """The fake Mega's controller: button (PS + L2), stick, controller (lost), or
-        mode:<goto|forward|patrol|follow> (the page's mode buttons)."""
+        mode:<goto|forward|patrol|follow|free> (the page's mode buttons)."""
         word = what
         if what.startswith("mode:") and what[5:] in MODES:
             word = f"mode {what[5:]}"
         elif what not in ("button", "stick", "controller"):
-            return "press: button, stick, controller or mode:<goto|forward|patrol|follow>"
+            return "press: button, stick, controller or mode:<goto|forward|patrol|follow|free>"
         try:
             fd = os.open(self.get_parameter("mega_ctl").value, os.O_WRONLY | os.O_NONBLOCK)
             os.write(fd, (word + "\n").encode())

@@ -17,7 +17,7 @@ Everything ROS sends starts with ROS:, so it stands apart from the console comma
   ROS:TRACK:?              ask for the state
 
   ROS:BIND:CLEAR          forget the combo bindings (answers "BIND CLEAR")
-  ROS:BIND:<COMBO>,<mode> bind a controller combo to a mode (goto|forward|patrol|follow; none frees it);
+  ROS:BIND:<COMBO>,<mode> bind a controller combo to a mode (goto|forward|patrol|follow|free; none frees it);
                            answers "BIND OK <COMBO> <mode>". ROS:BIND:RESET restores the default
                            (FOOT_PS_L2 -> goto). Errors: ERR BIND FULL, ERR unknown combo/mode.
 

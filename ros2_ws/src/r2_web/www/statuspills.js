@@ -1,8 +1,9 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // The header's status pills, the same on every page: ROS, Mega, Navs, Pico, Lidar, Camera, Mode, each as
 // "Name: state" (green ok, amber so-so, red gone, grey not known yet). Pure: tested with node --test.
+import { MODE_LABELS } from './modesform.js';
+
 const FRESH_MS = 3000;
-const MODE_LABELS = { goto: 'Go to a point', forward: 'Go forward', patrol: 'Patrol', follow: 'Follow a colour' };
 
 const pill = (key, icon, text, cls, title, href) => ({ key, icon, text, cls, title, href });
 

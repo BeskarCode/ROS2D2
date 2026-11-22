@@ -2,7 +2,7 @@
 # combo: one of the names in r2_nav/modes.py (null = none). DOME_PS_L2 is face tracking: not assignable.
 goto:    {combo: FOOT_PS_L2, sound_on: "", sound_off: ""}   # the navigator has its own sounds
 forward: {combo: null, sound_on: "", sound_off: ""}
-patrol:  {combo: null, sound_on: "", sound_off: ""}
+patrol:  {combo: null, sound_on: "", sound_off: ""}   # wander within a radius (nav.yaml wander:)
 follow:
   combo: null
   sound_on: "S1:$12"
@@ -16,3 +16,4 @@ follow:
   distance: 1.5         # m, 0.8-4
   max_speed: 0.3        # m/s, 0.05-0.4
   search_s: 5           # s searching with the dome before giving up, 0-20
+free:    {combo: null, sound_on: "", sound_off: ""}   # Free roam: Patrol without the radius

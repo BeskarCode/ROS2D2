@@ -19,7 +19,7 @@ Topics:
   out  /mega/tx               std_msgs/String     every line sent to the Mega; "(not sent) ..." when
                                                   the port is closed
   out  /r2/auto_mode          std_msgs/Bool       autonomous mode on or off (latched)
-  out  /r2/mode               std_msgs/String     which mode is on (goto|forward|patrol|follow), "" when
+  out  /r2/mode               std_msgs/String     which mode is on (goto|forward|patrol|follow|free), "" when
                                                   off (latched)
   in   /r2/modes/reload       std_msgs/Empty      re-read modes.yaml and send the combo bindings
   out  /r2/auto_mode/reason   std_msgs/String     why it went off: boot, button, stick,

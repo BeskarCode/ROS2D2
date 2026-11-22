@@ -16,14 +16,15 @@ test('stickValue: centre, the edge, kept inside the circle; up is a smaller y', 
 test('modeButtons: no Go to a point on the droid, face tracking last, no combo = no start', () => {
   const modes = { goto: { combo: 'FOOT_PS_L2' }, forward: { combo: 'FOOT_UP_PS' }, patrol: { combo: null }, follow: { combo: 'DOME_UP_L2' } };
   const droid = modeButtons(modes, false);
-  assert.deepEqual(droid.map((b) => b.mode), ['forward', 'patrol', 'follow', 'tracking']);
+  assert.deepEqual(droid.map((b) => b.mode), ['forward', 'patrol', 'follow', 'free', 'tracking']);
   assert.equal(droid.find((b) => b.mode === 'patrol').combo, null);
+  assert.equal(droid.find((b) => b.mode === 'free').label, 'Free roam');
   assert.equal(droid.at(-1).combo, 'DOME_PS_L2');
   assert.equal(droid.at(-1).label, 'Face tracking');
   const sim = modeButtons(modes, true);
   assert.equal(sim[0].mode, 'goto');
   assert.equal(sim[0].label, 'Go to a point');
-  assert.deepEqual(modeButtons({}, false).map((b) => b.combo), [null, null, null, 'DOME_PS_L2']);
+  assert.deepEqual(modeButtons({}, false).map((b) => b.combo), [null, null, null, null, 'DOME_PS_L2']);
 });
 
 test('actionGrid: favourites on top with their names, the rest without them, a search', () => {

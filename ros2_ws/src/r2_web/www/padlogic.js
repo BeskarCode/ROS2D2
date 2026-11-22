@@ -8,6 +8,8 @@
 // Esc lets every hold go. A hold stays pressed while the stick moves and goes when it is let go.
 
 // Bit order, as the Mega reads it (DroidButton / VirtualPad.h)
+import { MODE_LABELS } from './modesform.js';
+
 export const BUTTONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'CROSS', 'CIRCLE', 'L1', 'L2', 'L3', 'PS'];
 
 export const maskOf = (names) => [...names].reduce((m, n) => m | (1 << BUTTONS.indexOf(n)), 0);
@@ -94,11 +96,10 @@ export function ownerState(pads, me) {
 // What closing the Remote would switch off: the Mega takes a virtual Nav that goes quiet as a lost
 // controller, and that ends what needs it (the automatic mode needs the foot Nav, face tracking the
 // dome Nav). A slot held by a real Nav is not affected. null = nothing to warn about.
-const MODE_NAMES = { goto: 'Go to a point', forward: 'Go forward', patrol: 'Patrol', follow: 'Follow a colour' };
 export function closeWarning(pads, { track = false, auto = false, mode = '' } = {}) {
   if (!pads) return null;
   const off = [];
-  if (auto && pads.F === 'virtual') off.push(`the mode ${MODE_NAMES[mode] || mode || 'on'}`);
+  if (auto && pads.F === 'virtual') off.push(`the mode ${MODE_LABELS[mode] || mode || 'on'}`);
   if (track && pads.D === 'virtual') off.push('face tracking');
   return off.length ? off : null;
 }

@@ -25,3 +25,7 @@ follow:
   distance: 2.2   # m, 0.8-4
   max_speed: 0.25   # m/s, 0.05-0.4
   search_s: 0   # s searching with the dome, 0-20
+free:
+  combo: FOOT_DOWN_L1
+  sound_on: ""
+  sound_off: ""

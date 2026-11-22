@@ -6,7 +6,7 @@ with_modes keeps it spinning LINGER_S after the last mode goes off, so switching
 stops and restarts it.
 """
 
-MODES = ("goto", "forward", "patrol", "follow")
+MODES = ("goto", "forward", "patrol", "follow", "free")
 LINGER_S = 5.0
 
 

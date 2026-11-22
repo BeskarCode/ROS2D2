@@ -4,9 +4,8 @@
 // gives it PS + L2 in modes.yaml (POST /api/modes/start, the same file as Setup -> Modes) and the
 // Mega bridge sends the new bindings; Stop is /r2/auto_mode/disable.
 import { call, subscribe } from './rosbridge.js';
-import { MODES, MODE_LABELS, startMode } from './modesform.js';
+import { MODES, MODE_ICONS as ICONS, MODE_LABELS, startMode } from './modesform.js';
 
-const ICONS = { goto: 'fa-location-crosshairs', forward: 'fa-arrow-up', patrol: 'fa-route', follow: 'fa-shirt' };
 
 /** el: the container. onPress (optional): a "PS + L2" button that presses it (the simulator). */
 export function createModePick(el, { onPress, log = () => {} } = {}) {

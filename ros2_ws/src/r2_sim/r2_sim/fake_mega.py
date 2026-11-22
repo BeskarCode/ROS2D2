@@ -36,7 +36,7 @@ import serial
 
 from r2_nav.modes import COMBOS
 
-MODES = ("goto", "forward", "patrol", "follow")
+MODES = ("goto", "forward", "patrol", "follow", "free")
 MAX_BINDINGS = 8
 DEFAULT_BINDINGS = {"FOOT_PS_L2": "goto"}
 

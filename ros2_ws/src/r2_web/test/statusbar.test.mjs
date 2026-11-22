@@ -77,3 +77,7 @@ test('navs: not known yet, no Mega, or a firmware that does not say', () => {
   assert.equal(navs({ mega: true, supported: false, F: 'none', D: 'none' }).text, 'Navs: ?');
   assert.equal(navs({ mega: true, supported: false, F: 'none', D: 'none' }).cls, '');
 });
+
+test('mode pill: Free roam', () => {
+  assert.equal(byKey(statusPills({ ...all, auto: true, mode: 'free' }, now)).mode.text, 'Mode: Free roam');
+});

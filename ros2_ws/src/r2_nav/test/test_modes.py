@@ -81,3 +81,12 @@ def test_nav_mode_the_navigator_runs():
     assert [nav_mode(m) for m in ("goto", "forward", "patrol")] == ["goto", "forward", "patrol"]
     assert nav_mode("") == "goto"                   # off: the navigator still reports (manual)
     assert nav_mode("follow") is None
+
+
+def test_free_roam_mode():
+    from r2_nav.modes import NAV_MODES, WANDER_MODES, nav_mode
+    assert MODES[-1] == "free"                       # after follow, like the firmware's MODE_FREE
+    assert parse_modes("")["free"]["combo"] is None  # no combo by default
+    assert bindings(parse_modes("free: {combo: FOOT_UP_PS}")) == {"FOOT_PS_L2": "goto", "FOOT_UP_PS": "free"}
+    assert nav_mode("free") == "free" and "free" in NAV_MODES
+    assert WANDER_MODES == ("patrol", "free")

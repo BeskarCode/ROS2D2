@@ -22,7 +22,7 @@ and a small HTTP API for what ROS topics cannot do:
                       and the combo names the page may offer
   POST /api/modes     save modes.yaml in ~/.config/ros2d2/ (body: {"yaml": "..."}), only if valid;
                       then publishes /r2/modes/reload so the Mega bridge sends the new bindings
-  POST /api/modes/start  {"mode": "goto|forward|patrol|follow"}: PS + L2 starts that mode (it swaps
+  POST /api/modes/start  {"mode": "goto|forward|patrol|follow|free"}: PS + L2 starts that mode (it swaps
                       combos with the mode that had PS + L2), saved and sent to the Mega the same way
   GET  /api/remote    remote.yaml in use (the virtual Navs' stick limit, guest mode, the phone's
                       favourite actions) and any error in it (then the defaults, as the bridge uses)
