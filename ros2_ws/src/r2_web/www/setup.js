@@ -6,6 +6,7 @@ import './remote.js';
 import { call, connect, setParam } from './rosbridge.js';
 import { createSensorsTab } from './sensors.js';
 import { createSystemTab } from './system.js';
+import { createImuTab } from './imu.js';
 import { createModesTab } from './modes.js';
 import { showStream, stopStream } from './mjpeg.js';
 import { onSaveKey, toast } from './savekey.js';
@@ -250,6 +251,7 @@ function toYaml() {
 let section = 'cameras';
 const sensorsTab = createSensorsTab({ status });
 const systemTab = createSystemTab();
+const imuTab = createImuTab();
 const modesTab = createModesTab({ status });
 
 async function save(restart) {
@@ -316,22 +318,24 @@ function restartFailed() {
   status('ROS2D2 did not come back in 2 minutes: look at it on the Pi (journalctl -u r2d2).', 'bad');
 }
 
-// Tabs: Cameras, Sensors, Modes, System, and File (the text of whichever of Cameras, Sensors
-// and Modes was open last; System has no file)
+// Tabs: Cameras, Sensors, IMU, Modes, System, and File (the text of whichever of Cameras, Sensors
+// and Modes was open last; IMU and System have no file: the IMU node keeps its own settings)
 let current = 'cameras';   // the tab on screen (Ctrl+S saves it)
 function showTab(name) {
   current = name;
   // the address says the tab: a reload, a shared link or Back opens this same one
   if (location.hash !== `#${name}`) history.replaceState(null, '', `#${name}`);
-  if (name !== 'file' && name !== 'system') section = name;
+  if (name !== 'file' && name !== 'system' && name !== 'imu') section = name;
   $('form').hidden = name !== 'cameras';
   $('sensors').hidden = name !== 'sensors';
+  $('imu').hidden = name !== 'imu';
   $('modes').hidden = name !== 'modes';
   $('file').hidden = name !== 'file';
   $('system').hidden = name !== 'system';
-  $('save').hidden = $('restart').hidden = name === 'system';
+  $('save').hidden = $('restart').hidden = name === 'system' || name === 'imu';
   $('tab-form').classList.toggle('on', name === 'cameras');
   $('tab-sensors').classList.toggle('on', name === 'sensors');
+  $('tab-imu').classList.toggle('on', name === 'imu');
   $('tab-modes').classList.toggle('on', name === 'modes');
   $('tab-file').classList.toggle('on', name === 'file');
   $('tab-system').classList.toggle('on', name === 'system');
@@ -341,6 +345,7 @@ function showTab(name) {
   if (name === 'sensors') sensorsTab.show(); else sensorsTab.hide();
   if (name === 'modes') modesTab.show(); else modesTab.hide();
   if (name === 'system') systemTab.show(); else systemTab.hide();
+  if (name === 'imu') imuTab.show(); else imuTab.hide();
   if (name !== 'file') return;
   if (section === 'sensors') {
     $('yaml').value = sensorsTab.fileText();
@@ -364,6 +369,7 @@ $('save').addEventListener('click', async () => {
 // Ctrl+S: what Save would do, and the status line it leaves, in a message seen from anywhere
 onSaveKey(async () => {
   if (current === 'system') return { ok: null, text: 'Nothing to save here: the board settings save as you change them' };
+  if (current === 'imu') return { ok: null, text: 'Nothing to save here: the IMU settings save as you change them' };
   if ($('save').disabled) return { ok: false, text: 'Cannot save now (an automatic mode or a restart is running)' };
   $('status').textContent = '';
   await save(false);
@@ -374,6 +380,7 @@ onSaveKey(async () => {
 $('restart').addEventListener('click', () => save(true));
 $('tab-form').addEventListener('click', () => showTab('cameras'));
 $('tab-sensors').addEventListener('click', () => showTab('sensors'));
+$('tab-imu').addEventListener('click', () => showTab('imu'));
 $('tab-modes').addEventListener('click', () => showTab('modes'));
 $('tab-file').addEventListener('click', () => showTab('file'));
 $('tab-system').addEventListener('click', () => showTab('system'));
@@ -412,7 +419,7 @@ connect(load);
 sensorsTab.load();   // from the web server: works without rosbridge
 modesTab.load();
 // setup.html#cameras, #sensors, #modes, #system or #file opens that tab (the status pills link here)
-const TABS = ['cameras', 'sensors', 'modes', 'system', 'file'];
+const TABS = ['cameras', 'sensors', 'imu', 'modes', 'system', 'file'];
 const tabFromHash = () => { const t = location.hash.slice(1); if (TABS.includes(t) && t !== current) showTab(t); };
 tabFromHash();
 addEventListener('hashchange', tabFromHash);

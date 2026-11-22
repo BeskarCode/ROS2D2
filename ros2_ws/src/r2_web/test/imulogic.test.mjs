@@ -85,3 +85,7 @@ test('checks: yaw across ±180 counts the short way', () => {
   run(c, 2, 3, () => ({ pitch: 6, yaw: -165 }));      // +25° through 180
   assert.equal(state(c, 3), 'done');
 });
+test('statusPills: simulated says it once (no port pill)', () => {
+  const p = statusPills({ ...OK, simulate: true, port: 'simulated' }, 100);
+  assert.equal(p.filter((x) => x.text === 'simulated').length, 1);
+});

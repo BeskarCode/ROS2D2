@@ -54,7 +54,7 @@ export function statusPills(st, ageMs) {
   const p = [st.simulate ? { text: 'simulated', cls: 'warn' } : { text: 'BNO085 connected', cls: 'ok' },
     { text: `${st.fps} frames/s`, cls: st.fps >= 50 ? '' : 'warn' },
     { text: `checksum errors ${st.bad_frames}`, cls: st.bad_frames > 0 ? 'warn' : '' },
-    { text: st.port, cls: '' },
+    ...(st.simulate ? [] : [{ text: st.port, cls: '' }]),     // simulated: its port is "simulated", said already
     { text: `box: ${st.box}`, cls: '' },
     st.levelled ? { text: 'levelled', cls: 'ok' } : { text: 'not levelled yet', cls: 'warn' }];
   if (!st.in_use) p.push({ text: 'not in use', cls: 'warn' });

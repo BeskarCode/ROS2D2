@@ -48,6 +48,7 @@ export function call(service, type, args) {
 
 export function setParam(node, name, value) {
   const v = typeof value === 'boolean' ? { type: 1, bool_value: value }
+    : typeof value === 'string' ? { type: 4, string_value: value }
     : Number.isInteger(value) ? { type: 2, integer_value: value } : { type: 3, double_value: value };
   return call(`${node}/set_parameters`, 'rcl_interfaces/srv/SetParameters', { parameters: [{ name, value: v }] });
 }
@@ -57,6 +58,14 @@ export function subscribe(topic, type, cb, throttleMs = 0) {
   if (subs[topic]) return;             // already subscribed: the new callback shares it
   subs[topic] = { op: 'subscribe', topic, type, throttle_rate: throttleMs, queue_length: 1 };
   send(subs[topic]);
+}
+
+/** Stop one callback; the last one gone, stop the topic (a tab that is not on screen reads nothing). */
+export function unsubscribe(topic, cb) {
+  handlers[topic] = (handlers[topic] || []).filter((f) => f !== cb);
+  if (handlers[topic].length || !subs[topic]) return;
+  delete subs[topic];
+  send({ op: 'unsubscribe', topic });
 }
 
 const advertised = new Set();

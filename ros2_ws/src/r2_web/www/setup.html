@@ -386,6 +386,46 @@
     #system .syscols .syslive { position: static; }
     #file textarea { flex: 1; min-height: 0; }
   }
+  /* Setup → IMU */
+  .imupills { margin: 0 0 10px; flex: none; }   /* .pills grows in the header; not here */
+  .imugrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: var(--gap); align-items: start; }
+  @media (max-width: 900px) { .imugrid { grid-template-columns: 1fr; } }
+  .imubody { display: flex; flex-wrap: wrap; gap: 14px; padding: 10px 12px; align-items: center; }
+  .imusphere { flex: 0 1 360px; min-width: 160px; }
+  .imuright { flex: 1 1 300px; min-width: 0; }
+  .imudials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .imudial { border: 1px solid var(--line); border-radius: 10px; padding: 6px; text-align: center; }
+  .imudial svg { width: 100%; max-width: 120px; height: auto; display: block; margin: 0 auto; }
+  .imudial b { display: block; font-size: 18px; }
+  .imudial .help { display: block; }
+  .imuh { font-size: var(--fs-s); color: var(--muted); margin: 10px 0 4px; }
+  .imudial .imuh { margin: 0; }
+  .imuh .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .imurow { margin-top: 10px; }
+  .imurow b.ok { color: var(--green); } .imurow b.warn { color: var(--amber); } .imurow b.bad { color: var(--red); }
+  #imu-bumprow.alarm, #imu-bumprow.alarm b { color: var(--amber); }
+  .imubars { display: grid; grid-template-columns: 16px 1fr 56px; gap: 5px 8px; align-items: center; font-size: var(--fs-s); }
+  .imubar { position: relative; height: 10px; background: var(--line); border-radius: 5px; }
+  .imubar i { position: absolute; left: 50%; top: -2px; width: 1px; height: 14px; background: var(--muted); }
+  .imubar b { position: absolute; height: 10px; border-radius: 5px; }
+  .imurate { width: 100%; height: 50px; display: block; }
+  .imurate polyline { fill: none; stroke: var(--green); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  #imu-live .track { fill: none; stroke: var(--line); stroke-width: 6; }
+  #imu-live .floor { stroke: var(--line2); }
+  #imu-live .mark { fill: var(--muted); font-size: 9px; }
+  #imu-live .r2b { fill: var(--text); opacity: .8; } #imu-live .r2d { fill: var(--blue); } #imu-live .r2l { fill: var(--muted); }
+  #imu-live .nose { fill: var(--green); }
+  #imu-live.stale .imubody { filter: grayscale(1); opacity: .55; }
+  .imuside { display: grid; gap: var(--gap); }
+  .imuset { display: grid; gap: 10px; padding: 10px 12px; }
+  .imuset input[type=text], .imuset select { margin-left: 6px; }
+  .imubox { display: grid; gap: 4px; }
+  .imubtns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .imuchecks { margin: 0; padding: 10px 12px 12px; list-style: none; display: grid; gap: 8px; }
+  .imuchecks li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .imuchecks li.done > i:first-child { color: var(--green); }
+  .imuchecks li.inverted > i:first-child { color: var(--amber); }
+  .imuchecks button, .card h2 button { padding: 2px 8px; font-size: var(--fs-s); }
 </style>
 </head>
 <body>
@@ -404,6 +444,7 @@
   <div class="tabs">
     <button id="tab-form" class="on" title="Cameras: which cameras R2 uses, their order, size, turn and where they point"><i class="fa-solid fa-video"></i>Cameras</button>
     <button id="tab-sensors" title="Sensors: where each sensor sits, what it covers, the lidar's settings, and ignoring a sensor"><i class="fa-solid fa-satellite-dish"></i>Sensors</button>
+    <button id="tab-imu" title="IMU: the BNO085's settings, levelling and what it measures live"><i class="fa-solid fa-compass"></i>IMU</button>
     <button id="tab-modes" title="Modes: the controller buttons that start each automatic mode and its settings"><i class="fa-solid fa-gamepad"></i>Modes</button>
     <button id="tab-system" title="System: the Pi and the Pico board, their versions, telemetry, board settings and firmware"><i class="fa-solid fa-gauge-high"></i>System</button>
     <button id="tab-file" title="File: the settings file as text, to read or edit by hand"><i class="fa-solid fa-file-code"></i>File</button>
@@ -473,6 +514,85 @@
         <div id="slist"></div>
         <div class="sadd"><select id="s-addtype"><option value="vl53l0x">VL53L0X</option><option value="hcsr04">HC-SR04</option>
           <option value="rplidar_c1">RPLIDAR C1</option></select><button id="s-add" title="Add a sensor of the type on the left: it takes the first free connector of the Pico board"><i class="fa-solid fa-plus"></i>Add sensor</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="imu" hidden>
+    <div class="tabtools">
+    <label class="systog" title="Read the IMU live (only while on and this tab is open)">
+      <input type="checkbox" id="imu-telemetry"><i class="fa-solid fa-chart-line"></i>Telemetry
+      <span class="knob"></span><span class="state"></span></label>
+    <details class="howto"><summary><i class="fa-solid fa-circle-info"></i>How it works</summary><p class="help">The BNO085 in the
+      ROS2 box tells how R2 is tilted, where it points and how it is pushed. <b>Live</b> shows it while <b>Telemetry</b> is on:
+      the sphere is the world seen from R2 (drag it to look from another side), and the three dials are R2 from the side,
+      from the front and from above. Once, with R2 <b>still on a flat floor</b>, press <b>Level here</b>: the tilt the box
+      sits at becomes 0 and is saved. <b>Heading to 0</b> lasts until the IMU node restarts. <b>Check it</b> ticks itself as
+      you tilt and turn R2.</p></details>
+    </div>
+    <div class="pills imupills" id="imu-pills"></div>
+    <div class="imugrid">
+      <div class="card imulive stale" id="imu-live">
+        <h2><span><i class="fa-solid fa-cube"></i>Live</span></h2>
+        <div class="imubody">
+          <div class="imusphere" id="imu-sphere"></div>
+          <div class="imuright">
+            <div class="imudials">
+              <div class="imudial"><div class="imuh"><i class="sw" style="background:var(--green)"></i>Pitch · side</div>
+                <svg viewBox="-55 -55 110 100" aria-label="R2 from the side"><path class="track" d="M-45 0 A45 45 0 0 1 45 0"/><line class="floor" x1="-50" y1="30" x2="50" y2="30"/>
+                  <g id="imu-sp" transform="translate(0,20)"><rect class="r2b" x="-11" y="-30" width="22" height="34" rx="3"/><path class="r2d" d="M-11 -30 A11 11 0 0 1 11 -30"/><rect class="r2l" x="10" y="-6" width="6" height="16"/><rect class="r2l" x="-16" y="-6" width="6" height="16"/></g></svg>
+                <b id="imu-pitch">–</b><span class="help">front down +</span></div>
+              <div class="imudial"><div class="imuh"><i class="sw" style="background:var(--red)"></i>Roll · front</div>
+                <svg viewBox="-55 -55 110 100" aria-label="R2 from the front"><path class="track" d="M-45 0 A45 45 0 0 1 45 0"/><line class="floor" x1="-50" y1="30" x2="50" y2="30"/>
+                  <g id="imu-sr" transform="translate(0,20)"><rect class="r2b" x="-13" y="-30" width="26" height="34" rx="3"/><path class="r2d" d="M-13 -30 A13 13 0 0 1 13 -30"/><rect class="r2l" x="-20" y="-24" width="6" height="30"/><rect class="r2l" x="14" y="-24" width="6" height="30"/></g></svg>
+                <b id="imu-roll">–</b><span class="help">left down −</span></div>
+              <div class="imudial"><div class="imuh"><i class="sw" style="background:var(--blue)"></i>Heading · top</div>
+                <svg viewBox="-55 -55 110 110" aria-label="R2 from above"><circle class="track" r="42"/><text class="mark" y="-28" text-anchor="middle">0°</text>
+                  <g id="imu-sy"><circle class="r2b" r="15"/><circle class="r2d" r="9"/><path class="nose" d="M0 -23 L5 -15 L-5 -15 Z"/></g></svg>
+                <b id="imu-yaw">–</b><span class="help" id="imu-turn">turn rate</span></div>
+            </div>
+            <div class="imurow">tilt <b id="imu-tilt">–</b> <span class="help">amber over 10°, red over 20°</span></div>
+            <div class="imuh">Acceleration (m/s², gravity left out) · the yellow arrow on the sphere</div>
+            <div class="imubars">
+              <span style="color:var(--red)">X</span><div class="imubar"><i></i><b id="imu-ax" style="background:var(--red)"></b></div><span id="imu-axv">–</span>
+              <span style="color:var(--green)">Y</span><div class="imubar"><i></i><b id="imu-ay" style="background:var(--green)"></b></div><span id="imu-ayv">–</span>
+              <span style="color:var(--blue)">Z</span><div class="imubar"><i></i><b id="imu-az" style="background:var(--blue)"></b></div><span id="imu-azv">–</span>
+            </div>
+            <div class="imurow" id="imu-bumprow"><i class="fa-solid fa-burst"></i>bump <b id="imu-bump">–</b> m/s² <span class="help">strongest of the last second; alarm over 6</span></div>
+            <div class="imuh">Turn rate, last 10 s</div>
+            <svg class="imurate" viewBox="0 0 300 50" preserveAspectRatio="none" aria-label="turn rate, last 10 seconds"><line class="floor" x1="0" y1="25" x2="300" y2="25"/><polyline id="imu-rateline" points=""/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="imuside">
+        <div class="card">
+          <h2><span><i class="fa-solid fa-sliders"></i>Setup</span></h2>
+          <div class="imuset">
+            <label class="chk" title="Off: the IMU node keeps reading and reporting here, but publishes nothing for navigation"><input type="checkbox" id="imu-inuse"> In use</label>
+            <label title="The Pi UART the BNO085's SDA (its TX) goes to; Enter to apply">Port <input type="text" id="imu-port" spellcheck="false" placeholder="/dev/ttyAMA3"></label>
+            <div class="imubox" title="Where the board is screwed in the ROS2 box">Box
+              <label class="chk"><input type="radio" name="imu-box" value="standing"><i class="fa-solid fa-arrows-up-down"></i>standing (board on the floor)</label>
+              <label class="chk"><input type="radio" name="imu-box" value="lying"><i class="fa-solid fa-arrows-left-right"></i>lying (board on the divider)</label></div>
+            <label title="Which of the arrows printed on the board points to R2's front">R2's front is the board's <select id="imu-front">
+              <option value="+x">+X arrow</option><option value="-x">−X (opposite the X arrow)</option><option value="+y">+Y arrow</option><option value="-y">−Y (opposite the Y arrow)</option></select></label>
+            <label class="chk" title="If turning R2 left makes the heading go down, untick it"><input type="checkbox" id="imu-leftup"> turning left makes heading go up</label>
+            <p class="status warn" id="imu-mismatch" hidden></p>
+            <div class="imubtns">
+              <button id="imu-level" title="R2 still on a flat floor: its tilt now becomes 0 (saved)"><i class="fa-solid fa-ruler-horizontal"></i>Level here</button>
+              <button id="imu-heading" title="Where R2 points now is heading 0, until the IMU node restarts"><i class="fa-solid fa-compass"></i>Heading to 0</button>
+              <button id="imu-forget" title="Drop the levelling (saved)"><i class="fa-solid fa-rotate-left"></i>Forget the calibration</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span><i class="fa-solid fa-list-check"></i>Check it</span><button id="imu-checks-again" title="Start the check again"><i class="fa-solid fa-rotate-left"></i>Again</button></h2>
+          <ol class="imuchecks" id="imu-checks">
+            <li data-n="1"><i class="fa-regular fa-circle"></i>Frames arrive (50 a second or more)</li>
+            <li data-n="2"><i class="fa-regular fa-circle"></i>Tilt R2's front down: pitch goes up</li>
+            <li data-n="3"><i class="fa-regular fa-circle"></i>Turn R2 left: heading goes up <button id="imu-invert" hidden title="Heading went down: invert it"><i class="fa-solid fa-right-left"></i>Invert it</button></li>
+            <li data-n="4"><i class="fa-regular fa-circle"></i>Foot motors running: heading does not jump <button id="imu-done4" title="Mark it once you have seen it"><i class="fa-solid fa-check"></i>Done</button></li>
+          </ol>
+        </div>
       </div>
     </div>
   </section>
