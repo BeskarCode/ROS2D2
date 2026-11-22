@@ -59,6 +59,16 @@ function port_tall(k) = k == "usb" ? 16 : 13.5;                       // out of 
 pi_hdmi0 = 26;                       // micro-HDMI 0 on the bottom edge, from the front edge (Pi 4 and Pi 5)
 conv_gap = 5;                        // Pi's top edge -> converter
 
+// --- fan version of the shell (shell_fan): a 30 x 30 x 7 fan (LD3007MS, 5 V, docs/medidas ventilador.PNG) on the
+// right side, over the Pi's SoC, screwed inside or outside. One round opening + its 4 screw holes + a slot for the
+// wires when it goes outside (they come in through the opening's edge, under the fan's frame).
+fan_size = 30;  fan_t = 7;  fan_pitch = 24;  fan_hole_d = m3_clear;   // M3 + nut (its own holes are 3.5)
+fan_open_d = 28;                     // 1.3 of wall left between the opening and each screw hole
+fan_slot_w = 3.5;  fan_slot_out = 17;   // wire slot: width, and how far from the centre it reaches (the fan's edge is at 15)
+fan_soc = [28, 32];                  // Pi 4 SoC centre on the board (along its length from the SD end, from the USB-C edge); 1 mm forward: room for the IMU bracket behind
+function fan_c() = [pi_y0() + fan_soc[0], pi_z0() + fan_soc[1]];   // (Y, Z) on the right side
+fan_band_keep = 2;                   // the Pi-side vent slots within this of the fan's square go
+
 // --- back: one window for both Pis, closed by a swappable frame (frame_pi4 / frame_pi5) -------------
 marco_t = 2;  marco_lip = 3.5;  marco_fit = 0.25;  marco_rim = 1.5;     // flange outside; rim of the plug around the jacks
 

@@ -1,11 +1,12 @@
 // ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 // Caja ROS2 (rack). Pick what to render with part:
 //   openscad -o wall.stl -D 'part="wall"' rack_box.scad
-// Parts (print orientation): pared, logo_navy, logo_blue, logo_grey, wall_monocolor, pulsador, base, tapa,
+// Parts (print orientation): pared, logo_navy, logo_blue, logo_grey, wall_monocolor, pulsador, base, tapa (shell, shell_fan),
 // frame_pi4, frame_pi5; the LED face: wall_led, wall_led_monocolor, logo_navy_led,
 // logo_blue_led, logo_grey_led; its translucent lenses: led_lenses; HDMI on the back: hdmi_holder
 // (FPC kit holder) or hdmi_cover (blank cover); the LED face without AMS: wall_led_no_ams and its fillings
-// inlay_navy, inlay_blue, inlay_grey; blanks for the unused connectors: blank (-D bi=0..9) or blanks_all.
+// inlay_navy, inlay_blue, inlay_grey; blanks for the unused connectors: blank (-D bi=0..9) or blanks_all;
+// the IMU bracket on the Pi: imu_bracket.
 // ghosts, check_*, echo_* are for the tests.
 include <params.scad>
 include <ghosts.scad>
@@ -18,6 +19,7 @@ include <light_pipes.scad>
 include <hdmi_fpc.scad>
 include <no_ams.scad>
 include <blanks.scad>
+include <imu_bracket.scad>
 
 part = "wall";
 ga = "pico";  gb = "pi";  led = "VL1";
@@ -163,6 +165,25 @@ else if (part == "check_usb_vs_shell") intersection() { tapa(); ghost("usb"); }
 else if (part == "check_usb_vs_pared") intersection() { pared(leds = leds == 1); ghost("usb"); }
 else if (part == "check_logo_vs_usb_recess") intersection() { logo_svg("todo", 1.4, false); usb_recess_cut(); }
 else if (part == "check_tapa_vs_ghost") intersection() { tapa(); ghost(ga); }   // one ghost at a time: light enough for OpenSCAD 2021
+// --- shell with the fan (shell_fan) ---
+else if (part == "shell_fan") print_tapa() tapa(fan = true);
+else if (part == "check_tapa_fan_assembled") intersection() { tapa(fan = true); union() { base(); pared(); } }
+else if (part == "check_tapa_fan_slide") intersection() { translate([0, 0, dz]) { tapa(fan = true); ghost_fan(); } union() { base(); pared(); } }
+else if (part == "check_tapa_fan_vs_ghost") intersection() { tapa(fan = true); ghost(ga); }
+else if (part == "check_fan_inside_vs_ghost") intersection() { translate([0, 0, dz]) ghost_fan(); ghost(ga); }   // the fan rides down with the shell
+else if (part == "check_fan_vs_shell") intersection() { tapa(fan = true); union() { ghost_fan(); ghost_fan(outside = true); } }   // it sits on the wall, never in it
+else if (part == "check_fan_holes_open") intersection() { tapa(fan = true); let(c = fan_c()) for (sx = [-1, 1], sy = [-1, 1]) translate([W - wall - 1, c[0] + sx * fan_pitch / 2, c[1] + sy * fan_pitch / 2]) rotate([0, 90, 0]) cylinder(d = fan_hole_d - 0.2, h = wall + 2, $fn = 24); }
+else if (part == "check_fan_hole_rims") difference() { let(c = fan_c()) for (sx = [-1, 1], sy = [-1, 1]) translate([W - wall, c[0] + sx * fan_pitch / 2, c[1] + sy * fan_pitch / 2]) rotate([0, 90, 0]) cylinder(d = fan_hole_d + 2, h = wall, $fn = 24); tapa(fan = true); let(c = fan_c()) for (sx = [-1, 1], sy = [-1, 1]) translate([W - wall - 1, c[0] + sx * fan_pitch / 2, c[1] + sy * fan_pitch / 2]) rotate([0, 90, 0]) cylinder(d = fan_hole_d, h = wall + 2, $fn = 24); }
+// --- IMU bracket on the Pi ---
+else if (part == "imu_bracket") print_imu_bracket() imu_bracket();
+else if (part == "imu_bracket_mounted") { imu_bracket(); ghost_imu_standoffs(); ghost_imu_arm(); ghost_imu_shelf(); }
+else if (part == "check_imu_vs_box") intersection() { union() { imu_bracket(); ghost_imu_standoffs(); ghost_imu_arm(); ghost_imu_shelf(); } union() { base(); pared(); tapa(); tapa(fan = true); ghost_fan(); } }
+else if (part == "check_imu_vs_ghost") intersection() { union() { imu_bracket(); ghost_imu_standoffs(); ghost_imu_arm(); ghost_imu_shelf(); } ghost(ga); }
+else if (part == "check_imu_vs_pi_jacks") intersection() { union() { imu_bracket(); ghost_imu_arm(); ghost_imu_shelf(); } union() { ghost_pi_pcb(); pi_ports(); } }
+else if (part == "check_imu_shell_slide") intersection() { union() { imu_bracket(); ghost_imu_arm(); ghost_imu_shelf(); } translate([0, 0, dz]) { tapa(fan = true); ghost_fan(); } }
+else if (part == "check_imu_standoffs_touch") intersection() { imu_bracket(); translate([0.2, 0, 0]) ghost_imu_standoffs(); }   // the arm rests on their ends
+else if (part == "echo_imu") { echo("arm_x", imu_arm_x()); echo("shelf_top", imu_shelf_z + imu_t); echo("pi_z0", pi_z0()); echo("shelf_board_bottom", imu_shelf_z - imu_boss_h - pcb_t); echo("floor", wall); echo("y", imu_y); echo("fan_y1", fan_c()[0] + fan_size / 2); dot(); }
+else if (part == "echo_fan") { echo("fan_c", fan_c()); echo("pi_y", [pi_y0(), pi_y0() + pi_l]); echo("pi_z", [pi_z0(), pi_z0() + pi_w]); echo("conv_z0", conv_p0()[2]); echo("gap_inside", W - wall - fan_t - pi_xp()); echo("open_to_hole", (fan_pitch / 2) * sqrt(2) - fan_hole_d / 2 - fan_open_d / 2); dot(); }
 else if (part == "echo_vents") echo_vents();
 else if (part == "montaje_sin_orejetas") { pared(); base(); tapa(); }
 // --- v3: removable ears ---

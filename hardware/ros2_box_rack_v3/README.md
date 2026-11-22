@@ -53,6 +53,8 @@ Every screw goes into a **heat-set insert**, the boards' too (M2.5 for the Pi, M
 | `stl/wall_monocolor.stl` | single-colour main face, logo engraved 1 mm | logo face on the bed |
 | `stl/base.stl` | floor, front (XT60, switch, vent), back, divider and the ear pockets | floor on the bed |
 | `stl/shell.stl` | roof and side | roof on the bed |
+| `stl/shell_fan.stl` | the same with a 30 × 30 mm fan over the Pi (see below) | roof on the bed |
+| `stl/imu_bracket.stl` | the BNO085 IMU's bracket on the Pi (see below) | on its end, the profile on the bed |
 | `stl/push_rod.stl` | DISPLAY push rod | standing |
 | `stl/frame_pi4.stl` | back frame for the Pi 4 | outer face on the bed |
 | `stl/frame_pi5.stl` | back frame for the Pi 5 | outer face on the bed |
@@ -61,6 +63,39 @@ Every screw goes into a **heat-set insert**, the boards' too (M2.5 for the Pi, M
 | `stl/blanks/blank_US1.stl` … `blank_EXP.stl` | optional, looks only: a blank for each sensor connector you don't use (US1–US5, VL1–VL4, EXP); it plugs onto the connector's pins and closes its strip of the opening flush. `blanks_all.stl` has the ten on one plate | visible face on the bed, wall's colour |
 
 PETG, 0.2 mm, 0.4 nozzle, no supports.
+
+## Shell with a fan (optional)
+
+![Shell with a fan](assembly/img/shell_fan.png)
+
+`stl/shell_fan.stl` is the shell with an opening for a 30 × 30 × 7 mm fan (LD3007MS, 5 V 0.2 A) on the side,
+right over the Pi's processor. Print **one** of the two shells: `shell.stl` or this one.
+
+- The opening is a 28 mm circle with the 4 M3 holes 24 mm apart. The side's vent slots that fell under the
+  fan are gone; the rest are as before.
+- **Inside:** the fan against the side's inner face, blowing onto the Pi; M3 × 12 screw from outside and the
+  nut on the fan's side. 19 mm stay between the fan and the Pi's parts.
+- **Outside:** the fan against the outer face (it sticks out 7 mm); M3 × 12 screw from the fan and the nut
+  inside. The wire goes in through the **slot** that runs up from the circle: turn the fan so its wire is on
+  that side.
+- Power it from the Pi's 5 V pins: red to pin 4 (5 V), black to pin 6 (GND).
+- With the box **lying** on this side the fan is covered: use it with the box standing.
+
+## IMU bracket (optional)
+
+![The IMU bracket on the Pi](assembly/img/imu_bracket.png)
+
+`stl/imu_bracket.stl` holds the Adafruit BNO085 IMU (product 4754) on the Pi itself, the box unchanged: on
+the Pi's two holes on the USB side, swap their M2.5 screws for **two 10 mm M2.5 male-female standoffs** and
+screw the bracket onto them with two M2.5. It sits between the Pi and the side, behind the fan.
+
+It has two places for the board, the same 4 holes (M2.5 × 6 screws biting into the plastic):
+
+- **The arm**, parallel to the Pi: level with the box **lying** on the side.
+- **The shelf**, under the Pi's bottom edge, the board hanging under it: level with the box **standing**.
+
+Upside down, or the box tilted a few degrees, does not matter: it is zeroed from the console. Wiring to the
+Pi is in `ros2_ws/src/r2_imu_bno085`.
 
 ## LED face (optional)
 

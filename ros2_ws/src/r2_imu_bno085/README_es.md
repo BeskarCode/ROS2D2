@@ -33,7 +33,8 @@ dtoverlay=uart3
 Reiniciar y mirar qué nombre le da: `ls /dev/ttyAMA*` (en `config/imu.yaml` pone `/dev/ttyAMA3`).
 El usuario tiene que estar en el grupo `dialout`.
 
-**Dónde montarlo:** en el cuerpo, plano, centrado y lo más cerca posible del eje del foot, con
+**Dónde montarlo:** en la caja ROS2, con el soporte `imu_bracket` que va atornillado a la Pi (ver
+`hardware/ros2_box_rack_v3`), o en el cuerpo, plano, centrado y lo más cerca posible del eje del foot, con
 la flecha X mirando hacia delante. Sujeto con cinta de doble cara gruesa o espuma para que no le
 llegue la vibración de los motores.
 

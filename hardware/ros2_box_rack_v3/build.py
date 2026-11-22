@@ -17,7 +17,7 @@ base.SCAD = HERE / "rack_box.scad"
 
 LOGO_PARTS = ["logo_navy", "logo_blue", "logo_grey"]
 LOGO_LED_PARTS = ["logo_navy_led", "logo_blue_led", "logo_grey_led"]
-PRINT_PARTS = ["wall", *LOGO_PARTS, "wall_monocolor", "push_rod", "base", "shell", "frame_pi4", "frame_pi5",
+PRINT_PARTS = ["wall", *LOGO_PARTS, "wall_monocolor", "push_rod", "base", "shell", "shell_fan", "frame_pi4", "frame_pi5",
                "wall_led", *LOGO_LED_PARTS, "wall_led_monocolor", "led_lenses"]
 # the LED face, cone version: a 45 deg cone under each lens recess (prints face down without supports)
 CONE_PARTS = ["wall_led_cone", "wall_led_cone_monocolor", "led_lenses_cone"]
@@ -30,6 +30,8 @@ PRINT_PARTS += NOAMS_PARTS
 PRINT_PARTS += ["ear", "ear_blank"]
 # the HDMI jack's optional pieces on the back: FPC kit holder or blank cover
 PRINT_PARTS += ["hdmi_holder", "hdmi_cover"]
+# the IMU (Adafruit BNO085) bracket on the Pi
+PRINT_PARTS += ["imu_bracket"]
 # blanks for the unused connectors (stl/blanks/): one per connector, and all ten on one plate
 BLANK_NAMES = ["US1", "US2", "US3", "US4", "US5", "VL1", "VL2", "VL3", "VL4", "EXP"]
 BLANKS_DIR = "blanks"

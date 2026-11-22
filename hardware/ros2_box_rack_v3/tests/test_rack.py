@@ -253,3 +253,90 @@ def test_bom_counts():
 @pytest.mark.parametrize("kind", ["ins_m3", "ins_m25", "m3x8_flat", "m3x6_pan", "m3x6_cyl", "m3x10_pan", "m25x6"])
 def test_hardware_only_goes_through_holes(kind, model):
     assert is_empty("check_screws_vs_parts", {"kind": kind, "model": model})
+
+
+# --- shell with a 30 mm fan over the Pi (shell_fan): inside or outside on the same holes ---------------------
+GHOSTS = ["pico", "pi", "conv", "xt60", "switch", "cables", "hdmi", "leds", "usb"]
+
+
+def test_shell_fan_fits_assembled():
+    assert is_empty("check_tapa_fan_assembled")
+
+
+@pytest.mark.parametrize("dz", [20, 60, 130])
+def test_shell_fan_slides_on_from_above_with_the_fan_inside(dz):
+    assert is_empty("check_tapa_fan_slide", {"dz": dz})
+
+
+@pytest.mark.parametrize("g", GHOSTS)
+def test_shell_fan_clear_of_ghosts(g):
+    assert is_empty("check_tapa_fan_vs_ghost", {"ga": g})
+
+
+# not the Pi's ghost: it is a solid block with 25 mm kept in front of the board for a fan, and this fan is that
+@pytest.mark.parametrize("dz", [0, 30, 90])
+@pytest.mark.parametrize("g", [g for g in GHOSTS if g != "pi"])
+def test_fan_inside_clear_of_everything_while_the_shell_goes_on(g, dz):
+    assert is_empty("check_fan_inside_vs_ghost", {"ga": g, "dz": dz})
+
+
+def test_fan_sits_on_the_wall_inside_or_outside():
+    assert is_empty("check_fan_vs_shell")
+
+
+def test_fan_screw_holes_open_with_wall_round_them():
+    assert is_empty("check_fan_holes_open")      # nothing in the holes
+    assert is_empty("check_fan_hole_rims")       # 1 mm of wall all round each hole
+
+
+def test_fan_over_the_pi_soc():
+    v = echo_values("echo_fan")
+    y, z = v["fan_c"]
+    assert v["pi_y"][0] + 15 <= y <= v["pi_y"][1] - 15      # the whole fan in front of the board
+    assert v["pi_z"][0] + 15 <= z <= v["pi_z"][1] - 15
+    assert z + 15 < v["conv_z0"]                              # under the converter
+    assert v["gap_inside"] >= 15                              # room between the fan inside and the Pi's parts
+    assert v["open_to_hole"] >= 1.0                           # wall between the opening and each screw hole
+
+
+def test_shell_fan_prints_like_the_shell():
+    lo, hi = stl_bbox(run_scad("shell_fan"))
+    lo0, hi0 = stl_bbox(run_scad("shell"))
+    assert lo[2] == pytest.approx(0, abs=0.01)
+    assert lo == pytest.approx(lo0, abs=0.01) and hi == pytest.approx(hi0, abs=0.01)
+
+
+# --- IMU bracket on the Pi (one piece: the arm for the box lying, the shelf for the box standing) ----------
+def test_imu_bracket_clear_of_the_box_and_the_fan():
+    assert is_empty("check_imu_vs_box")
+
+
+@pytest.mark.parametrize("g", [g for g in GHOSTS if g != "pi"])
+def test_imu_bracket_clear_of_ghosts(g):
+    assert is_empty("check_imu_vs_ghost", {"ga": g})
+
+
+def test_imu_bracket_clear_of_the_pi_board_and_its_jacks():
+    assert is_empty("check_imu_vs_pi_jacks")
+
+
+@pytest.mark.parametrize("dz", [10, 40, 100])
+def test_shell_fan_slides_past_the_imu_bracket(dz):
+    assert is_empty("check_imu_shell_slide", {"dz": dz})
+
+
+def test_imu_bracket_sits_on_its_standoffs():
+    assert not is_empty("check_imu_standoffs_touch")
+
+
+def test_imu_bracket_room():
+    v = echo_values("echo_imu")
+    assert v["shelf_top"] <= v["pi_z0"] - 1.5          # the shelf passes under the Pi's bottom edge
+    assert v["shelf_board_bottom"] - 1.5 > v["floor"]   # the hanging board (+ its solder) clears the floor
+    assert v["y"][0] > v["fan_y1"]                      # behind the fan
+
+
+def test_imu_bracket_prints_on_its_end():
+    lo, hi = stl_bbox(run_scad("imu_bracket"))
+    assert lo[2] == pytest.approx(0, abs=0.01)
+    assert hi[2] < 73.5 - 52.5 + 2          # the arm's end bosses stick out 1.4 at the top

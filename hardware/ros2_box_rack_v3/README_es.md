@@ -53,6 +53,8 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 | `stl/wall_monocolor.stl` | pared principal de un color, logo grabado 1 mm | cara del logo sobre la cama |
 | `stl/base.stl` | suelo, frontal (XT60, interruptor, rejilla), trasera, tabique y rebajes de las orejas | suelo sobre la cama |
 | `stl/shell.stl` | techo y lateral | techo sobre la cama |
+| `stl/shell_fan.stl` | la misma con un ventilador de 30 × 30 mm sobre la Pi (ver abajo) | techo sobre la cama |
+| `stl/imu_bracket.stl` | soporte de la IMU BNO085 sobre la Pi (ver abajo) | de canto, el perfil sobre la cama |
 | `stl/push_rod.stl` | varilla del pulsador DISPLAY | de pie |
 | `stl/frame_pi4.stl` | marco trasero para la Pi 4 | cara exterior sobre la cama |
 | `stl/frame_pi5.stl` | marco trasero para la Pi 5 | cara exterior sobre la cama |
@@ -61,6 +63,39 @@ Todos los tornillos van a **insertos térmicos**, también los de las placas (M2
 | `stl/blanks/blank_US1.stl` … `blank_EXP.stl` | opcional, solo estética: una tapa por cada conector de sensor que no uses (US1–US5, VL1–VL4, EXP); se clava en los pines del conector y cierra a ras su franja de la abertura. `blanks_all.stl` lleva las diez en una placa | cara vista sobre la cama, color de la pared |
 
 PETG, 0,2 mm, boquilla 0,4, sin soportes.
+
+## Tapa con ventilador (opcional)
+
+![Tapa con ventilador](assembly/img/shell_fan.png)
+
+`stl/shell_fan.stl` es la tapa con un hueco para un ventilador de 30 × 30 × 7 mm (LD3007MS, 5 V 0,2 A) en
+el lateral, justo encima del procesador de la Pi. Imprime **una** de las dos tapas: `shell.stl` o esta.
+
+- El hueco es un círculo de 28 mm con los 4 agujeros de M3 a 24 mm entre centros. Las rejillas del
+  lateral que caían debajo del ventilador desaparecen; el resto se queda igual.
+- **Por dentro:** el ventilador contra la cara interior del lateral, soplando hacia la Pi; tornillo M3 × 12
+  desde fuera y tuerca del lado del ventilador. Entre el ventilador y los componentes de la Pi quedan 19 mm.
+- **Por fuera:** el ventilador contra la cara exterior (sobresale 7 mm); tornillo M3 × 12 desde el ventilador
+  y tuerca por dentro. El cable entra por la **ranura** que sale del círculo hacia arriba: gira el
+  ventilador para que su cable quede en ese lado.
+- Se alimenta de los pines de 5 V de la Pi: rojo al pin 4 (5 V) y negro al pin 6 (GND).
+- Con la caja **tumbada** sobre este lateral el ventilador queda tapado: úsala con la caja de pie.
+
+## Soporte de la IMU (opcional)
+
+![Soporte de la IMU sobre la Pi](assembly/img/imu_bracket.png)
+
+`stl/imu_bracket.stl` sujeta la IMU Adafruit BNO085 (ref. 4754) a la propia Pi, sin tocar la caja: en los dos
+agujeros de la Pi del lado de los USB, cambia sus tornillos M2.5 por **dos separadores M2.5 macho-hembra de
+10 mm** y atornilla el soporte encima con dos M2.5. Queda entre la Pi y el lateral, detrás del ventilador.
+
+Tiene dos sitios para la placa, con los mismos 4 agujeros (tornillos M2.5 × 6 que muerden el plástico):
+
+- **El brazo**, paralelo a la Pi: con la caja **tumbada** sobre el lateral la placa queda plana.
+- **La bandeja**, bajo el borde inferior de la Pi, con la placa colgando por debajo: con la caja **de pie**.
+
+Que la placa quede boca abajo o con la caja inclinada unos grados da igual: se pone a cero desde la consola.
+La conexión con la Pi está en `ros2_ws/src/r2_imu_bno085`.
 
 ## Pared con LEDs (opcional)
 
