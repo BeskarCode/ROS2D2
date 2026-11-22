@@ -4,6 +4,7 @@
 // sensor's beam as long as its reading, the lidar's points, the goal, the chosen heading and
 // the trail. Click the floor = goal; drag an obstacle = move it; right-click = remove it.
 import { R2, freeText, lidarPointColours, splitScan } from './sensormath.js';
+import { radiusCircle } from './wanderview.js';
 
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
 const rad = (d) => d * Math.PI / 180;
@@ -49,6 +50,12 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
       g.strokeStyle = 'rgba(59,130,246,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(...P(...st.trail[0]));
       for (const t of st.trail) g.lineTo(...P(...t));
       g.stroke();
+    }
+    // Patrol: the circle round where it started
+    const c = radiusCircle(st.wander, P, (m) => m * S());
+    if (c) {
+      g.setLineDash([6, 5]); g.strokeStyle = 'rgba(210,153,34,.8)'; g.fillStyle = 'rgba(210,153,34,.06)'; g.lineWidth = 2;
+      g.beginPath(); g.arc(c.cx, c.cy, c.r, 0, 7); g.fill(); g.stroke(); g.setLineDash([]);
     }
     if (st.goal) {
       const [gx, gy] = P(...st.goal);

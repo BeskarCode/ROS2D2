@@ -76,7 +76,7 @@ export function createModesTab({ status }) {
       if (m === 'goto') {
         const note = document.createElement('div');
         note.className = 'mnote';
-        note.textContent = "To test the sensors' layout: without wheel encoders it drifts on the droid";
+        note.textContent = "Simulator only: to try the sensors' layout before building it (on the droid, without wheel encoders, it drifts)";
         row.append(note);
       }
       const sel = row.querySelector('select');

@@ -71,19 +71,24 @@ el haz de cada sensor va en su color, y el círculo verde discontinuo es el huec
 R2 (con la distancia, *36 cm free*). **Haz clic en el suelo** para mandar a R2 allí (el destino es
 una bandera verde); *Cancel goal* lo olvida. *Sensor beams* y *trail* muestran u ocultan los haces y
 el camino que ha hecho R2. R2 solo va allí con el modo automático encendido (Go to a point, mira
-[Modes](#setup--modes)).
+[Modes](#setup--modes)). Go to a point es para el simulador: sirve para probar la distribución de los
+sensores antes de montarlos (en el droide, sin encoders en las ruedas, su posición deriva).
 
 **PS + L2 starts** (también en la Console, en la tarjeta del Mega): eliges qué modo arranca PS + L2
-en el mando del foot (Go to a point, Go forward, Patrol, Follow a colour); el texto en verde dice cuál
+en el mando del foot (Go to a point, Go forward, Patrol, Follow a colour, Free roam); el texto en verde dice cuál
 está en marcha. Encender un modo solo se puede desde el mando: así siempre hay alguien con el mando
 en la mano cuando R2 empieza a moverse solo. **Stop** lo apaga desde la página. Elegir un modo aquí
 es lo mismo que darle PS + L2 en [Modes](#setup--modes): el modo que tenía PS + L2 se queda con la
 combinación que tenía el elegido, así que no se pierde ninguna.
 
-**Ruta de patrulla**: con *route point* activado, cada clic en el suelo añade un punto numerado; en
-Patrol R2 los recorre en bucle (el punto al que va sale relleno). Un punto al que no llega se lo
-salta; si no llega a ninguno, se para. *Clear route* la borra. *goal* hace que el clic vuelva a
-mandar a R2 a un sitio.
+**Patrol y Free roam**: R2 pasea despacio a su aire (0,15 m/s por defecto), cambiando de rumbo de vez
+en cuando, parándose a veces a mirar alrededor con el dome, y saludando (un sonido) a una cara nueva
+que se acerca; el dome sigue a las caras todo el rato, también caminando. Si algo le corta el paso se
+para, y si sigue bloqueado se da la vuelta (120-180°). **Patrol** se queda cerca de donde se encendió:
+el círculo discontinuo ámbar del mapa es su radio (2 m por defecto; aproximado, la odometría deriva) y
+fuera de él los rumbos nuevos apuntan a casa. **Free roam** es lo mismo sin círculo. Bajo el estado sale
+lo que está haciendo la cabeza (*walking*, *looking around*, *saying hello*, *turning away*) y, en
+Patrol, a cuánto está del inicio.
 
 **Go forward**: R2 avanza recto en la dirección en la que miraba, esquivando lo que encuentra. Si se
 atasca (o la única salida queda muy a un lado) gira despacio sobre sí mismo buscando un hueco libre y
@@ -105,9 +110,13 @@ la Mega más la IMU (el nodo *dead_reckoning*); en el simulador, de la sala simu
 
 **Settings**: todos los ajustes de cómo se mueve R2 solo (nav.yaml), por grupos: círculo de
 seguridad, velocidad (con *slowing down* para las frenadas suaves y *real braking*, la deceleración con
-la que R2 frena de verdad: mídela en el droide), qué hacer cuando se bloquea (Go to a point, Patrol:
-cuánto espera, cuánto retrocede, cuándo cuenta un intento y cuánto tiempo debe quedar libre el
-camino), la búsqueda lenta de Go forward y los sensores de distancia. El círculo de seguridad no puede
+la que R2 frena de verdad: mídela en el droide), qué hacer cuando se bloquea (Go to a point: cuánto
+espera, cuánto retrocede, cuándo cuenta un intento y cuánto tiempo debe quedar libre el camino), la
+búsqueda lenta de Go forward, **Patrol and Free roam** (velocidad máxima, radio de Patrol, cada cuánto y
+cuánto cambia de rumbo, cada cuánto y cuánto rato se para a mirar, lo grande que tiene que ser una cara
+para saludarla, cuánto dura el saludo y lo que espera para otro, cuándo se da la vuelta y lo recto que
+vuelve a casa) y los sensores de distancia. El sonido del saludo y los de mientras mira están en
+`nav.yaml` (`wander: hello`, `idle_sounds`). El círculo de seguridad no puede
 ser menor de 0,40 m (medio cuerpo son 0,36). Un cambio se aplica al momento (pruébalo en el simulador);
 **Save** lo guarda en `~/.config/ros2d2/nav.yaml` y **Defaults** vuelve a los valores del paquete.
 Hasta que guardes, R2 usa los de por defecto; un ajuste cambiado respecto al de por defecto sale en
@@ -319,8 +328,10 @@ reiniciar. Si no queda ningún sensor en uso mirando hacia delante, la consola a
 Cada modo automático se enciende con su propia **combinación del mando**; pulsarla otra vez lo
 apaga, y tocar el stick devuelve el control al momento. Una combinación dada a un modo deja de hacer
 su acción de MarcDuino. *Dome PS + L2* es el seguimiento de caras y no se puede dar a un modo.
-*Go to a point* sirve para probar la distribución de los sensores (sobre todo en el simulador): sin
-encoders en las ruedas, en el droide su posición deriva.
+*Go to a point* es solo para el simulador: sirve para probar la distribución de los sensores antes de
+montarlos (sin encoders en las ruedas, en el droide su posición deriva). *Patrol* y *Free roam* son el
+paseo lento mirando a la gente (mira [Navigation](#navigation)); Free roam no tiene combinación hasta
+que le das una.
 
 **Remote and phone** (debajo del color): hasta dónde llegan los sticks de los Navs virtuales (de 15 a
 100 %, 20 % por defecto; por debajo de 15 % el stick del foot se quedaría en la zona muerta de ShadowMD), el modo invitado del móvil y el enlace a la vista del móvil. Se guarda en
@@ -330,6 +341,7 @@ cuanto cambia (`remote.yaml`).
 |---|---|
 | ![Go to a point](ros2_ws/src/r2_web/www/img/modes/goto.svg) | ![Go forward](ros2_ws/src/r2_web/www/img/modes/forward.svg) |
 | ![Patrol](ros2_ws/src/r2_web/www/img/modes/patrol.svg) | ![Follow a colour](ros2_ws/src/r2_web/www/img/modes/follow.svg) |
+| ![Free roam](ros2_ws/src/r2_web/www/img/modes/free.svg) | |
 
 **Follow a colour**: ponte algo de un color claro, **haz clic sobre él en la imagen de la cámara** y
 mira cuánto de la imagen coincide (lo que coincide se pinta en magenta). Sus deslizadores ajustan lo

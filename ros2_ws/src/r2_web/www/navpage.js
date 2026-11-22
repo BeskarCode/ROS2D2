@@ -12,6 +12,7 @@ import { GROUPS, FIELDS, changedKeys, getK, liveParam, setK, toNavYaml } from '.
 import { call } from './rosbridge.js';
 import { freeText, nearestPoint } from './sensormath.js';
 import { onSaveKey, toast } from './savekey.js';
+import { headLabel } from './wanderview.js';
 
 const $ = (id) => document.getElementById(id);
 const COL = { rplidar_c1: '#39c5cf', vl53l0x: '#a371f7', hcsr04: '#f0b429' };
@@ -23,7 +24,7 @@ export const page = {
   // until /odom arrives (it needs the Mega or the simulator) the droid stands at the origin,
   // so the lidar and the sensors still show with R2 on the bench
   sensors: {}, nav: {}, world: null, simSensors: null, pose: { x: 0, y: 0, th: 0 }, prevPose: null, poseAt: 0,
-  scan: [], state: {}, auto: null, selected: null, trail: [], stateTimes: [],
+  scan: [], state: {}, wander: null, wanderAt: 0, auto: null, selected: null, trail: [], stateTimes: [],
   mode: '',
 };
 const P = page;
@@ -72,6 +73,11 @@ subscribe('/scan', 'sensor_msgs/msg/LaserScan', (m) => {
   P.lidarNearest = nearest;
   P.scanAt = performance.now();
 }, 200);
+// Patrol and Free roam's head (the wander node): its state, and Patrol's start and radius
+subscribe('/wander/state', 'std_msgs/msg/String', (m) => {
+  try { P.wander = JSON.parse(m.data); P.wanderAt = performance.now(); } catch { /* ignore */ }
+});
+const wanderNow = () => (P.wander && performance.now() - P.wanderAt < 1000 ? P.wander : null);
 subscribe('/nav/state', 'std_msgs/msg/String', (m) => {
   P.state = JSON.parse(m.data);
   const now = performance.now();
@@ -249,7 +255,9 @@ function telemetry() {
   oe.textContent = oa == null ? 'odom: none' : `odom ${oa.toFixed(2)} s`;
   oe.style.color = odomOk ? '' : 'var(--red)';
   $('navstate').querySelector('.big').textContent = state;
-  $('navstate').querySelector('.why').textContent = st.why || '';
+  const head = wanderNow();
+  $('navstate').querySelector('.why').textContent = (st.why || '')
+    + (head ? ` · ${headLabel(head)}${head.home_dist != null && head.radius ? ` · ${head.home_dist.toFixed(1)} of ${head.radius} m from the start` : ''}` : '');
   $('hz').textContent = `${P.stateTimes.length / 2} Hz`;
 }
 
@@ -282,7 +290,7 @@ function interpolatedPose() {
 export function frameState() {
   return {
     world: P.world, pose: interpolatedPose(), scan: P.scan, free: lidarFree(), near: lidarNear(), sensors: P.sensors, readings: P.state.filtered || {},
-    stops: P.state.stops || {}, radius: P.nav.safety_radius, goal: P.state.goal, heading: P.state.heading,
+    stops: P.state.stops || {}, radius: P.nav.safety_radius, goal: P.state.goal, heading: P.state.heading, wander: wanderNow(),
     state: P.state.state, v: P.state.v, selected: P.selected, trail: P.trail,
     showRays: $('rays').checked, showTrail: $('trail').checked,
   };

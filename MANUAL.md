@@ -68,18 +68,25 @@ Video of every mode in the simulator: <https://youtu.be/Smfn6zQICm0>
 sensor's beam is drawn in its colour, and the green dashed circle is the free space round R2 (with
 the distance, *36 cm free*). **Click the floor** to send R2 there (the goal is a green flag);
 *Cancel goal* forgets it. *Sensor beams* and *trail* show or hide the beams and the way R2 has gone.
-R2 only drives there when the automatic mode is on (Go to a point, see [Modes](#setup--modes)).
+R2 only drives there when the automatic mode is on (Go to a point, see [Modes](#setup--modes)). Go to
+a point is for the simulator: to try the sensors' layout before building it (on the droid, without wheel
+encoders, its position drifts).
 
 **PS + L2 starts** (also on the Console, in the Mega card): pick which mode PS + L2 on the foot
-controller starts (Go to a point, Go forward, Patrol, Follow a colour); the green text says which one
+controller starts (Go to a point, Go forward, Patrol, Follow a colour, Free roam); the green text says which one
 is on. Only the controller switches a mode on: that keeps someone with the controller in hand
 whenever R2 starts moving by itself. **Stop** switches it off from the page. Picking a mode here is
 the same as giving it PS + L2 in [Modes](#setup--modes): the mode that had PS + L2 gets the picked
 mode's old combination, so none is lost.
 
-**Patrol route**: with *route point* on, each click on the floor adds a numbered point; in Patrol R2
-goes round them in a loop (the point it heads for is filled). A point it cannot reach is skipped; if
-it reaches none it stops. *Clear route* forgets it. *goal* puts clicks back to sending R2 somewhere.
+**Patrol and Free roam**: R2 strolls slowly on its own (0.15 m/s by default), changing course now and
+then, sometimes stopping to look round with the dome, and saying hello (a sound) to a new face that
+comes close; the dome follows the faces all the time, walking too. Something in the way: it stops, and
+if it stays blocked it turns away (120-180°). **Patrol** keeps near where it was switched on: the amber
+dashed circle on the map is its radius (2 m by default; approximate, the odometry drifts), and outside
+it the new courses point home. **Free roam** is the same without the circle. Under the state, what the
+head is doing (*walking*, *looking around*, *saying hello*, *turning away*) and, in Patrol, how far it
+is from the start.
 
 **Go forward**: R2 drives straight on along the way it was facing, steering round things. When it is
 boxed in (or the only way out is well off to a side) it turns slowly on the spot looking for a free
@@ -100,9 +107,12 @@ in red when it is missing. On the droid the odometry comes from what went to the
 
 **Settings**: every setting of how R2 moves on its own (nav.yaml), in groups: safety circle, speed
 (with *slowing down* for gentle slow-downs and *real braking*, the deceleration R2 really stops with:
-measure it on the droid), what to do when blocked (Go to a point, Patrol: how long it waits, how far it
-backs up, when a try counts and how long the way must be clear), Go forward's slow search, and the
-distance sensors. The safety circle cannot be smaller than 0.40 m (half the body is 0.36).
+measure it on the droid), what to do when blocked (Go to a point: how long it waits, how far it
+backs up, when a try counts and how long the way must be clear), Go forward's slow search, **Patrol and
+Free roam** (top speed, Patrol's radius, how often it changes course and by how much, how often and how
+long it stops to look round, how big a face must be for a hello, how long a hello lasts and the wait
+before another, when it turns away, how straight it heads home), and the distance sensors. The hello
+and the sounds while looking round are in `nav.yaml` (`wander: hello`, `idle_sounds`). The safety circle cannot be smaller than 0.40 m (half the body is 0.36).
 A change applies at once (try it in the simulator); **Save** keeps it in `~/.config/ros2d2/nav.yaml`,
 **Defaults** brings back the package's values. Until you save, R2 uses the defaults; a setting you
 changed from its default shows in amber.
@@ -301,8 +311,9 @@ looking ahead, the console warns you: R2 will not move.
 Each automatic mode starts with its own **controller combination**; pressing it again switches the
 mode off, and touching the stick takes the control back at once. A combination given to a mode no
 longer plays its MarcDuino action. *Dome PS + L2* is face tracking and cannot be given to a mode.
-*Go to a point* is there to try the sensors' layout (mostly in the simulator): without wheel
-encoders, on the droid its position drifts.
+*Go to a point* is for the simulator only: to try the sensors' layout before building it (without
+wheel encoders, on the droid its position drifts). *Patrol* and *Free roam* are the slow stroll looking
+at people (see [Navigation](#navigation)); Free roam has no combination until you give it one.
 
 **Remote and phone** (under the colour): how far the virtual Navs' sticks go (15 to 100 %, 20 % by
 default; below 15 % the foot stick would stay inside ShadowMD's dead zone), the phone's guest mode, and the link to the phone view. Saved as soon as it changes
@@ -312,6 +323,7 @@ default; below 15 % the foot stick would stay inside ShadowMD's dead zone), the 
 |---|---|
 | ![Go to a point](ros2_ws/src/r2_web/www/img/modes/goto.svg) | ![Go forward](ros2_ws/src/r2_web/www/img/modes/forward.svg) |
 | ![Patrol](ros2_ws/src/r2_web/www/img/modes/patrol.svg) | ![Follow a colour](ros2_ws/src/r2_web/www/img/modes/follow.svg) |
+| ![Free roam](ros2_ws/src/r2_web/www/img/modes/free.svg) | |
 
 **Follow a colour**: wear something of a clear colour, **click on it in the camera picture** and
 check how much of the picture it matches (the matches are painted magenta). Its sliders set how
