@@ -577,3 +577,27 @@ def test_go_forward_after_a_wander_hold_moves():
     nav.cancel()
     nav.start_forward(0.0)                               # then Go forward
     assert run(nav, 5, t0=1.0)[-1].v > 0
+
+
+def test_wander_turns_on_the_spot_to_a_course_behind():
+    c = cfg()
+    nav = Navigator(c, SENSORS)
+    nav.wandering = True
+    nav.steer(2.5, False)                                # 143 deg left, nothing in the way
+    d = run(nav, 3)[-1]
+    assert d.state == "turning" and d.v == 0 and 0 < d.w <= c["search_turn"] * wm_of(c) + 1e-9
+
+
+def test_wander_keeps_the_way_out_for_a_while():
+    nav = Navigator(cfg(), SENSORS)
+    nav.wandering = True
+    nav.steer(0.0, False)
+    left_free = wall_ahead() + [(0.2 + k / 10, -0.5) for k in range(10)]
+    run(nav, 3, scan=left_free)                           # boxed in: searching
+    run(nav, 2, pose=(0.0, 0.0, 1.2), t0=1.0)             # out, along 1.2 rad
+    assert not nav.searching and nav.forward_th == pytest.approx(1.2)
+    nav.steer(0.0, False)                                 # the head asks for the blocked way again
+    assert nav.forward_th == pytest.approx(1.2)           # not yet: it keeps the way out
+    run(nav, 1, pose=(0.0, 0.0, 1.2), t0=6.5)
+    nav.steer(0.0, False)
+    assert nav.forward_th == pytest.approx(0.0)           # 5 s later the head's course counts again

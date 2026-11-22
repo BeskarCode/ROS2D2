@@ -84,6 +84,7 @@ DRIVE_UNITS_PER_MPS = 50   # the Mega bridge's conversion (r2_shadow_bridge): un
 TURN_UNITS_PER_RADPS = 30  # and rad/s * 30
 SIDE_SLOW_MIN = 0.3        # things beside the path slow R2 down to this fraction at most
 FLOOR_NEAR = 0.8         # floor sensor reading below 80% of the floor: something low in the way
+WANDER_DETOUR_S = 5.0    # s Patrol / Free roam keep the way out of a search before the head's course counts again
 FLOOR_FAR = 1.4          # above 140% of the floor (or no echo): a step down or a hole
 REAR_ROOM = 0.15         # m behind the body that must be free (and seen) to back up
 NO_VIEW_AHEAD = "no sensor looks ahead (lidar or front sensor reporting): not moving where it cannot see"
@@ -426,6 +427,7 @@ class Navigator:
         self.forward_th = None         # Go forward: the heading it travels along (odom), or None
         self.wandering = False         # Patrol / Free roam: Go forward on the wander node's course, at wander.max_speed
         self.hold = False              # the wander node wants the feet still (looking round, saying hello)
+        self.detour_until = -math.inf  # wandering: until then the way out of a search wins over the head's course
         self.brake = 0.0               # m it needs to stop at the speed it goes now
         self._sees = lambda b: False   # set every step: does a reporting sensor look along bearing b
 
@@ -466,7 +468,7 @@ class Navigator:
         that; the new course counts once it is out. hold: feet still."""
         if self.forward_th is None:
             self.start_forward(th)
-        elif not self.searching:
+        elif not self.searching and (self.last_t is None or self.last_t >= self.detour_until):
             self.forward_th = th
         self.hold = bool(hold)
 
@@ -536,9 +538,11 @@ class Navigator:
             self.last_th = th
             if (too_close is None and inside_ahead(pts, R + self.brake, cfg["safety_cone_deg"]) is None
                     and clearance(pts, 0.0) >= R + cfg["search_free"]):
-                # a way out straight ahead: carry on along it
+                # a way out straight ahead: carry on along it (wandering: for a while, whatever the head says)
                 self.searching, self.turned, self.last_th, self.search_dir = False, 0.0, None, 0
                 self.forward_th = th
+                if self.wandering:
+                    self.detour_until = now + WANDER_DETOUR_S
             elif self.turned >= 2 * math.pi:
                 self.gave_up = "no way out after a full turn: stopped"
                 self.forward_th = None
@@ -555,6 +559,14 @@ class Navigator:
                     d.why = f"STOP: {too_close}{': ' + floor_why if floor_why else ''}; " + d.why
                 return d
         want = wrap(self.forward_th - th)
+        if (self.wandering and abs(want) > math.radians(cfg["search_wide_deg"]) and too_close is None
+                and inside_ahead(pts, R + self.brake, cfg["safety_cone_deg"]) is None):
+            # a new course well off to a side or behind: turn to it on the spot, the way the head chose
+            self.moved_at = None
+            d.hard_stop = True
+            d.w = cfg["search_turn"] * wm * (1 if want > 0 else -1)
+            d.state, d.heading, d.why = "turning", want, "turning to the new course"
+            return d
         heading, clear = choose_heading(pts, want, cfg, self._sees)
         # boxed in, the only way is well off to a side, or not getting anywhere: search slowly
         x, y = pose[0], pose[1]

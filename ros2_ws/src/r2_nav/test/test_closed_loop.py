@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(__file__))
 world_mod = pytest.importorskip("r2_sim.world")
 pytest.importorskip("r2_shadow_bridge.protocol")
-from closed_loop import drive, follow  # noqa: E402
+from closed_loop import drive, follow, wander_run  # noqa: E402
 from r2_sensors.config import load_sensors  # noqa: E402
 
 SENSORS = load_sensors(os.path.join(os.path.dirname(__file__), "..", "..", "r2_sensors", "config", "sensors.yaml"))
@@ -104,3 +104,32 @@ def test_forward_boxed_in_searches_slowly_and_gives_up():
     assert trace[-1][1] == "gave up", trace[-1]
     assert any(t[1] == "searching" for t in trace)
     assert not any(t[7] for t in trace)
+
+
+# ---------- Patrol and Free roam: the head (wander_core) and the legs (the navigator) together ----------
+def _room():
+    # the default room without its low box: low things beside the path are a known limit of the
+    # navigator (Go forward as well), not of the head
+    w = world_mod.World.default()
+    w.apply({"op": "remove", "id": 5})
+    return w
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3])
+def test_patrol_stays_near_its_radius(seed):
+    trace = wander_run(_room(), SENSORS, "patrol", seconds=180, seed=seed)
+    radius = 2.0
+    assert max(row[4] for row in trace) < radius + 1.0, max(row[4] for row in trace)
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3])
+def test_free_roam_never_touches(seed):
+    trace = wander_run(_room(), SENSORS, "free", seconds=180, seed=seed)
+    assert not any(row[5] for row in trace), next(r for r in trace if r[5])
+
+
+@pytest.mark.parametrize("seed", [1, 2, 3])
+def test_free_roam_keeps_moving(seed):
+    trace = wander_run(_room(), SENSORS, "free", seconds=180, seed=seed)
+    walked = sum(math.hypot(b[2] - a[2], b[3] - a[3]) for a, b in zip(trace, trace[1:]))
+    assert walked > 3.0, walked

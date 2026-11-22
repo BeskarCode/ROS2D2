@@ -95,3 +95,48 @@ def follow(world, sensors, person_at, seconds=40.0, seed=1, dt=0.1, cfg=None, fc
                       math.hypot(person["x"] - world.pose[0], person["y"] - world.pose[1]), bump, v))
         t += dt
     return trace
+
+
+def wander_run(world, sensors, mode, seconds=180.0, seed=1, dt=0.1, cfg=None):
+    """Patrol ("patrol") or Free roam ("free") round the simulated room: the head (wander_core) gives
+    the course, the navigator drives it. No faces. Rows: (t, nav state, x, y, distance to the start,
+    bump, v, head state)."""
+    import random
+
+    from r2_dome_tracker.control import Gains
+    from r2_nav.wander_core import Wander
+    cfg = cfg or parse_nav("")
+    nav = Navigator(cfg, sensors)
+    nav.wandering = True
+    head = Wander(cfg["wander"], Gains(), random.Random(seed), mode == "patrol")
+    head.start(0.0, tuple(world.pose))
+    x0, y0 = world.pose[0], world.pose[1]
+    sim = SensorSim(seed)
+    inputs = SensorInputs()
+    v_out = w_out = 0.0
+    nav_state = None
+    rows = []
+    lidar = next(s for s in sensors.values() if s["type"] == "rplidar_c1")
+    t = 0.0
+    while t < seconds:
+        pose = tuple(world.pose)
+        out = head.step(t, pose, nav_state, [], 0.0)
+        nav.steer(out.heading, out.hold)
+        for n, s in sensors.items():
+            if s["type"] != "rplidar_c1":
+                inputs.on_range(n, t, sim.range_of(world, pose, s), cfg["filter"])
+        snap = inputs.snapshot(t)
+        d = nav.step(t, pose, lidar_points(sim, world, pose, lidar), snap.ranges, True, speed=v_out, lost=snap.lost)
+        nav_state = d.state
+        v_out, w_out = shape((v_out, w_out), d.v, d.w, d.hard_stop, cfg, dt)
+        drive_u, turn_u = twist_to_units(v_out, w_out, DRIVE, TURN, MAX_LIN, MAX_ANG)
+        v, w = units_to_twist(drive_u, turn_u, DRIVE, TURN)
+        nxt = step_pose(world.pose, v, w, dt)
+        bump = blocked_move(world, nxt) and v != 0
+        if bump:
+            nxt = (world.pose[0], world.pose[1], nxt[2])
+        world.pose = list(nxt)
+        rows.append((round(t, 1), d.state, world.pose[0], world.pose[1],
+                     math.hypot(world.pose[0] - x0, world.pose[1] - y0), bump, v, out.state))
+        t += dt
+    return rows

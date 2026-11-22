@@ -190,3 +190,19 @@ def test_mode_off_stops_dome_once():
     assert leave_outputs(True, False) == [("dome", 0)]     # leaving: one stop for the dome
     assert leave_outputs(False, False) == []               # then silence (the dome tracker is free)
     assert leave_outputs(False, True) == [] and leave_outputs(True, True) == []
+
+
+def test_blocked_counts_through_flicker():
+    w = make(pause_chance=0.0, blocked_s=3)
+    w.step(0.0, (0.0, 0.0, 0.0), "forward", [], 0.0)
+    outs = run(w, 0.1, 4.0, nav_state=None)
+    # the navigator flips between searching and forward every step while it creeps on
+    w2 = make(pause_chance=0.0, blocked_s=3)
+    states, t, away = ["searching", "forward"], 0.0, []
+    for i in range(40):
+        o = w2.step(t, (0.0, 0.0, 0.0), states[i % 2], [], 0.0)
+        if o.state == "turn_away":
+            away.append(t)
+        t += DT
+    assert away and away[0] == pytest.approx(3.0, abs=0.2)
+    assert not [o for _, o in outs if o.state == "turn_away"]

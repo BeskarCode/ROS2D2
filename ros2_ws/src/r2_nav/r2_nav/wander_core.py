@@ -24,6 +24,7 @@ from r2_nav.modes import WANDER_MODES
 BLOCKED = ("searching", "gave up")      # /nav/state states that count as blocked
 SWEEP_DEG = 45.0                         # looking round: the dome goes this far each side
 FRONT_DEG = 5.0                          # within this of the front the dome counts as facing front
+CLEAR_S = 1.0                            # not blocked for this long (in a row) before the blocked count starts again
 
 
 def wrap(a):
@@ -55,6 +56,7 @@ class Wander:
         self.until = None                 # end of look or greet
         self.last_greet = -math.inf
         self.blocked_since = None
+        self.free_since = None
         self.sweep = 1
         self.lock.reset()
         self.tracker.reset()
@@ -138,14 +140,18 @@ class Wander:
             if now >= self.until:
                 self._walk(now)
         elif self.state == "walk" and pose is not None:
-            blocked = nav_state in BLOCKED
-            if not blocked:
-                self.blocked_since = None
-            elif self.blocked_since is None:
-                self.blocked_since = now
-            if blocked and now - self.blocked_since >= cfg["blocked_s"]:
+            # blocked: the navigator searching (or given up), even if it flickers back to going for a step
+            if nav_state in BLOCKED:
+                self.free_since = None
+                if self.blocked_since is None:
+                    self.blocked_since = now
+            elif self.blocked_since is not None:
+                self.free_since = now if self.free_since is None else self.free_since
+                if now - self.free_since >= CLEAR_S:
+                    self.blocked_since = self.free_since = None
+            if self.blocked_since is not None and now - self.blocked_since >= cfg["blocked_s"]:
                 self.heading = wrap(self.heading + self.rng.choice((-1, 1)) * math.radians(self.rng.uniform(120, 180)))
-                self.state, self.blocked_since = "turn_away", None
+                self.state, self.blocked_since, self.free_since = "turn_away", None, None
                 self.next_turn = now + self.rng.uniform(*cfg["turn_every_s"])
             elif self._outside(home) and abs(wrap(self.heading - home[1])) > math.pi / 2:
                 self.heading = self._towards_home(home)       # going further out: back now
