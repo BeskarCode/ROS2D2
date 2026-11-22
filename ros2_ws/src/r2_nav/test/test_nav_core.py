@@ -517,3 +517,63 @@ def test_wander_param_checks_one_live_value():
     assert "wander.turn_every_s" in wander_param_error("turn_every_s", [9.0, 5.0])
     assert "wander.idle_sounds" in wander_param_error("idle_sounds", ["x"])
     assert "unknown" in wander_param_error("speed", 1.0)
+
+
+# ---------- Patrol and Free roam: the navigator follows the course the wander node gives ----------
+def test_steer_follows_the_given_heading():
+    nav = Navigator(cfg(), SENSORS)
+    nav.steer(0.5, False)                                # 29 deg left of where R2 points
+    d = run(nav, 3)[-1]
+    assert d.state == "forward" and d.w > 0
+    nav.steer(-0.5, False)
+    d = run(nav, 3, t0=1.0)[-1]
+    assert d.w < 0
+
+
+def test_hold_stops_feet():
+    nav = Navigator(cfg(), SENSORS)
+    nav.steer(0.0, True)
+    d = run(nav, 3)[-1]
+    assert d.state == "holding" and d.v == 0 and d.w == 0 and d.why == "looking around"
+    nav.steer(0.0, False)
+    assert run(nav, 3, t0=1.0)[-1].v > 0
+
+
+def test_wander_speed_cap():
+    nav = Navigator(cfg(max_speed=0.35), SENSORS)
+    nav.wandering = True
+    nav.steer(0.0, False)
+    d = run(nav, 20)[-1]
+    assert 0 < d.v <= 0.15 + 1e-9
+    nav.wandering = False
+    assert run(nav, 20, t0=3.0)[-1].v > 0.15
+
+
+def test_steer_does_not_interrupt_search():
+    c = cfg()
+    nav = Navigator(c, SENSORS)
+    nav.steer(0.0, False)
+    left_free = wall_ahead() + [(0.2 + k / 10, -0.5) for k in range(10)]
+    d = run(nav, 3, scan=left_free)[-1]
+    assert d.state == "searching" and d.w > 0
+    nav.steer(-1.0, False)                               # a course to the right while it looks left for a way out
+    d = run(nav, 2, scan=left_free, t0=1.0)[-1]
+    assert d.state == "searching" and d.w > 0
+
+
+def test_steer_after_gave_up_restarts():
+    nav = Navigator(cfg(), SENSORS)
+    nav.steer(0.0, False)
+    nav.gave_up, nav.forward_th = "no way out after a full turn: stopped", None   # where a full turn leaves it
+    nav.steer(1.0, False)
+    d = run(nav, 3)[-1]
+    assert d.state == "forward" and nav.forward_th == pytest.approx(1.0) and nav.gave_up is None
+
+
+def test_go_forward_after_a_wander_hold_moves():
+    nav = Navigator(cfg(), SENSORS)
+    nav.steer(0.0, True)                                 # Patrol, looking round
+    run(nav, 2)
+    nav.cancel()
+    nav.start_forward(0.0)                               # then Go forward
+    assert run(nav, 5, t0=1.0)[-1].v > 0

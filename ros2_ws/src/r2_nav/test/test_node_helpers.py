@@ -40,3 +40,10 @@ def test_follow_silent_in_other_mode():
     assert drives_in("follow", "follow") is True
     assert drives_in(None, "follow") is False
     assert drives_in("", "follow") is False
+
+
+def test_course_fresh():
+    from r2_nav.nav_core import course_fresh
+    assert not course_fresh(None, 10.0, 2.0)               # no course yet: stand still
+    assert course_fresh((9.0, 0.5), 10.0, 2.0)
+    assert not course_fresh((7.5, 0.5), 10.0, 2.0)         # the wander node went quiet

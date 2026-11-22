@@ -189,6 +189,11 @@ def _parse_wander(v):
     return w
 
 
+def course_fresh(course, now, stale):
+    """Is (time, rad) recent enough to drive along? None (none yet) is not."""
+    return course is not None and now - course[0] < stale
+
+
 def load_nav(path):
     with open(path, encoding="utf-8") as f:
         return parse_nav(f.read())
@@ -208,7 +213,7 @@ def ramp(current, wanted, max_step):
     return current + max(-max_step, min(max_step, wanted - current))
 
 
-def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", route=(), route_i=None, sources=None):
+def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", sources=None):
     """What /nav/state carries for the web page (one JSON object). sources: {name: s since its
     last message} for odom, the lidar and each distance sensor (None: never heard)."""
     r = lambda v: None if v is None else round(v, 3)   # noqa: E731
@@ -217,7 +222,7 @@ def state_json(d, goal, heading_odom, filtered, raw, ignored=(), mode="goto", ro
         "heading": r(heading_odom), "tries": d.tries, "goal": list(goal) if goal else None,
         "stops": {k: r(v) for k, v in d.stops.items()},
         "filtered": {k: r(v) for k, v in filtered.items()}, "raw": {k: r(v) for k, v in raw.items()},
-        "ignored": list(ignored), "mode": mode, "route": [list(p) for p in route], "route_i": route_i,
+        "ignored": list(ignored), "mode": mode,
         "lost": list(d.lost), "sources": {k: (None if v is None else round(v, 2)) for k, v in (sources or {}).items()},
     })
 
@@ -419,6 +424,8 @@ class Navigator:
         self.last_obstacle = -1e9
         self.floor_seen = set()        # floor sensors that have given a reading since start-up
         self.forward_th = None         # Go forward: the heading it travels along (odom), or None
+        self.wandering = False         # Patrol / Free roam: Go forward on the wander node's course, at wander.max_speed
+        self.hold = False              # the wander node wants the feet still (looking round, saying hello)
         self.brake = 0.0               # m it needs to stop at the speed it goes now
         self._sees = lambda b: False   # set every step: does a reporting sensor look along bearing b
 
@@ -453,9 +460,20 @@ class Navigator:
         self._reset_try_state()
         self.forward_th = th
 
+    def steer(self, th, hold):
+        """Patrol and Free roam: travel along th (odom), Go forward's way. Not going (just switched on,
+        or it gave up after a full turn): set off. While it turns to find a way out it keeps doing
+        that; the new course counts once it is out. hold: feet still."""
+        if self.forward_th is None:
+            self.start_forward(th)
+        elif not self.searching:
+            self.forward_th = th
+        self.hold = bool(hold)
+
     def cancel(self):
         self.goal = None
         self.forward_th = None
+        self.hold = False
         self._reset_try_state()
 
     def reconfigure(self, cfg=None, sensors=None):
@@ -493,6 +511,8 @@ class Navigator:
         cfg = self.cfg
         wm = min(math.radians(cfg["max_turn_deg"]), cfg["max_turn_power"] / TURN_UNITS_PER_RADPS)
         vmax = min(cfg["max_speed"], cfg["max_drive_power"] / DRIVE_UNITS_PER_MPS)
+        if self.wandering:
+            vmax = min(vmax, cfg["wander"]["max_speed"])
         return wm, vmax
 
     def _step_forward(self, now, pose, scan_xy, ranges, stops, d):
@@ -505,6 +525,10 @@ class Navigator:
         pts, too_close, floor_why = self._sense(now, scan_xy, ranges, stops, d)
         R = cfg["safety_radius"]
         wm, vmax = self._limits()
+        if self.hold and not self.searching:
+            self.moved_at = None                   # standing still on purpose is not being stuck
+            d.state, d.why = "holding", "looking around"
+            return d
         if self.searching:
             d.hard_stop = True                     # turning on the spot: no rolling on meanwhile
             if self.last_th is not None:

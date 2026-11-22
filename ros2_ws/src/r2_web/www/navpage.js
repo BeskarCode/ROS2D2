@@ -24,7 +24,7 @@ export const page = {
   // so the lidar and the sensors still show with R2 on the bench
   sensors: {}, nav: {}, world: null, simSensors: null, pose: { x: 0, y: 0, th: 0 }, prevPose: null, poseAt: 0,
   scan: [], state: {}, auto: null, selected: null, trail: [], stateTimes: [],
-  mode: '', route: [], clickRoute: false,
+  mode: '',
 };
 const P = page;
 
@@ -74,11 +74,6 @@ subscribe('/scan', 'sensor_msgs/msg/LaserScan', (m) => {
 }, 200);
 subscribe('/nav/state', 'std_msgs/msg/String', (m) => {
   P.state = JSON.parse(m.data);
-  // the navigator's copy of the route wins (another browser may have changed it)
-  if (P.state.mode === 'patrol' && Array.isArray(P.state.route) && JSON.stringify(P.state.route) !== JSON.stringify(P.route)) {
-    P.route = P.state.route;
-    showRoute();
-  }
   const now = performance.now();
   P.stateTimes = [...P.stateTimes.filter((t) => now - t < 2000), now];
   telemetry();
@@ -128,7 +123,7 @@ function simMode(on) {
   else showMega();
   $('maphint').textContent = on
     ? 'Click the floor to send R2 there. Drag an obstacle to move it; click it and press Delete (or right-click it) to remove it.'
-    : 'Click the floor to send R2 there (in the odometry frame). With "route point", clicks make the patrol route.';
+    : 'Click the floor to send R2 there (in the odometry frame).';
 }
 simMode(false);
 
@@ -141,7 +136,7 @@ function sendGoal(x, y) {
 }
 function select(id) { P.selected = id; $('del').disabled = $('shirt').disabled = id == null; }
 let moveTimer = 0;
-// ---------- rooms, modes, patrol route, sensors off (rooms, modes and sensors: simulator only) ----------
+// ---------- rooms, modes, sensors off (rooms, modes and sensors: simulator only) ----------
 function showRooms() {
   const sel = $('room'), names = P.world.rooms || [];
   if (sel.options.length !== names.length) {
@@ -152,33 +147,13 @@ function showRooms() {
 $('room').onchange = () => {
   worldCmd({ op: 'room', name: $('room').value });
   P.trail = [];
-  if (P.route.length) { P.route = []; sendRoute(); }          // the old route's points mean nothing in another room
   addLine(`· room: ${$('room').selectedOptions[0].textContent}`, 'info'); };
 // the mode PS + L2 starts, which is on, Stop; in simulation also the fake controller's PS + L2
 createModePick($('modepick'), { onPress: () => worldCmd({ op: 'press', what: 'button' }), log: (t) => addLine(t, 'info') });
 $('modepick').querySelector('.mp-press').classList.add('simonly');
 $('modepick').querySelector('.mp-press').hidden = $('simpill').hidden;     // made after simMode(false) ran
-function setClick(route) {
-  P.clickRoute = route;
-  $('click-goal').classList.toggle('on', !route);
-  $('click-route').classList.toggle('on', route);
-}
-$('click-goal').onclick = () => setClick(false);
-$('click-route').onclick = () => setClick(true);
-function sendRoute() {
-  publish('/nav/patrol', 'std_msgs/msg/String', { data: JSON.stringify(P.route.map(([x, y]) => [+x.toFixed(2), +y.toFixed(2)])) });
-  showRoute();
-}
-function showRoute() {
-  $('routeinfo').textContent = P.route.length ? `patrol route: ${P.route.length} point${P.route.length > 1 ? 's' : ''}` : 'no patrol route';
-}
-$('clearroute').onclick = () => { P.route = []; sendRoute(); addLine('· patrol route cleared', 'info'); };
-showRoute();
 function onFloor(x, y) {
-  if (!P.clickRoute) return sendGoal(x, y);
-  P.route.push([x, y]);
-  sendRoute();
-  addLine(`· route point ${P.route.length}: x ${x.toFixed(2)}, y ${y.toFixed(2)}`, 'info');
+  sendGoal(x, y);
 }
 function showSwitches() {
   const off = new Set((P.world && P.world.off) || []);
@@ -309,7 +284,6 @@ export function frameState() {
     world: P.world, pose: interpolatedPose(), scan: P.scan, free: lidarFree(), near: lidarNear(), sensors: P.sensors, readings: P.state.filtered || {},
     stops: P.state.stops || {}, radius: P.nav.safety_radius, goal: P.state.goal, heading: P.state.heading,
     state: P.state.state, v: P.state.v, selected: P.selected, trail: P.trail,
-    route: P.route, routeI: P.state.mode === 'patrol' ? P.state.route_i : null,
     showRays: $('rays').checked, showTrail: $('trail').checked,
   };
 }

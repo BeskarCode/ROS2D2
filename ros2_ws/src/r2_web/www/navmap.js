@@ -50,21 +50,6 @@ export function createNavMap(cv, { onGoal, onMove, onSelect, onRemove }) {
       for (const t of st.trail) g.lineTo(...P(...t));
       g.stroke();
     }
-    // the patrol route: numbered points joined in a loop, the one it heads for filled
-    if (st.route && st.route.length) {
-      g.setLineDash([6, 6]); g.strokeStyle = 'rgba(210,153,34,.8)'; g.lineWidth = 2; g.beginPath();
-      st.route.forEach((p, i) => (i ? g.lineTo(...P(...p)) : g.moveTo(...P(...p))));
-      if (st.route.length > 2) g.closePath();
-      g.stroke(); g.setLineDash([]);
-      g.font = 'bold 12px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      st.route.forEach((p, i) => {
-        const [px, py] = P(...p);
-        g.fillStyle = i === st.routeI ? '#d29922' : '#0d1117'; g.strokeStyle = '#d29922'; g.lineWidth = 2;
-        g.beginPath(); g.arc(px, py, 10, 0, 7); g.fill(); g.stroke();
-        g.fillStyle = i === st.routeI ? '#0d1117' : '#d29922'; g.fillText(String(i + 1), px, py + 1);
-      });
-      g.textAlign = 'start'; g.textBaseline = 'alphabetic';
-    }
     if (st.goal) {
       const [gx, gy] = P(...st.goal);
       g.strokeStyle = '#3fb950'; g.lineWidth = 2; g.beginPath(); g.arc(gx, gy, 12, 0, 7); g.stroke();
