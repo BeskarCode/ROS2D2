@@ -1,27 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" role="img" aria-label="Free roam: R2 strolls slowly round the whole room, changing course now and then, stopping to look round and to say hello to someone">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" role="img" aria-label="Free roam: R2 strolls round the room looking for people with the dome; it stops by each person, turns the dome to look at them, says hello, and walks on looking for someone else">
   <!-- ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com) -->
   <defs>
     <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1f2630" stroke-width="1"/></pattern>
-    <g id="r2">
-      <rect x="-7" y="-14" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
-      <rect x="-7" y="9" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
-      <circle r="9" fill="#161b22" stroke="#8b949e" stroke-width="1.5"/>
-      <path d="M10 0 L4 -4 L4 4 Z" fill="#e6edf3"/>
-    </g>
     <g id="person"><circle r="7" fill="#6e7681" fill-opacity="0.5" stroke="#8b949e"/><circle r="3" fill="#8b949e"/></g>
   </defs>
   <rect width="320" height="180" rx="10" fill="#0d1117"/>
   <rect width="320" height="180" rx="10" fill="url(#g)"/>
-  <!-- someone it stops to say hello to -->
-  <use href="#person" x="252" y="66"/>
-  <text x="262" y="52" fill="#d29922" font-family="system-ui, sans-serif" font-size="10">hello!</text>
-  <path id="way" d="M40 120 C70 60 120 50 150 84 C178 116 214 96 232 76 C252 56 290 100 270 132 C250 160 150 160 110 140 C80 126 52 140 40 120 Z" fill="none" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.35"/>
-  <use href="#r2">
-    <!-- a stop to look round, then one by the person -->
-    <animateMotion dur="16s" repeatCount="indefinite" rotate="auto" keyPoints="0;0.22;0.22;0.38;0.38;1" keyTimes="0;0.2;0.3;0.45;0.6;1" calcMode="linear">
+  <!-- the people it finds -->
+  <use href="#person" x="120" y="50"/>
+  <use href="#person" x="255" y="135"/>
+  <use href="#person" x="95" y="125"/>
+  <path id="way" d="M30 130 L110 95 L230 95 L290 140 L200 150 L60 150 Z" fill="none" stroke="#3b82f6" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.3"/>
+  <!-- "hello!" while it stops by each one -->
+  <text x="132" y="44" fill="#d29922" font-family="system-ui, sans-serif" font-size="10" opacity="0">hello!
+    <animate attributeName="opacity" dur="16s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.17;0.19;0.29;0.31;1"/>
+  </text>
+  <text x="262" y="124" fill="#d29922" font-family="system-ui, sans-serif" font-size="10" opacity="0">hello!
+    <animate attributeName="opacity" dur="16s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.47;0.49;0.59;0.61;1"/>
+  </text>
+  <g>
+    <!-- stops by the first person (0.15-0.32) and by the second (0.45-0.62) -->
+    <animateMotion dur="16s" repeatCount="indefinite" rotate="auto" calcMode="linear"
+      keyPoints="0;0.159;0.159;0.378;0.378;1" keyTimes="0;0.15;0.32;0.45;0.62;1">
       <mpath href="#way"/>
     </animateMotion>
-  </use>
+    <rect x="-7" y="-14" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+    <rect x="-7" y="9" width="14" height="5" rx="1.5" fill="#202833" stroke="#8b949e"/>
+    <circle r="9" fill="#161b22" stroke="#8b949e" stroke-width="1.5"/>
+    <!-- the dome: it looks round while walking, turns to each person while stopped -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" dur="16s" repeatCount="indefinite" calcMode="linear"
+        values="0;-25;-68;-68;0;25;-25;58;58;0;-30;30;-30;0"
+        keyTimes="0;0.07;0.18;0.29;0.33;0.38;0.43;0.48;0.59;0.63;0.72;0.82;0.92;1"/>
+      <path d="M6 0 L44 -13 L44 13 Z" fill="#d29922" fill-opacity="0.13"/>
+      <circle r="5.5" fill="#3b82f6" fill-opacity="0.35" stroke="#e6edf3" stroke-width="1"/>
+      <path d="M7 0 L3 -3 L3 3 Z" fill="#e6edf3"/>
+    </g>
+  </g>
   <text x="12" y="20" fill="#e6edf3" font-family="system-ui, sans-serif" font-size="12" font-weight="700">Free roam</text>
-  <text x="12" y="168" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">strolls anywhere it can, stops to look and say hello</text>
+  <text x="12" y="172" fill="#8b949e" font-family="system-ui, sans-serif" font-size="10">strolls, stops to look at people and say hello, looks for more</text>
 </svg>
