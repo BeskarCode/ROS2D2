@@ -7,7 +7,7 @@ with R2 still on a flat floor, so the correction undoes the box's tilt and the f
 turns round R2's vertical: which of the board's arrows points to R2's front.
 
 Rotations: the chip's attitude is Rz(yaw)·Ry(pitch)·Rx(roll) (the ROS order rvc.quaternion uses).
-The mount M = Rz(front)·Ry(level pitch)·Rx(level roll) takes a vector in the chip's axes to R2's;
+The mount M = Rz(-θ)·L, L = Ry(level pitch)·Rx(level roll), θ = where L puts the front arrow, takes a vector in the chip's axes to R2's;
 R2's attitude is the chip's times Mᵀ.
 """
 
@@ -20,7 +20,7 @@ import yaml
 G = 9.80665
 DEFAULTS = {"in_use": True, "port": "/dev/ttyAMA3", "box": "standing", "front": "+x",
             "invert_yaw": False, "level": None}
-FRONT_DEG = {"+x": 0.0, "+y": -90.0, "-x": 180.0, "-y": 90.0}
+FRONT_ARROW = {"+x": (1.0, 0.0, 0.0), "-x": (-1.0, 0.0, 0.0), "+y": (0.0, 1.0, 0.0), "-y": (0.0, -1.0, 0.0)}
 BOXES = ("standing", "lying")
 LEVEL_MIN_SAMPLES = 50          # half a second at 100 frames a second
 LEVEL_STILL_DEG = 1.0           # every frame of the last second this close to the mean
@@ -63,9 +63,12 @@ class Mount:
     """How the board sits in R2: `level` ({roll_deg, pitch_deg} or None) and `front` ("+x" ...)."""
 
     def __init__(self, level, front):
-        m = _rz(FRONT_DEG[front])
-        if level:
-            m = _mul(m, _mul(_ry(level["pitch_deg"]), _rx(level["roll_deg"])))
+        lv = _mul(_ry(level["pitch_deg"]), _rx(level["roll_deg"])) if level else _rz(0.0)
+        # the printed arrow, once levelled, lies flat: turn round R2's vertical until it points forward.
+        # (Worked out from the arrow, not a fixed angle: on the upside-down board of the lying box +Y and -Y
+        # swap sides, and a fixed table would put R2's front behind it.)
+        a = _apply(lv, FRONT_ARROW[front])
+        m = _mul(_rz(-math.degrees(math.atan2(a[1], a[0]))), lv)
         self.m = m
         self.mt = _t(m)
 
@@ -119,7 +122,7 @@ def check_setting(name, value):
     if name == "box":
         return "" if value in BOXES else f"box must be one of {', '.join(BOXES)}"
     if name == "front":
-        return "" if value in FRONT_DEG else f"front must be one of {', '.join(FRONT_DEG)}"
+        return "" if value in FRONT_ARROW else f"front must be one of {', '.join(FRONT_ARROW)}"
     if name == "level":
         if value is None:
             return ""
@@ -137,7 +140,7 @@ def load_user(path):
     try:
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-    except (OSError, yaml.YAMLError) as e:
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as e:   # a file saved by an ANSI editor too
         return cfg, f"{path}: cannot read it ({str(e).splitlines()[0]}); using the defaults"
     if data is None:
         return cfg, ""

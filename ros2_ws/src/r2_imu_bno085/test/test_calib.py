@@ -105,3 +105,23 @@ def test_load_bad_value_falls_back(tmp_path):
     p.write_text("box: sideways\nfront: -y\n")
     cfg, err = load_user(str(p))
     assert cfg["box"] == "standing" and cfg["front"] == "-y" and "box" in err
+
+
+def test_lying_box_plus_y_arrow_is_r2_front():     # upside-down board: the printed +Y arrow still points forward
+    m = Mount({"roll_deg": 180.0, "pitch_deg": 0.0}, "+y")
+    assert m.vec((0, 1, 0)) == pytest.approx((1, 0, 0), abs=1e-9)
+    assert m.vec((0, 0, -1)) == pytest.approx((0, 0, 1), abs=1e-9)          # its -Z is up
+
+
+def test_lying_box_front_down_is_pitch_plus():
+    lv = {"roll_deg": 180.0, "pitch_deg": 0.0}
+    for front, arrow in (("+y", (0, 1, 0)), ("-y", (0, -1, 0)), ("+x", (1, 0, 0)), ("-x", (-1, 0, 0))):
+        m = Mount(lv, front)
+        assert m.vec(arrow) == pytest.approx((1, 0, 0), abs=1e-9), front
+
+
+def test_load_latin1_file_does_not_crash(tmp_path):
+    p = tmp_path / "imu.yaml"
+    p.write_bytes("# caja tumbada, ni\xf1o\nbox: lying\n".encode("latin-1"))
+    cfg, err = load_user(str(p))
+    assert cfg == DEFAULTS and err
