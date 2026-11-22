@@ -4,7 +4,7 @@
 import { connect, subscribe } from './rosbridge.js';
 import { statusPills } from './statuspills.js';
 
-const st = { ros: null, mega: null, pico: null, picoAt: null, scanAt: null, cams: {}, auto: false, mode: '', track: false };
+const st = { ros: null, mega: null, pico: null, picoAt: null, scanAt: null, cams: {}, auto: false, mode: '', track: false, pads: null };
 let box = null, heartAt = 0, started = false;
 
 function render() {
@@ -40,6 +40,10 @@ function start() {
   subscribe('/scan', 'sensor_msgs/msg/LaserScan', () => { st.scanAt = Date.now(); }, 2000);
   subscribe('/r2/auto_mode', 'std_msgs/msg/Bool', (m) => { st.auto = m.data; render(); });
   subscribe('/r2/mode', 'std_msgs/msg/String', (m) => { st.mode = m.data; render(); });
+  subscribe('/mega/pads', 'std_msgs/msg/String', (m) => {
+    try { st.pads = JSON.parse(m.data); } catch { return; }
+    render();
+  });
   subscribe('/r2/track_mode', 'std_msgs/msg/Bool', (m) => { st.track = m.data; render(); });
   fetch('api/cameras', { cache: 'no-store' }).then((r) => r.json()).then((c) => {
     for (const name of Object.keys(c.cameras || {})) {

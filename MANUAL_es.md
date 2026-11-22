@@ -14,7 +14,8 @@ página o pestaña en la que estás. Todos los botones tienen una ayuda: deja el
 tarjeta o pestaña tiene arriba un **How it works** plegado.
 
 Las píldoras junto al menú son las mismas en todas las páginas y dicen cómo están las cosas: **ROS**
-(el enlace de la consola con ROS), el **Mega**, la placa de la **Pico** (con su versión de firmware),
+(el enlace de la consola con ROS), el **Mega**, los **Navs** (qué mando tiene el Mega en cada hueco,
+foot y dome: `real`, `virtual` desde la ventana Remote o el móvil, o `none` si no hay), la placa de la **Pico** (con su versión de firmware),
 el **Lidar**, la **Camera** (o cuántas de las cámaras contestan) y el **Mode** encendido (uno
 automático o el seguimiento de caras). Verde está bien, ámbar hay que mirarlo, rojo es que no está.
 Un clic en la píldora de Pico, Lidar, Camera o Mode abre su pestaña de Setup; cada pestaña de Setup
@@ -53,8 +54,9 @@ y vídeos de eventos). Debajo: cuántas caras ve, la mejor puntuación y dónde 
   girado.
 - *Camera view* dibuja hacia dónde mira la cámara.
 
-**Mega**: lo que se manda al Mega (→) y lo que contesta (←). *Pause* para el desplazamiento de la
-lista, *Clear* la vacía y *show replies* oculta o muestra las respuestas.
+**Mega**: lo que se manda al Mega (→) y lo que contesta (←). La línea más nueva sale abajo y la
+lista la sigue, como `tail -f`; si subes para leer algo se queda quieta hasta que vuelvas abajo del todo.
+*Pause* para la lista, *Clear* la vacía y *show replies* oculta o muestra las respuestas.
 
 ---
 
@@ -159,7 +161,9 @@ cómo está:
 Mientras la ventana está abierta los dos Navs están "encendidos" (su estado sale 20 veces por
 segundo, como un Nav real). **Cerrar la ventana, ocultar la pestaña o salir de la página los
 apaga**: se suelta todo y el Mega para los motores y los modos él solo, como cuando se pierde un
-mando real. Solo hay una ventana Remote abierta a la vez, entre todas las pestañas.
+mando real. Si el seguimiento de caras o un modo automático va con un Nav virtual, cerrar la ventana
+con su X o con el botón Remote pregunta antes (una pestaña oculta no puede preguntar). Solo hay una
+ventana Remote abierta a la vez, entre todas las pestañas.
 
 ### Mandos
 

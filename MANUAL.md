@@ -14,7 +14,8 @@ on. Every button has a tooltip: hold the mouse over it, and each card or tab has
 works** at its top.
 
 The pills next to the menu are the same on every page and say how things are: **ROS** (the
-console's link to ROS), the **Mega**, the **Pico** board (its firmware version), the **Lidar**, the
+console's link to ROS), the **Mega**, the **Navs** (which controller the Mega has on each slot, foot
+and dome: `real`, `virtual` from the Remote window or the phone, or `none`), the **Pico** board (its firmware version), the **Lidar**, the
 **Camera** (or how many of the cameras answer) and the **Mode** on (an automatic one, or face
 tracking). Green is fine, amber means look, red means it is not there. A click on the Pico, Lidar,
 Camera or Mode pill opens its Setup tab; each Setup tab has its own address (`setup.html#system`…). If R2 stops answering, a
@@ -51,8 +52,9 @@ Below: how many faces it sees, the best score and where the best one is.
 - *Simulate (no Mega)* tries the tracking with no Mega: the faces move as if the camera had turned.
 - *Camera view* draws where the camera looks.
 
-**Mega**: what goes to the Mega (→) and what it answers (←). *Pause* stops the list scrolling,
-*Clear* empties it, *show replies* hides or shows the answers.
+**Mega**: what goes to the Mega (→) and what it answers (←). The newest line is at the bottom and
+the list follows it, like `tail -f`; scroll up to read and it stays put until you go back to the bottom.
+*Pause* stops the list, *Clear* empties it, *show replies* hides or shows the answers.
 
 ---
 
@@ -150,8 +152,9 @@ the same buttons do the same things. It needs a Mega firmware with the virtual N
 
 While the window is open both Navs are "on" (their state goes out 20 times a second, like a real
 Nav). **Closing the window, hiding the tab or leaving the page switches them off**: everything is let
-go and the Mega stops the motors and the modes by itself, as when a real controller is lost. Only one
-Remote window is open at a time, across tabs.
+go and the Mega stops the motors and the modes by itself, as when a real controller is lost. If face tracking
+or an automatic mode runs on a virtual Nav, closing the window with its X or the Remote button asks
+first (a hidden tab cannot ask). Only one Remote window is open at a time, across tabs.
 
 ### Controllers
 

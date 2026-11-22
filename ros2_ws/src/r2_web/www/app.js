@@ -298,26 +298,30 @@ function onTx(m) {
   else addLine(m.data, 'tx');
 }
 
+// Like tail -f: the newest line at the bottom, and the log follows it while you are at the bottom;
+// scroll up to read and it stays where you are until you go back down.
 function addLine(text, cls) {
   if (paused) return;
   const log = $('megalog');
-  const first = log.firstElementChild;
+  const follow = log.scrollHeight - log.scrollTop - log.clientHeight < 24;
+  const last = log.lastElementChild;
   // 15 identical ROS:DOME: lines a second: group repeats on one line with a counter
-  if (first && first.dataset.text === text && first.dataset.cls === cls) {
-    const n = Number(first.dataset.n) + 1;
-    first.dataset.n = n;
-    first.querySelector('.n').textContent = '×' + n;
-    first.querySelector('.t').textContent = clock();
-    return;
+  if (last && last.dataset.text === text && last.dataset.cls === cls) {
+    const n = Number(last.dataset.n) + 1;
+    last.dataset.n = n;
+    last.querySelector('.n').textContent = '×' + n;
+    last.querySelector('.t').textContent = clock();
+  } else {
+    const div = document.createElement('div');
+    div.className = cls;
+    div.dataset.text = text; div.dataset.cls = cls; div.dataset.n = 1;
+    div.innerHTML = '<span class="t"></span><span class="x"></span><span class="n"></span>';
+    div.querySelector('.t').textContent = clock();
+    div.querySelector('.x').textContent = text;
+    log.append(div);
+    while (log.childElementCount > MAX_LINES) log.firstElementChild.remove();
   }
-  const div = document.createElement('div');
-  div.className = cls;
-  div.dataset.text = text; div.dataset.cls = cls; div.dataset.n = 1;
-  div.innerHTML = '<span class="t"></span><span class="x"></span><span class="n"></span>';
-  div.querySelector('.t').textContent = clock();
-  div.querySelector('.x').textContent = text;
-  log.prepend(div);
-  while (log.childElementCount > MAX_LINES) log.lastElementChild.remove();
+  if (follow) log.scrollTop = log.scrollHeight;
 }
 
 function clock() {

@@ -10,6 +10,9 @@
 // the sending itself (and the one-page-at-a-time rule with the phone view) is padlink.js.
 import { shortcutList } from './shortcuts.js';
 import { createPadLink } from './padlink.js';
+import { closeWarning } from './padlogic.js';
+import { confirmDialog } from './dialog.js';
+import { subscribe } from './rosbridge.js';
 
 const NAMES = { F: 'Foot Nav', D: 'Dome Nav' };
 
@@ -18,6 +21,10 @@ const link = createPadLink({ onTick: markHolds });
 const pad = link.pad;
 const channel = 'BroadcastChannel' in window ? new BroadcastChannel('r2-remote') : null;
 const me = Math.random().toString(36).slice(2);
+const running = { track: false, auto: false, mode: '' };     // what closing the window would switch off
+subscribe('/r2/track_mode', 'std_msgs/msg/Bool', (m) => { running.track = m.data; });
+subscribe('/r2/auto_mode', 'std_msgs/msg/Bool', (m) => { running.auto = m.data; });
+subscribe('/r2/mode', 'std_msgs/msg/String', (m) => { running.mode = m.data; });
 
 function addStyle() {
   const s = document.createElement('style');
@@ -121,7 +128,7 @@ function build() {
         mode instead. Free combinations are not listed.</p>
     </div>`;
   document.body.append(win);
-  win.querySelector('.r2r-x').addEventListener('click', close);
+  win.querySelector('.r2r-x').addEventListener('click', closeAsked);
   win.querySelectorAll('.r2r-pad').forEach(wirePad);
   win.querySelectorAll('.r2r-tabs button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
   win.querySelector('.r2r-sfind').addEventListener('input', renderShortcuts);
@@ -306,6 +313,22 @@ function open() {
   channel?.postMessage({ open: me });     // one window at a time across tabs
 }
 
+// Closing by hand (the X or the Remote button): if a mode or face tracking runs on a virtual Nav,
+// say that closing switches it off (the Mega takes the quiet Nav as a lost controller) and ask.
+async function closeAsked() {
+  const off = closeWarning(link.pads(), running);
+  if (off) {
+    const ok = await confirmDialog({
+      title: 'Close the Remote?', icon: 'fa-triangle-exclamation', ok: 'Close',
+      lines: [`It runs on the virtual Navs: ${off.join(' and ')}.`,
+        'Closing the window switches the virtual Navs off, and the Mega switches that off with them, as when a real controller is lost.'],
+      warn: 'Keep the window open (it can be dragged aside) while it should keep going.',
+    });
+    if (!ok) return;
+  }
+  close();
+}
+
 function close() {
   link.stop();
   if (win) {
@@ -343,7 +366,7 @@ if (nav) {
   btn.className = 'r2rbtn';
   btn.title = 'Two virtual PS3 Navs: try things without the real controllers (a real Nav in use always wins)';
   btn.innerHTML = '<i class="fa-solid fa-gamepad"></i>Remote';
-  btn.addEventListener('click', (e) => { e.preventDefault(); if (win && !win.hidden) close(); else open(); });
+  btn.addEventListener('click', (e) => { e.preventDefault(); if (win && !win.hidden) closeAsked(); else open(); });
   nav.append(btn);
 }
 link.onPads(() => showStatus());

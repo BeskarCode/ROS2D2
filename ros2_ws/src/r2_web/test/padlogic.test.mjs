@@ -121,3 +121,16 @@ test('force(mask): a shortcut presses those buttons on top of the rest; force(0)
   p.force(maskOf(['UP'])); p.reset();
   assert.equal(p.state(0).buttons, 0);          // closing the window lets a shortcut go too
 });
+
+test('closing the Remote: a warning only when something runs on a virtual Nav', async () => {
+  const { closeWarning } = await import('../www/padlogic.js');
+  const pads = { F: 'virtual', D: 'virtual' };
+  assert.equal(closeWarning(pads, { track: false, auto: false }), null);
+  assert.deepEqual(closeWarning(pads, { track: true, auto: false }), ['face tracking']);
+  assert.deepEqual(closeWarning(pads, { track: false, auto: true, mode: 'patrol' }), ['the mode Patrol']);
+  assert.deepEqual(closeWarning(pads, { track: true, auto: true, mode: 'follow' }), ['the mode Follow a colour', 'face tracking']);
+  // a real Nav holds that slot: closing the window does not switch it off
+  assert.equal(closeWarning({ F: 'real', D: 'real' }, { track: true, auto: true, mode: 'patrol' }), null);
+  assert.deepEqual(closeWarning({ F: 'real', D: 'virtual' }, { track: true, auto: true, mode: 'patrol' }), ['face tracking']);
+  assert.equal(closeWarning(null, { track: true }), null);
+});
