@@ -1,0 +1,13 @@
+# Adafruit BNO085 in UART-RVC mode (P0 to 3V3) on the Pi's uart3: its SDA pin (the sensor's TX in
+# this mode) to GPIO 5 (header pin 29). Needs dtoverlay=uart3 in /boot/firmware/config.txt.
+# UART-RVC: 115200 baud, 100 frames a second (BNO08X datasheet 1000-3927, 1.2.5).
+imu:
+  ros__parameters:
+    port: /dev/ttyAMA3      # check with ls /dev/ttyAMA* after enabling uart3
+    baud: 115200
+    rate_hz: 100.0
+    frame_id: imu_link
+    zero_yaw: true          # yaw 0 = where R2 points when the node starts
+    invert_yaw: false       # set true if turning R2 left makes yaw go down
+    tilt_warn_deg: 20.0
+    stale_sec: 0.5

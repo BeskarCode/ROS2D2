@@ -13,6 +13,7 @@ servicio `r2d2` los arranca todos con un único launch (`r2_bringup`).
 | [`r2_dome_tracker`](r2_dome_tracker) | Gira el dome hacia la cara más grande que vea cualquier cámara |
 | [`r2_shadow_bridge`](r2_shadow_bridge) | El único nodo que habla con el Mega (ShadowMD) por USB |
 | [`r2_imu`](r2_imu) | El giroscopio y acelerómetro MPU6050 (todavía no va en el launch principal) |
+| [`r2_imu_bno085`](r2_imu_bno085) | La IMU Adafruit BNO085 en un UART de la Pi, con la orientación calculada por el propio chip (todavía no va en el launch principal) |
 | [`r2_sensors`](r2_sensors) | Dónde va cada sensor (`sensors.yaml`), el barrido del lidar recortado a lo que R2 no tapa, su motor |
 | [`r2_pico_bridge`](r2_pico_bridge) | Habla con la Pico que lee los sensores de distancia (VL53L0X, HC-SR04) |
 | [`r2_nav`](r2_nav) | Los modos automáticos: ir a un punto, avanzar, patrulla, seguir un color; y la odometría |

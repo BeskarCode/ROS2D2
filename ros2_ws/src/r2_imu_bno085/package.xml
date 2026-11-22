@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>r2_imu_bno085</name>
+  <version>0.1.0</version>
+  <description>ROS2D2 IMU node: the Adafruit BNO085 in UART-RVC mode on a Pi UART (orientation fused by the chip), published as sensor_msgs/Imu, plus tilt.</description>
+  <maintainer email="BeskarCode@users.noreply.github.com">NandoMadrid</maintainer>
+  <license>MIT</license>
+  <url type="website">https://www.astromechspain.com</url>
+  <author>NandoMadrid</author>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>python3-serial</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

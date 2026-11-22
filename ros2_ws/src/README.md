@@ -13,6 +13,7 @@ Everything that runs on the Raspberry Pi inside R2. Each folder is a ROS 2 packa
 | [`r2_dome_tracker`](r2_dome_tracker) | Turns the dome towards the biggest face any camera sees |
 | [`r2_shadow_bridge`](r2_shadow_bridge) | The only node that talks to the Mega (ShadowMD) over USB |
 | [`r2_imu`](r2_imu) | The MPU6050 gyroscope and accelerometer (not in the main launch yet) |
+| [`r2_imu_bno085`](r2_imu_bno085) | The Adafruit BNO085 IMU on a Pi UART, orientation fused by the chip (not in the main launch yet) |
 | [`r2_sensors`](r2_sensors) | Where each sensor sits (`sensors.yaml`), the lidar's scan cut to what R2 does not hide, its motor |
 | [`r2_pico_bridge`](r2_pico_bridge) | Talks to the Pico that reads the distance sensors (VL53L0X, HC-SR04) |
 | [`r2_nav`](r2_nav) | The automatic modes: go to a point, go forward, patrol, follow a colour; and the odometry |
