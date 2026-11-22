@@ -25,8 +25,10 @@ static const char *TAG = "detect";
 
 static volatile int s_mode = CAM_DETECT_FACES ? DETECT_FACES : DETECT_NONE;
 static color_model_t s_color = {0, 0, 0, 10, 60};
-static volatile int s_score1 = 50, s_score2 = 50;   // %, MSR and MNP thresholds
-static volatile bool s_scores_changed;
+// %, MSR and MNP thresholds. 30/40 measured on the droid 2026-11-21 (OV5647, home lamps): 50/50 found
+// a face at 1 m in 13 % of frames, 30/40 in 100 %. Applied on the first frame, then via /control.
+static volatile int s_score1 = 30, s_score2 = 40;
+static volatile bool s_scores_changed = true;
 static SemaphoreHandle_t s_lock;
 static char s_line[LINE_SIZE];   // the newest line, guarded by s_lock
 static uint32_t s_line_seq;

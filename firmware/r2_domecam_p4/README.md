@@ -85,7 +85,7 @@ is the centre and area of the colour blob as fractions of the picture, or `null`
 | `/control?var=` | Values |
 |-----------------|--------|
 | `detect` | 0 nothing, 1 faces, 2 colour |
-| `score1`, `score2` | face detector thresholds, 1-99 % (default 50) |
+| `score1`, `score2` | face detector thresholds, 1-99 % (default 30 and 40, measured on the droid; 50/50 missed most faces) |
 | `color_h` | hue 0-179 (OpenCV scale) |
 | `color_s`, `color_v` | 0-255 |
 | `color_htol` | hue tolerance 2-40 |
