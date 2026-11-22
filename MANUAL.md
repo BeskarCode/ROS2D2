@@ -26,7 +26,7 @@ anywhere on it.
 - [Navigation](#navigation)
 - [Remote control](#remote-control): [Controllers](#controllers) · [Shortcuts](#shortcuts)
 - [Phone](#phone)
-- [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
+- [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [IMU](#setup--imu) · [Modes](#setup--modes) ·
   [System](#setup--system) · [File](#setup--file)
 
 ---
@@ -303,6 +303,41 @@ looking ahead, the console warns you: R2 will not move.
   The C1's speed cannot be changed (it turns at about 10 per second).
 
 **Save** applies at once: ROS moves the sensors and the lidar's cut.
+
+### Setup → IMU
+
+![Setup → IMU with a simulated IMU](media/manual/setup-imu.png)
+
+The **BNO085 IMU** in the ROS2 box says how R2 is tilted, where it points and how it is pushed. This tab
+sets it up, levels it and shows what it measures. The droid starts the IMU node always: with no board
+the pills say **not connected** and the buttons wait.
+
+- **Telemetry** (the same switch as System): **Live** reads only while it is on and the tab is open.
+- **Pills**: connected (or simulated), frames a second, checksum errors (wiring or baud rate), port,
+  box, and whether it is **levelled**.
+- **Live**: the **sphere** is the world seen from R2: sky above, floor below, a line every 10° of
+  pitch, the heading round its middle; the arrows are R2 (X red forward, Y green left, Z blue up) and the
+  **yellow** one is the acceleration without gravity. Drag it to look from another side. Next to it, R2
+  **from the side** (pitch, front down +), **from the front** (roll, left down −) and **from above**
+  (heading and how fast it turns); the **tilt** (amber over 10°, red over 20°); the acceleration bars
+  with 0 in the middle; the **bump**, the strongest knock of the last second (amber over 6 m/s²); and the
+  turn rate of the last 10 s.
+- **Setup**: **In use** (off: the node keeps reporting here but gives navigation nothing), the **port**
+  (Enter to apply), the **box** standing (board on the floor) or lying (board on the divider), which of
+  the board's arrows points to **R2's front**, and **turning left makes heading go up** (untick it if it
+  goes down). Each change is saved at once by the IMU node in `~/.config/ros2d2/imu.yaml`.
+- **Level here**: with R2 **still on a flat floor**, the tilt the box sits at (about 10°, or upside down
+  with the box lying) becomes 0, and is saved. If R2 moves it says so and keeps the old one. A warning
+  shows if the levelling does not match the box chosen.
+- **Heading to 0**: where R2 points now is heading 0, **until the IMU node restarts** (the chip counts
+  heading from when it powers up, so it is not saved).
+- **Forget the calibration** (asks first): back to the board's raw tilt.
+- **Check it**, the first time: the steps tick themselves as frames arrive, as you tilt R2's front down
+  and as you turn it left (if heading goes down it offers **Invert it**); the last one, with the foot
+  motors running, you mark with **Done**.
+
+Without the board, `ros2 run r2_imu_bno085 bno085_node --ros-args -r __node:=imu -p simulate:=true`
+(stop the droid's IMU node first) shows a pretend IMU, as in the picture.
 
 ### Setup → Modes
 

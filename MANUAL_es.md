@@ -27,7 +27,7 @@ en la que estás, desde cualquier parte de ella.
 - [Navigation](#navigation)
 - [Mando a distancia](#mando-a-distancia): [Mandos](#mandos) · [Atajos](#atajos)
 - [Móvil](#móvil)
-- [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [Modes](#setup--modes) ·
+- [Setup](#setup): [Cameras](#setup--cameras) · [Sensors](#setup--sensors) · [IMU](#setup--imu) · [Modes](#setup--modes) ·
   [System](#setup--system) · [File](#setup--file)
 
 ---
@@ -320,6 +320,42 @@ reiniciar. Si no queda ningún sensor en uso mirando hacia delante, la consola a
   vuelta. La velocidad del C1 no se puede cambiar (gira a unas 10 vueltas por segundo).
 
 **Save** se aplica al momento: ROS mueve los sensores y el recorte del lidar.
+
+### Setup → IMU
+
+![Setup → IMU con una IMU simulada](media/manual/setup-imu.png)
+
+La **IMU BNO085** de la caja ROS2 dice cuánto está inclinado R2, hacia dónde apunta y cómo lo empujan.
+Esta pestaña la configura, la nivela y enseña lo que mide. El droide arranca siempre el nodo de la IMU:
+sin placa, las píldoras dicen **not connected** y los botones esperan.
+
+- **Telemetry** (el mismo interruptor que System): **Live** solo lee mientras está encendido y la
+  pestaña abierta.
+- **Píldoras**: conectada (o simulada), tramas por segundo, errores de checksum (cableado o velocidad),
+  puerto, postura de la caja y si está **nivelada** (levelled).
+- **Live**: la **esfera** es el mundo visto desde R2: cielo arriba, suelo abajo, una línea cada 10° de
+  cabeceo y el rumbo alrededor; las flechas son R2 (X roja adelante, Y verde a la izquierda, Z azul
+  arriba) y la **amarilla** es la aceleración sin la gravedad. Se arrastra para mirarla desde otro lado.
+  Al lado, R2 **de lado** (cabeceo, frente abajo +), **de frente** (alabeo, izquierda abajo −) y **desde
+  arriba** (rumbo y lo rápido que gira); la **inclinación** (ámbar por encima de 10°, roja por encima de
+  20°); las barras de aceleración con el 0 en medio; el **golpe** (bump), el más fuerte del último
+  segundo (ámbar por encima de 6 m/s²), y el giro de los últimos 10 s.
+- **Setup**: **In use** (apagado, el nodo sigue informando aquí pero no da nada a la navegación), el
+  **puerto** (Enter para aplicarlo), la **caja** de pie (placa en el suelo) o tumbada (placa en el
+  tabique), qué flecha de la placa apunta al **frente de R2** y **girar a la izquierda sube el rumbo**
+  (desmárcalo si baja). Cada cambio lo guarda al momento el nodo de la IMU en `~/.config/ros2d2/imu.yaml`.
+- **Level here** (nivelar aquí): con R2 **quieto en suelo plano**, la inclinación con la que queda la caja
+  (unos 10°, o boca abajo con la caja tumbada) pasa a ser 0, y se guarda. Si R2 se mueve lo dice y deja la
+  anterior. Si lo nivelado no encaja con la postura elegida, sale un aviso.
+- **Heading to 0** (rumbo a 0): hacia donde apunta R2 ahora es el rumbo 0, **hasta que el nodo de la IMU
+  se reinicie** (el chip cuenta el rumbo desde que se enciende, así que no se guarda).
+- **Forget the calibration** (pregunta antes): vuelve a la inclinación en bruto de la placa.
+- **Check it**, la primera vez: los pasos se marcan solos al llegar tramas, al inclinar el frente de R2
+  hacia abajo y al girarlo a la izquierda (si el rumbo baja, ofrece **Invert it**); el último, con los
+  motores del foot en marcha, lo marcas tú con **Done**.
+
+Sin la placa, `ros2 run r2_imu_bno085 bno085_node --ros-args -r __node:=imu -p simulate:=true` (parando
+antes el nodo de la IMU del droide) enseña una IMU de mentira, como en la imagen.
 
 ### Setup → Modes
 

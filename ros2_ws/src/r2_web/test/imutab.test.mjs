@@ -32,3 +32,14 @@ test('the tab talks to the node by its names', () => {
 });
 
 test('setParam can send text (port, box, front)', () => assert.match(read('rosbridge.js'), /string_value/));
+
+test('the manual has Setup → IMU in both languages', () => {
+  const md = (f) => readFileSync(new URL(`../../../../${f}`, import.meta.url), 'utf8');
+  for (const [f, word] of [['MANUAL.md', 'Level here'], ['MANUAL_es.md', 'nivelar']]) {
+    const t = md(f);
+    assert.ok(t.includes('### Setup → IMU'), f);
+    assert.ok(t.includes('media/manual/setup-imu.png'), f);
+    assert.ok(t.includes(word), `${f}: ${word}`);
+    assert.ok(t.indexOf('### Setup → Sensors') < t.indexOf('### Setup → IMU') && t.indexOf('### Setup → IMU') < t.indexOf('### Setup → Modes'), f);
+  }
+});
