@@ -55,6 +55,27 @@ ros2 launch r2_imu_bno085 imu.launch.py
 - `invert_yaw`: si al girar R2 a la izquierda el rumbo baja, ponlo a `true`.
 - Si no llegan tramas o llegan con el checksum mal, el nodo lo avisa en el log (P0, cable o baudios).
 
+## Ajustes desde la consola
+
+La pestaña **Setup → IMU** de la consola la configura, la nivela y enseña lo que mide. El arranque del
+droide lanza siempre este nodo: sin placa, su estado dice «not connected».
+
+- **Fichero de ajustes:** `~/.config/ros2d2/imu.yaml`, que escribe la consola, gana a `config/imu.yaml`:
+  `in_use`, `port`, `box` (`standing` de pie | `lying` tumbada), `front` (qué flecha de la placa apunta al
+  frente de R2: `+x`, `-x`, `+y`, `-y`), `invert_yaw` y `level`. Se cambian en marcha con
+  `ros2 param set /imu ...` y se guardan. Con `in_use: false` el nodo sigue informando pero no publica
+  `/imu/data`.
+- **Nivelar:** con R2 quieto en suelo plano, `ros2 service call /imu/level_here std_srvs/srv/Trigger`
+  guarda como 0 la inclinación de la placa (los ~10° de la caja, o la placa boca abajo de la caja tumbada).
+  `/imu/data` sale en los ejes de R2: orientación, giro y aceleración. `/imu/forget_calibration` lo borra.
+- **Rumbo 0:** `/imu/heading_zero` hace que donde apunta R2 ahora sea el rumbo 0, **hasta que el nodo se
+  reinicie**: en UART-RVC el rumbo cuenta desde que se enciende el chip, así que no se guarda.
+- **Estado:** `/imu/status` (`std_msgs/String`, JSON dos veces por segundo): conectada, puerto, tramas por
+  segundo, tramas malas, nivelada, los ajustes, la edad de la última trama y el golpe más fuerte del último
+  segundo (m/s²).
+- **Sin placa:** `ros2 run r2_imu_bno085 bno085_node --ros-args -r __node:=imu -p simulate:=true` (o
+  `sim:=true` en el arranque del droide) hace de IMU de mentira para probar la consola.
+
 ## Pendiente de probar con la placa
 
 - El nombre del puerto del `uart3` en Ubuntu.

@@ -56,6 +56,25 @@ ros2 launch r2_imu_bno085 imu.launch.py
 - If no frames arrive, or they arrive with a wrong checksum, the node says so in the log (P0, wire
   or baud rate).
 
+## Setup from the console
+
+The console's **Setup → IMU** sets it up, levels it and shows what it measures. The droid's launch starts
+this node always: with no board its status says "not connected".
+
+- **Settings file:** `~/.config/ros2d2/imu.yaml`, written by the console, wins over `config/imu.yaml`:
+  `in_use`, `port`, `box` (`standing` | `lying`), `front` (which of the board's arrows points to R2's
+  front: `+x`, `-x`, `+y`, `-y`), `invert_yaw` and `level`. They change live with `ros2 param set /imu ...`
+  and are saved. With `in_use: false` the node keeps reporting but publishes no `/imu/data`.
+- **Levelling:** with R2 still on a flat floor, `ros2 service call /imu/level_here std_srvs/srv/Trigger`
+  stores the board's tilt (the box's ~10°, or the upside-down board of the lying box) as 0. `/imu/data`
+  comes out in R2's axes: attitude, turn rate and acceleration. `/imu/forget_calibration` drops it.
+- **Heading 0:** `/imu/heading_zero` makes where R2 points now heading 0, **until the node restarts**:
+  in UART-RVC the yaw counts from when the chip powers up, so it is not saved.
+- **Status:** `/imu/status` (`std_msgs/String`, JSON twice a second): connected, port, frames a second,
+  bad frames, levelled, the settings, the last frame's age, the strongest knock of the last second (m/s²).
+- **No board:** `ros2 run r2_imu_bno085 bno085_node --ros-args -r __node:=imu -p simulate:=true` (or
+  `sim:=true` in the droid's launch) runs a pretend IMU to try the console.
+
 ## Still to try with the board
 
 - The `uart3` port name on Ubuntu.

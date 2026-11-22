@@ -1,6 +1,8 @@
 # Adafruit BNO085 in UART-RVC mode (P0 to 3V3) on the Pi's uart3: its SDA pin (the sensor's TX in
 # this mode) to GPIO 5 (header pin 29). Needs dtoverlay=uart3 in /boot/firmware/config.txt.
 # UART-RVC: 115200 baud, 100 frames a second (BNO08X datasheet 1000-3927, 1.2.5).
+# in_use, port, box, front, invert_yaw and the levelling live in ~/.config/ros2d2/imu.yaml, which wins
+# over this file: the console (Setup → IMU) writes it.
 imu:
   ros__parameters:
     port: /dev/ttyAMA3      # check with ls /dev/ttyAMA* after enabling uart3
@@ -11,3 +13,4 @@ imu:
     invert_yaw: false       # set true if turning R2 left makes yaw go down
     tilt_warn_deg: 20.0
     stale_sec: 0.5
+    simulate: false         # true: no board, a pretend IMU (the bringup sets it with sim:=true)

@@ -97,6 +97,17 @@ def generate_launch_description():
             condition=IfCondition(PythonExpression(["'", LaunchConfiguration("pico"), "'.lower() == 'true' and '",
                                                     LaunchConfiguration("sim"), "'.lower() != 'true'"])),
         ),
+        # the BNO085 IMU, always: with no board its /imu/status says "not connected" and the console's
+        # Setup → IMU can still set it up; in the simulation a pretend IMU
+        Node(
+            package="r2_imu_bno085",
+            executable="bno085_node",
+            name="imu",
+            output="screen",
+            parameters=[share("r2_imu_bno085", "config", "imu.yaml"),
+                        {"simulate": ParameterValue(PythonExpression(
+                            ["'", LaunchConfiguration("sim"), "'.lower() == 'true'"]), value_type=bool)}],
+        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(share("r2_web", "launch", "web.launch.py")),
             condition=IfCondition(LaunchConfiguration("web"))),
