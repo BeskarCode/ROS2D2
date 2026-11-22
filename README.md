@@ -18,10 +18,11 @@ motors, sounds and lights. **The controller always wins.**
 ## What it does
 
 - **The dome follows your face**: a camera and the OpenCV YuNet face detector.
-- **Four automatic modes**, each started from the controller: go to a point, go forward, patrol,
-  follow a colour.
+- **Five automatic modes**, each started from the controller: go forward, patrol, follow a colour,
+  free roam (a slow stroll that looks at people with the dome and says hello), and go to a point
+  (for the simulator: to try the sensors' layout before building it).
 - **Sees around itself**: an RPLIDAR C1, VL53L0X and HC-SR04 distance sensors read by a
-  Raspberry Pi Pico, and an MPU6050 IMU.
+  Raspberry Pi Pico, and an IMU (Adafruit BNO085, or an MPU6050).
 - **Web console** in any browser: the floor around R2 with the lidar's points, R2 in 3D, cameras,
   sensor setup, Pico firmware updates.
 - **Safe by design**: touch the stick and control is back with you at once; the Mega stops the
@@ -68,12 +69,14 @@ click; set the lidar (motor, scan mode, blind sectors) and read what it says abo
 
 ![Setup, Sensors: coverage, test object and the in use / ignored switch](media/console-sensors-setup.gif)
 
-**Setup → Modes**: each automatic mode starts with its own controller combination. What each one does:
+**Setup → Modes**: each automatic mode starts with its own controller combination. What each one does
+(*Go to a point* is for the simulator only: without wheel encoders its position drifts on the droid):
 
 | | |
 |---|---|
 | ![Go to a point](ros2_ws/src/r2_web/www/img/modes/goto.svg) | ![Go forward](ros2_ws/src/r2_web/www/img/modes/forward.svg) |
 | ![Patrol](ros2_ws/src/r2_web/www/img/modes/patrol.svg) | ![Follow a colour](ros2_ws/src/r2_web/www/img/modes/follow.svg) |
+| ![Free roam](ros2_ws/src/r2_web/www/img/modes/free.svg) | |
 
 ## Hardware
 
@@ -106,11 +109,12 @@ Tilting mounts for the HC-SR04 and the VL53L0X, adjustable in 10° steps from �
 | [`r2_camera`](ros2_ws/src/r2_camera) | `camera_node` | USB or network (ESP32-P4 dome) camera, one instance per camera |
 | [`r2_vision`](ros2_ws/src/r2_vision) | `face_detector` | OpenCV YuNet face detector, closest face first |
 | [`r2_dome_tracker`](ros2_ws/src/r2_dome_tracker) | `dome_tracker` | Dome speed from the face position (control law tuned on the droid) |
-| [`r2_shadow_bridge`](ros2_ws/src/r2_shadow_bridge) | `mega_bridge`, `foot_calibrate` | The only node that talks to the Mega over USB serial; the feet move only in autonomous mode (PS + L2 on the foot controller), the dome only with face tracking on (PS + L2 on the dome controller); the two are independent |
+| [`r2_shadow_bridge`](ros2_ws/src/r2_shadow_bridge) | `mega_bridge`, `foot_calibrate` | The only node that talks to the Mega over USB serial; the feet move only in autonomous mode (PS + L2 on the foot controller), the dome with face tracking on (PS + L2 on the dome controller) or an automatic mode on |
 | [`r2_imu`](ros2_ws/src/r2_imu) | `imu_node` | MPU6050 gyro and accelerometer over I2C, plus a Madgwick filter |
+| [`r2_imu_bno085`](ros2_ws/src/r2_imu_bno085) | `bno085_node` | Adafruit BNO085 in UART-RVC mode on a Pi UART: orientation fused by the chip, no compass |
 | [`r2_sensors`](ros2_ws/src/r2_sensors) | `sensor_tf`, `fake_lidar`, `scan_crop`, `lidar_motor` | Where the lidar and the distance sensors (VL53L0X, HC-SR04 on a Pico) sit, from `sensors.yaml` (edited in the web console: Setup → Sensors), on `/tf_static`; the lidar's `/scan` cut to what the droid does not hide; a pretend lidar with `lidar:=sim` |
 | [`r2_pico_bridge`](ros2_ws/src/r2_pico_bridge) | `pico_bridge`, `fake_pico` | Talks to the Raspberry Pi Pico that reads the distance sensors (`firmware/r2_pico_sensors`, on `/dev/r2-pico`): sends it the sensors and pins from `sensors.yaml` (again on every save), publishes `/range/<name>` for each sensor that answers and `/pico/state` (JSON) for the console. Not started with `sim:=true` (the simulator has its own `/range`) or `pico:=false`. Flash the Pico from the PC with `firmware/r2_pico_sensors/flash.sh` |
-| [`r2_nav`](ros2_ws/src/r2_nav) | `navigator`, `follow` | The automatic modes: go to a point, go forward and patrol (`navigator`), follow a colour (`follow`); they stop for anything the lidar or the distance sensors see in their way |
+| [`r2_nav`](ros2_ws/src/r2_nav) | `navigator`, `follow`, `wander` | The automatic modes: go to a point, go forward, patrol and free roam (`navigator`, with `wander` choosing where patrol and free roam go, the stops and the dome), follow a colour (`follow`); they stop for anything the lidar or the distance sensors see in their way |
 | [`r2_sim`](ros2_ws/src/r2_sim) | `sim_world`, `fake_mega` | Simulator: rooms, a pretend R2 and a pretend Mega, to try the modes and the console without a droid (`sim:=true`) |
 | [`r2_web`](ros2_ws/src/r2_web) | `web_console` | Web console on port 8080: cameras, faces, 3D dome, camera and sensor setup |
 | [`r2_bringup`](ros2_ws/src/r2_bringup) | | Launch files: `ros2 launch r2_bringup dome_tracker.launch.py` |
