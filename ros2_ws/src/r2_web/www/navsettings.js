@@ -36,6 +36,22 @@ export const GROUPS = [
     { key: 'search_near', label: 'boxed in under', min: 0, max: 0.5, step: 0.01, unit: 'm', help: 'm beyond the circle: closer than this ahead counts as boxed in' },
     { key: 'forward_stuck_s', label: 'stuck after', min: 3, max: 30, step: 1, unit: 's', help: 'without moving 15 cm: search for a way out' },
   ]],
+  ['Patrol and Free roam', 'fa-shuffle', [
+    { key: 'wander.max_speed', label: 'top speed', min: 0.05, max: 0.4, step: 0.01, unit: 'm/s', help: 'slower than Go forward: it strolls' },
+    { key: 'wander.radius', label: 'Patrol radius', min: 0.5, max: 10, step: 0.1, unit: 'm', help: 'round where Patrol was switched on (approximate: without wheel encoders it drifts)' },
+    { key: 'wander.turn_every_s.0', label: 'new course every, from', min: 2, max: 120, step: 1, unit: 's' },
+    { key: 'wander.turn_every_s.1', label: '… to', min: 2, max: 120, step: 1, unit: 's' },
+    { key: 'wander.turn_deg.0', label: 'course change, from', min: 10, max: 180, step: 5, unit: '°' },
+    { key: 'wander.turn_deg.1', label: '… to', min: 10, max: 180, step: 5, unit: '°' },
+    { key: 'wander.pause_chance', label: 'stops to look', min: 0, max: 1, step: 0.05, unit: '', help: 'chance of stopping to look round at each new course (0-1)' },
+    { key: 'wander.pause_s.0', label: 'looks round for, from', min: 0.5, max: 30, step: 0.5, unit: 's' },
+    { key: 'wander.pause_s.1', label: '… to', min: 0.5, max: 30, step: 0.5, unit: 's' },
+    { key: 'wander.greet_size', label: 'says hello to a face from', min: 0.02, max: 0.5, step: 0.01, unit: '× picture', help: 'a face this wide (a fraction of the picture) is close enough to say hello' },
+    { key: 'wander.greet_s', label: 'hello lasts up to', min: 2, max: 60, step: 1, unit: 's' },
+    { key: 'wander.greet_cooldown_s', label: 'no new hello for', min: 0, max: 300, step: 5, unit: 's' },
+    { key: 'wander.blocked_s', label: 'turns away after', min: 1, max: 20, step: 0.5, unit: 's', help: 'blocked this long: a new course 120-180° away' },
+    { key: 'wander.heading_home_deg', label: 'back towards the start ±', min: 0, max: 90, step: 5, unit: '°', help: 'Patrol, outside its radius: new courses point home within this' },
+  ]],
   ['Sensors', 'fa-satellite-dish', [
     { key: 'filter', label: 'smooth the distance sensors', bool: true },
     { key: 'sensors_may_stop_earlier', label: "a sensor's own stop distance wins", bool: true },
@@ -56,10 +72,38 @@ const val = (k, v) => {
   return f && f.step < 1 && !t.includes('.') ? `${t}.0` : t;
 };
 
-/** nav.yaml as text from the settings (every key, then the sounds block). */
+// A field's key: a plain setting ('max_speed'), one in the wander block ('wander.radius') or one end of a
+// [min, max] pair ('wander.turn_every_s.0')
+export function getK(cfg, key) {
+  return key.split('.').reduce((o, p) => (o == null ? undefined : o[p]), cfg);
+}
+export function setK(cfg, key, v) {
+  const parts = key.split('.');
+  const last = parts.pop();
+  const o = parts.reduce((x, p) => x[p], cfg);
+  o[last] = v;
+}
+/** The ROS parameter a field changes: { name, value } (a pair sends its whole [min, max]). */
+export function liveParam(cfg, key) {
+  const parts = key.split('.');
+  if (parts.length === 3) parts.pop();
+  const name = parts.join('.');
+  return { name, value: getK(cfg, name) };
+}
+
+const WANDER_ORDER = ['max_speed', 'radius', 'turn_every_s', 'turn_deg', 'pause_chance', 'pause_s', 'greet_size', 'greet_s',
+  'greet_cooldown_s', 'blocked_s', 'heading_home_deg', 'hello', 'idle_sounds'];
+const wval = (v) => (Array.isArray(v) ? `[${v.map((x) => (typeof x === 'string' ? `"${x}"` : x)).join(', ')}]`
+  : typeof v === 'string' ? `"${v}"` : String(Math.round(v * 1000) / 1000));
+
+/** nav.yaml as text from the settings (every key, then the wander and sounds blocks). */
 export function toNavYaml(cfg) {
   let out = '# R2 navigation, saved from the web console (Navigation page). Hand edits are fine too.\n';
   for (const k of ORDER) if (cfg[k] !== undefined) out += `${k}: ${val(k, cfg[k])}\n`;
+  if (cfg.wander) {
+    out += 'wander:\n';
+    for (const k of WANDER_ORDER) if (cfg.wander[k] !== undefined) out += `  ${k}: ${wval(cfg.wander[k])}\n`;
+  }
   const sounds = cfg.sounds || {};
   out += 'sounds:\n';
   for (const [ev, cmd] of Object.entries(sounds)) out += `  ${ev}: "${cmd || ''}"\n`;
@@ -68,5 +112,5 @@ export function toNavYaml(cfg) {
 
 /** Keys whose value differs from the defaults (to show which ones the user changed). */
 export function changedKeys(cfg, defaults) {
-  return FIELDS.map((f) => f.key).filter((k) => cfg[k] !== undefined && defaults[k] !== undefined && cfg[k] !== defaults[k]);
+  return FIELDS.map((f) => f.key).filter((k) => getK(cfg, k) !== undefined && getK(defaults, k) !== undefined && getK(cfg, k) !== getK(defaults, k));
 }

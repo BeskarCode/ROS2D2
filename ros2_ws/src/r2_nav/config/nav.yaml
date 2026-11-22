@@ -32,3 +32,17 @@ sounds:                 # MarcDuino command, or "" for none (examples: match you
   blocked: "S1:$31"
   give_up: "S1:$41"
   arrived: "S1:$W"
+wander:                 # Patrol and Free roam (the wander node): a slow stroll, looking at people
+  max_speed: 0.15       # m/s, slower than Go forward
+  radius: 2.0           # m round where Patrol was switched on (approximate: the odometry drifts); Free roam has none
+  turn_every_s: [8, 20] # s between new courses, at random in this range
+  turn_deg: [30, 120]   # deg each new course turns, either way
+  pause_chance: 0.3     # chance of stopping to look round at a new course
+  pause_s: [3, 8]       # s it looks round
+  greet_size: 0.08      # a face this wide (fraction of the picture) is close: it stops and says hello
+  greet_s: 10           # s the hello lasts at most
+  greet_cooldown_s: 20  # s before another hello
+  blocked_s: 3          # s blocked before it turns 120-180 deg away
+  heading_home_deg: 30  # Patrol outside its radius: new courses point home within this
+  hello: "S1:$12"       # MarcDuino command for the hello, or ""
+  idle_sounds: []       # sounds it may play while looking round, e.g. ["S1:$15", "S1:$16"]

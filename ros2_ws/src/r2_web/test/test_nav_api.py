@@ -64,3 +64,12 @@ def test_payload_carries_the_package_defaults(tmp_path):
     p = nav_payload(str(default), str(user))
     assert p["nav"]["max_speed"] == 0.2 and p["nav"]["search_turn"] == 0.9      # the user's
     assert p["defaults"]["max_speed"] == 0.3 and p["defaults"]["search_turn"] == 0.5   # the package's
+
+
+def test_the_form_writes_a_valid_wander_block():
+    # The same file navsettings.test.mjs checks toNavYaml() against
+    from r2_nav.nav_core import parse_nav
+    with open(os.path.join(os.path.dirname(__file__), "fixtures", "nav_from_form.yaml"), encoding="utf-8") as f:
+        w = parse_nav(f.read())["wander"]
+    assert w["radius"] == 3.5 and w["turn_every_s"] == [5, 12] and w["idle_sounds"] == ["S1:$15", "S1:$16"]
+    assert w["hello"] == "S1:$12" and w["max_speed"] == 0.15

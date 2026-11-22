@@ -8,7 +8,7 @@ import { MODELS } from './models.js';
 import { createNavMap } from './navmap.js';
 import { createNavView3d } from './navview3d.js';
 import { createModePick } from './modepick.js';
-import { GROUPS, FIELDS, changedKeys, toNavYaml } from './navsettings.js';
+import { GROUPS, FIELDS, changedKeys, getK, liveParam, setK, toNavYaml } from './navsettings.js';
 import { call } from './rosbridge.js';
 import { freeText, nearestPoint } from './sensormath.js';
 import { onSaveKey, toast } from './savekey.js';
@@ -345,16 +345,23 @@ drawers.push((st) => view3d.draw(st));
 
 // ---------- settings (nav.yaml): applied live to the navigator, Save keeps them ----------
 // The navigator uses the package defaults until the user saves their own (~/.config/ros2d2/nav.yaml).
-const isInt = (k) => Number.isInteger(P.navDefaults[k]) && FIELDS.find((f) => f.key === k)?.step >= 1;
+// the wander settings are doubles on the ROS side (a pair: a double array)
+const isInt = (k) => !k.startsWith('wander.') && Number.isInteger(P.navDefaults[k]) && FIELDS.find((f) => f.key === k)?.step >= 1;
 function paramValue(k, v) {
   if (typeof v === 'boolean') return { type: 1, bool_value: v };
   if (typeof v === 'string') return { type: 4, string_value: v };
+  if (Array.isArray(v)) return { type: 8, double_array_value: v.map(Number) };
   return isInt(k) ? { type: 2, integer_value: Math.round(v) } : { type: 3, double_value: v };
 }
-async function applyLive(k, v) {
-  const r = await call('/navigator/set_parameters', 'rcl_interfaces/srv/SetParameters', { parameters: [{ name: k, value: paramValue(k, v) }] });
-  const res = r && r.results && r.results[0];
-  if (res && !res.successful) addLine(`· ${k}: ${res.reason}`, 'info');
+// a field's key -> the parameter it sets, on the navigator and (Patrol and Free roam) on the wander node too
+async function applyLive(key) {
+  const { name, value } = liveParam(P.nav, key);
+  const nodes = name.startsWith('wander.') ? ['/navigator', '/wander'] : ['/navigator'];
+  for (const n of nodes) {
+    const r = await call(`${n}/set_parameters`, 'rcl_interfaces/srv/SetParameters', { parameters: [{ name, value: paramValue(name, value) }] });
+    const res = r && r.results && r.results[0];
+    if (res && !res.successful) addLine(`· ${name}: ${res.reason}`, 'info');
+  }
 }
 let settingsDirty = false;
 function settingsState() {
@@ -385,19 +392,19 @@ function buildSettings() {
       <button id="nav-defaults" title="Every setting back to the package's defaults (applied now; Save to keep it)"><i class="fa-solid fa-rotate-left"></i>Defaults</button></div></details>`;
   for (const f of FIELDS) {
     const row = $('settings').querySelector(`.f[data-k="${f.key}"]`), inp = row.querySelector('[data-k]');
-    const show = () => { row.querySelector('b').textContent = fmt(f, P.nav[f.key]); };
-    if (f.bool) inp.checked = !!P.nav[f.key]; else inp.value = P.nav[f.key];
+    const show = () => { row.querySelector('b').textContent = fmt(f, getK(P.nav, f.key)); };
+    if (f.bool) inp.checked = !!getK(P.nav, f.key); else inp.value = getK(P.nav, f.key);
     show();
     const ev = f.bool || f.options ? 'change' : 'input';
     inp.addEventListener(ev, () => {
-      P.nav[f.key] = f.bool ? inp.checked : f.options ? inp.value : Number(inp.value);
+      setK(P.nav, f.key, f.bool ? inp.checked : f.options ? inp.value : Number(inp.value));
       settingsDirty = true; show(); settingsState();
     });
-    inp.addEventListener('change', () => applyLive(f.key, P.nav[f.key]));
+    inp.addEventListener('change', () => applyLive(f.key));
   }
   $('nav-save').onclick = async () => { const r = await saveNav(); toast(r.text, r.ok ? 'ok' : r.ok === null ? 'warn' : 'bad'); };
   $('nav-defaults').onclick = () => {
-    for (const f of FIELDS) { P.nav[f.key] = P.navDefaults[f.key]; applyLive(f.key, P.nav[f.key]); }
+    for (const f of FIELDS) { setK(P.nav, f.key, getK(P.navDefaults, f.key)); applyLive(f.key); }
     settingsDirty = true;
     buildSettings();
     $('settings').querySelector('details').open = true;

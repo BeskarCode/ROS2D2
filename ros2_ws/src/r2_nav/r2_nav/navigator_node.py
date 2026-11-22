@@ -38,7 +38,7 @@ from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.modes import nav_mode
 from r2_nav.patrol import Patrol, parse_route
 from r2_nav.nav_core import (BLOCKED_MODES, DEFAULTS, EVENTS, RANGES, SOUND, Navigator, NavConfigError, clamp_param,
-                             config_path, is_lidar, load_nav, state_json)
+                             config_path, declare_wander, is_lidar, load_nav, state_json, wander_param_error)
 from r2_nav.shaping import SensorInputs, shape
 from r2_nav.spin import spin
 from r2_sensors.config import Reloader, in_use
@@ -61,6 +61,8 @@ class NavigatorNode(Node):
             if k == "sounds":
                 for ev in EVENTS:
                     self.declare_parameter(f"sounds.{ev}", v[ev])
+            elif k == "wander":
+                declare_wander(self, v)
             else:
                 self.declare_parameter(k, v)
         self.cfg = cfg
@@ -197,10 +199,18 @@ class NavigatorNode(Node):
     def _on_params(self, params):
         cfg = dict(self.cfg)
         cfg["sounds"] = dict(self.cfg["sounds"])
+        cfg["wander"] = dict(self.cfg["wander"])
         for p in params:
             if p.name == "config":
                 continue
-            if p.name.startswith("sounds."):
+            if p.name.startswith("wander."):
+                key = p.name.split(".", 1)[1]
+                value = list(p.value) if isinstance(p.value, (list, tuple)) or hasattr(p.value, "tolist") else p.value
+                err = wander_param_error(key, value)
+                if err:
+                    return SetParametersResult(successful=False, reason=err)
+                cfg["wander"] = dict(cfg["wander"], **{key: value})
+            elif p.name.startswith("sounds."):
                 ev = p.name.split(".", 1)[1]
                 if ev not in EVENTS or (p.value and not SOUND.match(str(p.value))):
                     return SetParametersResult(successful=False, reason=f"{p.name}: must be empty or like S1:$11")

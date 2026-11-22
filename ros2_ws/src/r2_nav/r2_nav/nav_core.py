@@ -57,6 +57,10 @@ DEFAULTS = {
     "safety_cone_deg": 60, "search_turn": 0.5, "search_free": 0.3, "search_wide_deg": 60, "search_near": 0.1,
     "forward_stuck_s": 8, "wait_max_s": 4.0, "reverse_max": 0.30, "stuck_after_s": 12.0, "free_s": 0.8,
     "sounds": {"auto_on": "S1:$11", "obstacle": "S1:$21", "blocked": "S1:$31", "give_up": "S1:$41", "arrived": "S1:$W"},
+    # Patrol and Free roam (the wander node and the navigator's top speed while wandering)
+    "wander": {"max_speed": 0.15, "radius": 2.0, "turn_every_s": [8, 20], "turn_deg": [30, 120], "pause_chance": 0.3,
+               "pause_s": [3, 8], "greet_size": 0.08, "greet_s": 10, "greet_cooldown_s": 20, "blocked_s": 3,
+               "heading_home_deg": 30, "hello": "S1:$12", "idle_sounds": []},
 }
 # safety_radius stays above half the body (HALF_WIDTH): a smaller circle would let things touch a leg
 RANGES = {"safety_radius": (0.40, 1.5), "slow_from": (0.3, 3.0), "max_speed": (0.05, 0.4), "max_turn_deg": (5, 34),
@@ -66,6 +70,9 @@ RANGES = {"safety_radius": (0.40, 1.5), "slow_from": (0.3, 3.0), "max_speed": (0
           "search_near": (0.0, 0.5), "forward_stuck_s": (3, 30),
           "wait_max_s": (0.5, 30), "reverse_max": (0.05, 1.0), "stuck_after_s": (3, 60), "free_s": (0.2, 5.0)}
 BLOCKED_MODES = ("turn", "reverse", "wait")
+WANDER_RANGES = {"max_speed": (0.05, 0.4), "radius": (0.5, 10), "pause_chance": (0, 1), "greet_size": (0.02, 0.5),
+                 "greet_s": (2, 60), "greet_cooldown_s": (0, 300), "blocked_s": (1, 20), "heading_home_deg": (0, 90)}
+WANDER_PAIRS = {"turn_every_s": (2, 120), "turn_deg": (10, 180), "pause_s": (0.5, 30)}   # [min, max] within these
 SOUND = re.compile(r"^(S1|S3|MD):[ -~]{1,20}$")
 
 REVERSE_SPEED = 0.15     # m/s
@@ -115,6 +122,9 @@ def parse_nav(text):
                     raise NavConfigError(f"sounds.{ev}: must be empty or a command like S1:$11")
                 cfg["sounds"][ev] = cmd
             continue
+        if k == "wander":
+            cfg["wander"] = _parse_wander(v)
+            continue
         cfg[k] = v
     for k, (lo, hi) in RANGES.items():
         v = cfg[k]
@@ -127,6 +137,56 @@ def parse_nav(text):
         raise NavConfigError(f"on_blocked: must be one of {', '.join(BLOCKED_MODES)}")
     cfg["give_up_after"] = int(cfg["give_up_after"])
     return cfg
+
+
+def _number(v):
+    return not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v)
+
+
+def wander_param_error(key, value):
+    """Why one wander setting is wrong ("wander.<key>: ..."), or None when it is fine."""
+    name = f"wander.{key}"
+    if key in WANDER_RANGES:
+        lo, hi = WANDER_RANGES[key]
+        return None if _number(value) and lo <= value <= hi else f"{name}: must be a number from {lo} to {hi}"
+    if key in WANDER_PAIRS:
+        lo, hi = WANDER_PAIRS[key]
+        ok = (isinstance(value, (list, tuple)) and len(value) == 2 and all(_number(v) and lo <= v <= hi for v in value)
+              and value[0] <= value[1])
+        return None if ok else f"{name}: must be [min, max] with min <= max, from {lo} to {hi}"
+    if key == "hello":
+        return None if value in (None, "") or (isinstance(value, str) and SOUND.match(value)) else             f"{name}: must be empty or a command like S1:$12"
+    if key == "idle_sounds":
+        ok = isinstance(value, (list, tuple)) and all(isinstance(v, str) and SOUND.match(v) for v in value)
+        return None if ok else f"{name}: must be a list of commands like S1:$15"
+    return f"{name}: unknown setting"
+
+
+def declare_wander(node, w):
+    """Declare every wander setting as a ROS parameter "wander.<key>" (the navigator and the wander node).
+    Pairs are double arrays, idle_sounds a string array (typed: an empty list says nothing about its type)."""
+    from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+    for k, v in w.items():
+        if k == "idle_sounds":
+            node.declare_parameter(f"wander.{k}", list(v), ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY))
+        elif isinstance(v, list):
+            node.declare_parameter(f"wander.{k}", [float(x) for x in v])
+        elif k == "hello":
+            node.declare_parameter(f"wander.{k}", v)
+        else:
+            node.declare_parameter(f"wander.{k}", float(v))
+
+
+def _parse_wander(v):
+    if not isinstance(v, dict):
+        raise NavConfigError("wander: must be a block of key: value")
+    w = copy.deepcopy(DEFAULTS["wander"])
+    for k, val in v.items():
+        err = wander_param_error(k, val)
+        if err:
+            raise NavConfigError(err)
+        w[k] = list(val) if isinstance(val, tuple) else ("" if val is None else val)
+    return w
 
 
 def load_nav(path):

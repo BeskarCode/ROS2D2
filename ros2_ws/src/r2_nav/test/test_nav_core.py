@@ -477,3 +477,43 @@ def test_search_turn_comes_from_the_settings():
     nav.start_forward(0.0)
     d = run(nav, 3, scan=wall_ahead() + [(0.2 + k / 10, -0.5) for k in range(10)])[-1]
     assert d.state == "searching" and d.w == pytest.approx(wm_of(c))
+
+
+# ---------- Patrol and Free roam: the wander block of nav.yaml ----------
+def test_wander_defaults():
+    w = parse_nav("")["wander"]
+    assert w == {"max_speed": 0.15, "radius": 2.0, "turn_every_s": [8, 20], "turn_deg": [30, 120],
+                 "pause_chance": 0.3, "pause_s": [3, 8], "greet_size": 0.08, "greet_s": 10, "greet_cooldown_s": 20,
+                 "blocked_s": 3, "heading_home_deg": 30, "hello": "S1:$12", "idle_sounds": []}
+
+
+def test_wander_partial_block_keeps_the_rest():
+    w = parse_nav("wander: {radius: 3.5, idle_sounds: ['S1:$15', 'S1:$16']}\n")["wander"]
+    assert w["radius"] == 3.5 and w["idle_sounds"] == ["S1:$15", "S1:$16"] and w["max_speed"] == 0.15
+
+
+@pytest.mark.parametrize("text,key", [
+    ("wander: {radius: 50}", "wander.radius"),
+    ("wander: {max_speed: 0.9}", "wander.max_speed"),
+    ("wander: {turn_every_s: [20, 8]}", "wander.turn_every_s"),
+    ("wander: {pause_s: [3]}", "wander.pause_s"),
+    ("wander: {turn_deg: [30, 500]}", "wander.turn_deg"),
+    ("wander: {pause_chance: true}", "wander.pause_chance"),
+    ("wander: {hello: nope}", "wander.hello"),
+    ("wander: {idle_sounds: ['S1:$15', 'nope']}", "wander.idle_sounds"),
+    ("wander: {speed: 1}", "wander.speed"),
+    ("wander: 3", "wander"),
+])
+def test_wander_bad_values_name_the_key(text, key):
+    with pytest.raises(NavConfigError, match=re.escape(key)):
+        parse_nav(text + "\n")
+
+
+def test_wander_param_checks_one_live_value():
+    from r2_nav.nav_core import wander_param_error
+    assert wander_param_error("radius", 3.0) is None
+    assert wander_param_error("turn_every_s", [5.0, 9.0]) is None
+    assert "wander.radius" in wander_param_error("radius", 99.0)
+    assert "wander.turn_every_s" in wander_param_error("turn_every_s", [9.0, 5.0])
+    assert "wander.idle_sounds" in wander_param_error("idle_sounds", ["x"])
+    assert "unknown" in wander_param_error("speed", 1.0)
