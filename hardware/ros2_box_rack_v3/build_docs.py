@@ -59,6 +59,9 @@ g.PRINTED = [
     ("frame_pi4.stl", "Marco trasero para la Pi 4 (Ethernet arriba)", "Back frame for the Pi 4 (Ethernet at the top)"),
     ("frame_pi5.stl", "o bien: marco trasero para la Pi 5 (Ethernet abajo)", "or: back frame for the Pi 5 (Ethernet at the bottom)"),
     ("push_rod.stl", "Varilla del pulsador DISPLAY", "DISPLAY push rod"),
+    ("shell_fan.stl", "Opcional, en lugar de `shell.stl`: la tapa con hueco para un ventilador de 30 mm sobre la Pi (paso 9)",
+     "Optional, instead of `shell.stl`: the shell with an opening for a 30 mm fan over the Pi (step 9)"),
+    ("imu_bracket.stl", "Opcional: soporte de la IMU BNO085 sobre la Pi (paso 9)", "Optional: the BNO085 IMU's bracket on the Pi (step 9)"),
 ]
 g.STEPS = [
     {"n": 1, "extra_views": ["step1_pi"],
@@ -154,6 +157,30 @@ g.STEPS = [
             "side, with the 4 in the pockets by that side. Each ear sits flush in its pocket with 2 M3 × 8 countersunk; "
             "the other 4 pockets take a blank with its 2 screws. Then screw the box to the R2 through the 4 lugs."}},
 ]
+g.STEPS.append(
+    {"n": 9, "extra_views": ["shell_fan"],
+     "es": {"title": "Opcional: ventilador e IMU",
+            "hw": ["4× M3 × 12", "4× tuerca M3", "2× separador M2.5 × 10", "6× M2.5 × 6"],
+            "text": "Con `shell_fan.stl` en lugar de `shell.stl`, el ventilador de 30 mm va en el lateral justo encima del "
+            "procesador de la Pi, por dentro (soplando hacia la Pi, tornillo desde fuera y tuerca del lado del ventilador) "
+            "o por fuera (sobresale 7 mm; su cable entra por la ranura que sale del círculo hacia arriba). Rojo al pin 4 "
+            "(5 V) de la Pi y negro al pin 6 (GND). Con la caja tumbada sobre ese lateral queda tapado: úsalo con la caja "
+            "de pie. El soporte de la IMU (`imu_bracket.stl`, en naranja en el dibujo) va en los dos agujeros de la Pi "
+            "del lado de los USB: cambia sus tornillos por los 2 separadores, atornilla el soporte encima con 2 M2.5 y "
+            "la placa de la IMU (en azul) con 4 M2.5 × 6 en el sitio que quede plano: **en el brazo** con la caja "
+            "tumbada, **colgando bajo la bandeja** con la caja de pie. Hazlo antes del paso 7: con la tapa puesta no se "
+            "llega. Boca abajo o unos grados torcida da igual: se pone a cero desde la consola."},
+     "en": {"title": "Optional: fan and IMU",
+            "hw": ["4× M3 × 12", "4× M3 nut", "2× M2.5 × 10 standoff", "6× M2.5 × 6"],
+            "text": "With `shell_fan.stl` instead of `shell.stl`, the 30 mm fan goes on the side right over the Pi's "
+            "processor, inside (blowing onto the Pi, screw from outside and the nut on the fan's side) or outside (it "
+            "sticks out 7 mm; its wire goes in through the slot running up from the circle). Red to the Pi's pin 4 "
+            "(5 V), black to pin 6 (GND). With the box lying on that side it is covered: use it with the box standing. "
+            "The IMU bracket (`imu_bracket.stl`, orange in the picture) goes on the Pi's two holes on the USB side: swap "
+            "their screws for the 2 standoffs, screw the bracket onto them with 2 M2.5 and the IMU board (blue) with 4 "
+            "M2.5 × 6 where it lies flat: **on the arm** with the box lying, **hanging under the shelf** with the box "
+            "standing. Do it before step 7: with the shell on you cannot reach it. Upside down or a few degrees off "
+            "does not matter: it is zeroed from the console."}})
 g.NAMES = dict(g.NAMES, ins_m25=("Inserto térmico M2,5 (5 mm de largo, agujero de 3,6 mm)", "M2.5 heat-set insert (5 mm long, 3.6 mm hole)"),
                m25x6=("Tornillo M2.5 × 6", "M2.5 × 6 screw"))
 g.SHORT = dict(g.SHORT, ins_m25="inserto M2,5")
@@ -165,6 +192,9 @@ g.OTHER = [o for o in g.OTHER if "USB-C" not in o[1] and "micro-USB" not in o[1]
      "USB-C male pigtail (5 V to the Pi), 90° up/down angle, 15–20 cm; 3 A for a Pi 4, 5 A for a Pi 5"),
     ("1", "Cable micro-HDMI macho acodado 90° a HDMI hembra de panel con 2 tornillos M3, 30 cm (mide su brida: `hdmi_*`)",
      "Angled 90° micro-HDMI male to HDMI female panel-mount cable with 2 M3 screws, 30 cm (measure its flange: `hdmi_*`)"),
+    ("1", "Opcional (paso 9): ventilador de 30 × 30 × 7 mm a 5 V (LD3007MS o similar)", "Optional (step 9): 30 × 30 × 7 mm 5 V fan (LD3007MS or similar)"),
+    ("1", "Opcional (paso 9): IMU Adafruit BNO085 (ref. 4754)", "Optional (step 9): Adafruit BNO085 IMU (product 4754)"),
+    ("2", "Opcional (paso 9): separador M2.5 macho-hembra de 10 mm", "Optional (step 9): 10 mm M2.5 male-female standoff"),
 ]
 g.TXT = copy.deepcopy(g.TXT)
 g.TXT["es"].update(title="Caja ROS2 rack · Instrucciones de montaje", intro=

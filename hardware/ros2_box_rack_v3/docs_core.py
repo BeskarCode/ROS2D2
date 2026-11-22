@@ -343,7 +343,7 @@ def write_guide(lang, table, path):
     L += ["", f"## {t['wiring']}", "", f"![](assembly/img/wiring_{lang}.svg)"]
     L += ["", f"## {t['angled']}", "", f"![](assembly/img/connectors_{lang}.svg)"]
     for s in STEPS:
-        hw = step_hw(table, s["n"], lang)
+        hw = s[lang].get("hw") or step_hw(table, s["n"], lang)      # optional steps list their own hardware
         L += ["", f"## {s['n']} · {s[lang]['title']}", "", f"![](assembly/img/step{s['n']}.png)", ""]
         L += [x for v in s.get("extra_views", []) for x in (f"![](assembly/img/{v}.png)", "")]   # optional 2nd angle
         L += [f"**{t['you_need']}:** {', '.join(hw) if hw else t['nothing']}", "", s[lang]["text"]]
@@ -364,7 +364,7 @@ def write_html(lang, table, path):
     other = "".join(f"<tr><td>{q}</td><td>{e((es, en)[i])}</td></tr>" for q, es, en in OTHER)
     steps = ""
     for s in STEPS:
-        hw = step_hw(table, s["n"], lang)
+        hw = s[lang].get("hw") or step_hw(table, s["n"], lang)
         chips = "".join(f"<span class=chip>{e(h)}</span>" for h in hw) or f"<span class=none>{t['nothing']}</span>"
         md = lambda x: re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", re.sub(r"`([^`]+)`", r"<code>\1</code>", e(x)))
         txt = md(s[lang]["text"])

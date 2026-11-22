@@ -43,6 +43,8 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 | `stl/frame_pi4.stl` | Marco trasero para la Pi 4 (Ethernet arriba) |
 | `stl/frame_pi5.stl` | o bien: marco trasero para la Pi 5 (Ethernet abajo) |
 | `stl/push_rod.stl` | Varilla del pulsador DISPLAY |
+| `stl/shell_fan.stl` | Opcional, en lugar de `shell.stl`: la tapa con hueco para un ventilador de 30 mm sobre la Pi (paso 9) |
+| `stl/imu_bracket.stl` | Opcional: soporte de la IMU BNO085 sobre la Pi (paso 9) |
 
 | Cant. | Pieza | Paso |
 |---|---|---|
@@ -66,6 +68,9 @@ Segunda caja, tipo rack: la placa de la Pico, la Pi y el convertidor van de pie,
 | 1 | Cable micro-USB 2.0 a USB-A con clavija recta, unos 30 cm (ver «Conectores») |
 | 1 | Cable USB-C macho con hilos (5 V a la Pi), acodado 90° arriba/abajo, 15–20 cm; 3 A para la Pi 4, 5 A para la Pi 5 |
 | 1 | Cable micro-HDMI macho acodado 90° a HDMI hembra de panel con 2 tornillos M3, 30 cm (mide su brida: `hdmi_*`) |
+| 1 | Opcional (paso 9): ventilador de 30 × 30 × 7 mm a 5 V (LD3007MS o similar) |
+| 1 | Opcional (paso 9): IMU Adafruit BNO085 (ref. 4754) |
+| 2 | Opcional (paso 9): separador M2.5 macho-hembra de 10 mm |
 
 ## Conexiones
 
@@ -146,3 +151,13 @@ Es el techo y el lateral: la frontal se queda con la base. Bájala desde arriba 
 **Necesitas:** 16× M3 × 8 avellanado, 4× M4 × 12
 
 Saca el micro-USB por la muesca de la trasera, bájalo por fuera y enchufa su USB-A en un USB de la Pi: es el conector que se ve fuera de la caja en el dibujo (no está suelto). Por él la Pi recibe los sensores y flashea el firmware de la Pico. Elige cómo va la caja: de pie, con las 4 orejas en los rebajes junto al suelo, o tumbada sobre el lateral de la tapa, con las 4 en los rebajes junto a ese lateral. Cada oreja va a ras en su rebaje con 2 M3 × 8 avellanados; en los otros 4 rebajes, una tapa ciega con sus 2 tornillos. Luego atornilla la caja al R2 por las 4 lengüetas.
+
+## 9 · Opcional: ventilador e IMU
+
+![](assembly/img/step9.png)
+
+![](assembly/img/shell_fan.png)
+
+**Necesitas:** 4× M3 × 12, 4× tuerca M3, 2× separador M2.5 × 10, 6× M2.5 × 6
+
+Con `shell_fan.stl` en lugar de `shell.stl`, el ventilador de 30 mm va en el lateral justo encima del procesador de la Pi, por dentro (soplando hacia la Pi, tornillo desde fuera y tuerca del lado del ventilador) o por fuera (sobresale 7 mm; su cable entra por la ranura que sale del círculo hacia arriba). Rojo al pin 4 (5 V) de la Pi y negro al pin 6 (GND). Con la caja tumbada sobre ese lateral queda tapado: úsalo con la caja de pie. El soporte de la IMU (`imu_bracket.stl`, en naranja en el dibujo) va en los dos agujeros de la Pi del lado de los USB: cambia sus tornillos por los 2 separadores, atornilla el soporte encima con 2 M2.5 y la placa de la IMU (en azul) con 4 M2.5 × 6 en el sitio que quede plano: **en el brazo** con la caja tumbada, **colgando bajo la bandeja** con la caja de pie. Hazlo antes del paso 7: con la tapa puesta no se llega. Boca abajo o unos grados torcida da igual: se pone a cero desde la consola.

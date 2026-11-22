@@ -43,6 +43,8 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 | `stl/frame_pi4.stl` | Back frame for the Pi 4 (Ethernet at the top) |
 | `stl/frame_pi5.stl` | or: back frame for the Pi 5 (Ethernet at the bottom) |
 | `stl/push_rod.stl` | DISPLAY push rod |
+| `stl/shell_fan.stl` | Optional, instead of `shell.stl`: the shell with an opening for a 30 mm fan over the Pi (step 9) |
+| `stl/imu_bracket.stl` | Optional: the BNO085 IMU's bracket on the Pi (step 9) |
 
 | Qty | Part | Step |
 |---|---|---|
@@ -66,6 +68,9 @@ Second box, rack style: the Pico board, the Pi and the converter stand on edge, 
 | 1 | micro-USB 2.0 to USB-A cable with a straight plug, about 30 cm (see «Plugs») |
 | 1 | USB-C male pigtail (5 V to the Pi), 90° up/down angle, 15–20 cm; 3 A for a Pi 4, 5 A for a Pi 5 |
 | 1 | Angled 90° micro-HDMI male to HDMI female panel-mount cable with 2 M3 screws, 30 cm (measure its flange: `hdmi_*`) |
+| 1 | Optional (step 9): 30 × 30 × 7 mm 5 V fan (LD3007MS or similar) |
+| 1 | Optional (step 9): Adafruit BNO085 IMU (product 4754) |
+| 2 | Optional (step 9): 10 mm M2.5 male-female standoff |
 
 ## Wiring
 
@@ -146,3 +151,13 @@ It is the roof and the side: the front stays with the base. Lower it from above 
 **You need:** 16× M3 × 8 countersunk, 4× M4 × 12
 
 Bring the micro-USB out of the notch in the back, down the outside, and plug its USB-A into a Pi USB port: it is the plug you see outside the box in the picture (it is not loose). Through it the Pi gets the sensor data and flashes the Pico firmware. Choose how the box sits: standing, with the 4 ears in the pockets by the floor, or lying on the shell's side, with the 4 in the pockets by that side. Each ear sits flush in its pocket with 2 M3 × 8 countersunk; the other 4 pockets take a blank with its 2 screws. Then screw the box to the R2 through the 4 lugs.
+
+## 9 · Optional: fan and IMU
+
+![](assembly/img/step9.png)
+
+![](assembly/img/shell_fan.png)
+
+**You need:** 4× M3 × 12, 4× M3 nut, 2× M2.5 × 10 standoff, 6× M2.5 × 6
+
+With `shell_fan.stl` instead of `shell.stl`, the 30 mm fan goes on the side right over the Pi's processor, inside (blowing onto the Pi, screw from outside and the nut on the fan's side) or outside (it sticks out 7 mm; its wire goes in through the slot running up from the circle). Red to the Pi's pin 4 (5 V), black to pin 6 (GND). With the box lying on that side it is covered: use it with the box standing. The IMU bracket (`imu_bracket.stl`, orange in the picture) goes on the Pi's two holes on the USB side: swap their screws for the 2 standoffs, screw the bracket onto them with 2 M2.5 and the IMU board (blue) with 4 M2.5 × 6 where it lies flat: **on the arm** with the box lying, **hanging under the shelf** with the box standing. Do it before step 7: with the shell on you cannot reach it. Upside down or a few degrees off does not matter: it is zeroed from the console.

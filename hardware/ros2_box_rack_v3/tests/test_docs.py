@@ -18,8 +18,9 @@ def test_bom_matches_the_table(table):
     assert rows == dict(collections.Counter(f[0] for f in table)) and rows["ins_m3"] == 34 and rows["ins_m25"] == 4
 
 
-def test_eight_steps_both_languages():
-    assert [s["n"] for s in STEPS] == list(range(1, 9))
+def test_eight_steps_and_the_optional_ninth_both_languages():
+    assert [s["n"] for s in STEPS] == list(range(1, 10))      # 9: optional fan and IMU, with its own hardware
+    assert STEPS[-1]["es"]["hw"] and STEPS[-1]["en"]["hw"]
     for s in STEPS:
         assert s["es"]["text"] and s["en"]["text"]
 
@@ -28,7 +29,7 @@ def test_eight_steps_both_languages():
 def test_guide(tmp_path, table, lang, name):
     write_guide(lang, table, tmp_path / name)
     md = (tmp_path / name).read_text(encoding="utf8")
-    for n in range(1, 9):
+    for n in range(1, 10):
         assert f"assembly/img/step{n}.png" in md
     assert f"wiring_{lang}.svg" in md and f"connectors_{lang}.svg" in md
     assert "wall_multicolor_bambu.3mf" in md and "34× " in md and "frame_pi5.stl" in md
