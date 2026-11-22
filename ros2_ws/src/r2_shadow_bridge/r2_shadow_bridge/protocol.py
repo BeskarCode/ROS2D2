@@ -48,6 +48,12 @@ def dome_line(speed, max_speed):
     return f"ROS:DOME:{_clamp(int(speed), max_speed)}\n"
 
 
+def dome_allowed(track_on, auto_on):
+    """Does the Mega take ROS:DOME: now? With face tracking on or the autonomous mode on (the
+    firmware's domeTrackerActive): Patrol, Free roam and Follow a colour turn the dome too."""
+    return bool(track_on) or bool(auto_on)
+
+
 def dome_tick(fresh, speed, stopped, max_speed):
     """What to send to the Mega on one bridge tick: (line or None, stopped).
 

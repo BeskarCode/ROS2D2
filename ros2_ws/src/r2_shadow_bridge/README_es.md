@@ -29,7 +29,7 @@ velocidades.
 | | Nombre | Tipo | Qué es |
 |---|---|---|---|
 | in | `/foot/cmd_vel` | `geometry_msgs/Twist` | Velocidad del foot: `linear.x` en m/s, `angular.z` en rad/s |
-| in | `/dome/speed_cmd` | `std_msgs/Int16` | Velocidad del dome (unidades del SyRen) |
+| in | `/dome/speed_cmd` | `std_msgs/Int16` | Velocidad del dome (unidades del SyRen), se pasa con el seguimiento de caras o un modo automático encendido |
 | in | `/mega/command` | `std_msgs/String` | Órdenes `MD:`, `S1:`, `S3:` (sonidos, paneles, luces) |
 | out | `/r2/auto_mode` | `std_msgs/Bool` (latched) | Modo autónomo activo o no |
 | out | `/r2/auto_mode/reason` | `std_msgs/String` (latched) | Por qué se apagó: `boot`, `button`, `stick`, `controller`, `pi`, `disconnected` |

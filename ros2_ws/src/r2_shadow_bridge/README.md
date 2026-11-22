@@ -28,7 +28,7 @@ and while one is off it sends nothing to its part (foot or dome), even if someon
 | | Name | Type | What it is |
 |---|---|---|---|
 | in | `/foot/cmd_vel` | `geometry_msgs/Twist` | Foot speed: `linear.x` in m/s, `angular.z` in rad/s |
-| in | `/dome/speed_cmd` | `std_msgs/Int16` | Dome speed (SyRen units) |
+| in | `/dome/speed_cmd` | `std_msgs/Int16` | Dome speed (SyRen units), passed on while face tracking or an automatic mode is on |
 | in | `/mega/command` | `std_msgs/String` | `MD:`, `S1:`, `S3:` commands (sounds, panels, lights) |
 | out | `/r2/auto_mode` | `std_msgs/Bool` (latched) | Autonomous mode on or off |
 | out | `/r2/auto_mode/reason` | `std_msgs/String` (latched) | Why it went off: `boot`, `button`, `stick`, `controller`, `pi`, `disconnected` |

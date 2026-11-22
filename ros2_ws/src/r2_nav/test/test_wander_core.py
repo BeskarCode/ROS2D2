@@ -186,10 +186,9 @@ def test_wander_active_only_in_its_modes_with_auto_on():
 
 
 def test_mode_off_stops_dome_once():
-    from r2_nav.wander_core import leave_outputs
-    assert leave_outputs(True, False) == [("dome", 0)]     # leaving: one stop for the dome
-    assert leave_outputs(False, False) == []               # then silence (the dome tracker is free)
-    assert leave_outputs(False, True) == [] and leave_outputs(True, True) == []
+    from r2_nav.wander_core import head_plan
+    assert head_plan("patrol", None) == "stop"             # leaving: one stop for the dome
+    assert head_plan(None, None) == "idle"                 # then silence (the dome tracker is free)
 
 
 def test_blocked_counts_through_flicker():
@@ -206,3 +205,33 @@ def test_blocked_counts_through_flicker():
         t += DT
     assert away and away[0] == pytest.approx(3.0, abs=0.2)
     assert not [o for _, o in outs if o.state == "turn_away"]
+
+
+def test_greet_after_being_blocked_does_not_turn_away():
+    # walking up to someone: the navigator stops for them, R2 says hello, then walks on the other way
+    w = make(pause_chance=0.0, blocked_s=3, greet_s=2)
+    w.step(0.0, (0.0, 0.0, 0.0), "forward", [], 0.0)
+    run(w, 0.1, 1.5, nav_state="searching")                       # blocked 1.4 s by the person
+    run(w, 1.5, 2.5, nav_state="holding", faces=face_at(0.0, 0.1))  # hello (2 s at most)
+    outs = run(w, 2.5, 6.0, nav_state="forward")
+    assert not [o for _, o in outs if o.state == "turn_away"]
+
+
+def test_turn_away_outside_the_radius_sticks():
+    # at the edge, the way home blocked: the turn away is not undone on the next step
+    w = make(pause_chance=0.0, blocked_s=3)
+    w.step(0.0, (3.0, 0.0, math.pi), "forward", [], 0.0)          # 3 m out, heading home
+    outs = run(w, 0.1, 3.5, pose=(3.0, 0.0, math.pi), nav_state="searching")
+    away = [o.heading for _, o in outs if o.state == "turn_away"]
+    assert away
+    after = run(w, 3.5, 5.0, pose=(3.0, 0.0, math.pi), nav_state="forward")
+    assert after[-1][1].heading == pytest.approx(away[0])
+
+
+def test_switching_patrol_and_free_rebuilds_the_head():
+    from r2_nav.wander_core import head_plan
+    assert head_plan(None, "patrol") == "start"          # switched on
+    assert head_plan("patrol", "patrol") == "keep"
+    assert head_plan("patrol", "free") == "restart"      # straight from one to the other: a new start, no dome stop
+    assert head_plan("free", None) == "stop"             # off: one dome stop
+    assert head_plan(None, None) == "idle"

@@ -220,3 +220,11 @@ def test_parse_pad_report():
     assert parse_pad_report("PAD F:virtual D:virtual") == {"F": "virtual", "D": "virtual"}
     assert parse_pad_report("PAD F:bad D:none") is None
     assert parse_pad_report("AUTO ON") is None
+
+
+def test_dome_goes_through_with_face_tracking_or_an_automatic_mode():
+    # the firmware moves the dome from ROS:DOME: while face tracking OR the autonomous mode is on
+    # (domeTrackerActive): Patrol, Free roam and Follow a colour drive the dome without face tracking
+    from r2_shadow_bridge.protocol import dome_allowed
+    assert dome_allowed(True, False) and dome_allowed(False, True) and dome_allowed(True, True)
+    assert not dome_allowed(False, False)

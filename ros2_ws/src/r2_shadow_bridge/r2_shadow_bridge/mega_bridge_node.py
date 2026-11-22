@@ -8,7 +8,8 @@ switch the autonomous mode (PS + L2 on the foot Nav) or face tracking (PS + L2 o
 dome Nav) on. The two are independent.
 
 Topics:
-  in   /dome/speed_cmd        std_msgs/Int16      dome speed (DM: units); sent ~15 times a second
+  in   /dome/speed_cmd        std_msgs/Int16      dome speed (DM: units); sent ~15 times a second, passed on while
+                                                  face tracking or an automatic mode is on (as the firmware takes it)
                                                   while turning and with face tracking on; at 0
                                                   or when it goes stale, one stop and silence
   in   /foot/cmd_vel          geometry_msgs/Twist linear.x m/s, angular.z rad/s; same rules,
@@ -59,7 +60,7 @@ from std_srvs.srv import Trigger
 
 from r2_nav.modes import bindings, load_modes, modes_path
 from r2_shadow_bridge.remote_cfg import USER_REMOTE, PadOwner, limit_stick, load_remote
-from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_line, dome_tick, foot_tick,
+from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_allowed, dome_line, dome_tick, foot_tick,
                                        is_auto_off_error, is_error, lines_for_mega_line,
                                        pad_line, parse_auto_line, parse_bind_reply, parse_pad_report,
                                        parse_track_line, twist_to_units)
@@ -382,7 +383,7 @@ class MegaBridgeNode(Node):
 
     def _tick(self):
         fresh = self.dome_t is not None and time.monotonic() - self.dome_t < self.param("cmd_timeout")
-        line, self.dome_sent_stop = dome_tick(fresh and self.track_on, self.dome_speed,
+        line, self.dome_sent_stop = dome_tick(fresh and dome_allowed(self.track_on, self.auto_on), self.dome_speed,
                                               self.dome_sent_stop, self.param("max_dome_speed"))
         if line:
             self._write(line)

@@ -57,6 +57,7 @@ class Wander:
         self.last_greet = -math.inf
         self.blocked_since = None
         self.free_since = None
+        self.keep_until = -math.inf       # after a turn away: no "back home now" until then
         self.sweep = 1
         self.lock.reset()
         self.tracker.reset()
@@ -85,6 +86,7 @@ class Wander:
     def _walk(self, now):
         self.state, self.until = "walk", None
         self.next_turn = now + self.rng.uniform(*self.cfg["turn_every_s"])
+        self.blocked_since = self.free_since = None   # blocked before a stop (someone in the way) is not blocked now
 
     # ---------- the dome ----------
     def _dome_towards(self, direction):
@@ -128,6 +130,7 @@ class Wander:
             self._walk(now)
         if best is not None and new and best[2] >= cfg["greet_size"] and now - self.last_greet >= cfg["greet_cooldown_s"]:
             self.state, self.until, self.last_greet = "greet", now + cfg["greet_s"], now
+            self.blocked_since = self.free_since = None
             if cfg["hello"]:
                 out.sounds.append(cfg["hello"])
         elif self.state == "greet":
@@ -153,7 +156,8 @@ class Wander:
                 self.heading = wrap(self.heading + self.rng.choice((-1, 1)) * math.radians(self.rng.uniform(120, 180)))
                 self.state, self.blocked_since, self.free_since = "turn_away", None, None
                 self.next_turn = now + self.rng.uniform(*cfg["turn_every_s"])
-            elif self._outside(home) and abs(wrap(self.heading - home[1])) > math.pi / 2:
+                self.keep_until = self.next_turn       # the way home is blocked: away from it until the next course
+            elif self._outside(home) and now >= self.keep_until and abs(wrap(self.heading - home[1])) > math.pi / 2:
                 self.heading = self._towards_home(home)       # going further out: back now
                 self.next_turn = now + self.rng.uniform(*cfg["turn_every_s"])
             elif now >= self.next_turn:
@@ -161,6 +165,7 @@ class Wander:
                 self.next_turn = now + self.rng.uniform(*cfg["turn_every_s"])
                 if self.rng.random() < cfg["pause_chance"]:
                     self.state, self.until = "look", now + self.rng.uniform(*cfg["pause_s"])
+                    self.blocked_since = self.free_since = None
                     if cfg["idle_sounds"] and self.rng.random() < cfg["pause_chance"]:
                         out.sounds.append(self.rng.choice(cfg["idle_sounds"]))
 
@@ -177,6 +182,12 @@ def wander_active(mode, auto_on):
     return bool(auto_on) and mode in WANDER_MODES
 
 
-def leave_outputs(was_active, active):
-    """What to send when the head stops: one stop for the dome, then nothing (the dome tracker takes over)."""
-    return [("dome", 0)] if was_active and not active else []
+def head_plan(was, mode):
+    """What the wander node does with its head when the mode it runs for (None: none) becomes `mode`:
+    "start" a new one, "keep" it, "restart" (Patrol <-> Free roam: a new start and radius, the dome
+    keeps going), "stop" (one stop for the dome) or stay "idle"."""
+    if was is None:
+        return "idle" if mode is None else "start"
+    if mode is None:
+        return "stop"
+    return "keep" if mode == was else "restart"

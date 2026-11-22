@@ -41,7 +41,7 @@ from r2_dome_tracker.control import Gains, bearing_deg, face_error
 from r2_dome_tracker.dome_tracker_node import cameras_from_config
 from r2_nav.nav_core import NavConfigError, config_path, declare_wander, load_nav, wander_param_error
 from r2_nav.spin import spin
-from r2_nav.wander_core import Wander, leave_outputs, wander_active
+from r2_nav.wander_core import Wander, head_plan, wander_active
 
 ODOM_STALE = 0.5     # s
 RATE_HZ = 15.0       # the Mega stops the dome 300 ms without an order: well inside that
@@ -88,7 +88,7 @@ class WanderNode(Node):
         self.dome_deg = 0.0
         self.width, self.latest = {}, {}
         self.head = None              # the Wander of the mode that is on
-        self.active = False
+        self.head_mode = None         # the mode it was built for (None: no head)
         self.last_state = 0.0
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL, reliability=ReliabilityPolicy.RELIABLE)
@@ -147,18 +147,17 @@ class WanderNode(Node):
 
     def _tick(self):
         now = self._now()
-        active = wander_active(self.mode, self.auto_on)
-        for what, value in leave_outputs(self.active, active):
-            if what == "dome":
-                self.pub_dome.publish(Int16(data=value))
-        if active and not self.active:
+        plan = head_plan(self.head_mode, self.mode if wander_active(self.mode, self.auto_on) else None)
+        if plan == "stop":
+            self.pub_dome.publish(Int16(data=0))          # one stop, then the dome tracker is free
+        if plan in ("start", "restart"):
             self.head = Wander(self.cfg, self.gains, random.Random(), self.mode == "patrol", self.lock_gate, self.lock_calm)
             self.head.start(now, self._pose(now))
             self.get_logger().info(f"{self.mode}: strolling")
-        self.active = active
-        if not active:
-            self.head = None
+        if plan in ("stop", "idle"):
+            self.head, self.head_mode = None, None
             return
+        self.head_mode = self.mode
         faces = [f for got in self.latest.values() for f in got if now - f[0] <= self.gains.lost_after]
         out = self.head.step(now, self._pose(now), self.nav_state, faces, self.dome_deg)
         if out.heading is not None:
@@ -187,7 +186,7 @@ def main():
     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
         pass
     finally:
-        if rclpy.ok() and node.active:
+        if rclpy.ok() and node.head_mode is not None:
             node.pub_dome.publish(Int16(data=0))
         node.destroy_node()
         rclpy.try_shutdown()
