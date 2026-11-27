@@ -84,3 +84,17 @@ def test_crop_of_a_scan_from_0_to_2pi():
     kept = [i for i, r in enumerate(out) if r == 1.0]
     assert 0 in kept and 89 in kept and 359 in kept and 271 in kept
     assert 180 not in kept and 135 not in kept
+
+
+def test_blanked_on_a_scan_from_0_to_2pi():
+    # REV-T2: the node's path (blanked) with angle_min = 0, as a driver giving 0..2pi would
+    n = 360
+    inc = 2 * math.pi / n
+    half = math.radians(100)
+    sectors = [(math.radians(170), math.radians(-170))]          # a blind sector across the back
+    idx = set(blanked(n, 0.0, inc, -half, half, sectors))
+    kept = [i for i in range(n) if i not in idx]
+    assert 0 in kept and 99 in kept and 359 in kept and 261 in kept    # both sides of the front kept
+    assert 101 not in kept and 180 not in kept and 259 not in kept     # the back blanked
+    want = [i for i, r in enumerate(mask(crop([1.0] * n, 0.0, inc, -half, half), 0.0, inc, sectors)) if r != 1.0]
+    assert sorted(idx) == want
