@@ -77,7 +77,7 @@ async function pingWeb() {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), PING_TIMEOUT_MS);
   try {
-    const r = await fetch('api/system', { cache: 'no-store', signal: ctl.signal });
+    const r = await fetch('api/ping', { cache: 'no-store', signal: ctl.signal });   // nothing to compute: just alive
     return r.ok;
   } catch { return false; } finally { clearTimeout(t); }
 }

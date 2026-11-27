@@ -169,9 +169,15 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, domecams_payload(cameras))
         if self.path.split("?")[0] == "/api/firmware":
             return self._json(200, self.firmware.status())
+        if self.path.split("?")[0] == "/api/ping":
+            return self._json(200, {"ok": True})        # every open page, every 4 s: nothing else
         if self.path.split("?")[0] == "/api/system":
+            # only the CPU sample is shared: a slow read here must not hold the other pages back
             with Handler.stat_lock:
-                body, Handler.prev_stat = system_payload("telemetry=1" in self.path, Handler.prev_stat)
+                prev = Handler.prev_stat
+            body, stat = system_payload("telemetry=1" in self.path, prev)
+            with Handler.stat_lock:
+                Handler.prev_stat = stat
             return self._json(200, body)
         if self.path.split("?")[0] != "/api/cameras":
             return super().do_GET()

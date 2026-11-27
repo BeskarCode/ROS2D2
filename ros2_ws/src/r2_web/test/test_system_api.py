@@ -95,3 +95,21 @@ def test_api_system_always_has_the_pi_info(monkeypatch, tmp_path):
     monkeypatch.setattr(system_api, "pi_info", lambda: {"host": "r2pi", "up_s": 5})
     body, _ = system_payload(False, None, version_path=str(tmp_path / "none"))
     assert body["info"] == {"host": "r2pi", "up_s": 5}
+
+
+def test_addresses_asked_to_ip_at_most_every_few_seconds(monkeypatch):
+    # WEB-4: every open page pings the server every 4 s; `ip` is not run for each of them
+    monkeypatch.setattr(system_api, "_addr_cache", {"at": None, "value": []})
+    calls = []
+
+    class Done:
+        stdout = '[{"ifname": "wlan0", "addr_info": [{"family": "inet", "local": "10.42.0.1", "prefixlen": 24}]}]'
+
+    def run(*a, **k):
+        calls.append(a)
+        return Done()
+    first = system_api.addresses(now=100.0, run=run)
+    assert system_api.addresses(now=103.0, run=run) == first
+    assert len(calls) == 1
+    system_api.addresses(now=100.0 + system_api.ADDRESSES_TTL, run=run)
+    assert len(calls) == 2

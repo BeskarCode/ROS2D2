@@ -7,6 +7,8 @@ import json
 import os
 import socket
 import subprocess
+import threading
+import time
 
 VERSION_FILE = os.path.expanduser("~/r2_ws/VERSION")
 
@@ -152,18 +154,37 @@ def parse_os_release(text):
     return None
 
 
-def pi_info():
-    """What the Pi is and where: shown in System -> Raspberry Pi (cheap: read on every poll)."""
+ADDRESSES_TTL = 5.0      # s: the addresses are asked to `ip` at most this often
+_addr_lock = threading.Lock()
+_addr_cache = {"at": None, "value": []}
+
+
+def addresses(now=None, run=subprocess.run):
+    """The Pi's IPv4 addresses, from `ip` at most every ADDRESSES_TTL seconds (every open page
+    polls System, and a fork + exec of `ip` each time adds up)."""
+    now = time.monotonic() if now is None else now
+    with _addr_lock:
+        at = _addr_cache["at"]
+        if at is not None and 0 <= now - at < ADDRESSES_TTL:
+            return _addr_cache["value"]
     try:
-        ip = subprocess.run(["ip", "-j", "-4", "addr", "show"], capture_output=True, text=True, timeout=2).stdout
+        ip = run(["ip", "-j", "-4", "addr", "show"], capture_output=True, text=True, timeout=2).stdout
     except (OSError, subprocess.SubprocessError):
         ip = ""
+    value = parse_addresses(ip)
+    with _addr_lock:
+        _addr_cache["at"], _addr_cache["value"] = now, value
+    return value
+
+
+def pi_info():
+    """What the Pi is and where: shown in System -> Raspberry Pi (cheap: read on every poll)."""
     return {
         "host": socket.gethostname(),
         "up_s": parse_uptime(_read("/proc/uptime") or ""),
         "os": parse_os_release(_read("/etc/os-release") or ""),
         "ros": os.environ.get("ROS_DISTRO"),
-        "addresses": parse_addresses(ip),
+        "addresses": addresses(),
     }
 
 
