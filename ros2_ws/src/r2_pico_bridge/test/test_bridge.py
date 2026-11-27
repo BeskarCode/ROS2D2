@@ -497,3 +497,29 @@ def test_readings_arrive_one_by_one_not_in_pairs(bench):
     gaps = [b - a for a, b in zip(got[1:], got[2:])]
     # stamped as they are read: in pairs, half the gaps are ~0 and half ~100 ms; one by one they are all around 50 ms
     assert sum(1 for g in gaps if g < 0.015) <= len(gaps) // 4, gaps
+
+
+def test_a_failed_write_waits_before_opening_again(bench):
+    # REV-5: a write that fails (a stuck port, write_timeout) drops the port; the reader must still
+    # wait reconnect_sec (0.2 s here) before opening it again, as after a failed read
+    assert bench.spin_until(lambda: bench.connected is True)
+
+    class Broken:
+        in_waiting = 0
+
+        def write(self, data):
+            raise OSError("stuck")
+
+        def read(self, n):
+            time.sleep(0.01)
+            return b""
+
+        def close(self):
+            pass
+    with bench.node.lock:
+        bench.node.ser = Broken()
+    t0 = time.monotonic()
+    assert bench.node._write("HELLO\n") is False
+    assert bench.node.ser is None
+    assert bench.spin_until(lambda: bench.node.ser is not None, 4)
+    assert time.monotonic() - t0 >= 0.18
