@@ -29,6 +29,9 @@ def origin_ok(headers):
 def body_length(headers, limit=MAX_BODY):
     """Content-Length as a number of bytes to read: 0 when absent; BadBody when it is not a
     number, negative or over the limit (read(-1) would wait until the connection closes)."""
+    if headers.get("Transfer-Encoding"):
+        # a chunked body would stay on the connection and be read as the next request
+        raise BadBody("send the body with a Content-Length, not a Transfer-Encoding")
     raw = headers.get("Content-Length")
     if raw in (None, ""):
         return 0

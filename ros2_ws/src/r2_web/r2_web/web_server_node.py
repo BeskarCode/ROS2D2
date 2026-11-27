@@ -177,6 +177,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        if self.close_connection:                # the client is told, not left waiting on it
+            self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(body)
 
@@ -233,10 +235,13 @@ class Handler(SimpleHTTPRequestHandler):
             self.close_connection = True
             return self._json(403, {"error": "the console only takes orders from its own pages"})
         try:
-            raw = self.rfile.read(body_length(self.headers))     # every route: the whole body, at most 1 MiB
+            n = body_length(self.headers)
+            raw = self.rfile.read(n)             # every route: the whole body, at most 1 MiB
         except BadBody as e:
             self.close_connection = True         # what is left of it cannot be skipped
             return self._json(400, {"error": str(e)})
+        if len(raw) < n:                         # the client went before sending it all
+            self.close_connection = True
         if route == "/api/restart":
             # Answer first: restarting stops this very server
             self._json(200, {"ok": True})

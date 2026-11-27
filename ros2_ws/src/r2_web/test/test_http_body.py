@@ -21,3 +21,9 @@ def test_body_length():
     for bad in ("-1", "abc", "1.5", str(MAX_BODY + 1)):
         with pytest.raises(BadBody):
             body_length({"Content-Length": bad})
+
+
+def test_a_chunked_body_is_refused():
+    # REV-3: without a Content-Length a chunked body would be read as the next request
+    with pytest.raises(BadBody):
+        body_length({"Transfer-Encoding": "chunked"})

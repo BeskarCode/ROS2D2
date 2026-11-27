@@ -101,3 +101,18 @@ def test_one_connection_serves_several_requests(server):
         assert r.status == status, path
         assert r.version == 11
     c.close()
+
+
+def test_a_chunked_post_is_refused_and_the_connection_closed(server):
+    # REV-3: the chunked body is not read as the next request on the same connection
+    srv, _ = server
+    c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+    c.putrequest("POST", "/api/cameras")
+    c.putheader("Transfer-Encoding", "chunked")
+    c.endheaders()
+    c.send(b"5\r\nGET /\r\n0\r\n\r\n")
+    r = c.getresponse()
+    r.read()
+    assert r.status == 400
+    assert r.getheader("Connection", "").lower() == "close"
+    c.close()
