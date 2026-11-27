@@ -219,3 +219,16 @@ def parse_pad_report(line):
     """"PAD F:real D:none" -> {"F": "real", "D": "none"}, or None."""
     m = _PAD_REPORT.match(line.strip())
     return {"F": m.group(1), "D": m.group(2)} if m else None
+
+
+MAX_LINE = 8192          # bytes without a newline before they are thrown away (noise, not a line)
+
+
+def split_lines(buf, data):
+    """(complete lines, what is left) after `data` arrives on top of `buf` (bytes). A carriage return
+    ends a line as a newline does (the Mega sends either); more than MAX_LINE bytes with no newline
+    is noise and is thrown away."""
+    *lines, buf = (buf + data).replace(b"\r", b"\n").split(b"\n")
+    if len(buf) > MAX_LINE:
+        buf = b""
+    return lines, buf

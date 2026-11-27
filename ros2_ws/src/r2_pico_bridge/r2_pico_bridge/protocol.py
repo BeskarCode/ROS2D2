@@ -125,3 +125,15 @@ def parse(line):
     if line.startswith("ERR "):
         return ("err", line[4:])
     return None
+
+
+MAX_LINE = 8192          # bytes without a newline before they are thrown away (noise, not a line)
+
+
+def split_lines(buf, data):
+    """(complete lines, what is left) after `data` arrives on top of `buf` (bytes). Carriage returns
+    are dropped; more than MAX_LINE bytes with no newline is noise and is thrown away."""
+    *lines, buf = (buf + data).replace(b"\r", b"").split(b"\n")
+    if len(buf) > MAX_LINE:
+        buf = b""
+    return lines, buf

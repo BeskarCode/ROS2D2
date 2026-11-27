@@ -63,14 +63,12 @@ from r2_shadow_bridge.remote_cfg import USER_REMOTE, PadOwner, limit_stick, load
 from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allowed, dome_allowed, dome_line, dome_tick, foot_tick,
                                        is_auto_off_error, is_error, lines_for_mega_line,
                                        pad_line, parse_auto_line, parse_bind_reply, parse_pad_report,
-                                       parse_track_line, twist_to_units)
-
-MAX_LINE = 8192          # bytes without a newline before they are thrown away (noise, not a line)
+                                       parse_track_line, split_lines, twist_to_units)
 
 
 class MegaBridgeNode(Node):
-    def __init__(self):
-        super().__init__("mega_bridge")
+    def __init__(self, **kwargs):
+        super().__init__("mega_bridge", **kwargs)    # kwargs: the tests' parameter_overrides
         p = self.declare_parameter
         p("port", "/dev/r2-mega")
         p("baud", 115200)
@@ -137,6 +135,7 @@ class MegaBridgeNode(Node):
         self.pub_mode.publish(String(data=""))
         self._set_auto(False, "boot")
         self._set_track(False, "boot")
+        self.reopen_at = 0.0             # the port may be opened again from then (monotonic s)
         self._stop = threading.Event()
         self._reader = threading.Thread(target=self._read_loop, daemon=True)
         self._reader.start()
@@ -181,6 +180,8 @@ class MegaBridgeNode(Node):
             except OSError:
                 pass
             self.ser = None
+            # lost by a read or by a write: the reader waits this long before opening it again
+            self.reopen_at = time.monotonic() + self.param("reconnect_sec")
         self.pub_connected.publish(Bool(data=False))
         self.pad_pending = {"F": None, "D": None}
         self._set_pads(F="none", D="none", mega=False)
@@ -214,21 +215,24 @@ class MegaBridgeNode(Node):
     def _read_loop(self):
         buf = b""
         while not self._stop.is_set():
-            if self.ser is None:
+            ser = self.ser                   # once per turn: a write may drop it meanwhile
+            if ser is None:
+                wait = self.reopen_at - time.monotonic()
+                if wait > 0:                 # opening the port resets the Mega: never in a loop
+                    self._stop.wait(min(wait, 0.1))
+                    continue
                 if not self._connect():
-                    self._stop.wait(self.param("reconnect_sec"))
+                    self.reopen_at = time.monotonic() + self.param("reconnect_sec")
+                buf = b""
                 continue
             try:
                 # what is there, or wait (up to the timeout) for one byte: read(256) waited for 256
                 # bytes or the timeout, holding AUTO OFF / TRACK lines back up to 100 ms
-                buf += self.ser.read(self.ser.in_waiting or 1)
+                data = ser.read(ser.in_waiting or 1)
             except (serial.SerialException, OSError, TypeError, AttributeError) as e:
-                self._lost(e)
-                self._stop.wait(self.param("reconnect_sec"))   # opening the port resets the Mega: not in a loop
+                self._lost(e)                # nothing if a write already dropped it (and set the wait)
                 continue
-            *lines, buf = buf.replace(b"\r", b"\n").split(b"\n")
-            if len(buf) > MAX_LINE:          # no newline in 8 kB: noise, not a line
-                buf = b""
+            lines, buf = split_lines(buf, data)
             for raw in lines:
                 line = raw.decode("ascii", "replace").strip()
                 if not line:

@@ -34,11 +34,10 @@ from std_msgs.msg import Bool, String
 from std_srvs.srv import SetBool
 
 from r2_pico_bridge import board_settings
-from r2_pico_bridge.protocol import cfg_line, parse
+from r2_pico_bridge.protocol import cfg_line, parse, split_lines
 from r2_sensors.config import Reloader, config_path
 
 STATES = {"O": "ok", "N": "not_responding"}
-MAX_LINE = 8192          # bytes without a newline before they are thrown away (noise, not a line)
 NL = "\n"
 
 
@@ -106,6 +105,7 @@ class PicoBridge(Node):
         self.reload(force=True)
         self.create_timer(1.0, self.tick)
         self.create_timer(0.2, self.check_connected)
+        self.reopen_at = 0.0             # the port may be opened again from then (monotonic s)
         self._stop = threading.Event()
         self._reader = threading.Thread(target=self._read_loop, daemon=True)
         self._reader.start()
@@ -179,6 +179,8 @@ class PicoBridge(Node):
             self.ser = None
             self.last_hb = 0.0
             self.tm_sent = False
+            # lost by a read or by a write: the reader waits this long before opening it again
+            self.reopen_at = time.monotonic() + self.param("reconnect_sec")
         self.get_logger().error(f"lost the Pico: {why}")
 
     def _write(self, line):
@@ -201,23 +203,24 @@ class PicoBridge(Node):
                 self._stop.wait(0.1)
                 buf = b""
                 continue
-            if self.ser is None:
+            ser = self.ser                   # once per turn: a write may drop it meanwhile
+            if ser is None:
+                wait = self.reopen_at - time.monotonic()
+                if wait > 0:                 # lost a moment ago (read or write): not straight back
+                    self._stop.wait(min(wait, 0.1))
+                    continue
                 if not self._connect():
-                    self._stop.wait(self.param("reconnect_sec"))
+                    self.reopen_at = time.monotonic() + self.param("reconnect_sec")
                 buf = b""
                 continue
             try:
                 # what is there, or wait (up to the timeout) for one byte: read(256) waited for 256
                 # bytes or the timeout, handing the 50 ms readings over two at a time
-                data = self.ser.read(self.ser.in_waiting or 1)
+                data = ser.read(ser.in_waiting or 1)
             except (serial.SerialException, OSError, TypeError, AttributeError) as e:
-                self._lost(e)
-                self._stop.wait(self.param("reconnect_sec"))     # not straight back to open it again
+                self._lost(e)                # nothing if a write already dropped it (and set the wait)
                 continue
-            buf += data
-            *lines, buf = buf.replace(b"\r", b"").split(b"\n")
-            if len(buf) > MAX_LINE:          # no newline in 8 kB: noise, not a line
-                buf = b""
+            lines, buf = split_lines(buf, data)
             for raw in lines:
                 line = raw.decode("ascii", "replace").strip()
                 try:
@@ -360,6 +363,7 @@ class PicoBridge(Node):
             response.message = "released"
         else:
             self.released = False
+            self.reopen_at = 0.0             # taken back: open it at once
             response.message = "taken back"
         response.success = True
         return response
