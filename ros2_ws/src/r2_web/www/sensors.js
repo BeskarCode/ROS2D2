@@ -127,6 +127,7 @@ export function createSensorsTab({ status }) {
       errorCb();
     }
     subscribeRanges();
+    refreshUsb();
     await checkLidar();       // through rosbridge: may take a moment, or not answer
     renderList();
     redraw();
@@ -610,18 +611,34 @@ export function createSensorsTab({ status }) {
         <span>${sectors}<button class="addsec" title="Add a blind sector"><i class="fa-solid fa-plus"></i>Add</button></span></div>
       <div class="row"><label><i class="fa-solid fa-circle-info"></i>lidar</label><span class="sub lidarinfo">${lidarInfoText(lidarInfo, scanTurns, scanPoints)}</span></div>`;
   }
-  // The lidar's USB, unplugged in software and back (POST api/lidar/usb): applies at once, no Save
+  // The lidar's USB, unplugged in software and back (POST api/lidar/usb): applies at once, no Save.
+  // Its state (a sudo on the Pi each time) is asked on load, after a POST and in the 5 s poll;
+  // drawing the list again (a click on a card) paints the last one known.
+  let usbLast = null;
+  const lidarCard = () => [...$('slist').children].find((c) => c.querySelector('.lusb'));
+  async function refreshUsb() {
+    try { usbLast = await (await fetch('api/lidar/usb', { cache: 'no-store' })).json(); } catch { usbLast = { error: 'no answer from the Pi' }; }
+    const el = lidarCard();
+    if (el) paintUsb(el, usbLast);
+  }
   async function lidarUsb(el, body) {
     const btn = el.querySelector('.lusb'), msg = el.querySelector('.lusbmsg');
     btn.disabled = true;
-    if (body) msg.textContent = body.connected ? 'connecting…' : 'stopping the motor and disconnecting…';
+    msg.textContent = body.connected ? 'connecting…' : 'stopping the motor and disconnecting…';
     let r;
     try {
-      r = await (await fetch('api/lidar/usb', body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' })).json();
+      r = await (await fetch('api/lidar/usb', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
     } catch { r = { error: 'no answer from the Pi' }; }
-    if (body && !r.error) {   // the answer may be a step behind: read the state again
+    if (!r.error) {   // the answer may be a step behind: read the state again
       try { r = await (await fetch('api/lidar/usb', { cache: 'no-store' })).json(); } catch { /* keep the POST's */ }
     }
+    usbLast = r;
+    paintUsb(lidarCard() || el, r);
+  }
+  function paintUsb(el, r) {
+    const btn = el.querySelector('.lusb'), msg = el.querySelector('.lusbmsg');
+    if (!btn || !msg) return;
+    if (!r) { btn.disabled = true; return; }
     const state = r.state;
     btn.innerHTML = state === 'connected' ? '<i class="fa-solid fa-plug-circle-xmark"></i>Disconnect'
       : '<i class="fa-solid fa-plug-circle-check"></i>Connect';
@@ -635,7 +652,7 @@ export function createSensorsTab({ status }) {
     el.querySelector('.lpts').addEventListener('input', (e) => { s.points_colour = e.target.value.toLowerCase(); touched(); });
     el.querySelector('.lnear').addEventListener('input', (e) => { s.near_colour = e.target.value.toLowerCase(); touched(); });
     el.querySelector('.lusb').addEventListener('click', (e) => lidarUsb(el, { connected: e.currentTarget.dataset.state !== 'connected' }));
-    lidarUsb(el);
+    paintUsb(el, usbLast);
     el.querySelector('.lmotor').addEventListener('change', (e) => { s.motor = e.target.value; touched(); });
     el.querySelector('.lmode').addEventListener('change', (e) => { s.scan_mode = e.target.value; touched(); });
     el.querySelector('.linv').addEventListener('change', (e) => { s.inverted = e.target.checked; touched(); });
@@ -741,6 +758,7 @@ export function createSensorsTab({ status }) {
       const sim = simulated;
       await checkLidar();
       if (before !== api.lidar_device || sim !== simulated) { renderList(); redraw(); }
+      if (sensors.some(isLidar)) refreshUsb();
     } catch { /* restarting */ }
   }, 5000);
 
