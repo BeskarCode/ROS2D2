@@ -77,3 +77,23 @@ def test_a_failed_v4l2_ctl_is_not_kept():
     assert c.get("/dev/video0") == ["640x480@30"]
     assert c.get("/dev/video0") == ["640x480@30"]
     assert len(calls) == 2
+
+
+def test_two_saves_at_once_leave_one_whole_file(tmp_path):
+    # REV-2: each HTTP request has its own thread; two saves must not mix in the same temporary file
+    import threading
+    user = str(tmp_path / "cameras.yaml")
+    texts = ["".join(f"cam{i}:\n  yaw_deg: {k}\n" for i in range(300)) for k in (1, 2)]
+    out = []
+    go = threading.Barrier(2)
+
+    def save(t):
+        go.wait()
+        for _ in range(20):
+            out.append(save_cameras({"yaml": t}, user)[0])
+    th = [threading.Thread(target=save, args=(t,)) for t in texts]
+    [t.start() for t in th]
+    [t.join() for t in th]
+    assert set(out) == {200}
+    assert open(user, encoding="utf-8").read() in texts
+    assert not os.path.exists(user + ".tmp")

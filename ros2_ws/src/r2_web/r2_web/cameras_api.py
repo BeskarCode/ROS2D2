@@ -8,6 +8,8 @@ import yaml
 
 from r2_camera.config import load_cameras
 
+_save_lock = threading.Lock()     # one save at a time: each HTTP request runs in its own thread
+
 
 def save_cameras(body, user):
     """(HTTP code, body). body: the request's JSON ({"yaml": text}). Written whole or not at all
@@ -24,14 +26,17 @@ def save_cameras(body, user):
         return 400, {"error": f"not saved: {e}"}
     os.makedirs(os.path.dirname(user), exist_ok=True)
     tmp = f"{user}.tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(text if text.endswith("\n") else text + "\n")
-    try:
-        load_cameras(tmp, found=[])          # read back the way the nodes will read it
-    except (ValueError, TypeError, AttributeError, yaml.YAMLError) as e:
-        os.remove(tmp)
-        return 400, {"error": f"not saved: {e}"}
-    os.replace(tmp, user)
+    with _save_lock:                         # two saves at once must not share the temporary file
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(text if text.endswith("\n") else text + "\n")
+            f.flush()
+            os.fsync(f.fileno())             # on the card before it takes the old file's place
+        try:
+            load_cameras(tmp, found=[])      # read back the way the nodes will read it
+        except (ValueError, TypeError, AttributeError, yaml.YAMLError) as e:
+            os.remove(tmp)
+            return 400, {"error": f"not saved: {e}"}
+        os.replace(tmp, user)
     return 200, {"ok": True, "file": user}
 
 
