@@ -157,6 +157,11 @@ def pick_face(latest, now, max_age):
     return t, bearing
 
 
+def _angle_diff(a, b):
+    """How far apart two bearings are in degrees, the short way round (178 and -179 are 3 apart)."""
+    return abs((a - b + 180.0) % 360.0 - 180.0)
+
+
 class FaceLock:
     """Which face to follow when there are several: calmly, not the biggest of every picture.
 
@@ -181,9 +186,9 @@ class FaceLock:
 
     def update(self, faces, now):
         if self.bearing is not None:
-            near = [f for f in faces if abs(f[1] - self.bearing) <= self.gate_deg]
+            near = [f for f in faces if _angle_diff(f[1], self.bearing) <= self.gate_deg]
             if near:
-                f = min(near, key=lambda f: abs(f[1] - self.bearing))
+                f = min(near, key=lambda f: _angle_diff(f[1], self.bearing))
                 self.bearing, self.last_seen = f[1], now
                 return f, False, False
             if now - self.last_seen <= self.calm_s:

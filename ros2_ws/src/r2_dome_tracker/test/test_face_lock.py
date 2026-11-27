@@ -75,3 +75,13 @@ def test_reset_forgets_the_face():
 def test_sound_gate_plays_at_most_every_min_gap():
     g = SoundGate(min_gap_s=3.0)
     assert g.ready(0.0) and not g.ready(1.0) and not g.ready(2.9) and g.ready(3.1)
+
+
+def test_the_same_face_across_plus_minus_180_is_the_same_face():
+    # BRG-4: the dome's angle wraps at +-180, so the same face jumps from 178 to -179
+    lock = FaceLock(gate_deg=15, calm_s=2.0)
+    lock.update([face(178, 0.2)], 0.0)
+    got, new, waiting = lock.update([face(-179, 0.2)], 0.1)
+    assert got[1] == -179 and not new and not waiting
+    got, new, waiting = lock.update([face(179, 0.2), face(-170, 0.5)], 0.2)   # the nearer one, the short way
+    assert got[1] == 179 and not new
