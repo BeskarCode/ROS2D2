@@ -140,7 +140,7 @@ def in_view(rel_deg, cameras):
 
     cameras: iterable of (yaw_deg, hfov_deg).
     """
-    return any(abs(rel_deg - yaw) <= hfov / 2 for yaw, hfov in cameras)
+    return any(_angle_diff(rel_deg, yaw) <= hfov / 2 for yaw, hfov in cameras)     # a rear camera at 180 sees -179 too
 
 
 def pick_face(latest, now, max_age):
@@ -155,6 +155,11 @@ def pick_face(latest, now, max_age):
         return None
     t, bearing, _ = max(fresh, key=lambda v: v[2])
     return t, bearing
+
+
+def _wrap_deg(a):
+    """An angle in degrees brought to -180..180."""
+    return (a + 180.0) % 360.0 - 180.0
 
 
 def _angle_diff(a, b):
@@ -221,7 +226,8 @@ def face_to_error(bearing, dome_deg, cameras, simulate):
     With simulate the cameras stay still but pretend to turn with the (estimated) dome:
     the face is shifted by the dome angle and dropped if no camera would see it any more.
     """
-    rel = bearing - dome_deg if simulate else bearing
+    # wrapped to -180..180: a face at +179 with the dome at -179 is 2 degrees off, not 358
+    rel = _wrap_deg(bearing - dome_deg) if simulate else bearing
     if simulate and not in_view(rel, cameras):
         return None
     return rel / REF_HALF_FOV

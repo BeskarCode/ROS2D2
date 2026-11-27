@@ -96,3 +96,13 @@ def test_speed_integrator_invert_and_reset():
     assert s.angle(0.2) == pytest.approx(9.0)             # 45 deg/s right for 0.2 s
     s.reset()
     assert s.angle(1.0) == 0.0
+
+
+def test_simulate_across_plus_minus_180_with_a_rear_camera():
+    # BRG-4: front and rear cameras; the rear one sees a face at +179 while the (pretend) dome is at
+    # -179: turned with the dome, the front camera would have it 2 degrees off centre, not 358
+    both = [(0.0, 60.0), (180.0, 60.0)]
+    assert in_view(-179.0, both) and in_view(179.0, both) and not in_view(100.0, both)
+    assert face_to_error(179.0, -179.0, both, simulate=True) == pytest.approx(-2.0 / 30)
+    assert face_to_error(-170.0, 175.0, both, simulate=True) == pytest.approx(15.0 / 30)
+    assert face_to_error(179.0, -179.0, [(180.0, 60.0)], simulate=True) is None   # no front camera: out of view
