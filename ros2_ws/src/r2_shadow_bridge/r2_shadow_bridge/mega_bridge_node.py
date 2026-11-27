@@ -65,6 +65,8 @@ from r2_shadow_bridge.protocol import (auto_transition, bind_lines, command_allo
                                        pad_line, parse_auto_line, parse_bind_reply, parse_pad_report,
                                        parse_track_line, twist_to_units)
 
+MAX_LINE = 8192          # bytes without a newline before they are thrown away (noise, not a line)
+
 
 class MegaBridgeNode(Node):
     def __init__(self):
@@ -147,7 +149,8 @@ class MegaBridgeNode(Node):
     def _connect(self):
         port = self.param("port")
         try:
-            ser = serial.Serial(port, self.param("baud"), timeout=0.1)
+            # write_timeout: a stuck port must not hold the lock (and the whole node) on a write
+            ser = serial.Serial(port, self.param("baud"), timeout=0.1, write_timeout=0.5)
         except (serial.SerialException, OSError) as e:
             self.get_logger().warning(f"no Mega on {port} ({e}); retrying every "
                                    f"{self.param('reconnect_sec')} s", throttle_duration_sec=60.0)
@@ -216,43 +219,54 @@ class MegaBridgeNode(Node):
                     self._stop.wait(self.param("reconnect_sec"))
                 continue
             try:
-                buf += self.ser.read(256)
+                # what is there, or wait (up to the timeout) for one byte: read(256) waited for 256
+                # bytes or the timeout, holding AUTO OFF / TRACK lines back up to 100 ms
+                buf += self.ser.read(self.ser.in_waiting or 1)
             except (serial.SerialException, OSError, TypeError, AttributeError) as e:
                 self._lost(e)
+                self._stop.wait(self.param("reconnect_sec"))   # opening the port resets the Mega: not in a loop
                 continue
             *lines, buf = buf.replace(b"\r", b"\n").split(b"\n")
+            if len(buf) > MAX_LINE:          # no newline in 8 kB: noise, not a line
+                buf = b""
             for raw in lines:
                 line = raw.decode("ascii", "replace").strip()
                 if not line:
                     continue
-                self.pub_log.publish(String(data=line))
-                if lines_for_mega_line(line, {}) and self._load_modes():   # the Mega just booted
-                    for out in lines_for_mega_line(line, self.bindings):
-                        self._write(out)
-                bind = parse_bind_reply(line)
-                if bind is not None:
-                    if bind[0] == "ERR":
-                        self.get_logger().error(f"Mega refused a binding: {bind[1]}")
-                    continue
-                auto = parse_auto_line(line)
-                if auto is not None:
-                    self._set_auto(*auto)
-                    continue
-                track = parse_track_line(line)
-                if track is not None:
-                    self._set_track(*track)
-                    continue
-                pads = parse_pad_report(line)
-                if pads is not None:
-                    self._set_pads(supported=True, **pads)
-                    continue
-                if is_auto_off_error(line) and self.auto_on:
-                    # We missed an AUTO OFF line: the Mega is the authority. Stop sending
-                    # and ask why, so /r2/auto_mode/reason is right too.
-                    self._set_auto(False, "unknown")
-                    self._write("ROS:AUTO:?\n")
-                if is_error(line):
-                    self.get_logger().warning(f"Mega: {line}")
+                try:
+                    self._on_line(line)
+                except Exception as e:  # noqa: BLE001 - one bad line must not kill the reader (and the bridge)
+                    self.get_logger().error(f"Mega: {line[:60]!r}: {e!r}", throttle_duration_sec=5.0)
+
+    def _on_line(self, line):
+        self.pub_log.publish(String(data=line))
+        if lines_for_mega_line(line, {}) and self._load_modes():   # the Mega just booted
+            for out in lines_for_mega_line(line, self.bindings):
+                self._write(out)
+        bind = parse_bind_reply(line)
+        if bind is not None:
+            if bind[0] == "ERR":
+                self.get_logger().error(f"Mega refused a binding: {bind[1]}")
+            return
+        auto = parse_auto_line(line)
+        if auto is not None:
+            self._set_auto(*auto)
+            return
+        track = parse_track_line(line)
+        if track is not None:
+            self._set_track(*track)
+            return
+        pads = parse_pad_report(line)
+        if pads is not None:
+            self._set_pads(supported=True, **pads)
+            return
+        if is_auto_off_error(line) and self.auto_on:
+            # We missed an AUTO OFF line: the Mega is the authority. Stop sending
+            # and ask why, so /r2/auto_mode/reason is right too.
+            self._set_auto(False, "unknown")
+            self._write("ROS:AUTO:?\n")
+        if is_error(line):
+            self.get_logger().warning(f"Mega: {line}")
 
     # --- virtual Navs (the console's Remote window) -----------------------------------------
 
@@ -306,11 +320,12 @@ class MegaBridgeNode(Node):
         try:
             default = os.path.join(get_package_share_directory("r2_nav"), "config", "modes.yaml")
             path = self.param("modes_config") or modes_path(default)
-            self.modes = load_modes(path)
+            modes = load_modes(path)
+            binds = bindings(modes)
         except Exception as e:  # noqa: BLE001 - OSError, ModesConfigError, bad encoding, no package...
             self.get_logger().error(f"modes.yaml: {e} (the Mega keeps the bindings it had)")
             return False
-        self.bindings = bindings(self.modes)
+        self.modes, self.bindings = modes, binds
         return True
 
     def _send_bindings(self):

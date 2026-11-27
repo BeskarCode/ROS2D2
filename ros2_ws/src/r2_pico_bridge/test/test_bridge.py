@@ -452,3 +452,48 @@ def test_a_renamed_sensor_keeps_measuring_under_its_new_name(bench):
     assert bench.spin_until(lambda: "tof_left" in sensors(bench) and "tof_front_left" not in sensors(bench))
     assert bench.spin_until(lambda: len(got) > 0)
     assert bench.spin_until(lambda: sensors(bench).get("tof_left") == "ok")
+
+
+def test_an_error_on_one_line_does_not_kill_the_reader(bench, monkeypatch):
+    # BRG-3: an exception while handling a line used to end the reader thread for good
+    # (/pico/connected stayed down until the node was restarted)
+    bench.pico.states = "ONNNNNN"
+    bench.pico.readings = {0: 420}
+    assert bench.spin_until(lambda: sensors(bench).get("tof_front_left") == "ok")
+    real = bench.node.on_readings
+    calls = {"n": 0}
+
+    def flaky(items):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise KeyError("boom")
+        real(items)
+    monkeypatch.setattr(bench.node, "on_readings", flaky)
+    bench.ranges.clear()
+    assert bench.spin_until(lambda: calls["n"] >= 2 and bench.ranges.get("tof_front_left"))
+    assert bench.node._reader.is_alive()
+
+
+def test_noise_without_newlines_is_thrown_away(bench):
+    # BRG-6: 8 kB with no newline is noise: the buffer does not grow for ever, and lines after it count
+    bench.pico.states = "ONNNNNN"
+    bench.pico.readings = {0: 420}
+    assert bench.spin_until(lambda: sensors(bench).get("tof_front_left") == "ok")
+    os.write(bench.pico.fd, b"x" * 9000)
+    bench.ranges.clear()
+    assert bench.spin_until(lambda: len(bench.ranges.get("tof_front_left", [])) >= 3)
+    assert bench.node._reader.is_alive()
+
+
+def test_readings_arrive_one_by_one_not_in_pairs(bench):
+    # BRG-1: read(256) with a 0.1 s timeout handed the 50 ms readings over two at a time
+    bench.pico.states = "ONNNNNN"
+    bench.pico.readings = {0: 420}
+    assert bench.spin_until(lambda: sensors(bench).get("tof_front_left") == "ok")
+    got = []
+    bench.ear.create_subscription(Range, "/range/tof_front_left", lambda m: got.append(m.header.stamp.sec + m.header.stamp.nanosec * 1e-9),
+                                  qos_profile_sensor_data)
+    assert bench.spin_until(lambda: len(got) >= 12, 5)
+    gaps = [b - a for a, b in zip(got[1:], got[2:])]
+    # stamped as they are read: in pairs, half the gaps are ~0 and half ~100 ms; one by one they are all around 50 ms
+    assert sum(1 for g in gaps if g < 0.015) <= len(gaps) // 4, gaps

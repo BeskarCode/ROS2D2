@@ -38,6 +38,7 @@ from r2_pico_bridge.protocol import cfg_line, parse
 from r2_sensors.config import Reloader, config_path
 
 STATES = {"O": "ok", "N": "not_responding"}
+MAX_LINE = 8192          # bytes without a newline before they are thrown away (noise, not a line)
 NL = "\n"
 
 
@@ -126,15 +127,16 @@ class PicoBridge(Node):
         # sensor that is turned) or new ranges and poses: those always apply. Only new pins go to the
         # Pico; with the same pins each sensor keeps its state, matched by its place in the file.
         resend = force or line != self.line
+        # the publishers first: the reader thread publishes as soon as the names change
+        for n in names:
+            if n not in self.pub_range:
+                self.pub_range[n] = self.create_publisher(Range, f"/range/{n}", qos_profile_sensor_data)
         with self.lock:
             old = dict(zip(self.names, self.status.values())) if not resend else {}
             by_place = dict(zip(names, self.status.values())) if not resend and len(self.names) == len(names) else {}
             self.line, self.names = line, names
             self.sensors = {n: self.reloader.sensors[n] for n in names}
             self.status = {n: old.get(n, by_place.get(n, "waiting")) for n in names}
-        for n in names:
-            if n not in self.pub_range:
-                self.pub_range[n] = self.create_publisher(Range, f"/range/{n}", qos_profile_sensor_data)
         if resend:
             self.send_cfg()
         self.publish_state()
@@ -147,7 +149,8 @@ class PicoBridge(Node):
     def _connect(self):
         port = self.param("port")
         try:
-            ser = serial.Serial(port, 115200, timeout=0.1)
+            # write_timeout: a stuck port must not hold the lock (and the whole node) on a write
+            ser = serial.Serial(port, 115200, timeout=0.1, write_timeout=0.5)
         except (serial.SerialException, OSError) as e:
             self.get_logger().warning(f"no Pico on {port} ({e}); retrying", throttle_duration_sec=60.0)
             return False
@@ -204,14 +207,23 @@ class PicoBridge(Node):
                 buf = b""
                 continue
             try:
-                data = self.ser.read(256)
+                # what is there, or wait (up to the timeout) for one byte: read(256) waited for 256
+                # bytes or the timeout, handing the 50 ms readings over two at a time
+                data = self.ser.read(self.ser.in_waiting or 1)
             except (serial.SerialException, OSError, TypeError, AttributeError) as e:
                 self._lost(e)
+                self._stop.wait(self.param("reconnect_sec"))     # not straight back to open it again
                 continue
             buf += data
             *lines, buf = buf.replace(b"\r", b"").split(b"\n")
+            if len(buf) > MAX_LINE:          # no newline in 8 kB: noise, not a line
+                buf = b""
             for raw in lines:
-                self.on_line(raw.decode("ascii", "replace").strip())
+                line = raw.decode("ascii", "replace").strip()
+                try:
+                    self.on_line(line)
+                except Exception as e:       # one bad line must not kill the reader (and the bridge)
+                    self.get_logger().error(f"pico: {line[:60]!r}: {e!r}", throttle_duration_sec=5.0)
 
     # --- what the Pico says ---------------------------------------------------------
 
