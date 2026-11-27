@@ -103,3 +103,34 @@ def test_no_points_at_all():
     assert inside_ahead(np.empty((0, 2)), 1.0) is None
     assert choose_heading([], 0.0, CFG) == old_choose_heading([], 0.0, CFG)
     assert choose_heading([], 0.0, CFG, allowed=lambda h: False) == (0.0, 0.0)
+
+
+# ---- REV-7: the follow node's distance to the person, with numpy
+def old_lidar_distance(bearing, scan_xy):
+    from r2_nav.follow_core import CONE, CONE_MAX
+    return min((math.hypot(x, y) for x, y in (scan_xy if scan_xy is not None else ())
+                if math.hypot(x, y) <= CONE_MAX and abs(wrap(math.atan2(y, x) - bearing)) <= CONE), default=None)
+
+
+@pytest.mark.parametrize("seed", range(30))
+def test_follow_distance_same_as_the_plain_python_one(seed):
+    from r2_nav.follow_core import Follower
+    rng = random.Random(100 + seed)
+    ranges = [float(r) for r in np.array(random_scan(rng), dtype=np.float32)]
+    pts = scan_points(np.array(ranges, dtype=np.float32), -math.pi, 2 * math.pi / len(ranges), 0.05, 12.0)
+    f = Follower({"distance": 1.2}, {}, {})
+    for bearing in (0.0, rng.uniform(-math.pi, math.pi), math.pi, -math.pi + 1e-9):
+        old = old_lidar_distance(bearing, [tuple(p) for p in pts])
+        new = f._lidar_distance(bearing, pts)
+        assert (old is None) == (new is None)
+        if old is not None:
+            assert new == pytest.approx(old, abs=1e-12)
+
+
+def test_follow_distance_empty_none_and_nothing_in_the_cone():
+    from r2_nav.follow_core import Follower
+    f = Follower({"distance": 1.2}, {}, {})
+    assert f._lidar_distance(0.0, None) is None
+    assert f._lidar_distance(0.0, np.empty((0, 2))) is None
+    assert f._lidar_distance(0.0, np.array([[0.0, 2.0], [-1.0, 0.0], [5.0, 0.0]])) is None   # beside, behind, too far
+    assert f._lidar_distance(0.0, [(1.5, 0.05)]) == pytest.approx(math.hypot(1.5, 0.05))       # a list works too

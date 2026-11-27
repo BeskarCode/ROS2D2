@@ -13,7 +13,9 @@ turn_accel_deg from nav.yaml) are applied here: what step() returns goes to the 
 import math
 from dataclasses import dataclass, field
 
-from r2_nav.nav_core import (DRIVE_UNITS_PER_MPS, SIDE_SLOW_MIN, TURN_UNITS_PER_RADPS, braking, choose_heading,
+import numpy as np
+
+from r2_nav.nav_core import (DRIVE_UNITS_PER_MPS, SIDE_SLOW_MIN, TURN_UNITS_PER_RADPS, as_points, braking, choose_heading,
                              clearance, floor_problem, is_floor, is_lidar, nearest_ahead, points_from, ramp, sees, wrap,
                              stop_distances)
 
@@ -74,14 +76,31 @@ class Follower:
     def _front(self):
         return [n for n, s in self.sensors.items() if not is_lidar(s) and not is_floor(s) and abs(s["yaw_deg"]) < 90]
 
+    def _lidar_distance(self, bearing, scan_xy):
+        """The nearest lidar point within CONE of the bearing and CONE_MAX of R2, or None. With
+        numpy (the scan comes as an N x 2 array); the answer of the last scan is kept, as the node
+        asks again for the same tick's state."""
+        if scan_xy is None:
+            return None
+        last = getattr(self, "_lidar_last", None)
+        if last is not None and last[0] is scan_xy and last[1] == bearing:
+            return last[2]
+        p = as_points(scan_xy)
+        d = np.hypot(p[:, 0], p[:, 1])
+        a = np.arctan2(p[:, 1], p[:, 0]) - bearing
+        off = np.abs(np.arctan2(np.sin(a), np.cos(a)))          # wrap(), as nav_core
+        near = d[(d <= CONE_MAX) & (off <= CONE)]
+        out = float(near.min()) if len(near) else None
+        self._lidar_last = (scan_xy, bearing, out)
+        return out
+
     def _distance(self, bearing, area, scan_xy):
         """Metres to the person: the nearest lidar point near the bearing, else from the marker's size."""
         f = self.fcfg
         size = None
         if f.get("area_ref") and area and area > 0:
             size = f["distance"] * math.sqrt(f["area_ref"] / area)
-        lidar = min((math.hypot(x, y) for x, y in (scan_xy if scan_xy is not None else ())
-                     if math.hypot(x, y) <= CONE_MAX and abs(wrap(math.atan2(y, x) - bearing)) <= CONE), default=None)
+        lidar = self._lidar_distance(bearing, scan_xy)
         # something much nearer than the marker's size says is in the way, not the person
         if lidar is not None and size is not None and lidar < f["distance"] and size > 2 * lidar:
             return size
