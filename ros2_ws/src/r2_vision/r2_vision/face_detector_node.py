@@ -31,7 +31,7 @@ from sensor_msgs.msg import CompressedImage, Image
 from std_msgs.msg import Bool, String
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
-from r2_vision.face_watch import wants_faces
+from r2_vision.face_watch import FaceWatch
 from r2_vision.image_utils import biggest, image_to_bgr, pixelate
 
 # Changing one of these rebuilds the detector
@@ -71,7 +71,7 @@ class FaceDetectorNode(Node):
         self._image_qos = qos
         self._image_sub = None
         # the pictures only while someone uses the faces (same latched QoS as the dome tracker)
-        self.track_on, self.mode = False, ""
+        self.watch = FaceWatch()
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
                              reliability=ReliabilityPolicy.RELIABLE)
         self.create_subscription(Bool, "/r2/track_mode", self._on_track_mode, latched)
@@ -89,19 +89,17 @@ class FaceDetectorNode(Node):
         return self.get_parameter(name).value
 
     def _on_track_mode(self, msg):
-        self.track_on = msg.data
-        self._update_subscription()
+        self._update_subscription(track_on=msg.data)
 
     def _on_mode(self, msg):
-        self.mode = msg.data
-        self._update_subscription()
+        self._update_subscription(mode=msg.data)
 
-    def _update_subscription(self):
-        want = wants_faces(self.track_on, self.mode, self.pub_debug.get_subscription_count() > 0)
-        if want and self._image_sub is None:
+    def _update_subscription(self, **changed):
+        todo = self.watch.update(self.pub_debug.get_subscription_count() > 0, **changed)
+        if todo == "subscribe":
             self._image_sub = self.create_subscription(Image, "image_raw", self._on_image, self._image_qos)
             self.get_logger().info("faces in use: reading the camera")
-        elif not want and self._image_sub is not None:
+        elif todo == "unsubscribe":
             self.destroy_subscription(self._image_sub)
             self._image_sub = None
             self.get_logger().info("faces not in use: camera left alone")
