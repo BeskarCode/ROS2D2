@@ -2,13 +2,14 @@
 // rosbridge for the setup page: one websocket, service calls, parameters and throttled
 // subscriptions (sent again after a reconnect).
 import { reportRos } from './offline.js';
+import { topicWants } from './subthrottle.js';
 
 const WS_URL = `ws://${location.hostname || 'localhost'}:9090`;
 
 let ws = null;
 let callId = 0;
 const pending = {};
-const handlers = {};       // topic -> [callbacks] (two tabs may follow the same topic)
+const wants = topicWants(); // topic -> callbacks, each at its own rate (two tabs may follow the same topic)
 const subs = {};           // topic -> subscribe message, to send again on reconnect
 
 const onOpens = [];
@@ -24,7 +25,7 @@ export function connect(onOpen) {
   ws.onopen = () => { reportRos(true); advertised.clear(); Object.values(subs).forEach(send); onOpens.forEach((f) => f()); };
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data);
-    if (m.op === 'publish' && handlers[m.topic]) handlers[m.topic].forEach((cb) => cb(m.msg));
+    if (m.op === 'publish') wants.deliver(m.topic, m.msg, performance.now());
     if (m.op === 'service_response' && pending[m.id]) { pending[m.id](m.result ? m.values : null); delete pending[m.id]; }
   };
   ws.onclose = () => { reportRos(false); setTimeout(() => connect(), 2000); };
@@ -53,19 +54,25 @@ export function setParam(node, name, value) {
   return call(`${node}/set_parameters`, 'rcl_interfaces/srv/SetParameters', { parameters: [{ name, value: v }] });
 }
 
+/** rosbridge is asked for the fastest rate anyone on the page wants (a slower subscriber first
+ *  must not slow down a faster one after it); each callback gets the topic at its own rate. */
 export function subscribe(topic, type, cb, throttleMs = 0) {
-  (handlers[topic] = handlers[topic] || []).push(cb);
-  if (subs[topic]) return;             // already subscribed: the new callback shares it
-  subs[topic] = { op: 'subscribe', topic, type, throttle_rate: throttleMs, queue_length: 1 };
+  const rate = wants.add(topic, cb, throttleMs);
+  if (rate === null) return;           // already subscribed fast enough: the new callback shares it
+  if (subs[topic]) send({ op: 'unsubscribe', topic });
+  subs[topic] = { op: 'subscribe', topic, type, throttle_rate: rate, queue_length: 1 };
   send(subs[topic]);
 }
 
-/** Stop one callback; the last one gone, stop the topic (a tab that is not on screen reads nothing). */
+/** Stop one callback; the last one gone, stop the topic (a tab that is not on screen reads nothing).
+ *  If the fastest one left wants it slower, rosbridge is asked for that rate. */
 export function unsubscribe(topic, cb) {
-  handlers[topic] = (handlers[topic] || []).filter((f) => f !== cb);
-  if (handlers[topic].length || !subs[topic]) return;
-  delete subs[topic];
+  const r = wants.remove(topic, cb);
+  if (r === null || !subs[topic]) return;
   send({ op: 'unsubscribe', topic });
+  if (r.gone) { delete subs[topic]; return; }
+  subs[topic] = { ...subs[topic], throttle_rate: r };
+  send(subs[topic]);
 }
 
 const advertised = new Set();
