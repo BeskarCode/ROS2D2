@@ -134,3 +134,21 @@ def test_follow_distance_empty_none_and_nothing_in_the_cone():
     assert f._lidar_distance(0.0, np.empty((0, 2))) is None
     assert f._lidar_distance(0.0, np.array([[0.0, 2.0], [-1.0, 0.0], [5.0, 0.0]])) is None   # beside, behind, too far
     assert f._lidar_distance(0.0, [(1.5, 0.05)]) == pytest.approx(math.hypot(1.5, 0.05))       # a list works too
+
+
+def test_points_from_lidar_and_sensors_together():
+    # REV-T5: the lidar's points and the distance sensors' ones, as the old list
+    from r2_nav.nav_core import points_from
+    sensors = {
+        "lidar": {"type": "rplidar_c1", "x": 0.2, "y": 0.0, "yaw_deg": 0, "fov_deg": 220},
+        "sonar_front_left": {"type": "hcsr04", "x": 0.25, "y": 0.1, "yaw_deg": 20, "fov_deg": 15},
+        "tof_front": {"type": "vl53l0x", "x": 0.3, "y": 0.0, "yaw_deg": 0, "fov_deg": 25},
+    }
+    lidar = [(1.0, 0.5), (2.0, -0.3), (0.6, 0.0)]
+    ranges = {"sonar_front_left": 0.8, "tof_front": None, "lidar": 1.0}
+    new = points_from(np.array(lidar), ranges, sensors)
+    a, half = math.radians(20), math.radians(15) / 2
+    want = lidar + [(0.25 + 0.8 * math.cos(a + k), 0.1 + 0.8 * math.sin(a + k)) for k in (0.0, -half, half)]
+    assert np.allclose(new, np.array(want), atol=1e-12)
+    assert np.allclose(points_from(lidar, ranges, sensors), new)            # a list of points works the same
+    assert points_from(None, {}, sensors).shape == (0, 2)
