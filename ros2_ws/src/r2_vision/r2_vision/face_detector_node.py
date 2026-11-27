@@ -6,7 +6,10 @@ and publishes them as standard ROS detections. Each detection list keeps the
 stamp of the picture it came from, so the dome controller knows how old it is.
 
 Topics (relative to the node, e.g. /cameras/front/...):
-  in   image_raw                     sensor_msgs/Image
+  in   image_raw                     sensor_msgs/Image  (only while the faces are used: face
+                                                         tracking on, a mode on, or someone
+                                                         watching faces/image; see face_watch)
+  in   /r2/track_mode, /r2/mode      (latched)
   out  faces                         vision_msgs/Detection2DArray  (pixels of the full picture,
                                                                    biggest face first)
   out  faces/image/compressed        sensor_msgs/CompressedImage   picture with the boxes drawn,
@@ -23,10 +26,12 @@ import rclpy
 from ament_index_python.packages import get_package_share_directory
 from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CompressedImage, Image
+from std_msgs.msg import Bool, String
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
+from r2_vision.face_watch import wants_faces
 from r2_vision.image_utils import biggest, image_to_bgr, pixelate
 
 # Changing one of these rebuilds the detector
@@ -63,7 +68,16 @@ class FaceDetectorNode(Node):
                          history=HistoryPolicy.KEEP_LAST, depth=1)
         self.pub_faces = self.create_publisher(Detection2DArray, "faces", 10)
         self.pub_debug = self.create_publisher(CompressedImage, "faces/image/compressed", qos)
-        self.create_subscription(Image, "image_raw", self._on_image, qos)
+        self._image_qos = qos
+        self._image_sub = None
+        # the pictures only while someone uses the faces (same latched QoS as the dome tracker)
+        self.track_on, self.mode = False, ""
+        latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                             reliability=ReliabilityPolicy.RELIABLE)
+        self.create_subscription(Bool, "/r2/track_mode", self._on_track_mode, latched)
+        self.create_subscription(String, "/r2/mode", self._on_mode, latched)
+        self.create_timer(1.0, self._update_subscription)      # someone opening faces/image
+        self._update_subscription()
 
         self._detector = None
         self._det_size = None
@@ -73,6 +87,24 @@ class FaceDetectorNode(Node):
 
     def param(self, name):
         return self.get_parameter(name).value
+
+    def _on_track_mode(self, msg):
+        self.track_on = msg.data
+        self._update_subscription()
+
+    def _on_mode(self, msg):
+        self.mode = msg.data
+        self._update_subscription()
+
+    def _update_subscription(self):
+        want = wants_faces(self.track_on, self.mode, self.pub_debug.get_subscription_count() > 0)
+        if want and self._image_sub is None:
+            self._image_sub = self.create_subscription(Image, "image_raw", self._on_image, self._image_qos)
+            self.get_logger().info("faces in use: reading the camera")
+        elif not want and self._image_sub is not None:
+            self.destroy_subscription(self._image_sub)
+            self._image_sub = None
+            self.get_logger().info("faces not in use: camera left alone")
 
     def _after_params(self, params):
         if any(prm.name in REBUILD_PARAMS for prm in params):
