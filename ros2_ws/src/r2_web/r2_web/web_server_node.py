@@ -80,6 +80,7 @@ from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
 from r2_web.cameras_api import ModesCache, save_cameras
 from r2_web.domecam_api import domecams_payload
+from r2_web.http_body import BadBody, body_length, origin_ok
 from r2_web.http_cache import cache_control, etag
 from r2_web.ws_probe import probe
 from r2_web import wifi_api
@@ -224,6 +225,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.split("?")[0]
+        if not origin_ok(self.headers):          # a page of another site, open on the same WiFi
+            self.close_connection = True
+            return self._json(403, {"error": "the console only takes orders from its own pages"})
+        try:
+            raw = self.rfile.read(body_length(self.headers))     # every route: the whole body, at most 1 MiB
+        except BadBody as e:
+            self.close_connection = True         # what is left of it cannot be skipped
+            return self._json(400, {"error": str(e)})
         if route == "/api/restart":
             # Answer first: restarting stops this very server
             self._json(200, {"ok": True})
@@ -232,13 +241,13 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if route == "/api/nav":
             try:
-                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+                text = json.loads(raw)["yaml"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             return self._json(*save_nav(text, NAV_USER_CONFIG))
         if route == "/api/modes/start":
             try:
-                mode = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["mode"]
+                mode = json.loads(raw)["mode"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             code, body = set_start_mode(self.modes_default, USER_MODES, mode)
@@ -247,7 +256,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(code, body)
         if route == "/api/remote":
             try:
-                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+                text = json.loads(raw)["yaml"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             code, body = save_remote(text, USER_REMOTE)
@@ -256,7 +265,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(code, body)
         if route == "/api/modes":
             try:
-                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+                text = json.loads(raw)["yaml"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             code, body = save_modes(text, USER_MODES)
@@ -264,30 +273,28 @@ class Handler(SimpleHTTPRequestHandler):
                 self.on_modes_saved()
             return self._json(code, body)
         if route in ("/api/firmware/check", "/api/firmware/flash", "/api/firmware/retry"):
-            self.rfile.read(int(self.headers.get("Content-Length", 0) or 0))
             if route.endswith("check"):
                 self.firmware.check()
                 return self._json(200, self.firmware.status())
             res = self.firmware.flash() if route.endswith("flash") else self.firmware.retry()
             return self._json(200 if res == "ok" else 409, {"ok": True} if res == "ok" else {"error": res})
         if route in ("/api/wifi/survey", "/api/wifi/move"):
-            self.rfile.read(int(self.headers.get("Content-Length", 0) or 0))
             return self._json(*(wifi_api.survey() if route.endswith("survey") else wifi_api.move()))
         if route == "/api/lidar/usb":
             try:
-                connected = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["connected"]
+                connected = json.loads(raw)["connected"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not done: {e}"})
             return self._json(*set_usb(connected, stop_motor=self.stop_lidar_motor))
         if route == "/api/pico_board":
             try:
-                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+                text = json.loads(raw)["yaml"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             return self._json(*save_pico_board(text, BOARD_USER_CONFIG))
         if route == "/api/sensors/enabled":
             try:
-                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+                body = json.loads(raw)
                 name, enabled = body["name"], body["enabled"]
                 if not isinstance(name, str) or not isinstance(enabled, bool):
                     raise ValueError("name must be text and enabled true or false")
@@ -296,7 +303,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(*set_enabled(self.sensors_default, SENSORS_USER_CONFIG, name, enabled))
         if route == "/api/sensors":
             try:
-                text = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))["yaml"]
+                text = json.loads(raw)["yaml"]
             except (ValueError, KeyError, TypeError) as e:
                 return self._json(400, {"error": f"not saved: {e}"})
             old = sensors_payload(self.sensors_default, SENSORS_USER_CONFIG).get("yaml", "")
@@ -310,7 +317,7 @@ class Handler(SimpleHTTPRequestHandler):
         if route != "/api/cameras":
             return self._json(404, {"error": "not found"})
         try:
-            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            body = json.loads(raw)
         except ValueError as e:
             return self._json(400, {"error": f"not saved: {e}"})
         self._json(*save_cameras(body, USER_CONFIG))

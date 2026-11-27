@@ -57,3 +57,33 @@ def test_index_vendor_and_api(server):
     r, body = get(srv, "/api/ping")
     assert r.status == 200 and r.getheader("Cache-Control") == "no-store" and r.getheader("ETag") is None
     assert b'"ok": true' in body
+
+
+def post(srv, path, body=b"{}", headers=None):
+    c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+    c.request("POST", path, body=body, headers=headers or {})
+    r = c.getresponse()
+    data = r.read()
+    c.close()
+    return r, data
+
+
+def test_a_post_from_another_site_is_refused(server):
+    # WEB-9: a page of another site, open on a phone on the same WiFi, must not restart R2
+    srv, _ = server
+    r, _ = post(srv, "/api/nowhere", headers={"Origin": "http://otra"})
+    assert r.status == 403
+    port = srv.server_address[1]
+    r, _ = post(srv, "/api/nowhere", headers={"Origin": f"http://127.0.0.1:{port}"})
+    assert r.status == 404                      # its own page: on to the route (none here)
+
+
+def test_a_bad_content_length_is_refused(server):
+    srv, _ = server
+    c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+    c.putrequest("POST", "/api/cameras")
+    c.putheader("Content-Length", "-1")
+    c.endheaders()
+    r = c.getresponse()
+    assert r.status == 400
+    c.close()
