@@ -1,14 +1,15 @@
 # ROS2D2, created by NandoMadrid (https://www.astromechspain.com/droides/r2-d2-nandomadrid/) · Astromech Spain (https://www.astromechspain.com)
 import os
 
-from r2_web.http_cache import API, LONG, REVALIDATE, cache_control, etag
+from r2_web.http_cache import API, REVALIDATE, cache_control, etag
 
 
-def test_api_never_kept_vendor_and_models_kept_pages_revalidated():
+def test_api_never_kept_everything_else_revalidated():
+    # REV-4: vendor/ and models/ too, so a new three.js or model reaches every browser at once
     assert cache_control("/api/cameras?detect=0") == API
     assert cache_control("/api/system") == API
-    assert cache_control("/vendor/three.module.min.js") == LONG
-    assert cache_control("/models/r2d2-vladimirov.glb") == LONG
+    assert cache_control("/vendor/three.module.min.js") == REVALIDATE
+    assert cache_control("/models/r2d2-vladimirov.glb") == REVALIDATE
     assert cache_control("/setup.js") == REVALIDATE
     assert cache_control("/") == REVALIDATE
     assert cache_control("/nav.html?x=1") == REVALIDATE

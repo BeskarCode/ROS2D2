@@ -143,8 +143,8 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
     def end_headers(self):
-        # /api/ never kept; vendor/ and models/ kept a week; the pages kept but asked again every
-        # time (they change often while the droid is being tuned): see http_cache
+        # /api/ never kept; everything else kept but asked again every time (304 with its ETag when
+        # unchanged): see http_cache
         self.send_header("Cache-Control", cache_control(self.path))
         tag, self._etag = getattr(self, "_etag", None), None     # one request's (a connection serves several)
         if tag:

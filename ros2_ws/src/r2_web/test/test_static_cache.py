@@ -53,7 +53,7 @@ def test_index_vendor_and_api(server):
     r, _ = get(srv, "/")
     assert r.status == 200 and r.getheader("ETag")
     r, _ = get(srv, "/vendor/three.js")
-    assert r.getheader("Cache-Control") == "public, max-age=604800"
+    assert r.getheader("Cache-Control") == "no-cache" and r.getheader("ETag")
     r, body = get(srv, "/api/ping")
     assert r.status == 200 and r.getheader("Cache-Control") == "no-store" and r.getheader("ETag") is None
     assert b'"ok": true' in body
