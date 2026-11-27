@@ -91,11 +91,12 @@ class SensorInputs:
         self.filters.pop(name, None)
 
     def snapshot(self, now, lidar_name=None):
-        if self.scan and self.scan[1] is None:          # a scan not turned into points yet
+        fresh = self.scan and now - self.scan[0] < self.stale
+        if fresh and self.scan[1] is None:              # a scan not turned into points yet (only if it counts)
             m, (x, y, yaw) = self._raw
             self.scan = (self.scan[0], scan_points(m.ranges, m.angle_min, m.angle_increment,
                                                    m.range_min, m.range_max, x, y, yaw))
-        scan_xy = self.scan[1] if self.scan and now - self.scan[0] < self.stale else None
+        scan_xy = self.scan[1] if fresh else None
         ranges, raw, ages, lost = {}, {}, {}, []
         for name, (t, r, val) in self.ranges.items():
             ages[name] = now - t
