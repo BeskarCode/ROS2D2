@@ -46,7 +46,7 @@ export function createModesTab({ status }) {
     cfg = locked ? null : api.modes;
     changed = false;
     lastPick = null;
-    try { cameras = Object.keys((await (await fetch('api/cameras', { cache: 'no-store' })).json()).cameras || {}); } catch { cameras = []; }
+    try { cameras = Object.keys((await (await fetch('api/cameras?detect=0', { cache: 'no-store' })).json()).cameras || {}); } catch { cameras = []; }
     $('m-locked').hidden = !locked;
     if (visible) $('save').disabled = locked;
     render();

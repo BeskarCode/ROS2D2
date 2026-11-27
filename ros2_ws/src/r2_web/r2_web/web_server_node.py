@@ -78,7 +78,7 @@ from r2_web.modes_api import modes_payload, save_modes, set_start_mode
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
-from r2_web.cameras_api import save_cameras
+from r2_web.cameras_api import ModesCache, save_cameras
 from r2_web.domecam_api import domecams_payload
 from r2_web.ws_probe import probe
 from r2_web import wifi_api
@@ -102,6 +102,9 @@ def camera_name(path):
         return dev
 
 
+CAMERA_MODES = ModesCache(list_modes)     # v4l2-ctl once per plugged camera, not on every poll
+
+
 def detected_cameras():
     out = []
     by_id = {os.path.realpath(p): p for p in glob.glob("/dev/v4l/by-id/*video-index0")}
@@ -112,7 +115,7 @@ def detected_cameras():
             "id": by_id.get(dev, ""),        # stable by camera model/serial
             "device": dev,
             "name": camera_name(path),
-            "modes": list_modes(dev, "MJPG"),
+            "modes": CAMERA_MODES.get(dev, "MJPG"),
         })
     return out
 
@@ -188,8 +191,10 @@ class Handler(SimpleHTTPRequestHandler):
             cameras = load_cameras(path)
         except (OSError, yaml.YAMLError) as e:
             return self._json(500, {"error": str(e)})
-        self._json(200, {"file": path, "saved": path == USER_CONFIG, "yaml": text,
-                         "cameras": cameras, "detected": detected_cameras(), "started": STARTED})
+        body = {"file": path, "saved": path == USER_CONFIG, "yaml": text, "cameras": cameras, "started": STARTED}
+        if "detect=0" not in self.path:          # ?detect=0: the settings only, no look at the USB cameras
+            body["detected"] = detected_cameras()
+        self._json(200, body)
 
     def do_POST(self):
         route = self.path.split("?")[0]

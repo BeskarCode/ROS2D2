@@ -2,6 +2,7 @@
 """Saving cameras.yaml from the console (POST /api/cameras)."""
 
 import os
+import threading
 
 import yaml
 
@@ -32,3 +33,29 @@ def save_cameras(body, user):
         return 400, {"error": f"not saved: {e}"}
     os.replace(tmp, user)
     return 200, {"ok": True, "file": user}
+
+
+class ModesCache:
+    """What each USB camera offers (v4l2-ctl --list-formats-ext), asked once per plugged camera.
+    The pages poll GET /api/cameras every few seconds and v4l2-ctl is a fork + exec per camera;
+    the key changes when the camera is plugged in again (a new device node: new inode / ctime)."""
+
+    def __init__(self, list_modes, stat=os.stat):
+        self.list_modes, self.stat = list_modes, stat
+        self.lock = threading.Lock()
+        self.cache = {}          # device -> (key, modes)
+
+    def get(self, device, fourcc="MJPG"):
+        try:
+            st = self.stat(device)
+            key = (st.st_ino, st.st_ctime, fourcc)
+        except OSError:
+            return self.list_modes(device, fourcc)
+        with self.lock:
+            hit = self.cache.get(device)
+            if hit and hit[0] == key:
+                return list(hit[1])
+        modes = self.list_modes(device, fourcc)
+        with self.lock:
+            self.cache[device] = (key, modes)
+        return list(modes)

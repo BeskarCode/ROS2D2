@@ -281,7 +281,7 @@ async function save(restart) {
 }
 
 async function serverStarted() {
-  try { return (await (await fetch('api/cameras', { cache: 'no-store' })).json()).started; } catch { return null; }
+  try { return (await (await fetch('api/cameras?detect=0', { cache: 'no-store' })).json()).started; } catch { return null; }
 }
 
 // The page stays (it is cached): a spinner on top while ROS2D2 restarts, asking every second
@@ -400,8 +400,10 @@ function status(text, cls = '') { $('status').textContent = text; $('status').cl
 
 // Cameras plugged in or out while the page is open: reload the list (unless there are
 // unsaved changes, which a reload would throw away)
+// (only while the Cameras tab or its File is on screen)
 let plugged = '';
 setInterval(async () => {
+  if (section !== 'cameras' || (current !== 'cameras' && current !== 'file') || document.visibilityState !== 'visible') return;
   try {
     const api = await (await fetch('api/cameras', { cache: 'no-store' })).json();
     const now = api.detected.map((d) => d.path).join('|');

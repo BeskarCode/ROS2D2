@@ -45,7 +45,7 @@ function start() {
     render();
   });
   subscribe('/r2/track_mode', 'std_msgs/msg/Bool', (m) => { st.track = m.data; render(); });
-  fetch('api/cameras', { cache: 'no-store' }).then((r) => r.json()).then((c) => {
+  fetch('api/cameras?detect=0', { cache: 'no-store' }).then((r) => r.json()).then((c) => {
     for (const name of Object.keys(c.cameras || {})) {
       st.cams[name] = 0;
       subscribe(`/cameras/${name}/camera_info`, 'sensor_msgs/msg/CameraInfo', () => { st.cams[name] = Date.now(); }, 2000);
