@@ -30,8 +30,17 @@ On the Pi, enable `uart3` (it leaves the UART on pins 8 and 10, which has the Li
 dtoverlay=uart3
 ```
 
-Reboot and check its name: `ls /dev/ttyAMA*` (`config/imu.yaml` says `/dev/ttyAMA3`). The user must
-be in the `dialout` group.
+Reboot and check its name: `ls /dev/ttyAMA*`. On a Pi 4 with Ubuntu it is `/dev/ttyAMA3`, the one in
+`config/imu.yaml` (checked with the board: 100 frames a second, none bad). The user must be in the
+`dialout` group.
+
+**If nothing arrives** (the node says "no BNO085 frames"):
+- The board's green LED must be on: if not, VIN or GND makes no contact.
+- All four wires go on the Pi's odd row (the one towards the middle of the board), counting from the
+  end away from the USB ports: VIN on the 1st pin, GND on the 5th, P0 on the 9th and SDA on the
+  **15th** (pin 29; the 14th is pin 27, the wrong one).
+- With a multimeter (DC, black on the board's GND): VIN, P0 and SDA about 3.2 V; P1 0 V.
+- `sudo grep "^3:" /proc/tty/driver/ttyAMA`: the `rx:` count must go up about 1900 bytes a second.
 
 **Where to mount it:** in the ROS2 box, on the `imu_bracket` screwed to the Pi (see
 `hardware/ros2_box_rack_v3`), or in the body, flat, centred and as close to the foot's axis as possible, with
@@ -77,7 +86,6 @@ this node always: with no board its status says "not connected".
 
 ## Still to try with the board
 
-- The `uart3` port name on Ubuntu.
 - The yaw direction (`invert_yaw`), and that it does not jump near the foot motors.
 - Feeding it to the filter (robot_localization) with the lidar odometry (`rf2o`).
 

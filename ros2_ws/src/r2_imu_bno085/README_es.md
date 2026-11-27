@@ -30,8 +30,17 @@ En la Pi, activar el `uart3` (deja libre el UART de los pines 8 y 10, que tiene 
 dtoverlay=uart3
 ```
 
-Reiniciar y mirar qué nombre le da: `ls /dev/ttyAMA*` (en `config/imu.yaml` pone `/dev/ttyAMA3`).
-El usuario tiene que estar en el grupo `dialout`.
+Reiniciar y mirar qué nombre le da: `ls /dev/ttyAMA*`. En una Pi 4 con Ubuntu es `/dev/ttyAMA3`, el de
+`config/imu.yaml` (comprobado con la placa: 100 tramas por segundo, ninguna mala). El usuario tiene que
+estar en el grupo `dialout`.
+
+**Si no llega nada** (el nodo dice "no BNO085 frames"):
+- El LED verde de la placa tiene que estar encendido: si no, VIN o GND no hacen contacto.
+- Los cuatro cables van en la fila de los impares de la Pi (la de hacia el centro de la placa), contando
+  desde el extremo contrario a los USB: VIN en la 1.ª punta, GND en la 5.ª, P0 en la 9.ª y SDA en la
+  **15.ª** (pin 29; la 14.ª es el pin 27, que no es el bueno).
+- Con el polímetro (DC, negra en GND de la placa): VIN, P0 y SDA unos 3,2 V; P1 0 V.
+- `sudo grep "^3:" /proc/tty/driver/ttyAMA`: el contador `rx:` tiene que subir unos 1900 bytes por segundo.
 
 **Dónde montarlo:** en la caja ROS2, con el soporte `imu_bracket` que va atornillado a la Pi (ver
 `hardware/ros2_box_rack_v3`), o en el cuerpo, plano, centrado y lo más cerca posible del eje del foot, con
@@ -78,7 +87,6 @@ droide lanza siempre este nodo: sin placa, su estado dice «not connected».
 
 ## Pendiente de probar con la placa
 
-- El nombre del puerto del `uart3` en Ubuntu.
 - El sentido del rumbo (`invert_yaw`) y que no salte al acercarlo a los motores del foot.
 - Meterlo en el filtro (robot_localization) junto con la odometría del lidar (`rf2o`).
 
