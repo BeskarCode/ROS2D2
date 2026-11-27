@@ -11,9 +11,38 @@ and a hard stop cuts the forward speed at once (no ramp down when something is i
 """
 import math
 
+import numpy as np
+
 from r2_nav.nav_core import RangeFilter, ramp
 
 STALE = 0.5          # s: a sensor older than this is not reporting
+
+
+_TRIG = {}       # (rays, angle_min, angle_increment, yaw) -> (cos, sin) of every ray
+
+
+def scan_points(ranges, angle_min, angle_increment, range_min, range_max, x=0.0, y=0.0, yaw=0.0):
+    """A LaserScan's rays as points in base_link (an N x 2 array) for a lidar at (x, y) turned yaw
+    radians; rays with no echo or out of range are left out. The navigator and the follow node use
+    it; the angles' cos and sin are worked out once per scan geometry."""
+    r = np.asarray(ranges, dtype=np.float64)
+    key = (len(r), angle_min, angle_increment, yaw)
+    trig = _TRIG.get(key)
+    if trig is None:
+        a = angle_min + np.arange(len(r)) * angle_increment + yaw
+        trig = _TRIG[key] = (np.cos(a), np.sin(a))
+        if len(_TRIG) > 8:                      # the lidar's settings changed: keep only the new ones
+            _TRIG.clear()
+            _TRIG[key] = trig
+    with np.errstate(invalid="ignore"):
+        ok = np.isfinite(r) & (r >= range_min) & (r <= range_max)
+    r = r[ok]
+    return np.column_stack((x + r * trig[0][ok], y + r * trig[1][ok]))
+
+
+def lidar_pose(lidar):
+    """(x, y, yaw radians) of the lidar from sensors.yaml, or the origin when there is none."""
+    return (lidar["x"], lidar["y"], math.radians(lidar["yaw_deg"])) if lidar else (0.0, 0.0, 0.0)
 
 
 class Snapshot:
@@ -50,12 +79,22 @@ class SensorInputs:
     def on_scan(self, now, points):
         self.scan = (now, points)
 
+    def on_scan_msg(self, now, msg, pose):
+        """A LaserScan as it arrives: turned into points only when a snapshot needs them (at the
+        10 Hz tick of a mode that is on), not for every scan."""
+        self.scan = (now, None)
+        self._raw = (msg, pose)
+
     def forget(self, name):
         """An ignored sensor: as if it had never reported."""
         self.ranges.pop(name, None)
         self.filters.pop(name, None)
 
     def snapshot(self, now, lidar_name=None):
+        if self.scan and self.scan[1] is None:          # a scan not turned into points yet
+            m, (x, y, yaw) = self._raw
+            self.scan = (self.scan[0], scan_points(m.ranges, m.angle_min, m.angle_increment,
+                                                   m.range_min, m.range_max, x, y, yaw))
         scan_xy = self.scan[1] if self.scan and now - self.scan[0] < self.stale else None
         ranges, raw, ages, lost = {}, {}, {}, []
         for name, (t, r, val) in self.ranges.items():

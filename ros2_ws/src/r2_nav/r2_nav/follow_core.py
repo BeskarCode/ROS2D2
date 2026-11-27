@@ -80,7 +80,7 @@ class Follower:
         size = None
         if f.get("area_ref") and area and area > 0:
             size = f["distance"] * math.sqrt(f["area_ref"] / area)
-        lidar = min((math.hypot(x, y) for x, y in scan_xy or []
+        lidar = min((math.hypot(x, y) for x, y in (scan_xy if scan_xy is not None else ())
                      if math.hypot(x, y) <= CONE_MAX and abs(wrap(math.atan2(y, x) - bearing)) <= CONE), default=None)
         # something much nearer than the marker's size says is in the way, not the person
         if lidar is not None and size is not None and lidar < f["distance"] and size > 2 * lidar:

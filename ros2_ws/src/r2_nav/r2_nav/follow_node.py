@@ -33,7 +33,7 @@ from r2_nav.lidar_gate import LidarGate, motor_policy
 from r2_nav.follow_core import Follower
 from r2_nav.modes import drives_in, load_modes, modes_path
 from r2_nav.nav_core import NavConfigError, config_path, is_lidar, load_nav
-from r2_nav.shaping import SensorInputs
+from r2_nav.shaping import SensorInputs, lidar_pose
 from r2_nav.spin import spin
 from r2_sensors.config import Reloader, in_use
 from r2_sensors.config import config_path as sensors_path
@@ -150,15 +150,8 @@ class FollowNode(Node):
         if lidar is not None and not lidar.get("enabled", True):
             self.inputs.scan = None       # the lidar is ignored: as if there were none
             return
-        lx, ly, yaw = (lidar["x"], lidar["y"], math.radians(lidar["yaw_deg"])) if lidar else (0.0, 0.0, 0.0)
-        pts = []
-        for i, r in enumerate(m.ranges):
-            if not math.isfinite(r) or r < m.range_min or r > m.range_max:
-                continue
-            a = m.angle_min + i * m.angle_increment + yaw
-            pts.append((lx + r * math.cos(a), ly + r * math.sin(a)))
         now = self._now()
-        self.inputs.on_scan(now, pts)
+        self.inputs.on_scan_msg(now, m, lidar_pose(lidar))     # turned into points at the tick, if needed
         self.gate.on_scan(now)
 
     def _on_range(self, name, m):

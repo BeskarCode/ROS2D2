@@ -45,6 +45,7 @@ import os
 import re
 from dataclasses import dataclass, field
 
+import numpy as np
 import yaml
 
 USER_CONFIG = os.path.expanduser("~/.config/ros2d2/nav.yaml")
@@ -287,9 +288,16 @@ def braking(speed, cfg):
     return speed * speed / (2 * cfg["brake_decel"])
 
 
+def as_points(points):
+    """Obstacle points as an N x 2 array (they may come as a list of (x, y) or as an array)."""
+    return np.asarray(points, dtype=np.float64).reshape(-1, 2)
+
+
 def nearest_ahead(points):
     """Distance from the body centre to the nearest thing in the front half (3.0 if none)."""
-    return min((math.hypot(x, y) for x, y in points if x > 0), default=3.0)
+    p = as_points(points)
+    p = p[p[:, 0] > 0]
+    return float(np.hypot(p[:, 0], p[:, 1]).min()) if len(p) else 3.0
 
 
 def stop_distances(sensors, cfg):
@@ -335,8 +343,9 @@ class RangeFilter:
 
 
 def points_from(scan_xy, ranges, sensors):
-    """Obstacle points in base_link: the lidar's, plus one per distance sensor that sees something."""
-    pts = list(scan_xy or [])
+    """Obstacle points in base_link (an N x 2 array): the lidar's, plus one per distance sensor
+    that sees something."""
+    pts = []
     for name, d in ranges.items():
         s = sensors.get(name)
         if s is None or d is None or is_lidar(s):
@@ -353,18 +362,26 @@ def points_from(scan_xy, ranges, sensors):
         half = math.radians(s.get("fov_deg", 0.0)) / 2
         for k in ((0.0, -half, half) if half > 0 else (0.0,)):
             pts.append((s["x"] + d * math.cos(a + k), s["y"] + d * math.sin(a + k)))
-    return pts
+    lidar = as_points(scan_xy if scan_xy is not None else ())
+    return np.vstack((lidar, as_points(pts))) if pts else lidar
+
+
+def clearances(points, headings, half_width=HALF_WIDTH):
+    """clearance() for several headings at once (one pass over the points for all of them)."""
+    p = as_points(points)
+    h = np.asarray(headings, dtype=np.float64)
+    if not len(p):
+        return np.full(len(h), 3.0)
+    hc, hs = np.cos(h), np.sin(h)
+    x, y = p[:, 0:1], p[:, 1:2]
+    along = x * hc + y * hs                        # N x headings
+    side = np.abs(-x * hs + y * hc)
+    return np.where((along > 0) & (side < half_width), along, 3.0).min(axis=0).clip(max=3.0)
 
 
 def clearance(points, heading, half_width=HALF_WIDTH):
     """Free distance from the body centre along a heading, for a body ~0.7 m wide."""
-    c, s = math.cos(heading), math.sin(heading)
-    best = 3.0
-    for x, y in points:
-        along, side = x * c + y * s, abs(-x * s + y * c)
-        if along > 0 and side < half_width:
-            best = min(best, along)
-    return best
+    return float(clearances(points, [heading], half_width)[0])
 
 
 INSIDE_MARGIN = 0.03      # m: just inside the circle (a wall it runs along at the edge) does not count
@@ -373,12 +390,14 @@ INSIDE_MARGIN = 0.03      # m: just inside the circle (a wall it runs along at t
 def inside_ahead(points, radius, cone_deg=60):
     """The nearest point inside the safety circle and within cone_deg of ahead, or None. Driving
     forward would bring it closer; one behind or beside (a wall it runs along) does not stop R2."""
-    best = None
-    for x, y in points:
-        d = math.hypot(x, y)
-        if x > 0 and abs(math.atan2(y, x)) <= math.radians(cone_deg) and d < radius - INSIDE_MARGIN and (best is None or d < best[2]):
-            best = (x, y, d)
-    return best
+    p = as_points(points)
+    x, y = p[:, 0], p[:, 1]
+    d = np.hypot(x, y)
+    hit = (x > 0) & (np.abs(np.arctan2(y, x)) <= math.radians(cone_deg)) & (d < radius - INSIDE_MARGIN)
+    if not hit.any():
+        return None
+    i = np.flatnonzero(hit)[np.argmin(d[hit])]       # the first of the nearest, as before
+    return (float(x[i]), float(y[i]), float(d[i]))
 
 
 def choose_heading(points, goal_bearing, cfg, allowed=None):
@@ -386,11 +405,11 @@ def choose_heading(points, goal_bearing, cfg, allowed=None):
     allowed(heading) -> bool leaves out the headings no sensor looks along (0.0, 0.0 if none is)."""
     margin = cfg["safety_radius"] + cfg["slow_from"]
     best = None
-    for o in range(-90, 91, 10):
+    offsets = [o for o in range(-90, 91, 10) if allowed is None or allowed(math.radians(o))]
+    clear = clearances(points, [math.radians(o) for o in offsets])      # all of them in one pass
+    for o, c in zip(offsets, clear):
         h = math.radians(o)
-        if allowed is not None and not allowed(h):
-            continue
-        c = clearance(points, h)
+        c = float(c)
         cost = abs(wrap(h - goal_bearing)) / math.pi + (max(0.0, margin - c) * 2.5) + abs(o) / 900
         if best is None or cost < best[2]:
             best = (h, c, cost)
