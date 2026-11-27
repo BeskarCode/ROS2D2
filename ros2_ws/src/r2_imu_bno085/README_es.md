@@ -7,6 +7,8 @@ junta el giroscopio y el acelerómetro y manda la orientación ya calculada 100 
 por un solo cable. Publica lo mismo que [`r2_imu`](../r2_imu) (el del MPU6050), así que a quien use
 `/imu/data` le da igual qué IMU lleve R2.
 
+![Setup, IMU: el BNO085 movido con la mano, en directo en la consola web (esfera, los tres diales de R2, aceleración, velocidad de giro y las comprobaciones)](../../../media/console-imu-setup.gif)
+
 Datos del modo UART-RVC sacados de la hoja de datos de CEVA (BNO08X, 1000-3927 v1.17, apartado 1.2.5):
 115200 baudios, 8N1, 100 tramas por segundo de 19 bytes. El rumbo cuenta **desde que se enciende
 el chip** y en este modo no se usa la brújula (no se calibra el magnetómetro), lo que nos viene

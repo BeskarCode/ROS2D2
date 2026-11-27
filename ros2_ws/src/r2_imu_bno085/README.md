@@ -7,6 +7,8 @@ fuses the gyroscope and the accelerometer and sends the finished orientation 100
 over a single wire. It publishes the same as [`r2_imu`](../r2_imu) (the MPU6050 one), so whatever
 uses `/imu/data` does not care which IMU R2 has.
 
+![Setup, IMU: the BNO085 moved by hand, live in the web console (sphere, R2's three dials, acceleration, turn rate and the checks)](../../../media/console-imu-setup.gif)
+
 UART-RVC facts from CEVA's datasheet (BNO08X, 1000-3927 v1.17, section 1.2.5): 115200 baud, 8N1,
 100 frames a second of 19 bytes. Yaw counts **from when the chip powers up**, and this mode does not
 use the compass (the magnetometer is not calibrated), which suits us: inside R2 the motors and
