@@ -124,6 +124,10 @@ def detected_cameras():
 
 class Handler(SimpleHTTPRequestHandler):
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".js": "text/javascript"}
+    # one connection for the ~30 files of a page instead of one each (every answer has a
+    # Content-Length: _json, the files, the errors); an idle connection is closed after 30 s
+    protocol_version = "HTTP/1.1"
+    timeout = 30
     default_config = ""
     sensors_default = ""
     nav_default = ""

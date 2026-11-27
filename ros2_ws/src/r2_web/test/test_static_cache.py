@@ -87,3 +87,17 @@ def test_a_bad_content_length_is_refused(server):
     r = c.getresponse()
     assert r.status == 400
     c.close()
+
+
+def test_one_connection_serves_several_requests(server):
+    # HTTP/1.1: the files of a page, API answers, errors and a POST, one after the other on one socket
+    srv, _ = server
+    c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+    for method, path, status in [("GET", "/app.js", 200), ("GET", "/api/ping", 200), ("GET", "/nothing.js", 404),
+                                 ("POST", "/api/nowhere", 404), ("GET", "/vendor/three.js", 200)]:
+        c.request(method, path, body=b"{}" if method == "POST" else None)
+        r = c.getresponse()
+        r.read()
+        assert r.status == status, path
+        assert r.version == 11
+    c.close()
