@@ -5,6 +5,7 @@
 2. a goal across the room -> R2 gets there
 3. a goal it cannot reach (behind a wall) -> it gives up, plays its sound and stays still
 4. a sensor unplugged on the way -> "sensor lost", it stops at once; plugged back -> it carries on
+5. follow a colour in the event room -> the follow node sees the shirt and stays alive
 Prints PASS/FAIL per step and ALL PASS at the end (exit 1 on the first failure).
 """
 import json
@@ -28,6 +29,7 @@ n.create_subscription(Bool, "/mega/connected", lambda m: seen.update(connected=m
 n.create_subscription(String, "/nav/state", lambda m: seen.update(state=json.loads(m.data)), 10)
 n.create_subscription(Odometry, "/odom", lambda m: seen.update(pose=(m.pose.pose.position.x, m.pose.pose.position.y)), 10)
 n.create_subscription(String, "/sim/world", lambda m: seen.update(world=m.data), latched)
+n.create_subscription(String, "/follow/state", lambda m: seen.update(follow=json.loads(m.data)), 10)
 cmd = n.create_publisher(String, "/sim/world_cmd", 10)
 goal = n.create_publisher(PoseStamped, "/nav/goal", 10)
 
@@ -105,6 +107,15 @@ p1 = seen["pose"]
 step("stays still without it", abs(p1[0] - p0[0]) < 0.03 and abs(p1[1] - p0[1]) < 0.03)
 cmd.publish(String(data=json.dumps({"op": "sensor", "name": "tof_floor", "on": True})))
 step("plugged back: it carries on", wait(lambda: seen["state"].get("state") in ("going", "avoiding", "arrived"), 10))
+
+# follow a colour: the event room has a person with the coloured shirt in sight
+cmd.publish(String(data=json.dumps({"op": "room", "name": "event"})))
+wait(lambda: False, 1.0)
+cmd.publish(String(data=json.dumps({"op": "press", "what": "mode:follow"})))
+step("follow: it sees the marker (distance in /follow/state)",
+     wait(lambda: (seen.get("follow") or {}).get("distance") is not None, 20))
+seen["follow"] = None
+step("follow: the node is still alive 3 s later", wait(lambda: False, 3) or seen.get("follow") is not None)
 cmd.publish(String(data=json.dumps({"op": "press", "what": "stick"})))
 wait(lambda: False, 1)
 print("ALL PASS", flush=True)

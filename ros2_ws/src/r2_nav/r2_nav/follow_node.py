@@ -208,7 +208,7 @@ class FollowNode(Node):
             self.last_state = now
             m = self.marker if self.marker and self.marker.get("seen") else None
             bearing = None if m is None else m.get("bearing")
-            dist = None if m is None else self.follower._distance(bearing, m.get("area"), scan_xy)
+            dist = None if m is None else self.follower._distance(bearing, m.get("area"), snap.scan_xy)
             self.pub_state.publish(String(data=json.dumps({
                 "state": d.state, "v": round(d.v, 3), "w": round(d.w, 3),
                 "distance": None if dist is None else round(dist, 2),
