@@ -80,12 +80,12 @@ from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
 from r2_web.cameras_api import ModesCache, save_cameras
 from r2_web.domecam_api import domecams_payload
-from r2_web.http_body import BadBody, body_length, origin_ok
+from r2_web.http_body import BadBody, body_length, origin_ok, own_names
 from r2_web.http_cache import cache_control, etag
 from r2_web.ws_probe import probe
 from r2_web import wifi_api
 from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
-from r2_web.system_api import system_payload
+from r2_web.system_api import addresses, system_payload
 from r2_web.firmware_api import FirmwareJob, autonomous_active
 from r2_web.pico_board_api import pico_board_payload, save_pico_board
 from r2_pico_bridge.board_settings import USER_CONFIG as BOARD_USER_CONFIG
@@ -231,7 +231,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         route = self.path.split("?")[0]
-        if not origin_ok(self.headers):          # a page of another site, open on the same WiFi
+        names = own_names(a["ip"] for a in addresses())        # the Pi's names (addresses: cached 5 s)
+        if not origin_ok(self.headers, names):   # a page of another site, open on the same WiFi
             self.close_connection = True
             return self._json(403, {"error": "the console only takes orders from its own pages"})
         try:

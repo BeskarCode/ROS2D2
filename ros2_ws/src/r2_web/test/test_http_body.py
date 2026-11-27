@@ -27,3 +27,16 @@ def test_a_chunked_body_is_refused():
     # REV-3: without a Content-Length a chunked body would be read as the next request
     with pytest.raises(BadBody):
         body_length({"Transfer-Encoding": "chunked"})
+
+
+def test_dns_rebinding_is_refused():
+    # REV-8: someone else's domain pointing at the Pi sends Origin and Host alike, but not one of the Pi's names
+    from r2_web.http_body import own_names
+    import socket
+    names = own_names(["192.168.68.112/24", "10.42.0.1/24"])
+    me = socket.gethostname().lower()
+    assert not origin_ok({"Host": "evil.example:8080", "Origin": "http://evil.example:8080"}, names)
+    for host in ("192.168.68.112:8080", "10.42.0.1:8080", f"{me}.local:8080", f"{me}:8080",
+                 "localhost:8080", "127.0.0.1:8080", "[::1]:8080"):
+        assert origin_ok({"Host": host, "Origin": f"http://{host}"}, names), host
+    assert origin_ok({"Host": "evil.example:8080"}, names)       # no Origin: curl, scripts on the Pi
