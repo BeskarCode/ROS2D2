@@ -56,6 +56,7 @@ class ModesCache:
             if hit and hit[0] == key:
                 return list(hit[1])
         modes = self.list_modes(device, fourcc)
-        with self.lock:
-            self.cache[device] = (key, modes)
+        if modes:                # nothing = v4l2-ctl failed or timed out (a camera starting, busy):
+            with self.lock:      # asked again next time instead of kept until it is plugged again
+                self.cache[device] = (key, modes)
         return list(modes)

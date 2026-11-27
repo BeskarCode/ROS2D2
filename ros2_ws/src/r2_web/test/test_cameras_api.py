@@ -62,3 +62,18 @@ def test_modes_of_a_device_that_is_gone_are_not_cached():
     c.get("/dev/video9")
     c.get("/dev/video9")
     assert len(calls) == 2
+
+
+def test_a_failed_v4l2_ctl_is_not_kept():
+    # REV-1: a camera starting or busy makes v4l2-ctl fail ([]); that must not stick until it is replugged
+    answers = [[], ["640x480@30"]]
+    calls = []
+
+    def list_modes(dev, fourcc):
+        calls.append(dev)
+        return answers[len(calls) - 1]
+    c = ModesCache(list_modes, stat=lambda d: _Stat(1, 10.0))
+    assert c.get("/dev/video0") == []
+    assert c.get("/dev/video0") == ["640x480@30"]
+    assert c.get("/dev/video0") == ["640x480@30"]
+    assert len(calls) == 2
