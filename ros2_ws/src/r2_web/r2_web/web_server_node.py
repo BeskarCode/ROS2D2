@@ -80,6 +80,7 @@ from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
 from r2_web.cameras_api import ModesCache, save_cameras
 from r2_web.domecam_api import domecams_payload
+from r2_web.http_cache import cache_control, etag
 from r2_web.ws_probe import probe
 from r2_web import wifi_api
 from r2_web.sensors_api import save_sensors, sensors_payload, set_enabled
@@ -137,9 +138,34 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
     def end_headers(self):
-        # The pages change often while the droid is being tuned: never serve a stale copy
-        self.send_header("Cache-Control", "no-store")
+        # /api/ never kept; vendor/ and models/ kept a week; the pages kept but asked again every
+        # time (they change often while the droid is being tuned): see http_cache
+        self.send_header("Cache-Control", cache_control(self.path))
+        tag, self._etag = getattr(self, "_etag", None), None     # one request's (a connection serves several)
+        if tag:
+            self.send_header("ETag", tag)
         super().end_headers()
+
+    def _static(self):
+        """A file of the console: 304 when the browser already has this very one (ETag), else
+        the file as SimpleHTTPRequestHandler serves it, with its ETag."""
+        self._etag = None
+        fs = self.translate_path(self.path)
+        if os.path.isdir(fs):
+            fs = os.path.join(fs, "index.html")
+        try:
+            st = os.stat(fs)
+        except OSError:
+            return super().do_GET()
+        tag = etag(st)
+        self._etag = tag
+        # the tag decides, not the date: a deploy can leave an older modification time
+        del self.headers["If-Modified-Since"]
+        if tag in [t.strip() for t in self.headers.get("If-None-Match", "").split(",")]:
+            self.send_response(304)
+            self.end_headers()
+            return None
+        return super().do_GET()
 
     def _json(self, code, obj):
         body = json.dumps(obj).encode()
@@ -183,7 +209,7 @@ class Handler(SimpleHTTPRequestHandler):
                 Handler.prev_stat = stat
             return self._json(200, body)
         if self.path.split("?")[0] != "/api/cameras":
-            return super().do_GET()
+            return self._static()
         path = config_path(self.default_config)
         try:
             with open(path, encoding="utf-8") as f:
