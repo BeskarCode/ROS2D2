@@ -78,6 +78,7 @@ from r2_web.modes_api import modes_payload, save_modes, set_start_mode
 from r2_web.nav_api import nav_payload, save_nav
 from r2_web.lidar_api import lidar_needs_restart
 from r2_web.lidar_usb_api import set_usb, usb_state
+from r2_web.cameras_api import save_cameras
 from r2_web.domecam_api import domecams_payload
 from r2_web.ws_probe import probe
 from r2_web import wifi_api
@@ -273,16 +274,9 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(404, {"error": "not found"})
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-            text = body["yaml"]
-            parsed = yaml.safe_load(text) or {}
-            if not isinstance(parsed, dict):
-                raise ValueError("cameras.yaml must be a list of cameras (name: settings) or auto:")
-        except (ValueError, KeyError, yaml.YAMLError) as e:
+        except ValueError as e:
             return self._json(400, {"error": f"not saved: {e}"})
-        os.makedirs(os.path.dirname(USER_CONFIG), exist_ok=True)
-        with open(USER_CONFIG, "w", encoding="utf-8") as f:
-            f.write(text if text.endswith("\n") else text + "\n")
-        self._json(200, {"ok": True, "file": USER_CONFIG})
+        self._json(*save_cameras(body, USER_CONFIG))
 
 
 class WebServerNode(Node):
